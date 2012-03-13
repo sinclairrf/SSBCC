@@ -1,0 +1,66 @@
+# Copyright 2012, Sinclair R.F., Inc.
+#
+# Illustration of an SSBCC machine to blink an LED.
+# The machine has 9-bit opcodes and 8-bit data
+
+################################################################################
+#
+# define the processor architecture
+#
+# This architecture is defined for FPGAs with 6-input LUTs that can be used as
+# ROM or as single-port RAM.
+#
+# The program is small, so a very short ROM address works.  Since the target
+# machine uses 6-bit LUTs, which will accommodate 64 instructions, a 6-bit ROM
+# width is specified.
+#
+# The stack is only required to hold 8-bit values, so 8 bits are specified for
+# the stack width.  The return stack has the same width.  Since this is a small
+# program and the target is a device with small memories, the memories will be
+# instantiated in the fabric instead of in large SRAMs.
+#
+################################################################################
+
+ARCHITECTURE core_9_8
+
+  #
+  # define the memory widths and the structure of the associated ROMs and RAMs.
+  #
+
+  G_NBITS_ROM_ADDR        6;
+  G_NBITS_STACK_WIDTH     8;
+  G_NBITS_RETURN_WIDTH    max(C_NBITS_ROM_ADDR,C_NBITS_STACK_WIDTH);
+
+  MEMORY  ROM     64*G_NBITS_ROM_ADDR;
+  MEMORY  STACK   64*G_NBITS_STACK_WIDTH;
+  MEMORY  RETURN  64*G_NBITS_RETURN_WIDTH;
+
+  #
+  # Instruct the compiler to generate Verilog.
+  #
+
+  HDL Verilog
+
+  #
+  # No optional processor features are enabled.
+  #
+
+ENDARCHITECTURE
+
+################################################################################
+#
+# List the Forth files used to build the LED flasher code.
+#
+# Note:  The "LIBRARY" statement means that "core_9_8.fs" is included but that
+#        unused keywords are not incorporated in the compiled program.
+# Note:  Unused keywords in "led.fs" will be listed as warning messages when the
+#        Forth program is compiled.
+#
+################################################################################
+
+PROGRAM Forth
+
+  LIBRARY       core_9_8.fs
+  INCLUDE       led.fs
+
+ENDPROGRAM
