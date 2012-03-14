@@ -1,0 +1,94 @@
+<!-- Copyright 2012, Sinclair R.F., Inc. -->
+<html>
+<title>
+9-bit opcode, 8-bit data stack-based micro controller
+</title>
+<body>
+This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
+<h1>Introduction</h1>
+  The objective of this design is to provide a minimalist FPGA-based
+    microcontroller.<br/><br/>
+  A&nbsp;9-bit opcode was chosen because (1)&nbsp;it works well with Altera,
+    Lattice, and Xilinx SRAM widths and (2)&nbsp;it allows pushing 8-bit data
+    onto the stack with a single instruction.<br/><br/>
+  An&nbsp;8-bit data width was chosen because that's a practical minimal sizes
+    and is common to many hardware interfaces such as I2C devices.<br/><br/>
+  This architecture accommodates up to a 14-bit instructions address space by
+    first pushing the 8 least significant bits of the destination address onto
+    the stack and then encoding the 6 most significant bits in the jump
+    instruction.  This is the largest practicable instruction address width
+    because (1)&nbsp;one bit of the opcode is required to indicate pushing an
+    8-bit value onto the stack, (2)&nbsp;one bit of the remaining 8 bits is
+    required to indicate a jump instructions, and (3)&nbsp;one more bit is
+    required to indicate whether the jump is always performed or is
+    conditionally performed.  Consuming these 3 bits leaves 6 bit for the msb
+    of the jump address.<br/><br/>
+<h1>Restrictions</h1>
+  This section describes things the processor does not do and what is required
+    in code to work around these restrictions:<br/><br/>
+  <ul>
+    <li>The large SRAM on the FPGAs can have registers for their input addresses
+        and registers for the output data.  These registers are used to extract
+        the fastest speed possible from the memory.  While it is possible to
+        design the processor code to avoid these registers, that isn't always
+        what's desired.  This however impacts how jump instructions are
+        performed.<br/><br/>
+      Specifically, if a jump instruction changes the program counter during
+        cycle n, then the new input address is registered at the end of that
+        clock cycle and the corresponding data is registered at the end of the
+        next clock cycle, i.e., the new opcode is available at the end of cycle
+        n+1.  That is, the new opcode isn't performed by the core until
+        cycle&nbsp;+2.<br/><br/>
+      This means that JUMP and JUMPC instructions must be followed by a TBD
+        instruction.<br/><br/>
+      TODO -- should "TBD" be a "nop" or a "drop"?<br/><br/>
+      </li>
+    </ul>
+<h1>OPCODES</h1>
+  This section documents the opcodes.<br/><br/>
+  Alphabetic listing:
+    <a href="#jump">jump</a>,
+    <a href="#jumpc">jumpc</a>,
+    <a href="#nop">nop</a>,
+    <a href="#push">push</a>,
+    <br/><br/>
+  <h2>TODO -- add these instructions</h2>
+    +<br/>
+    -<br/>
+    0&lt; -- (or used "0x80 and" instead?)<br/>
+    0=<br/>
+    dis -- disable the interrupt<br/>
+    drop<br/>
+    ena -- enable the interrupt<br/>
+    fetch (@) -- read from memory<br/>
+    in -- input from port<br/>
+    out -- output to port<br/>
+    return<br/>
+    store (!) -- write to memory<br/>
+    swap<br/>
+    <br/>
+  <h2><a name="jump">Instruction:  jump</a></h2>
+    <b>Desription:</b>  Jump to the address constructed from the opcode and
+      <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
+    <b>OPCODE:</b>  <tt>0_10xx_xxxx</tt><br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO
+  <h2><a name="jumpc">Instruction:  jumpc</a></h2>
+    <b>Desription:</b>  Jump to the address constructed from the opcode and
+      <tt>S</tt> if <tt>N</tt> is non-zero.  Discard <tt>S</tt>
+      and&nbsp;<tt>N</tt>.<br/><br/>
+    <b>OPCODE:</b>  <tt>0_11xx_xxxx</tt><br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO
+  <h2><a name="nop">Instruction:  nop</a></h2>
+    <b>Desription:</b>  No operation.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO
+  <h2><a name="push">Instruction:  push 8-vit value</a></h2>
+    <b>Description:</b>  Push the specified 8-bit value onto the 8-bit
+      stack.<br/><br/>
+    <b>OPCODE:</b>  <tt>1_xxxx_xxxx</tt><br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO
+</body>
+</html>
