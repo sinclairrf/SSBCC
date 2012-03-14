@@ -31,7 +31,7 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
   This section describes things the processor does not do and what is required
     in code to work around these restrictions:<br/><br/>
   <ul>
-    <li>Stack Operations:<br/><br/>
+    <li>Data Stack Operations:<br/><br/>
       While the large SRAMs and distributed memory can be dual port, minimizing
         the FPGA resources required for the processor means that the stack
         memory and the program ROM frequently share a single SRAM.  That
@@ -66,6 +66,60 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         This substantially impairs the efficiency of the program, which means
         that the value of "<tt>N</tt>" must be stored in a register separate
         from the SRAM register.<br/><br/>
+      Then, in order to implement the "<tt>drop</tt>" instruction, the output of
+        the SRAM must be the third value on the stack.  In&nbsp;order to
+        immediately follow one "<tt>drop</tt>" instruction with another, the
+        output of the SRAM must immediately change to the next previous value on
+        the data stack.  I.e., if <em>SP</em> is the stack pointer, then
+        <em>SP</em>-1 points to the memory location where "<tt>N</tt>" would be
+        stored, <em>SP</em>-2 points to the third value on the stack, etc., then
+        the input address to the stack pointer memory must be <em>SP</em>-3.
+        When the first "<tt>drop</tt>" instruction is performed, the contents of
+        "<tt>N</tt>" will be stored by the "<tt>T</tt>" register, the output of
+        the SRAM register will be stored by the "<tt>N</tt>" register, the
+        output register of the SRAM will be enabled to store the unregister
+        output of the internal memory and will have the new value for the third
+        element on the stack.  Simultaneously, the input address register for
+        the SRAM will latch the new value of <em>SP</em>-3 so that the internal,
+        unregistered output of the SRAM will be the new fourth element on the
+        stack.  This will allow "<tt>drop</tt>" instructions to be issued
+        sequentially with no intermiediate "<tt>nop</tt>"
+        instructions.<br/><br/>
+      A&nbsp;problem with these scheme occurs if a "<tt>drop</tt>" or
+        "<tt>nip</tt>" instruction is preceded by a write instruction to the
+        stack.  Suppose the top 3 values in the data stack are
+        "<tt>1&nbsp;2&nbsp;3</tt>" and the instruction sequence
+        "<tt>4&nbsp;nip</tt>" is performed during clock cycle&nbps;<em>n</em>.
+        At the end of clock cycle <em>n</em>, the input data and address
+        registers for the SRAM will be "<tt>2</tt>" and the new value for
+        <em>SP</em>-2.  At&nbsp;the same time, the output register will still
+        have the value&nbsp;"<tt>1</tt>" because that is the value that had been
+        pointed to by the previously registered input address.  In&nbsp;order
+        for the subsequent "<tt>nip</tt>" instruction to work properly, the
+        output register should have the value&nbsp;"<tt>2</tt>".  Since the
+        memory write is actually done during clock cycle <em>n</em>+1, there
+        really isn't a practical way to have the SRAM output register have the
+        correct value at the end of clock cycle&nbsp;<em>n</em>.  This defect
+        can be corrected by requiring a "<tt>nop</tt>" instruction between the
+        two instructions, swapping the order of the push and "<tt>nip</tt>"
+        instructions and replacing the "<tt>nip</tt>" instruction with a
+        "<tt>drop</tt>" instruction (if the "<tt>nip</tt>" instruction is not
+        the target of a jump), or by adding a third data stack register.  None
+        of these options is really attractive, however requiring users to
+        remember to add "<tt>nop</tt>" instructions is the least attractive, so
+        an additional, third data stack register is required.<br/><br/>
+      Now, if "<tt>0&nbsp;1&nbsp;2&nbsp;3</tt>" are the values in the top of the
+        data stack and the instruction sequence "<tt>4&nbsp;nip</tt>" is
+        started during clock cycle&nbps;<em>n</em>, then at then end of clock
+        cycle <em>n</em> the three data stack registers will be "<tt>2</tt>",
+        "<tt>3</tt>", and "<tt>4</tt>", the input data and address registers to
+        the SRAM will be "<tt>1<tt>" and <em>SP-3</em> respectively. and the
+        contents of the SRAM output register will be invalid.  At&nbsp;the end
+        of clock cycle <em>n</em>+1 the values of the "<tt>T</tt>" and
+        "<tt>N</tt>" will be "<tt>4</tt>" and "<tt>2</tt>" respectively, the
+        third data stack register will be invalid (since there is no good value
+        to store in it), and the SRAM output register will have the new contents
+        for the third data stack register.<br/><br/>
       </li>
     <li>JUMP and JUMPC:<br/><br/>
       The large SRAM on the FPGAs can have registers for their input addresses
