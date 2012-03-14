@@ -34,7 +34,9 @@ The system is designed to run Forth.<br/><br/>
         anyway.  As&nbsp;another example, Xilinx' Spartan&nbsp;6 has 6-input
         LUTs that can be used as distributed memory, so a 128-word program can
         be efficiently stored in 18&nbsp;LUTs instead of occupying a precious
-        Block RAM.<br/><br/>
+        Block RAM.  Additionally, if the program is between 129 and 192 words,
+        i.e., it would fit in 3&nbsp;64x9&nbsp;LUTs, then the program ROM can be
+        described as such, saving 9&nbsp;LUT in this case.<br/><br/>
       </li>
     <li>An instruction to load the processor core and its intrinsics.<br/><br/>
       This instruction loads the HDL instantiating processor core, i.e., its
@@ -64,5 +66,31 @@ The system is designed to run Forth.<br/><br/>
         <tt>&nbsp;&nbsp;: 0
       </li>
     </ul>
+<h1>Processor Description Syntax</h1>
+  <h2>Memory Description</h2>
+  <h2>
+<h1>Core Description Syntax</h1>
+  <h2>Opcode List</h2>
+    This section lists the opcodes and describes how the compiler is to
+      implement them.<br/><br/>
+    TODO -- RFS:  Determine this syntax<br/><br/>
+  <h2>HDL Section(s)</h2>
+    Each of these sections lists the processor core implementation in the
+      specified language.<br/><br/>
+    The languages currently supported by the compiler are Verilog and
+      VHDL.<br/><br/>
+    <b>Syntax:</b>  <tt>HDL {Verilog|VHDL} ... ENDHDL</tt><br/><br/>
+    <b>Example:</b><br/>
+<pre>HDL Verilog
+  always @ (posedge i_clk) begin
+    s_stack_addr &lt;= s_stack_addr;
+    if (s_opcode[C_NBITS_OPCODE-1] = 1'b0) begin
+      s_stack[s_stack_addr] &lt;= s_opcode[C_NBITS_OPCODE-2:0];
+      s_stack_addr &lt;= s_stack_addr + 1;
+    else
+    end
+  end
+ENDHDL
+</pre><br/>
 </body>
 </html>
