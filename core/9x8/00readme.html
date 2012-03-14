@@ -173,6 +173,8 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
 <h1>OPCODES</h1>
   This section documents the opcodes.<br/><br/>
   Alphabetic listing:
+    <a href="#call">call</a>,
+    <a href="#callc">callc</a>,
     <a href="#jump">jump</a>,
     <a href="#jumpc">jumpc</a>,
     <a href="#nop">nop</a>,
@@ -207,12 +209,70 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     swap<br/>
     xor<br/>
     <br/>
+  <h2><a name="opcode_mapping">Opcode Mapping</a></h2>
+    Add:  call, callc<br/><br/>
+    <table>
+    <tr>
+      <th align="left">Opcode</th>
+        <th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+        <th align="left">Description</th>
+        </tr>
+      <th align="left">nop</th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">no operation</td>
+        </tr>
+      <th align="left">jump</th>
+        <td>0</td><td>1</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        <td align="left">Jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
+        </tr>
+      <th align="left">jumpc</th>
+        <td>0</td><td>1</td><td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        <td align="left">Conditionally jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
+        </tr>
+      <th align="left">push</th>
+        <td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        <td align="left">Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack.</td>
+        </tr>
+    </table>
+  <h2><a name="call">Instruction:  call</a></h2>
+    <b>Desription:</b>  Convert the immediately preceding "<tt>jump</tt>"
+      instruction into a function call by pushing the PC onto the return
+      stack.<br/><br/>
+    <b>OPCODE:</b>  <tt>TBD</tt><br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO
+    <b>Special:</b><br/><br/>
+      A&nbsp;function call consists of the following 3 opcode instruction
+      sequence:  "<tt>LL&nbsp;jump_MM&nbsp;call</tt>" where "<tt>LL</tt>" is the
+      instruction to push the 8&nbsp;lsb of the function address onto the stack,
+      "<tt>jump_MM</tt>" is the jump instruction along with the 6&nbsp;msb of
+      the function address, and "<tt>call</tt>" is the instruction to push the
+      PC onto the return stack.<br/><br/>
+  <h2><a name="callc">Instruction:  callc</a></h2>
+    <b>Desription:</b>  Convert the immediately preceding "<tt>jumpc</tt>"
+      instruction into a function call by pushing the PC onto the return
+      stack and dropping the conditional for the jump from the data
+      stack.<br/><br/>
+    <b>OPCODE:</b>  <tt>TBD</tt><br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO
+    <b>Special:</b><br/><br/>
+      A&nbsp;conditional function call consists of the following 3 opcode
+      instruction sequence:  "<tt>LL&nbsp;jumpc_MM&nbsp;callc</tt>" where
+      "<tt>LL</tt>" is the instruction to push the 8&nbsp;lsb of the function
+      address onto the stack, "<tt>jumpc_MM</tt>" is the jump instruction along
+      with the 6&nbsp;msb of the function address, and "<tt>callc</tt>" is the
+      instruction to push the PC onto the return stack and to drop the
+      conditional for the jump from the top of the stack.<br/><br/>
   <h2><a name="jump">Instruction:  jump</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
     <b>OPCODE:</b>  <tt>0_10xx_xxxx</tt><br/><br/>
     <b>Operation:</b><br/><br/>
       TODO
+    <b>Special:</b><br/><br/>
+      Interrupts are disabled during the clock cycle immediately following a
+      jump instruction.<br/><br/>
   <h2><a name="jumpc">Instruction:  jumpc</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt> if <tt>N</tt> is non-zero.  Discard <tt>S</tt>
@@ -220,11 +280,14 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>OPCODE:</b>  <tt>0_11xx_xxxx</tt><br/><br/>
     <b>Operation:</b><br/><br/>
       TODO
+    <b>Special:</b><br/><br/>
+      Interrupts are disabled during the clock cycle immediately following a
+      jumpc instruction.<br/><br/>
   <h2><a name="nop">Instruction:  nop</a></h2>
     <b>Desription:</b>  No operation.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO
-  <h2><a name="push">Instruction:  push 8-vit value</a></h2>
+  <h2><a name="push">Instruction:  push</a></h2>
     <b>Description:</b>  Push the specified 8-bit value onto the 8-bit
       stack.<br/><br/>
     <b>OPCODE:</b>  <tt>1_xxxx_xxxx</tt><br/><br/>
