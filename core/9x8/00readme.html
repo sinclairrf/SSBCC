@@ -4,6 +4,8 @@
 9-bit opcode, 8-bit data stack-based micro controller
 </title>
 <body>
+<b>9-bit Opcode, 8-bit Data Stack-Based Micro Controller</b><br/>
+Copyright 2012, Sinclair R.F., Inc.<br/><br/>
 This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
 <h1>Introduction</h1>
   The objective of this design is to provide a minimalist FPGA-based
@@ -13,6 +15,8 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     onto the stack with a single instruction.<br/><br/>
   An&nbsp;8-bit data width was chosen because that's a practical minimal sizes
     and is common to many hardware interfaces such as I2C devices.<br/><br/>
+  The machine has single-cycle instruction execution for all
+    instructions.<br/><br/>
   This architecture accommodates up to a 14-bit instructions address space by
     first pushing the 8 least significant bits of the destination address onto
     the stack and then encoding the 6 most significant bits in the jump
@@ -23,25 +27,63 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     required to indicate whether the jump is always performed or is
     conditionally performed.  Consuming these 3 bits leaves 6 bit for the msb
     of the jump address.<br/><br/>
-<h1>Restrictions</h1>
+<h1>Design</h1>
   This section describes things the processor does not do and what is required
     in code to work around these restrictions:<br/><br/>
   <ul>
-    <li>The large SRAM on the FPGAs can have registers for their input addresses
-        and registers for the output data.  These registers are used to extract
+    <li>Stack Operations:<br/><br/>
+      While the large SRAMs and distributed memory can be dual port, minimizing
+        the FPGA resources required for the processor means that the stack
+        memory and the program ROM frequently share a single SRAM.  That
+        requirement prohibits using dual port memory operations for the stack.
+        Also, the requirement that all instructions be single-cycle means that
+        only one stack operation can be performed per clock cycle.<br/><br/>
+      The large SRAM on the FPGAs can have registers for their input addresses
+        and values and registers for their output data.  These registers are
+        used to extract the fastests speed possible from the memory.  While it
+        is possible to design the stack operations to avoid these registers,
+        that isn't always what's desired.  This however impacts how stack
+        operations are performed.<br/><br/>
+      Implementing the "<tt>rot</tt>" instruction, i.e., if
+        "<tt>1&nbsp;2&nbsp;3</tt>" are the top 3 elements of the data stack with
+        "<tt>3</tt>" on the top of the stacks, then "<tt>rot</tt>" changes the
+        stack to "<tt>2&nbsp;3&nbsp;1</tt>", would seem to require immediate
+        access to the third element on the stack.  However, the instruction
+        sequence "<tt>&gt;r&nbsp;swap&nbsp;r&gt;swap</tt>" has the same effect
+        and only requires access to the top two elements of the data stack, but
+        does require that the return stack be implemented.<br/><br/>
+      This means that only the first two elements of the stack need to be
+        accessible.  That is "<tt>S</tt>" must be implemented in a registers.
+        The question then is, can "<tt>N</tt>" be implemented as the output of
+        the data stack with the input address register and output data register,
+        or must it also be implemented as a separate register?  Suppose that the
+        data stack address or the top element in the data stack SRAM changes
+        during clock cycle&nbsp;<em>n</em>.  Then the new value for "<tt>N</tt>"
+        will not be available until clock cycle&nbsp;<em>n</em>+2.  This means
+        that the preceding implementation for the "<tt>rot</tt>" operation would
+        have to be implemented as
+        "<tt>&gt;r&nbsp;nop&nbsp;swap&nbsp;nop&nbsp;r&gt;nop&nbsp;swap</tt>".
+        This substantially impairs the efficiency of the program, which means
+        that the value of "<tt>N</tt>" must be stored in a register separate
+        from the SRAM register.<br/><br/>
+      </li>
+    <li>JUMP and JUMPC:<br/><br/>
+      The large SRAM on the FPGAs can have registers for their input addresses
+        and registers for their output data.  These registers are used to extract
         the fastest speed possible from the memory.  While it is possible to
-        design the processor code to avoid these registers, that isn't always
+        design the processor ROM to avoid these registers, that isn't always
         what's desired.  This however impacts how jump instructions are
         performed.<br/><br/>
       Specifically, if a jump instruction changes the program counter during
-        cycle n, then the new input address is registered at the end of that
+        cycle <em>n</em>, then the new input address is registered at the end of that
         clock cycle and the corresponding data is registered at the end of the
         next clock cycle, i.e., the new opcode is available at the end of cycle
-        n+1.  That is, the new opcode isn't performed by the core until
-        cycle&nbsp;+2.<br/><br/>
+        <em>n</em>+1.  That is, the new opcode isn't performed by the core until
+        cycle&nbsp;<em>n</em>+2.<br/><br/>
       This means that JUMP and JUMPC instructions must be followed by a TBD
         instruction.<br/><br/>
-      TODO -- should "TBD" be a "nop" or a "drop"?<br/><br/>
+      TODO -- should "TBD" be a "nop", a "drop", or push the PC onto the return
+        stack?<br/><br/>
       </li>
     </ul>
 <h1>OPCODES</h1>
@@ -55,17 +97,31 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
   <h2>TODO -- add these instructions</h2>
     +<br/>
     -<br/>
+    &gt;r -- push top of data stack onto return stack<br/>
     0&lt; -- (or used "0x80 and" instead?)<br/>
     0=<br/>
+    2*<br/>
+    2/<br/>
+    and<br/>
+    call<br/>
     dis -- disable the interrupt<br/>
     drop<br/>
     ena -- enable the interrupt<br/>
     fetch (@) -- read from memory<br/>
     in -- input from port<br/>
+    or<br/>
     out -- output to port<br/>
+    r&gt; -- pop the return stack and push that value onto the data stack<br/>
+    r@ -- push a copy of the top of the return stack onto the data stack<br/>
+    reset?<br/>
     return<br/>
+    returnc -- ?<br/>
+    rot -- rotate top 3 elements of the data stack (use "&gt;r swap r&gt; swap" instead?<br/>
+    rotate -- left or right, carry in is 0<br/>
+    rotate with carry -- left or right, carry in is msb/lsb<br/>
     store (!) -- write to memory<br/>
     swap<br/>
+    xor<br/>
     <br/>
   <h2><a name="jump">Instruction:  jump</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
