@@ -113,13 +113,43 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         started during clock cycle&nbps;<em>n</em>, then at then end of clock
         cycle <em>n</em> the three data stack registers will be "<tt>2</tt>",
         "<tt>3</tt>", and "<tt>4</tt>", the input data and address registers to
-        the SRAM will be "<tt>1<tt>" and <em>SP-3</em> respectively. and the
+        the SRAM will be "<tt>1</tt>" and <em>SP-3</em> respectively. and the
         contents of the SRAM output register will be invalid.  At&nbsp;the end
         of clock cycle <em>n</em>+1 the values of the "<tt>T</tt>" and
         "<tt>N</tt>" will be "<tt>4</tt>" and "<tt>2</tt>" respectively, the
         third data stack register will be invalid (since there is no good value
         to store in it), and the SRAM output register will have the new contents
         for the third data stack register.<br/><br/>
+      For the following, let "<tt>T</tt>", "<tt>N</tt>", and "<tt>I</tt>" be the
+        registers for the top of the stack, the next element on the stack, the
+        intermediate register and let "<tt>R</tt>" be the output register of the
+        SRAM.  The data stack manipulation must be such that "<tt>T</tt>" and
+        "<tt>N</tt>" are always value.  Then, in order for a "<tt>drop</tt>" or
+        "<tt>nip</tt>" instruction to opertate successfully, either "<tt>I</tt>"
+        or "<tt>R</tt>" must have the third value on the stack and, if
+        "<tt>R</tt>" does not already have the fourth value on the stack, it
+        must do so by the end of the next clock cycle.<br/><br/>
+      Supposed the top 4 elements on the stack are
+        "<tt>0&nbsp;1&nbsp;2&nbsp;3</tt> and these are stored in the registers
+        "<tt>R</tt>", "<tt>I</tt>", "<tt>N</tt>", and "<tt>T</tt>" respectively.
+        Then the instruction sequence "<tt>4&nbsp;nip</tt>" started on clock
+        cycle&nbsp;<em>n</em> will have the following effects.  At&nbsp; the end
+        of clock cycle&nbsp<em>n</em>, the registers "<tt>T</tt>", "<tt>N</tt>",
+        and "<tt>I</tt>" will be valid and have the values "<tt>4</tt>",
+        "<tt>3</tt>", and "<tt>2</tt>" respectively, the SRAM input data and
+        address registers will have the values "<tt>1</tt>" and <em>SP</em>-3
+        respectively, and the SRAM output register will have the value
+        "<tt>0</tt>", which is not valid.  After the "<tt>nip</tt>" instruction,
+        at&nbsp;the end of clock cycle&nbsp;<em>n</em>+1, the "<tt>T</tt>" will
+        be unchanged at "<tt>4</tt>" and will be valid; the "<tt>N</tt>" will
+        have taken its value from "<tt>I</tt>", which had been valid, and will
+        be "<tt>2</tt>", the "<tt>I</tt>" register will not have a valid value,
+        and the "<tt>R</tt>" register will have the value "<tt>1</tt>" if the
+        SRAM had been configured for write-through operation, which will be the
+        valid valud for the third element on the stack as is required since the
+        value of "<tt>I</tt>" is not valid.  At&nbsp;the same time, the input
+        address register for the SRAM must be the new value of
+        <em>SP</em>-3.<br/><br/>
       </li>
     <li>JUMP and JUMPC:<br/><br/>
       The large SRAM on the FPGAs can have registers for their input addresses
