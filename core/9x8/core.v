@@ -202,20 +202,20 @@ always @ (opcode_curr,T) begin
                 s_bus_t         <= C_BUS_T_PRE;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
-      4'b1100:  // @ (fetch)
-                s_bus_t         <= C_BUS_T_MEMORY;
-      4'b1101:  // ! (store)
-                s_bus_t         <= C_BUS_T_PRE;
-                s_bus_n         <= C_BUS_N_STACK;
-                s_stack         <= C_STACK_DEC;
-      4'b1110:  // r> (pop the return stack and push it onto the data stack)
+      4'b1100:  // r> (pop the return stack and push it onto the data stack)
                 s_return        <= C_RETURN_DEC;
                 s_bus_t         <= C_BUS_T_PRE;
                 s_bus_n         <= C_BUS_N_T;
                 s_stack         <= C_STACK_INC;
-      4'b1111:  // enable/disable the interrupt
+      4'b1101:  // enable/disable the interrupt
                 s_interrupt_enabled_change <= 1'b1;
                 s_interrupt_enabled_next <= opcode_curr[0];
+      4'b1110:  // @ (fetch)
+                s_bus_t         <= C_BUS_T_MEMORY;
+      4'b1111:  // ! (store)
+                s_bus_t         <= C_BUS_T_PRE;
+                s_bus_n         <= C_BUS_N_STACK;
+                s_stack         <= C_STACK_DEC;
       default:  // nop
     endcase
   end

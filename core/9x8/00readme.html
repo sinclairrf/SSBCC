@@ -307,7 +307,38 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
         <td align="left">convert the immediately preceding "<tt>jump</tt>" to a function call</td>
         </tr>
-
+      <th align="left"><a href="#callc">callc</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">convert the immediately preceding "<tt>jumpc</tt>" to a function call</td>
+        </tr>
+      <th align="left"><a href="#drop">drop</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">drop the top value from the stack<tt>jumpc</tt>" to a function call</td>
+        </tr>
+      <th align="left"><a href="#>r">&gt;r</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">Pop the top of the data stack and push it onto the return stack</td>
+        </tr>
+      <th align="left"><a href="#r>">r&gt;</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">Pop the top of the return stack and push it onto the data stack</td>
+        </tr>
+      <th align="left"><a href="#dis">dis</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">disable interrupts</td>
+        </tr>
+      <th align="left"><a href="#ena">ena</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">enable interrupts</td>
+        </tr>
+      <th align="left"><a href="#fetch">fetch</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>b</td><td>b</td><td>b</td>
+        <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bbb</tt>"</td>
+        </tr>
+      <th align="left"><a href="#store">store</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td><td>b</td>
+        <td align="left">Store N in the T'th entry in bank "<tt>bbb</tt>" and pop the data stack</td>
+        </tr>
       <th align="left"><a href="#jump">jump</a></th>
         <td>0</td><td>1</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
         <td align="left">Jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
@@ -395,7 +426,7 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
   The following is a simple, 10 instruction sequence, demonstrating a
     loop:<br/><br/>
     <tt>&nbsp;&nbsp;;&nbsp;consume&nbsp;256*6+3&nbsp;clock&nbsp;cycles</tt><br/>
-    <tt>&nbsp;&nbsp;0&nbsp;:l00&nbsp;dup&nbsp;1&nbsp;-&nbsp;.jumpc(l00)&nbsp;drop&nbsp;.return</tt><br/><br/>
+    <tt>&nbsp;&nbsp;0&nbsp;:l00&nbsp;1&nbsp;-&nbsp;dup&nbsp;.jumpc(l00)&nbsp;drop&nbsp;.return</tt><br/><br/>
   This looks a lot like Forth code in that the operations are single words and
     are strung together on a single line.  Unlike traditional assembly
     languages, there are no source and destination registers, so most of the
