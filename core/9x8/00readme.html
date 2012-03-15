@@ -17,6 +17,11 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     and is common to many hardware interfaces such as I2C devices.<br/><br/>
   The machine has single-cycle instruction execution for all
     instructions.<br/><br/>
+  Only one data stack shift can be achieved per instruction cycle.  This means
+    that all operations that consume the top two elements of the stack, such as
+    a store instruction, can only remove one element from the stack and must be
+    immediately followed by a "<tt>drop</tt>" instruction to remove what had
+    been the second element on the data stack.<br/><br/>
   This architecture accommodates up to a 14-bit instructions address space by
     first pushing the 8 least significant bits of the destination address onto
     the stack and then encoding the 6 most significant bits in the jump
@@ -25,10 +30,10 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     8-bit value onto the stack, (2)&nbsp;one bit of the remaining 8 bits is
     required to indicate a jump instructions, and (3)&nbsp;one more bit is
     required to indicate whether the jump is always performed or is
-    conditionally performed.  Consuming these 3 bits leaves 6 bit for the msb
-    of the jump address.<br/><br/>
+    conditionally performed.  Consuming these 3 bits leaves 6 bits additional
+    address space for the jump instruction.<br/><br/>
   This architecture also supports 0 to 8&nbsp;pages of memory.  Each of these
-    pages can be either a RAM or a ROM.  Each of these pages can hold up to
+    pages can be either a RAM or a ROM and can hold up to
     256&nbsp;bytes of data.<br/><br/>
 <h1>Design</h1>
   This section describes things the processor does not do and what is required
