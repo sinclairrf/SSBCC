@@ -4,7 +4,7 @@
 9-bit opcode, 8-bit data stack-based micro controller
 </title>
 <body>
-<b>9-bit Opcode, 8-bit Data Stack-Based Micro Controller</b><br/>
+<b>9-bit Opcode, 8-bit Data, Stack-Based Micro Controller</b><br/>
 Copyright 2012, Sinclair R.F., Inc.<br/><br/>
 This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
 <h1>Introduction</h1>
@@ -27,6 +27,9 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     required to indicate whether the jump is always performed or is
     conditionally performed.  Consuming these 3 bits leaves 6 bit for the msb
     of the jump address.<br/><br/>
+  This architecture also supports 0 to 8&nbsp;pages of memory.  Each of these
+    pages can be either a RAM or a ROM.  Each of these pages can hold up to
+    256&nbsp;bytes of data.<br/><br/>
 <h1>Design</h1>
   This section describes things the processor does not do and what is required
     in code to work around these restrictions:<br/><br/>
@@ -181,55 +184,54 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <a href="#push">push</a>,
     <br/><br/>
   <h2>TODO -- add these instructions</h2>
-    +<br/>
-    -<br/>
     &gt;r -- push top of data stack onto return stack<br/>
     0&lt; -- (or used "0x80 and" instead?)<br/>
     0=<br/>
     2*<br/>
     2/<br/>
+    add (+)<br/>
     and<br/>
-    call<br/>
     dis -- disable the interrupt<br/>
     drop<br/>
+    dup<br/>
     ena -- enable the interrupt<br/>
     fetch (@) -- read from memory<br/>
     in -- input from port<br/>
     or<br/>
     out -- output to port<br/>
+    over -- push a copy of the second element of the stack onto the stack<br/>
     r&gt; -- pop the return stack and push that value onto the data stack<br/>
     r@ -- push a copy of the top of the return stack onto the data stack<br/>
     reset?<br/>
-    return<br/>
-    returnc -- ?<br/>
     rot -- rotate top 3 elements of the data stack (use "&gt;r swap r&gt; swap" instead?<br/>
     rotate -- left or right, carry in is 0<br/>
     rotate with carry -- left or right, carry in is msb/lsb<br/>
     store (!) -- write to memory<br/>
+    sub (-)<br/>
     swap<br/>
     xor<br/>
     <br/>
   <h2><a name="opcode_mapping">Opcode Mapping</a></h2>
-    Add:  call, callc<br/><br/>
+    Add:  call, callc, return<br/><br/>
     <table>
     <tr>
       <th align="left">Opcode</th>
         <th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
         <th align="left">Description</th>
         </tr>
-      <th align="left">nop</th>
+      <th align="left"><a href="#nop">nop</a></th>
         <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
         <td align="left">no operation</td>
         </tr>
-      <th align="left">jump</th>
+      <th align="left"><a href="#jump">jump</a></th>
         <td>0</td><td>1</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
         <td align="left">Jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
         </tr>
-      <th align="left">jumpc</th>
+      <th align="left"><a href="#jumpc">jumpc</a></th>
         <td>0</td><td>1</td><td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
         <td align="left">Conditionally jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
         </tr>
-      <th align="left">push</th>
+      <th align="left"><a href="#push">push</a></th>
         <td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
         <td align="left">Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack.</td>
         </tr>
@@ -238,9 +240,8 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>Desription:</b>  Convert the immediately preceding "<tt>jump</tt>"
       instruction into a function call by pushing the PC onto the return
       stack.<br/><br/>
-    <b>OPCODE:</b>  <tt>TBD</tt><br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO
+      TODO<br/><br/>
     <b>Special:</b><br/><br/>
       A&nbsp;function call consists of the following 3 opcode instruction
       sequence:  "<tt>LL&nbsp;jump_MM&nbsp;call</tt>" where "<tt>LL</tt>" is the
@@ -253,9 +254,8 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       instruction into a function call by pushing the PC onto the return
       stack and dropping the conditional for the jump from the data
       stack.<br/><br/>
-    <b>OPCODE:</b>  <tt>TBD</tt><br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO
+      TODO<br/><br/>
     <b>Special:</b><br/><br/>
       A&nbsp;conditional function call consists of the following 3 opcode
       instruction sequence:  "<tt>LL&nbsp;jumpc_MM&nbsp;callc</tt>" where
@@ -267,31 +267,139 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
   <h2><a name="jump">Instruction:  jump</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
-    <b>OPCODE:</b>  <tt>0_10xx_xxxx</tt><br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO
+      TODO<br/><br/>
     <b>Special:</b><br/><br/>
       Interrupts are disabled during the clock cycle immediately following a
       jump instruction.<br/><br/>
+      The "<tt>jump</tt>" instruction should be followed by a "<tt>nop</tt>"
+      instruction for normal jumps or a "<tt>call</tt>" instruction to complete
+      a function call.<br/><br/>
   <h2><a name="jumpc">Instruction:  jumpc</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt> if <tt>N</tt> is non-zero.  Discard <tt>S</tt>
       and&nbsp;<tt>N</tt>.<br/><br/>
-    <b>OPCODE:</b>  <tt>0_11xx_xxxx</tt><br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO
+      TODO<br/><br/>
     <b>Special:</b><br/><br/>
       Interrupts are disabled during the clock cycle immediately following a
       jumpc instruction.<br/><br/>
+      The "<tt>jumpc</tt>" instruction should be followed by a "<tt>drop</tt>"
+      instruction to drop the conditional from the top of the stack for normal
+      jumps or a "<tt>callc</tt>" instruction to complete a conditional function
+      call.<br/><br/>
   <h2><a name="nop">Instruction:  nop</a></h2>
     <b>Desription:</b>  No operation.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO
+      TODO<br/><br/>
   <h2><a name="push">Instruction:  push</a></h2>
     <b>Description:</b>  Push the specified 8-bit value onto the 8-bit
       stack.<br/><br/>
-    <b>OPCODE:</b>  <tt>1_xxxx_xxxx</tt><br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO
+      TODO<br/><br/>
+  <h2><a name="return">Instruction:  return</a></h2>
+    <b>Description:</b>  Popd the top of the return stack into the PC.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+    <b>Special:</b>
+      This instruction must be followed by a "<tt>nop</tt>"
+      instruction.<br/><br/>
+<h1>Assembler</h1>
+  This section describes the contents of an assembly language file and the
+    instruction format.<br/><br/>
+  The following is a simple, 10 instruction sequence, demonstrating a
+    loop:<br/><br/>
+    <tt>&nbsp;&nbsp;;&nbsp;consume&nbsp;256*6+3&nbsp;clock&nbsp;cycles</tt><br/>
+    <tt>&nbsp;&nbsp;0&nbsp;:l00&nbsp;dup&nbsp;1&nbsp;-&nbsp;.jumpc(l00)&nbsp;drop&nbsp;.return</tt><br/><br/>
+  This looks a lot like Forth code in that the operations are single words and
+    are strung together on a single line.  Unlike traditional assembly
+    languages, there are no source and destination registers, so most of the
+    operations for this stack-based processor simply manipulate the stack.  This
+    can make it easier to see the body of the assembly code since an instruction
+    sequence can occupy a single line of the file instead of tens of lines of
+    vertical space.  The exceptions to the single-operand format are labels,
+    such as the "<tt>:l00</tt>" which are declared with a single "<tt>:</tt>"
+    immediately followed by the name of the label with no intervening spaces;
+    jump instructions such as the 3&nbsp;instruction,
+    "<tt>push&nbsp;jumpc&nbsp;drop</tt>", sequence created by the
+    "<tt>.jumpc</tt>" macro; and the 2&nbsp;operand, "<tt>return&nbsp;nop</tt>",
+    sequence created by the "<tt>.return</tt>" macro.  The "<tt>.jump</tt>",
+    "<tt>.jumpc</tt>", "<tt>.call</tt>", and "<tt>.callc</tt>", macros are
+    pre-defined in the assembler and ensure that the correct sequence of
+    operands is generated for the jump, conditional jump, function call, and
+    conditional function call instructions.  Similarly, the "<tt>.return</tt>"
+    macro is pre-defined in the assember and ensures that the correct sequence
+    of operations is done for returning from a called function.<br/><br/>
+  Memory does not have to be declared for the processor.  For example, the LED
+    flashing examples required no variable or constant storage, and therefore do
+    not declare or consume resources required for memory.  Variable declarations
+    are done within pages declared using the "<tt>.page</tt>" and
+    "<tt>.variable</tt>" macros as follows:<br/><br/>
+    <tt>&nbsp;&nbsp;.page&nbsp;RAM&nbsp;myRAM</tt><br/>
+    <tt>&nbsp;&nbsp;.variable&nbsp;save_count</tt><br/>
+    <tt>&nbsp;&nbsp;.variable&nbsp;old_count&nbsp;.x0a</tt><br/>
+    <tt>&nbsp;&nbsp;.variable&nbsp;out_string&nbsp;.length&nbsp;16</tt><br/><br/>
+    Here, the "<tt>.page&nbsp;RAM</tt>" macro declares the start of a page
+    of&nbsp;RAM.  The RAM will be allocated as prescribed in the processor
+    description file.  Here, the variable "<tt>save_count</tt>" will be at
+    memory address "<tt>0x00</tt>" and will occupy a single, uninitialized slot
+    of memory.  The variable "<tt>old_count</tt>" will also occupy a single slot
+    of memory at address "<tt>0x01</tt>" and will be initialized to the hex
+    value "<tt>0x0a</tt>".  Note that if the processor is reset that this value
+    will not be re-initialized.  Finally, the variable "<tt>out_string</tt>"
+    will start at address "<tt>0x02</tt>" and will occupy 16 bytes of
+    memory.<br/><br/>
+  A&nbsp;ROM is declared similarly.  For example,<br/><br/>
+    <tt>&nbsp;&nbsp;.page&nbsp;ROM&nbsp;myROM</tt><br/>
+    <tt>&nbsp;&nbsp;.variable&nbsp;hex_to_ascii&nbsp;'0'&nbsp;'1'&nbsp;'2'&nbsp;'3'&nbsp;'4'&nbsp;'5'&nbsp;'6'&nbsp;'7'&nbsp;\&nbsp;;&nbsp;first&nbsp;8&nbsp;characters</tt><br/>
+    <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'8'&nbsp;'9'&nbsp;'A'&nbsp;'B'&nbsp;'C'&nbsp;'D'&nbsp;'E'&nbsp;'F'</tt><br/><br/>
+    declares a page of ROM with the 16&nbsp;element array hex_to_ascii
+    initialized with the values required to convert a 4-bit value to the
+    corresponding hex ascii character.  This also illustrates how the
+    initialization sequence (and length determination) can be continued on
+    multiple lines.  If&nbsp;"<tt>outbyte</tt>" is a function that outputs a
+    single byte to a port, then the hex value of a one-byte value can be output
+    using the following sequence:<br/><br/>
+    <tt>&nbsp;&nbsp;dup&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;hex_to_ascii&nbsp;+&nbsp;.fetch(myROM)&nbsp;.call(outbyte)</tt><br/>
+    <tt>&nbsp;&nbsp;.x0F&nbsp;and&nbsp;hex_to_ascii&nbsp;+&nbsp;.fetch(myROM)&nbsp;.call(outbyte)</tt><br/><br/>
+    The first line extracts the most significant nibble of the byte by right
+    shifting it 4 times while filling the left with zeros, adding that value to
+    the address "<tt>hex_to_ascii</tt>" to get the corresponding ascii
+    character, fetching that value from the ROM named "<tt>myROM</tt>", and then
+    calling the function that consumes that value on the top of the stack while
+    sending it to the output port (this takes 11 instructions).  The second line
+    extracts the least significant nibble using an "<tt>and</tt>" instructions
+    and then proceeds similarly (this takes 8 instructions).  The
+    "<tt>.fetch</tt>" macro generates the "<tt>fetch</tt>" instruction using the
+    3&nbsp;bit value of "<tt>myROM</tt>" as part of the memory address
+    generation.<br/><br/>
+  The "<tt>.store</tt>" macro is similar to the "<tt>.fetch</tt>" macro except
+    that the assembler will generate an error message if a "<tt>store</tt>"
+    operation is attempted to a ROM page.<br/><br/>
+  Two additional variants of the "<tt>.fetch</tt>" and "<tt>.store</tt>" macros
+    are provided.  The first, "<tt>.fetch(save_count)</tt>" will generate the
+    2&nbsp;instruction sequence consisting of (1)&nbsp;the instruction to push
+    the 8&nbsp;bit address of "<tt>save_count</tt>" onto the stack and
+    (2)&nbsp;the "<tt>fetch</tt>" instruction with the 3&nbsp;bit page number
+    associated with "<tt>save_count</tt>".  This helps ensure the correct page
+    is used when accessing "<tt>save_count</tt>".  The instruction
+    "<tt>store(save_count)</tt>" is similar.  The second variant of these is for
+    indexed fetches and stores.  For example, the preceding example to convert
+    the single-byte value to hex could be written as<br/><br/>
+    <tt>&nbsp;&nbsp;dup&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;.fetchindexed(hex_to_ascii)&nbsp;.call(outbyte)</tt><br/>
+    <tt>&nbsp;&nbsp;.x0F&nbsp;and&nbsp;.fetchindexed(hex_to_ascii)&nbsp;.call(outbyte)</tt><br/><br/>
+    Here, the macro "<tt>.fetchindexed</tt>" consumes the top of the data stack
+    as an index into the array variable "<tt>hex_to_ascii</tt>" and pushes the
+    indexed value onto the top of the data stack.<br/><br/>
+  The "<tt>store</tt>" instruction must be followed by a drop instruction since
+    it consumes the top two values in the data stack.  The "<tt>.store</tt>" and
+    "<tt>.storeindexed</tt>" macros generate this drop function automatically.
+    Thus, "<tt>.store(myRAM)</tt>" generates the 2&nbsp;instruction sequence
+    "<tt>store&nbsp;drop</tt>", "<tt>.store(save_count)</tt>" generates the
+    3&nbsp;instruction sequence "<tt>save_count&nbsp;store&nbsp;drop</tt>", and
+    "<tt>.storeindexed(out_string)</tt>" generates the 4&nbsp;instruction
+    sequence "<tt>out_string&nbsp;+&nbsp;store&nbsp;drop</tt>", all with the
+    proviso that the "<tt>store</tt>" instructions include the 3&nbsp;bit
+    address&nbsp;"<tt>myRAM</tt>".<br/><br/>
 </body>
 </html>
