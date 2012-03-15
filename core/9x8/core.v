@@ -57,9 +57,9 @@ localparam C_BUS_PC_NORMAL      = 2'b00;
 localparam C_BUS_PC_JUMP        = 2'b01;
 localparam C_BUS_PC_RETURN      = 2'b11;
 
-localparam C_BUS_P_NOP          = 2'b00;
-localparam C_BUS_P_PC           = 2'b01;
-localparam C_BUS_P_T            = 2'b10;
+localparam C_BUS_R_NOP          = 2'b00;
+localparam C_BUS_R_PC           = 2'b01;
+localparam C_BUS_R_T            = 2'b10;
 
 localparam C_BUS_T_PRE_OPCODE   = 3'b000;
 localparam C_BUS_T_PRE_RETURN   = 3'b001;
@@ -83,15 +83,16 @@ localparam C_STACK_DEC          = 2'b10;
 
 always @ (opcode_curr,T) begin
   s_bus_pc      <= C_BUS_PC_NORMAL;
+  s_bus_r       <= C_BUS_R_NOP;
   s_bus_t_pre   <= C_BUS_T_PRE_RETURN;
   s_bus_t       <= C_BUS_T_NOP;
   s_bus_n       <= C_BUS_N_NOP;
+  s_return      <= C_RETURN_NOP;
   s_stack       <= C_STACK_NOP;
-  s_interrupt_enabled_next
-                <= s_interrupt_enabled;
-  s_interrupt_holdoff
-                <= 1'b0;
-  s_outport_next<= 1'b0;
+  s_interrupt_enabled_change    <= 1'b1;
+  s_interrupt_enabled_next      <= s_interrupt_enabled;
+  s_interrupt_holdoff           <= 1'b0;
+  s_outport_next                <= 1'b0;
   if (opcode_curr[8] == 1'b1) begin // push
     s_bus_t_pre <= C_BUS_T_PRE_OPCODE;
     s_bus_t     <= C_BUS_T_PRE;
@@ -99,7 +100,6 @@ always @ (opcode_curr,T) begin
     s_stack     <= C_STACK_INC;
   end else if (opcode_curr[7] = 1'b1) begin // jump or jumpc
     if (opcode_curr[6] = 1'b0 || (|s_T))
-      s_bus_pc  <= C_BUS_PC_JUMP;
     s_bus_t_pre <= C_BUS_T_PRE_N;
     s_bus_t     <= C_BUS_T_PRE;
     s_bus_n     <= C_BUS_N_STACK;
@@ -107,12 +107,19 @@ always @ (opcode_curr,T) begin
     s_interrupt_holdoff <= 1'b1;
   end else case (opcode_curr[3+:4])
       4'b0000:  // nop
-      4'bXXXX:  // drop, outport
+                ;
+      4'bXXXX:  // drop, outport, callc, >r
                 s_bus_t_pre     <= C_BUS_T_PRE_N;
                 s_bus_t         <= C_BUS_T_PRE;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
                 s_outport_next  <= opcode_curr[0];
+                if (opcode_curr[1] && (|T)) begin
+                  s_bus_pc      <= C_BUS_PC_JUMP;
+                  s_bus_r       <= C_BUS_R_PC;
+                end
+                if (opcode_curr[2])
+                  s_bus_r       <= C_BUS_R_T;
       4'bXXXX:  // dup
                 s_bus_t_pre     <= C_BUS_T_PRE_T;
                 s_bus_t         <= C_BUS_T_PRE;
@@ -125,21 +132,38 @@ always @ (opcode_curr,T) begin
       4'bXXXX:  // @ (fetch)
                 s_bus_t_pre     <= C_BUS_T_PRE_MEMORY;
                 s_bus_t         <= C_BUS_T_PRE;
+      4'bXXXX:  // ! (store)
+                ?
       4'bXXXX:  // inport
                 s_bus_t_pre     <= C_BUS_T_PRE_INPORT;
                 s_bus_t         <= C_BUS_T_PRE;
-      4'bXXXX:  // dual-operand math:  add/sub/and/or/xor
+      4'bXXXX:  // dual-operand math:  add/and/or/sub/xor
                 s_bus_t         <= C_BUS_T_MATH_DUAL;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
-      4'bXXXX:  // single-operand math: 0<, 2*, 2/
+      4'bXXXX:  // single-operand math: 0=, 2*, 2/
                 s_bus_t         <= C_BUS_T_MATH_SINGLE;
       4'bXXXX:  // return
                 s_bus_pc        <= C_BUS_PC_RETURN;
-      4'bXXXX:  // >r (push top of data stack onto return stack and pop data stack)
+      4'bXXXX:  // r@ (push a copy of the top of the return stack onto the data stack)
+                // r> (pop the return stack and push it onto the data stack)
+                s_bus_t_pre     <= C_BUS_T_PRE_RETURN;
+                s_bus_t         <= C_BUS_T_PRE;
+                s_bus_n         <= C_BUS_N_T;
+                if (opcode_curr[0])
+                  s_stack         <= C_RETURN_DEC;
       4'bXXXX:  // enable/disable the interrupt
+                s_interrupt_enabled_change <= 1'b1;
                 s_interrupt_enabled_next <= opcode_curr[0];
       4'bXXXX:  // call
+                s_bus_pc        <= C_BUS_PC_JUMP;
+                s_bus_r         <= C_BUS_R_PC;
+      4'bXXXX:  // returnc
+                ?
+      4'bXXXX:  // reset
+                ?
+      4'bXXXX:  // over
+                ?
       default:  // nop
     endcase
   end
@@ -157,12 +181,12 @@ end
 
 // reduced-warning message method to extract the jump address from the top of
 // the stack and the current opcode
-wire s_PC_jump[C_RETURN_STACK_WIDTH-1:0];
+wire s_PC_jump[C_PC_WIDTH-1:0];
 generate
-  if (C_RETURN_STACK_WIDTH <= 8) begin : gen_pc_narrow
-    s_PC_jump <= s_T[0+:C_RETURN_STACK_WIDTH];
+  if (C_PC_WIDTH <= 8) begin : gen_pc_narrow
+    s_PC_jump <= s_T[0+:C_PC_WIDTH];
   end else begin : gen_pc_wide
-    s_PC_jump <= { opcode_curr[0+:C_RETURN_STACK_WIDTH-8], s_T };
+    s_PC_jump <= { opcode_curr[0+:C_PC_WIDTH-8], s_T };
 endgenerate
 
 always @ (posedge i_clk)
