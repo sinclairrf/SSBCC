@@ -223,6 +223,91 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
         <td align="left">no operation</td>
         </tr>
+      <th align="left"><a href="#<<0">&lt;&lt;0</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">left shift 1 bit and bring in a 0</td>
+        </tr>
+      <th align="left"><a href="#<<1">&lt;&lt;1</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">left shift 1 bit and bring in a 1</td>
+        </tr>
+      <th align="left"><a href="#<<lsb">&lt;&lt;lsb</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        <td align="left">left shift 1 bit keeping the lsb the same</td>
+        </tr>
+      <th align="left"><a href="#0>>">0&gt;&gt;</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td>
+        <td align="left">right shift 1 bit and bring in a 0</td>
+        </tr>
+      <th align="left"><a href="#1>>">1&gt;&gt;</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td>
+        <td align="left">right shift 1 bit and bring in a 1</td>
+        </tr>
+      <th align="left"><a href="#msb>>">msb&gt;&gt;</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td>
+        <td align="left">right shift 1 bit and keep the msb the same</td>
+        </tr>
+      <th align="left"><a href="#lsb>>">lsb&gt;&gt;</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td>
+        <td align="left">right shift 1 bit and rotate the lsb into the msb</td>
+        </tr>
+      <th align="left"><a href="#dup">dup</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">push a duplicate of the top of the data stack onto the data stack</td>
+        </tr>
+      <th align="left"><a href="#r@">r@</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">push a duplicate of the top of the return stack onto the data stack</td>
+        </tr>
+      <th align="left"><a href="#over">over</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">push a duplicate of the next-to-top of the data stack onto the data stack</td>
+        </tr>
+      <th align="left"><a href="#swap">swap</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">swap the top and the next-to-top of the data stack</td>
+        </tr>
+      <th align="left"><a href="#+">+</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">pop the stack and replace the top with N+T</td>
+        </tr>
+      <th align="left"><a href="#-">-</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">pop the stack and replace the top with N-T</td>
+        </tr>
+      <th align="left"><a href="#&">and</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">pop the stack and replace the top with N &amp; T</td>
+        </tr>
+      <th align="left"><a href="#or">or</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">pop the stack and replace the top with N | T</td>
+        </tr>
+      <th align="left"><a href="#^">xor</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">pop the stack and replace the top with N ^ T</td>
+        </tr>
+      <th align="left"><a href="#nip">nip</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        <td align="left">pop the next-to-top from the data stack</td>
+        </tr>
+      <th align="left"><a href="#return">return</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">return from a function call</td>
+        </tr>
+      <th align="left"><a href="#inport">inport</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">replace the top of the stack with the contents of the specified input port</td>
+        </tr>
+      <th align="left"><a href="#outport">outport</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">write the next-to-top of the data stack to the output port specified by the top of the data stack</td>
+        </tr>
+      <th align="left"><a href="#call">call</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">convert the immediately preceding "<tt>jump</tt>" to a function call</td>
+        </tr>
+
       <th align="left"><a href="#jump">jump</a></th>
         <td>0</td><td>1</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
         <td align="left">Jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
