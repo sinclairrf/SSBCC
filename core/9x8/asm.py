@@ -8,6 +8,7 @@
 #
 ################################################################################
 
+import argparse
 import re
 
 ################################################################################
@@ -111,3 +112,20 @@ import re
 # - Print the memory and instruction usage statistics.
 #
 ################################################################################
+
+################################################################################
+#
+# The main loop:
+#
+# - Process the command line arguments.
+#
+################################################################################
+
+#
+# Construct the command-line argument list parser
+#
+
+argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
+argListParser.add_argument('-l', nargs=1, metavar='filename', action='append', help='optional library (can be repeated)');
+argListParser.add_argument('filename', metavar='filename', nargs='+', help='required list of files');
+argList = argListParser.parse_args();
