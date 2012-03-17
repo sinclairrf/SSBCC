@@ -35,8 +35,6 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
   This architecture also supports 0 to 8&nbsp;pages of memory.  Each of these
     pages can be either a RAM or a ROM and can hold up to
     256&nbsp;bytes of data.<br/><br/>
-<h1>Example</h1>
-  The following example of blinking an LED illustrates how the processor
 <h1>Design</h1>
   This section describes things the processor does not do and what is required
     in code to work around these restrictions:<br/><br/>
@@ -190,34 +188,6 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <a href="#nop">nop</a>,
     <a href="#push">push</a>,
     <br/><br/>
-  <h2>TODO -- add these instructions</h2>
-    &gt;r -- push top of data stack onto return stack<br/>
-    0&lt; -- (or used "0x80 and" instead?)<br/>
-    0=<br/>
-    2*<br/>
-    2/<br/>
-    add (+)<br/>
-    and<br/>
-    dis -- disable the interrupt<br/>
-    drop<br/>
-    dup<br/>
-    ena -- enable the interrupt<br/>
-    fetch (@) -- read from memory<br/>
-    in -- input from port<br/>
-    or<br/>
-    out -- output to port<br/>
-    over -- push a copy of the second element of the stack onto the stack<br/>
-    r&gt; -- pop the return stack and push that value onto the data stack<br/>
-    r@ -- push a copy of the top of the return stack onto the data stack<br/>
-    reset?<br/>
-    rot -- rotate top 3 elements of the data stack (use "&gt;r swap r&gt; swap" instead?<br/>
-    rotate -- left or right, carry in is 0<br/>
-    rotate with carry -- left or right, carry in is msb/lsb<br/>
-    store (!) -- write to memory<br/>
-    sub (-)<br/>
-    swap<br/>
-    xor<br/>
-    <br/>
   <h2><a name="opcode_mapping">Opcode Mapping</a></h2>
     Add:  call, callc, return<br/><br/>
     <table>
