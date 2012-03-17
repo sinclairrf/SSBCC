@@ -365,18 +365,66 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         <td align="left">Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack.</td>
         </tr>
     </table>
-  <h2><a name="&">Instruction:  &amp;</a></h2> TODO
-  <h2><a name="+">Instruction:  +</a></h2> TODO
-  <h2><a name="-">Instruction:  -</a></h2> TODO
-  <h2><a name="-1=">Instruction:  -1=</a></h2> TODO
-  <h2><a name="0=">Instruction:  0=</a></h2> TODO
-  <h2><a name="0>>">Instruction:  0&gt;&gt;</a></h2> TODO
-  <h2><a name="1>>">Instruction:  1&gt;&gt;</a></h2> TODO
-  <h2><a name="<<0">Instruction:  &lt;&lt;0</a></h2> TODO
-  <h2><a name="<<1">Instruction:  &lt;&lt;1</a></h2> TODO
-  <h2><a name="<<msb">Instruction:  &lt;&lt;msb</a></h2> TODO
-  <h2><a name=">r">Instruction:  &gt;r</a></h2> TODO
-  <h2><a name="^">Instruction:  ^</a></h2> TODO
+  <h2><a name="&">Instruction:  &amp;</a></h2>
+    <b>Desription:</b>  Pop the data stack and replace the top with the bitwise
+      and of the previous top and next-to-top.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="+">Instruction:  +</a></h2>
+    <b>Desription:</b>  Pop the data stack and replace the top with the
+      8&nbsp;sum of the previous top and next-to-top.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="-">Instruction:  -</a></h2>
+    <b>Desription:</b>  Pop the data stack and replace the top with the
+      8&nbsp;difference of the previous top and next-to-top.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="-1=">Instruction:  -1=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value was all ones, otherwise set it to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="0=">Instruction:  0=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value was all zeros, otherwise set it to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="0>>">Instruction:  0&gt;&gt;</a></h2>
+    <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
+      left-most bit with a zero.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="1>>">Instruction:  1&gt;&gt;</a></h2>
+    <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
+      left-most bit with a zero.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="<<0">Instruction:  &lt;&lt;0</a></h2>
+    <b>Desription:</b>  Left shift the top of the stack one bit, replacing the
+      right-most bit with a zero.
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="<<1">Instruction:  &lt;&lt;1</a></h2>
+    <b>Desription:</b>  Left shift the top of the stack one bit, replacing the
+      right-most bit with a one.<br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="<<msb">Instruction:  &lt;&lt;msb</a></h2>
+    <b>Desription:</b>  Left shift the top of the stack one bit, leaving the
+      right-most bit unchanged.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name=">r">Instruction:  &gt;r</a></h2>
+    <b>Desription:</b>  Pop the data stack and push its previous value onto the
+      return stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="^">Instruction:  ^</a></h2>
+    <b>Desription:</b>  Pop the data stack and replace the top with the bitwise
+      or of the previous top and next-to-top.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
   <h2><a name="call">Instruction:  call</a></h2>
     <b>Desription:</b>  Convert the immediately preceding "<tt>jump</tt>"
       instruction into a function call by pushing the PC onto the return
@@ -405,15 +453,40 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       with the 6&nbsp;msb of the function address, and "<tt>callc</tt>" is the
       instruction to push the PC onto the return stack and to drop the
       conditional for the jump from the top of the stack.<br/><br/>
-  <h2><a name="dis">Instruction:  dis</a></h2> TODO
-  <h2><a name="drop">Instruction:  drop</a></h2> TODO
-  <h2><a name="dup">Instruction:  dup</a></h2> TODO
+  <h2><a name="dis">Instruction:  dis</a></h2>
+    <b>Desription:</b>  Disable interrupts.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="drop">Instruction:  drop</a></h2>
+    <b>Desription:</b>  Pop the data stack, discarding the value that had been
+      on the top.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="dup">Instruction:  dup</a></h2>
+    <b>Desription:</b>  Push the top of the data stack onto the data
+      stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
   <h2><a name="ena">Instruction:  ena</a></h2>
     <b>Desription:</b>  Enable interrupts.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
-  <h2><a name="fetch">Instruction:  fetch</a></h2> TODO
-  <h2><a name="inport">Instruction:  inport</a></h2> TODO
+  <h2><a name="fetch">Instruction:  fetch</a></h2>
+    <b>Desription:</b>  Replace the top of the data stack with an 8&nbsp;bit
+      value from memory.  The memory bank is specified by the four
+      least-significant bits of the opcode.  The index within the memory bank is
+      specified by the previous value of the top of the stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="inport">Instruction:  inport</a></h2>
+    <b>Desription:</b>  Replace the top of the data stack with the 8&nbsp;value
+      from the port specified by the previous value of the top of the data
+      stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+    <b>Special:</b><br/><br/>
+      The recommended procedure to read from an inport port is to use the
+      "<tt>.inport</tt>" macro.<br/><br/>
   <h2><a name="jump">Instruction:  jump</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
@@ -438,23 +511,60 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       instruction to drop the conditional from the top of the stack for normal
       jumps or a "<tt>callc</tt>" instruction to complete a conditional function
       call.<br/><br/>
-  <h2><a name="lsb>>">Instruction:  lsb&gt;&gt;</a></h2> TODO
-  <h2><a name="msb>>">Instruction:  msb&gt;&gt;</a></h2> TODO
-  <h2><a name="nip">Instruction:  nip</a></h2> TODO
+  <h2><a name="lsb>>">Instruction:  lsb&gt;&gt;</a></h2>
+    <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
+      left-most bit with the previous value of the right-most bit.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="msb>>">Instruction:  msb&gt;&gt;</a></h2>
+    <b>Desription:</b>  Right shift the top of the stack one bit, preserving the
+      value of the left-most bit.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="nip">Instruction:  nip</a></h2>
+    <b>Desription:</b>  Discard the next-to-top value on the data
+      stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
   <h2><a name="nop">Instruction:  nop</a></h2>
     <b>Desription:</b>  No operation.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
-  <h2><a name="or">Instruction:  or</a></h2> TODO
-  <h2><a name="outport">Instruction:  outport</a></h2> TODO
-  <h2><a name="over">Instruction:  over</a></h2> TODO
+  <h2><a name="or">Instruction:  or</a></h2>
+    <b>Desription:</b>  Pop the data stack and replace the top with the bitwise
+      or of the previous top and next-to-top.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="outport">Instruction:  outport</a></h2>
+    <b>Desription:</b>  Pop the data stack and write the previous next-to-top to
+      the port specified by the previous top.<br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+    <b>Special:</b><br/><br/>
+      This instruction must be following by a "<tt>drop</tt>" in order to
+      discard the value from the data stack that had been written to the data
+      port.  The recommended procedure to write to an output port is to use the
+      "<tt>.outport</tt>" macro.<br/><br/>
+  <h2><a name="over">Instruction:  over</a></h2>
+    <b>Desription:</b>  Push the next-to-top of the data stack onto the data
+      stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
   <h2><a name="push">Instruction:  push</a></h2>
     <b>Description:</b>  Push the specified 8-bit value onto the 8-bit
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
-  <h2><a name="r>">Instruction:  r&gt;</a></h2> TODO
-  <h2><a name="r@">Instruction:  r@</a></h2> TODO
+  <h2><a name="r>">Instruction:  r&gt;</a></h2>
+    <b>Desription:</b>  Pop the return stack and push its previous value onto
+      the data stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+  <h2><a name="r@">Instruction:  r@</a></h2>
+    <b>Desription:</b>  Push the top of the return stack onto the data
+      stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
   <h2><a name="return">Instruction:  return</a></h2>
     <b>Description:</b>  Popd the top of the return stack into the PC.<br/><br/>
     <b>Operation:</b><br/><br/>
@@ -462,8 +572,17 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>Special:</b>
       This instruction must be followed by a "<tt>nop</tt>"
       instruction.<br/><br/>
-  <h2><a name="store">Instruction:  store</a></h2> TODO
-  <h2><a name="swap">Instruction:  swap</a></h2> TODO
+  <h2><a name="store">Instruction:  store</a></h2>
+    <b>Desription:</b>  Pop the data stack and store the previous next-to-top of
+      the data stack at the memory location specified by the previous top of the
+      data stack.  The memory bank is specified by the three least significant
+      bits of the opcode.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      The recommended procecure is to use the "<tt>.store</tt>" macro.<br/><br/>
+  <h2><a name="swap">Instruction:  swap</a></h2>
+    <b>Desription:</b>  Swap the top two values on the data stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/></br>
 <h1>Assembler</h1>
   This section describes the contents of an assembly language file and the
     instruction format.<br/><br/>
