@@ -1,8 +1,19 @@
 /*******************************************************************************
  *
+ * Copyright 2012, Sinclair R.F., Inc.
+ *
+ * Verilog version of the 9-bit opcode, 8-bit data stack-based controller core.
+ *
+ * WARNING:  This is not a verilog module.  These are the lines of Verilog code
+ *           that perform the opcodes.  The interface to the rest of the system,
+ *           the memory declaration and initializations, and so forth required
+ *           for the complete processor are generated seperately as described in
+ *           the "00readme.html" file co-located with this code.
+ *
  * The processor core is implemented such that at most two layers of 6-input
- * LUTs are involved in the computations between successive clock cycles.  For
- * example, if an addition operation is performed then
+ * LUTs are involved in the computations between successive clock cycles.
+ *
+ * For example, if an addition operation is performed then
  *   1. Do the unlatched addition and identify how the registers will be
  *      affected.  Here, the input to the T latch will be the adder output, the
  *      input to N will be the top of the data stack, the data stack pointer
@@ -13,6 +24,10 @@
  *      etc.
  *
  ******************************************************************************/
+
+//@SSBCC@ module
+
+//@SSBCC@ parameters
 
 reg       [7:0] T                       = 8'h00;
 
@@ -45,26 +60,23 @@ always @ (posedge i_clk)
  *
  ******************************************************************************/
 
-// adder/subtracter
-wire [7:0] math_dual_adder;
+// add,sub,and,or,xor,TBD,drop,nip
+wire [7:0] s_math_dual;
 always @ (T,N,opcode_curr)
-  case (opcode_curr[0])
-       1'b0 : math_dual_adder <= N + T; // add
-       1'b1 : math_dual_adder <= N - T; // sub
-    default : math_dual_adder <= T;
+  case (opcode_curr[0+:3])
+     3'b000 : s_math_dual <= N + T;     // add
+     3'b001 : s_math_dual <= N - T;     // sub
+     3'b010 : s_math_dual <= N & T;     // and
+     3'b011 : s_math_dual <= N | T;     // or
+     3'b100 : s_math_dual <= N ^ T;     // xor
+     3'b101 : s_math_dual <= T;         // TBD
+     3'b110 : s_math_dual <= N;         // drop
+     3'b111 : s_math_dual <= T;         // nip
+    default : s_math_dual <= T;
   endcase
 
-// logic operations
-// 4-input LUT formulation -- 2-bit opcode, 1 bit each of T and N
-wire [7:0] math_dual_logic;
-always @ (T,N,opcode_curr)
-  case (opcode_curr[0+:2])
-      2'b00 : math_dual_logic <= T & N; // and
-      2'b01 : math_dual_logic <= T | N; // or
-      2'b10 : math_dual_logic <= T ^ N; // xor
-      2'b11 : math_dual_logic <= T;     // nip
-    default : math_dual_logic <= T;
-  endcase
+// Test T for equality to all zeros or to all ones.
+wire s_T_equals = &({(8){~opcode_curr[0]}} ^ T);
 
 // shifter operations (including "nop" as no shift)
 // 6-input LUT formulation -- 3-bit opcode, 3 bits of T centered at current bit
@@ -96,110 +108,118 @@ always @ (*)
 /*******************************************************************************
  *
  * Define the states for the bus muxes and then compute these stated from the
- * current opcode.
+ * 6 msb of the opcode.
  *
  ******************************************************************************/
 
 localparam C_BUS_PC_NORMAL      = 2'b00;
 localparam C_BUS_PC_JUMP        = 2'b01;
 localparam C_BUS_PC_RETURN      = 2'b11;
+wire [1:0] s_bus_pc;
 
-localparam C_BUS_R_NOP          = 2'b00;
-localparam C_BUS_R_PC           = 2'b01;
-localparam C_BUS_R_T            = 2'b10;
+localparam C_BUS_R_T            = 1'b0;         // no-op and push T onto return stack
+localparam C_BUS_R_PC           = 1'b1;         // push PC onto return stack
+wire s_bus_r;
 
-localparam C_BUS_T_PRE_OPCODE   = 3'b000;
-localparam C_BUS_T_PRE_RETURN   = 3'b001;
-localparam C_BUS_T_PRE_MEMORY   = 3'b010;
-localparam C_BUS_T_PRE_N        = 3'b011;
-localparam C_BUS_T_PRE_T        = 3'b100;
-localparam C_BUS_T_PRE_INPORT   = 3'b101;
+localparam C_RETURN_NOP         = 2'b00;        // don't change return stack pointer
+localparam C_RETURN_INC         = 2'b01;        // add element to return stack
+localparam C_RETURN_DEC         = 2'b10;        // remove element from return stack
+wire [1:0] s_return;
 
-localparam C_BUS_T_NOP          = 2'b00;
-localparam C_BUS_T_PRE          = 2'b01;
-localparam C_BUS_T_MATH_DUAL    = 2'b10;
-localparam C_BUS_T_MATH_ROTATE  = 2'b11;
+localparam C_BUS_T_MATH_ROTATE  = 3'b000;       // nop and rotate operations
+localparam C_BUS_T_OPCODE       = 3'b001;
+localparam C_BUS_T_N            = 3'b010;
+localparam C_BUS_T_PRE          = 3'b011;
+localparam C_BUS_T_MATH_DUAL    = 3'b100;
+localparam C_BUS_T_ZERO_EQUAL   = 3'b101;
+localparam C_BUS_T_INPORT       = 3'b110;
+localparam C_BUS_T_MEMORY       = 3'b111;
+wire [2:0] s_bus_t;
 
-localparam C_BUS_N_NOP          = 2'b00;
-localparam C_BUS_N_T            = 2'b01;
-localparam C_BUS_N_STACK        = 2'b10;
+localparam C_BUS_N_N            = 2'b00;        // don't change N
+localparam C_BUS_N_T            = 2'b01;        // replace N with T
+localparam C_BUS_N_STACK        = 2'b10;        // replace N with third-on-stack
+wire [1:0] s_bus_n;
 
-localparam C_STACK_NOP          = 2'b00;
-localparam C_STACK_INC          = 2'b01;
-localparam C_STACK_DEC          = 2'b10;
+localparam C_STACK_NOP          = 2'b00;        // don't change internal data stack pointer
+localparam C_STACK_INC          = 2'b01;        // add element to internal data stack
+localparam C_STACK_DEC          = 2'b10;        // remove element from internal data stack
+wire [1:0] s_stack;
 
 always @ (opcode_curr,T) begin
+  // default operation is nop/math_rotate
   s_bus_pc      <= C_BUS_PC_NORMAL;
-  s_bus_r       <= C_BUS_R_NOP;
-  s_bus_t_pre   <= C_BUS_T_PRE_RETURN;
-  s_bus_t       <= C_BUS_T_NOP;
-  s_bus_n       <= C_BUS_N_NOP;
+  s_bus_r       <= C_BUS_R_T;
   s_return      <= C_RETURN_NOP;
+  s_bus_t       <= C_BUS_T_MATH_ROTATE;
+  s_bus_n       <= C_BUS_N_N;
   s_stack       <= C_STACK_NOP;
   s_interrupt_enabled_change    <= 1'b1;
   s_interrupt_enabled_next      <= s_interrupt_enabled;
   s_interrupt_holdoff           <= 1'b0;
   s_outport_next                <= 1'b0;
   if (opcode_curr[8] == 1'b1) begin // push
-    s_bus_t_pre <= C_BUS_T_PRE_OPCODE;
-    s_bus_t     <= C_BUS_T_PRE;
+    s_bus_t     <= C_BUS_T_OPCODE;
     s_bus_n     <= C_BUS_N_T;
     s_stack     <= C_STACK_INC;
-  end else if (opcode_curr[7] = 1'b1) begin // jump or jumpc
-    if (opcode_curr[6] = 1'b0 || (|s_T))
-    s_bus_t_pre <= C_BUS_T_PRE_N;
-    s_bus_t     <= C_BUS_T_PRE;
+  end else if (opcode_cur[6+:2] == 2'b10) begin // jump
+    s_bus_t     <= C_BUS_T_N;
+    s_bus_n     <= C_BUS_N_STACK;
+    s_stack     <= C_STACK_DEC;
+    s_interrupt_holdoff <= 1'b1;
+  end else if (opcode_cur[6+:2] == 2'b11) begin // jumpc
+    if (|T) begin
+      s_bus_r   <= C_BUS_R_PC;
+      s_stack   <= C_STACK_INC;
+    end
+    s_bus_t     <= C_BUS_T_N;
     s_bus_n     <= C_BUS_N_STACK;
     s_stack     <= C_STACK_DEC;
     s_interrupt_holdoff <= 1'b1;
   end else case (opcode_curr[3+:4])
       4'b0000:  // nop, math_rotate
-                s_bus_t         <= C_BUS_T_MATH_ROTATE;
-                s_bus_n         <= C_BUS_N_STACK;
-                s_stack         <= C_STACK_NOP;
+                ;
       4'b0001:  // dup, r@, over
                 s_bus_t         <= C_BUS_T_PRE;
                 s_bus_n         <= C_BUS_N_T;
                 s_stack         <= C_STACK_INC;
       4'b0010:  // swap
-                s_bus_t         <= C_BUS_T_PRE;
+                s_bus_t         <= C_BUS_T_N;
                 s_bus_n         <= C_BUS_N_T;
-      4'b0011:  // dual-operand math:  add/sub
-                s_bus_t         <= C_BUS_T_MATH_ADDER;
+      4'b0011:  // dual-operand math:  add,sub,TBD,TBD,and,or,xor,nip
+                s_bus_t         <= C_BUS_T_MATH_DUAL;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
-      4'b0100:  // dual-operand math:  and/or/xor/nip
-                s_bus_t         <= C_BUS_T_MATH_LOGIC;
-                s_bus_n         <= C_BUS_N_STACK;
-                s_stack         <= C_STACK_DEC;
+      4'b0100:  // 0=, -1=
+                s_bus_t         <= C_BUS_T_ZERO_EQUAL;
       4'b0101:  // return
                 s_bus_pc        <= C_BUS_PC_RETURN;
                 s_return        <= C_RETURN_DEC;
       4'b0110:  // inport
                 s_bus_t         <= C_BUS_T_INPORT;
       4'b0111:  // outport
-                s_bus_t         <= C_BUS_T_PRE;
+                s_bus_t         <= C_BUS_T_N;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
       4'b1000:  // call
                 s_bus_pc        <= C_BUS_PC_JUMP;
-                s_return        <= C_RETURN_INC;
                 s_bus_r         <= C_BUS_R_PC;
+                s_return        <= C_RETURN_INC;
       4'b1001:  // callc
                 s_bus_pc        <= C_BUS_PC_JUMP;
-                s_return        <= C_RETURN_INC;
                 s_bus_r         <= C_BUS_R_PC;
-                s_bus_t         <= C_BUS_T_PRE;
+                s_return        <= C_RETURN_INC;
+                s_bus_t         <= C_BUS_T_N;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
       4'b1010:  // drop
-                s_bus_t         <= C_BUS_T_PRE;
+                s_bus_t         <= C_BUS_T_N;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
       4'b1011:  // >r
-                s_return        <= C_RETURN_INC;
                 s_bus_r         <= C_BUS_R_T;
-                s_bus_t         <= C_BUS_T_PRE;
+                s_return        <= C_RETURN_INC;
+                s_bus_t         <= C_BUS_T_N;
                 s_bus_n         <= C_BUS_N_STACK;
                 s_stack         <= C_STACK_DEC;
       4'b1100:  // r> (pop the return stack and push it onto the data stack)
@@ -251,16 +271,6 @@ always @ (posedge i_clk)
     default:              s_PC <= s_PC_next;
   endcase
 
-wire [1:0] s_bus_t_pre
-always @ (posedge s_registers_opcode)
-  case (s_registers_opcode)
-    4'b0000:            s_bus_t_pre <= C_BUS_T_PRE_RETURN;      // nop
-    4'b0001:
-    4'b0010:            s_bus_t_pre <= C_BUS_T_PRE_RETURN;      // add/sub
-    4'b0011:            s_bus_t_pre <= C_BUS_T_PRE_RETURN;      // math_opcode
-    default:            s_bus_t_pre <= C_BUS_T_PRE_RETURN;
-  endcase;
-
 always @ (opcode_curr[7+:2], s_registers_opcode) begin
   bus__adder_out <= 1'b0;
   bus__math_out  <= 1'b0;
@@ -288,3 +298,5 @@ end
 wire N_gets_top         = opcode_curr[8];
 wire N_gets_third       = opcode_curr[7] || 
 wire N_same
+
+//*SSBCC* endmodule

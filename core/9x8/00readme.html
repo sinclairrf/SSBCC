@@ -35,6 +35,8 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
   This architecture also supports 0 to 8&nbsp;pages of memory.  Each of these
     pages can be either a RAM or a ROM and can hold up to
     256&nbsp;bytes of data.<br/><br/>
+<h1>Example</h1>
+  The following example of blinking an LED illustrates how the processor
 <h1>Design</h1>
   This section describes things the processor does not do and what is required
     in code to work around these restrictions:<br/><br/>
@@ -220,8 +222,8 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     Add:  call, callc, return<br/><br/>
     <table>
     <tr>
-      <th align="left">Opcode</th>
-        <th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+      <th align="left">Opcode&nbsp;&nbsp;&nbsp;</th>
+        <th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3&nbsp;&nbsp;&nbsp;</th><th>2</th><th>1</th><th>0&nbsp;&nbsp;&nbsp;</th>
         <th align="left">Description</th>
         </tr>
       <th align="left"><a href="#nop">nop</a></th>
@@ -236,9 +238,9 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td>
         <td align="left">left shift 1 bit and bring in a 1</td>
         </tr>
-      <th align="left"><a href="#<<lsb">&lt;&lt;lsb</a></th>
+      <th align="left"><a href="#<<msb">&lt;&lt;msb</a></th>
         <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td>
-        <td align="left">left shift 1 bit keeping the lsb the same</td>
+        <td align="left">left shift 1 bit and rotate the msb into the lsb</td>
         </tr>
       <th align="left"><a href="#0>>">0&gt;&gt;</a></th>
         <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td>
@@ -280,21 +282,41 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td>
         <td align="left">pop the stack and replace the top with N-T</td>
         </tr>
-      <th align="left"><a href="#&">and</a></th>
-        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+      <th align="left"><a href="#&">&amp;</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td>
         <td align="left">pop the stack and replace the top with N &amp; T</td>
         </tr>
       <th align="left"><a href="#or">or</a></th>
-        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td>
         <td align="left">pop the stack and replace the top with N | T</td>
         </tr>
       <th align="left"><a href="#^">xor</a></th>
-        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td>
         <td align="left">pop the stack and replace the top with N ^ T</td>
         </tr>
+      <th align="left"><a href="#drop">drop</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td>
+        <td align="left">drop the top value from the stack<tt>jumpc</tt>" to a function call</td>
+        </tr>
       <th align="left"><a href="#nip">nip</a></th>
-        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
         <td align="left">pop the next-to-top from the data stack</td>
+        </tr>
+      <th align="left"><a href="#dis">dis</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">disable interrupts</td>
+        </tr>
+      <th align="left"><a href="#ena">ena</a></th>
+        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">enable interrupts</td>
+        </tr>
+      <th align="left"><a href="#0=">0=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">replace the top of the stack with all ones if it is all zeros and all zeros otherwise</td>
+        </tr>
+      <th align="left"><a href="#-1=">-1=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">replace the top of the stack with all ones if it is all ones and all zeros otherwise</td>
         </tr>
       <th align="left"><a href="#return">return</a></th>
         <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
@@ -316,33 +338,21 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
         <td align="left">convert the immediately preceding "<tt>jumpc</tt>" to a function call</td>
         </tr>
-      <th align="left"><a href="#drop">drop</a></th>
-        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
-        <td align="left">drop the top value from the stack<tt>jumpc</tt>" to a function call</td>
-        </tr>
       <th align="left"><a href="#>r">&gt;r</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
         <td align="left">Pop the top of the data stack and push it onto the return stack</td>
         </tr>
       <th align="left"><a href="#r>">r&gt;</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td>
         <td align="left">Pop the top of the return stack and push it onto the data stack</td>
         </tr>
-      <th align="left"><a href="#dis">dis</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
-        <td align="left">disable interrupts</td>
-        </tr>
-      <th align="left"><a href="#ena">ena</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td>
-        <td align="left">enable interrupts</td>
+      <th align="left"><a href="#store">store</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>b</td><td>b</td><td>b</td>
+        <td align="left">Store N in the T'th entry in bank "<tt>bbb</tt>" and pop the data stack</td>
         </tr>
       <th align="left"><a href="#fetch">fetch</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>b</td><td>b</td><td>b</td>
-        <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bbb</tt>"</td>
-        </tr>
-      <th align="left"><a href="#store">store</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td><td>b</td>
-        <td align="left">Store N in the T'th entry in bank "<tt>bbb</tt>" and pop the data stack</td>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td><td>b</td><td>b</td>
+        <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bbbb</tt>"</td>
         </tr>
       <th align="left"><a href="#jump">jump</a></th>
         <td>0</td><td>1</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
@@ -385,6 +395,10 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       with the 6&nbsp;msb of the function address, and "<tt>callc</tt>" is the
       instruction to push the PC onto the return stack and to drop the
       conditional for the jump from the top of the stack.<br/><br/>
+  <h2><a name="ena">Instruction:  ena</a></h2>
+    <b>Desription:</b>  Enable interrupts.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
   <h2><a name="jump">Instruction:  jump</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
