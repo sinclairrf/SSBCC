@@ -370,83 +370,90 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       and of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; T &amp; N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
-      R, <tt>return</tt> unchanged<br/>
       <br/>
   <h2><a name="+">Instruction:  +</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the
       8&nbsp;sum of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; T + N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
-      R, <tt>return</tt> unchanged<br/>
       <br/>
   <h2><a name="-">Instruction:  -</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the
       8&nbsp;difference of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; T - N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
-      R, <tt>return</tt> unchanged<br/>
       <br/>
   <h2><a name="-1=">Instruction:  -1=</a></h2>
     <b>Desription:</b>  Set the top of the stack to all ones if the previous
       value was all ones, otherwise set it to all zeros.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; -1 if T=-1, 0 otherwise<br/>
-      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="0=">Instruction:  0=</a></h2>
     <b>Desription:</b>  Set the top of the stack to all ones if the previous
       value was all zeros, otherwise set it to all zeros.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; -1 if T=0, -1 otherwise<br/>
-      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="0>>">Instruction:  0&gt;&gt;</a></h2>
     <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
       left-most bit with a zero.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; { 0, T[7], T[6], ..., T[1] }<br/>
-      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="1>>">Instruction:  1&gt;&gt;</a></h2>
     <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
       left-most bit with a zero.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; { 1, T[7], T[6], ..., T[1] }<br/>
-      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="<<0">Instruction:  &lt;&lt;0</a></h2>
     <b>Desription:</b>  Left shift the top of the stack one bit, replacing the
       right-most bit with a zero.
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; { T[6], T[5], ..., T[0], 0 }<br/>
-      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="<<1">Instruction:  &lt;&lt;1</a></h2>
     <b>Desription:</b>  Left shift the top of the stack one bit, replacing the
       right-most bit with a one.<br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; { T[6], T[5], ..., T[0], 1 }<br/>
-      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="<<msb">Instruction:  &lt;&lt;msb</a></h2>
     <b>Desription:</b>  Left shift the top of the stack one bit, leaving the
       right-most bit unchanged.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; { T[6], T[5], ..., T[0], T[7] }<br/>
-      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name=">r">Instruction:  &gt;r</a></h2>
     <b>Desription:</b>  Pop the data stack and push its previous value onto the
@@ -569,7 +576,7 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; { O[5], O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
-      R, <tt>return</tt> unchanged<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; T &amp; N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
@@ -589,7 +596,7 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       else<br/>
       &nbsp;&nbsp;PC &leftarrow; PC+1<br/>
       end if<br/>
-      R, <tt>return</tt> unchanged<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; T &amp; N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
@@ -638,9 +645,9 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       or of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
       T &leftarrow; T or N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
-      R, <tt>return</tt> unchanged<br/>
       <br/>
   <h2><a name="outport">Instruction:  outport</a></h2>
     <b>Desription:</b>  Pop the data stack and write the previous next-to-top to
