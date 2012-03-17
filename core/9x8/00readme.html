@@ -218,7 +218,6 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <a href="#swap">swap</a>
     <br/><br/>
   <h2><a name="opcode_mapping">Opcode Mapping</a></h2>
-    Add:  call, callc, return<br/><br/>
     <table>
     <tr>
       <th align="left">Opcode&nbsp;&nbsp;&nbsp;</th>
@@ -366,6 +365,18 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
         <td align="left">Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack.</td>
         </tr>
     </table>
+  <h2><a name="&">Instruction:  &amp;</a></h2> TODO
+  <h2><a name="+">Instruction:  +</a></h2> TODO
+  <h2><a name="-">Instruction:  -</a></h2> TODO
+  <h2><a name="-1=">Instruction:  -1=</a></h2> TODO
+  <h2><a name="0=">Instruction:  0=</a></h2> TODO
+  <h2><a name="0>>">Instruction:  0&gt;&gt;</a></h2> TODO
+  <h2><a name="1>>">Instruction:  1&gt;&gt;</a></h2> TODO
+  <h2><a name="<<0">Instruction:  &lt;&lt;0</a></h2> TODO
+  <h2><a name="<<1">Instruction:  &lt;&lt;1</a></h2> TODO
+  <h2><a name="<<msb">Instruction:  &lt;&lt;msb</a></h2> TODO
+  <h2><a name=">r">Instruction:  &gt;r</a></h2> TODO
+  <h2><a name="^">Instruction:  ^</a></h2> TODO
   <h2><a name="call">Instruction:  call</a></h2>
     <b>Desription:</b>  Convert the immediately preceding "<tt>jump</tt>"
       instruction into a function call by pushing the PC onto the return
@@ -394,10 +405,15 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       with the 6&nbsp;msb of the function address, and "<tt>callc</tt>" is the
       instruction to push the PC onto the return stack and to drop the
       conditional for the jump from the top of the stack.<br/><br/>
+  <h2><a name="dis">Instruction:  dis</a></h2> TODO
+  <h2><a name="drop">Instruction:  drop</a></h2> TODO
+  <h2><a name="dup">Instruction:  dup</a></h2> TODO
   <h2><a name="ena">Instruction:  ena</a></h2>
     <b>Desription:</b>  Enable interrupts.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
+  <h2><a name="fetch">Instruction:  fetch</a></h2> TODO
+  <h2><a name="inport">Instruction:  inport</a></h2> TODO
   <h2><a name="jump">Instruction:  jump</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
@@ -422,15 +438,23 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       instruction to drop the conditional from the top of the stack for normal
       jumps or a "<tt>callc</tt>" instruction to complete a conditional function
       call.<br/><br/>
+  <h2><a name="lsb>>">Instruction:  lsb&gt;&gt;</a></h2> TODO
+  <h2><a name="msb>>">Instruction:  msb&gt;&gt;</a></h2> TODO
+  <h2><a name="nip">Instruction:  nip</a></h2> TODO
   <h2><a name="nop">Instruction:  nop</a></h2>
     <b>Desription:</b>  No operation.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
+  <h2><a name="or">Instruction:  or</a></h2> TODO
+  <h2><a name="outport">Instruction:  outport</a></h2> TODO
+  <h2><a name="over">Instruction:  over</a></h2> TODO
   <h2><a name="push">Instruction:  push</a></h2>
     <b>Description:</b>  Push the specified 8-bit value onto the 8-bit
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
+  <h2><a name="r>">Instruction:  r&gt;</a></h2> TODO
+  <h2><a name="r@">Instruction:  r@</a></h2> TODO
   <h2><a name="return">Instruction:  return</a></h2>
     <b>Description:</b>  Popd the top of the return stack into the PC.<br/><br/>
     <b>Operation:</b><br/><br/>
@@ -438,6 +462,8 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>Special:</b>
       This instruction must be followed by a "<tt>nop</tt>"
       instruction.<br/><br/>
+  <h2><a name="store">Instruction:  store</a></h2> TODO
+  <h2><a name="swap">Instruction:  swap</a></h2> TODO
 <h1>Assembler</h1>
   This section describes the contents of an assembly language file and the
     instruction format.<br/><br/>
