@@ -369,68 +369,114 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>Desription:</b>  Pop the data stack and replace the top with the bitwise
       and of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; T &amp; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      R, <tt>return</tt> unchanged<br/>
+      <br/>
   <h2><a name="+">Instruction:  +</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the
       8&nbsp;sum of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; T + N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      R, <tt>return</tt> unchanged<br/>
+      <br/>
   <h2><a name="-">Instruction:  -</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the
       8&nbsp;difference of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; T - N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      R, <tt>return</tt> unchanged<br/>
+      <br/>
   <h2><a name="-1=">Instruction:  -1=</a></h2>
     <b>Desription:</b>  Set the top of the stack to all ones if the previous
       value was all ones, otherwise set it to all zeros.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; -1 if T=-1, 0 otherwise<br/>
+      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="0=">Instruction:  0=</a></h2>
     <b>Desription:</b>  Set the top of the stack to all ones if the previous
       value was all zeros, otherwise set it to all zeros.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; -1 if T=0, -1 otherwise<br/>
+      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="0>>">Instruction:  0&gt;&gt;</a></h2>
     <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
       left-most bit with a zero.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; { 0, T[7], T[6], ..., T[1] }<br/>
+      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="1>>">Instruction:  1&gt;&gt;</a></h2>
     <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
       left-most bit with a zero.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; { 1, T[7], T[6], ..., T[1] }<br/>
+      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="<<0">Instruction:  &lt;&lt;0</a></h2>
     <b>Desription:</b>  Left shift the top of the stack one bit, replacing the
       right-most bit with a zero.
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; { T[6], T[5], ..., T[0], 0 }<br/>
+      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="<<1">Instruction:  &lt;&lt;1</a></h2>
     <b>Desription:</b>  Left shift the top of the stack one bit, replacing the
       right-most bit with a one.<br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; { T[6], T[5], ..., T[0], 1 }<br/>
+      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="<<msb">Instruction:  &lt;&lt;msb</a></h2>
     <b>Desription:</b>  Left shift the top of the stack one bit, leaving the
       right-most bit unchanged.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; { T[6], T[5], ..., T[0], T[7] }<br/>
+      R, <tt>return</tt>, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name=">r">Instruction:  &gt;r</a></h2>
     <b>Desription:</b>  Pop the data stack and push its previous value onto the
       return stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R &leftarrow; T<br/>
+      <tt>++return</tt> &leftarrow; R<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
   <h2><a name="^">Instruction:  ^</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the bitwise
-      or of the previous top and next-to-top.<br/><br/>
+      exclusive or of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T ^ N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
   <h2><a name="call">Instruction:  call</a></h2>
     <b>Desription:</b>  Convert the immediately preceding "<tt>jump</tt>"
       instruction into a function call by pushing the PC onto the return
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC + 1<br/>
+      R &leftarrow; PC<br/>
+      <tt>++return</tt> &leftarrow; R<br/>
+      T, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
     <b>Special:</b><br/><br/>
       A&nbsp;function call consists of the following 3 opcode instruction
       sequence:  "<tt>LL&nbsp;jump_MM&nbsp;call</tt>" where "<tt>LL</tt>" is the
@@ -444,7 +490,16 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       stack and dropping the conditional for the jump from the data
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC + 1<br/>
+      if T != 0 then<br/>
+      &nbsp;&nbsp;R &leftarrow; PC<br/>
+      &nbsp;&nbsp;<tt>++return</tt> &leftarrow; R<br/>
+      else<br/>
+      &nbsp;&nbsp;R and <tt>return</tt> unchanged<br/>
+      endif<br/>
+      T &leftarrow; T<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
     <b>Special:</b><br/><br/>
       A&nbsp;conditional function call consists of the following 3 opcode
       instruction sequence:  "<tt>LL&nbsp;jumpc_MM&nbsp;callc</tt>" where
@@ -456,21 +511,34 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
   <h2><a name="dis">Instruction:  dis</a></h2>
     <b>Desription:</b>  Disable interrupts.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R, <tt>return</tt>, T, N, and <tt>stack</tt> unchanged</br>
+      <br/>
   <h2><a name="drop">Instruction:  drop</a></h2>
     <b>Desription:</b>  Pop the data stack, discarding the value that had been
       on the top.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
   <h2><a name="dup">Instruction:  dup</a></h2>
     <b>Desription:</b>  Push the top of the data stack onto the data
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T<br/>
+      N &leftarrow; T<br/>
+      <tt>++stack</tt> &leftarrow; N<br/>
+      <br/>
   <h2><a name="ena">Instruction:  ena</a></h2>
     <b>Desription:</b>  Enable interrupts.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R, <tt>return</tt>, T, N, and <tt>stack</tt> unchanged</br>
+      <br/>
   <h2><a name="fetch">Instruction:  fetch</a></h2>
     <b>Desription:</b>  Replace the top of the data stack with an 8&nbsp;bit
       value from memory.  The memory bank is specified by the four
@@ -478,12 +546,21 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       specified by the previous value of the top of the stack.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; bbbb[T] where "bbbb" is the bank<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="inport">Instruction:  inport</a></h2>
     <b>Desription:</b>  Replace the top of the data stack with the 8&nbsp;value
       from the port specified by the previous value of the top of the data
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; <tt>input_port</tt>[T]<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
     <b>Special:</b><br/><br/>
       The recommended procedure to read from an inport port is to use the
       "<tt>.inport</tt>" macro.<br/><br/>
@@ -491,7 +568,11 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>Desription:</b>  Jump to the address constructed from the opcode and
       <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; { O[5], O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
+      R, <tt>return</tt> unchanged<br/>
+      T &leftarrow; T &amp; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
     <b>Special:</b><br/><br/>
       Interrupts are disabled during the clock cycle immediately following a
       jump instruction.<br/><br/>
@@ -503,7 +584,15 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       <tt>S</tt> if <tt>N</tt> is non-zero.  Discard <tt>S</tt>
       and&nbsp;<tt>N</tt>.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      if T != 0 then<br/>
+      &nbsp;&nbsp;PC &leftarrow; { O[5], O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
+      else<br/>
+      &nbsp;&nbsp;PC &leftarrow; PC+1<br/>
+      end if<br/>
+      R, <tt>return</tt> unchanged<br/>
+      T &leftarrow; T &amp; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
     <b>Special:</b><br/><br/>
       Interrupts are disabled during the clock cycle immediately following a
       jumpc instruction.<br/><br/>
@@ -515,31 +604,54 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
       left-most bit with the previous value of the right-most bit.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; { T[0], T[7], T[6], ..., T[1] }<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="msb>>">Instruction:  msb&gt;&gt;</a></h2>
     <b>Desription:</b>  Right shift the top of the stack one bit, preserving the
       value of the left-most bit.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; { T[7], T[7], T[6], ..., T[1] }<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="nip">Instruction:  nip</a></h2>
     <b>Desription:</b>  Discard the next-to-top value on the data
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <return</tt> unchanged<br/>
+      T &leftarrow; T<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
   <h2><a name="nop">Instruction:  nop</a></h2>
     <b>Desription:</b>  No operation.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow PC + 1<br/>
+      R, <tt>return</tt>, T, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="or">Instruction:  or</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the bitwise
       or of the previous top and next-to-top.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      T &leftarrow; T or N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      R, <tt>return</tt> unchanged<br/>
+      <br/>
   <h2><a name="outport">Instruction:  outport</a></h2>
     <b>Desription:</b>  Pop the data stack and write the previous next-to-top to
       the port specified by the previous top.<br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <tt>outport</tt>[T] &leftarrow; N<br/>
+      <br/>
     <b>Special:</b><br/><br/>
       This instruction must be following by a "<tt>drop</tt>" in order to
       discard the value from the data stack that had been written to the data
@@ -549,26 +661,49 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
     <b>Desription:</b>  Push the next-to-top of the data stack onto the data
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; T<br/>
+      <tt>++stack</tt> &leftarrow; N<br/>
+      <br/>
   <h2><a name="push">Instruction:  push</a></h2>
     <b>Description:</b>  Push the specified 8-bit value onto the 8-bit
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; <tt>opcode</tt>[7:0]<br/>
+      N &leftarrow; T<br/>
+      <tt>++stack</tt> &leftarrow; N<br/>
+      <br/>
   <h2><a name="r>">Instruction:  r&gt;</a></h2>
     <b>Desription:</b>  Pop the return stack and push its previous value onto
       the data stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R &leftarrow; <tt>return--</tt><br/>
+      T &leftarrow; R<br/>
+      N &leftarrow; T<br/>
+      <tt>++stack</tt> &leftarrow; N<br/>
+      <br/>
   <h2><a name="r@">Instruction:  r@</a></h2>
     <b>Desription:</b>  Push the top of the return stack onto the data
       stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; R<br/>
+      N &leftarrow; T<br/>
+      <tt>++stack</tt> &leftarrow; N<br/>
   <h2><a name="return">Instruction:  return</a></h2>
     <b>Description:</b>  Popd the top of the return stack into the PC.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
+      PC &leftarrow; R<br/>
+      R &leftarrow; <tt>return--</tt><br/>
+      T, N, and <tt>stack</tt> unchanged<br/>
+      <br/>
     <b>Special:</b>
       This instruction must be followed by a "<tt>nop</tt>"
       instruction.<br/><br/>
@@ -578,11 +713,23 @@ This document describes a 9-bit opcode, 8-bit data, stack-based microcontroller.
       data stack.  The memory bank is specified by the three least significant
       bits of the opcode.<br/><br/>
     <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      bbb[T] &leftarrow; N where "<tt>bbb</tt>" is the bank<br/>
+      <br/>
+    <b>Special:</b>
       The recommended procecure is to use the "<tt>.store</tt>" macro.<br/><br/>
   <h2><a name="swap">Instruction:  swap</a></h2>
     <b>Desription:</b>  Swap the top two values on the data stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/></br>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; T<br/>
+      <tt>stack</tt> unchanged<br/>
+      <br/>
 <h1>Assembler</h1>
   This section describes the contents of an assembly language file and the
     instruction format.<br/><br/>
