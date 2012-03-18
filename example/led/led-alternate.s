@@ -9,7 +9,7 @@
 :l00
 
 ; update the LED setting
-1 xor dup C_LED out
+1 ^ dup .output(C_LED)
 
 ; consume 256 iteractions of the clock cycle consumpsion
 0 :l01
