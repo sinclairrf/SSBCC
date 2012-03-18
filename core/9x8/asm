@@ -27,7 +27,6 @@ import re
 # - Convert each of these lines or group of lines into an array of the raw
 #   tokens.
 # - For each array of tokens that begins with one of the macro directives
-#     .array (variant of .variable)
 #     .constant
 #     .function
 #     .include
@@ -60,6 +59,38 @@ import re
 #     body.
 #
 ################################################################################
+
+inputGroups = list();
+holding = list();
+pending = list();
+
+def Stage1_FlushHolding():
+  global holding, inputGroups, pending
+  if holding:
+    inputGroups.append(('group',holding,));
+  holding = pending;
+  pending = list();
+
+def Stage1_IsDirective(line):
+  return re.match('^[ \t]*\.(constant|function|include|interrupt|macro|main|memory|variable)([ \t]+.*)?$',line);
+
+def Stage1_NoContent(line):
+  return re.match('^[ \t]*(;|$)',line);
+
+def Stage1(fp, library=False):
+  global holding, inputGroups, lineNumber, pending
+  inputGroups.append(('file',fp.name,));
+  lineNumber = 0;
+  for line in fp:
+    lineNumber = lineNumber+1;
+    pending.append(('line',lineNumber,line,));
+    if Stage1_NoContent(line):
+      continue;
+    if Stage1_IsDirective(line):
+      Stage1_FlushHolding();
+      continue;
+    holding += pending;
+    pending = list();
 
 ################################################################################
 #
@@ -126,6 +157,18 @@ import re
 #
 
 argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
-argListParser.add_argument('-l', nargs=1, metavar='filename', action='append', help='optional library (can be repeated)');
-argListParser.add_argument('filename', metavar='filename', nargs='+', help='required list of files');
+argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
 argList = argListParser.parse_args();
+
+# Loop through the optional libraries and then the required files for the
+# "Stage 1" parsing.
+for fp in argList.filename:
+  Stage1(fp);
+  Stage1_FlushHolding();
+  Stage1_FlushHolding();
+  fp.close();
+
+for ig in inputGroups:
+  print ig[0];
+  if len(ig)>0:
+    print ig[1];
