@@ -11,138 +11,116 @@ class asmDef_9x8:
 
   ################################################################################
   #
+  # Configure the class for processing directives.
+  #
+  ################################################################################
+
+  def fn_directiveConstant(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_directiveFunction(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_directiveInclude(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_directiveInterrupt(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_directiveMacro(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_directiveMain(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_directiveMemory(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_directiveVariable(methodName):
+    raise Exception('Wrong or unimplemented argument');
+
+  directives = dict();
+  directives['predefined']= list();
+  directives['predefined'].append(dict(name='.constant',    method=fn_directiveConstant));
+  directives['predefined'].append(dict(name='.function',    method=fn_directiveFunction));
+  directives['predefined'].append(dict(name='.include',     method=fn_directiveInclude));
+  directives['predefined'].append(dict(name='.interrupt',   method=fn_directiveInterrupt));
+  directives['predefined'].append(dict(name='.macro',       method=fn_directiveMacro));
+  directives['predefined'].append(dict(name='.main',        method=fn_directiveMain));
+  directives['predefined'].append(dict(name='.memory',      method=fn_directiveMemory));
+  directives['predefined'].append(dict(name='.variable',    method=fn_directiveVariable));
+
+  directives['list'] = list();
+  for directive in directives['predefined']:
+    directives['list'].append(directive['name']);
+
+  ################################################################################
+  #
   # Configure the class for identifying and processing macros.
   #
   ################################################################################
 
-  macros = dict();
-
   def fn_macroCall(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 3;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroCallc(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 3;
     raise Exception('Wrong or unimplemented argument');
 
-  def fn_macroConstant(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
-
   def fn_macroFetch(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 2;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroFetchIndexed(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 3;
     raise Exception('Wrong or unimplemented argument');
 
-  def fn_macroFunction(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroInclude(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroInterrupt(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
-
   def fn_macroJump(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 3;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroJumpc(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 3;
     raise Exception('Wrong or unimplemented argument');
 
-  def fn_macroMacro(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroMain(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroMemory(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
-
   def fn_macroReturn(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 2;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroStore(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 3;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroStoreIndexed(methodName):
-    if methodName == 'isDirective':
-      return False;
     if methodName == 'length':
       return 4;
     raise Exception('Wrong or unimplemented argument');
 
-  def fn_macroVariable(methodName):
-    if methodName == 'isDirective':
-      return True;
-    raise Exception('Wrong or unimplemented argument');
+  macros = dict();
 
   macros['predefined']= list();
   macros['predefined'].append(dict(name='.call',        method=fn_macroCall));
   macros['predefined'].append(dict(name='.callc',       method=fn_macroCallc));
-  macros['predefined'].append(dict(name='.constant',    method=fn_macroConstant));
   macros['predefined'].append(dict(name='.fetch',       method=fn_macroFetch));
   macros['predefined'].append(dict(name='.fetchindexed',method=fn_macroFetchIndexed));
-  macros['predefined'].append(dict(name='.function',    method=fn_macroFunction));
-  macros['predefined'].append(dict(name='.include',     method=fn_macroInclude));
-  macros['predefined'].append(dict(name='.interrupt',   method=fn_macroInterrupt));
   macros['predefined'].append(dict(name='.jump',        method=fn_macroJump));
   macros['predefined'].append(dict(name='.jumpc',       method=fn_macroJumpc));
-  macros['predefined'].append(dict(name='.macro',       method=fn_macroMacro));
-  macros['predefined'].append(dict(name='.main',        method=fn_macroMain));
-  macros['predefined'].append(dict(name='.memory',      method=fn_macroMemory));
   macros['predefined'].append(dict(name='.return',      method=fn_macroReturn));
   macros['predefined'].append(dict(name='.store',       method=fn_macroStore));
   macros['predefined'].append(dict(name='.storeindexed',method=fn_macroStoreIndexed));
-  macros['predefined'].append(dict(name='.variable',    method=fn_macroVariable));
 
   macros['directives'] = list();
   for macro in macros['predefined']:
-    if macro['method']('isDirective'):
-      macros['directives'].append(macro['name']);
+    macros['directives'].append(macro['name']);
 
   def IsDirective(self,macroName):
     return macroName in self.macros['directives'];
@@ -193,8 +171,10 @@ class asmDef_9x8:
   def IsInstruction(self,symbolName):
     return symbolName in self.instructions['list'];
 
-  def InstructionOpcode(self,symbolName):
-    for instruction in instructions['opcodes']:
+  def InstructionOpcode(self,symbolName,language):
+    for instruction in self.instructions['opcodes']:
       if instruction['name'] == symbolName:
-        return instruction['opcode'];
+        if language == 'Verilog':
+          return '9\'h%03x' % (instruction['opcode']);
+        raise Exception('Unrecognized language: ' + language);
     raise Exception('Wrong or unimplemented instruction');
