@@ -51,7 +51,7 @@ class fileDirectiveBlockIterator:
         if len(self.pending) == 0:
           self.pending.append(self.lineNumber);
         self.pending.append(line);
-        if self.current > 0:
+        if self.current:
           return self.current;
         self.current = self.pending;
         self.pending = list();
