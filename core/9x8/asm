@@ -25,15 +25,6 @@ from fileDirectiveBlockIterator import fileDirectiveBlockIterator
 #   assembled memory initialization.
 #   Note: A group of lines consists the comment lines preceding a macro
 #         directive and the body of the macro directive.
-#   Note:  The macro directives are
-#           .constant
-#           .function
-#           .include
-#           .interrupt (variant of ".function" macro)
-#           .macro
-#           .main
-#           .memory
-#           .variable
 # - Convert group of lines into an array of the raw tokens.
 # - For each array of tokens (which must begin with one of the macro directives)
 #   update the assembler dictionaries as required.  A malformed macro array is
