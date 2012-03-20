@@ -14,7 +14,6 @@ import re
 
 # User defined modules
 import asmDef
-from fileDirectiveBlockIterator import fileDirectiveBlockIterator
 
 ################################################################################
 #
@@ -50,17 +49,18 @@ from fileDirectiveBlockIterator import fileDirectiveBlockIterator
 #
 
 inputGroups = list();
-def Stage1(fp,ad):
+def Stage1(fdbi,ad):
   global inputGroups
-  filename=fp.name;
-  inputGroups.append(dict(filename=filename));
-  fdbi = fileDirectiveBlockIterator(fp,ad.directives['list']);
   for bl in fdbi:
-    startLine = bl[0];
-    body = bl[1:];
-    rawTokens = asmDef.TokenList(filename,startLine,body,ad);
-    ad.CheckRawTokens(filename,rawTokens);
-    inputGroups.append(dict(startLine=startLine, body=body, rawTokens=rawTokens));
+    filename = bl[0];
+    startLine = bl[1];
+    body = bl[2:];
+    if re.match(r'\s*\.include\s',bl[-1]):
+      inputGroups.append(dict(filename=filename, startLine=startLine, body=body));
+    else:
+      rawTokens = asmDef.TokenList(filename,startLine,body,ad);
+      ad.CheckRawTokens(filename,rawTokens);
+      inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
 
 ################################################################################
 #
@@ -133,15 +133,18 @@ argList = argListParser.parse_args();
 from asmDef_9x8 import asmDef_9x8
 ad = asmDef_9x8();
 
-# Loop through the optional libraries and then the required files for the
+# Construct the iterator that loops through the code bodies.
+import fileBodyIterator
+fdbi = fileBodyIterator.fileBodyIterator(argList.filename,ad.directives['list']);
+
 # "Stage 1" parsing.
-for fp in argList.filename:
-  Stage1(fp,ad);
+Stage1(fdbi,ad);
 
 for ig in inputGroups:
-  if 'filename' in ig:
-    print ig['filename'];
+  print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
+  if 'rawTokens' not in ig:
+    print ig['body'][-1];
   else:
     for tk in ig['rawTokens']:
       print tk;
-    print
+  print

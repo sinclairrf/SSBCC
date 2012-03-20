@@ -21,9 +21,6 @@ class asmDef_9x8:
   def fn_directiveFunction(methodName):
     raise Exception('Wrong or unimplemented argument');
 
-  def fn_directiveInclude(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
   def fn_directiveInterrupt(methodName):
     raise Exception('Wrong or unimplemented argument');
 
@@ -43,7 +40,6 @@ class asmDef_9x8:
   directives['predefined']= list();
   directives['predefined'].append(dict(name='.constant',    method=fn_directiveConstant));
   directives['predefined'].append(dict(name='.function',    method=fn_directiveFunction));
-  directives['predefined'].append(dict(name='.include',     method=fn_directiveInclude));
   directives['predefined'].append(dict(name='.interrupt',   method=fn_directiveInterrupt));
   directives['predefined'].append(dict(name='.macro',       method=fn_directiveMacro));
   directives['predefined'].append(dict(name='.main',        method=fn_directiveMain));
