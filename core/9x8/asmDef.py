@@ -82,7 +82,7 @@ def TokenList(filename,startLineNumber,lines,ad):
           if b.group(0) == a.group(0):
             macroArgs = list();
           else:
-            macroArgs = re.findall(r'([^,]+)',a.group(0)[len(b.group(0))+1:]);
+            macroArgs = re.findall(r'([^,)]+)',a.group(0)[len(b.group(0))+1:]);
           if len(macroArgs) != ad.MacroNumberArgs(b.group(0)):
             raise Exception('Wrong number of arguments to macro in %s(%d), column %d' % (filename, lineNumber, col+1));
           tokens.append(dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=macroArgs));
