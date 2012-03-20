@@ -221,3 +221,45 @@ class asmDef_9x8:
           return '9\'h%03x' % (instruction['opcode']);
         raise Exception('Unrecognized language: ' + language);
     raise Exception('Wrong or unimplemented instruction');
+
+  ################################################################################
+  #
+  # Check a list of raw tokens to ensure their proper format.
+  #
+  ################################################################################
+
+  def CheckRawTokens(self,filename,rawTokens):
+    # Ensure the first token is a directive.
+    firstToken = rawTokens[0];
+    if firstToken['type'] != 'directive':
+      raise Exception('Program Bug triggered by %s(%d), column %d' % (filename,firstToken['line'],firstToken['col']));
+    # Ensure the main body ends in a ".jump".
+    lastToken = rawTokens[-1];
+    if firstToken['value'] == '.main':
+      if (lastToken['type'] != 'macro') or (lastToken['value'] != '.jump'):
+        raise Exception('.main body does not end in ".jump" at %s(%d), column %d' % (filename,lastToken['line'],lastToken['col']));
+    # Ensure functions and interrupts end in a ".jumpc" or ".return".
+    if firstToken['value'] in ('.function','.interrupt',):
+      errorMsg = 'Last entry in ".function" or ".interrupt" must be a ".jump" or ".return" at %s(%d), column %d' % (filename,lastToken['line'],lastToken['col']);
+      if lastToken['type'] != 'macro':
+        raise Exception(errorMsg);
+      if lastToken['value'] not in ('.jump','.return',):
+        raise Exception(errorMsg);
+    # Ensure local lables are defined and used.
+    labelDefs = list();
+    for token in rawTokens:
+      if token['type'] == 'label':
+        name = token['value'];
+        if name in labelDefs:
+          raise Exception('Repeated label definition at %s(%d), column %d', (filename,token['line'],token['col']));
+        labelDefs.append(name);
+    labelsUsed = list();
+    for token in rawTokens:
+      if (token['type'] == 'macro') and (token['value'] in ('.jump','.jumpc',)):
+        target = token['argument'][0];
+        if target not in labelDefs:
+          raise Exception('label definition for target missing at %s(%d), column %d' % (filename,token['line'],token['col']));
+        labelsUsed.append(target);
+    labelsUnused = set(labelDefs) - set(labelsUsed);
+    if labelsUnused:
+      raise Exception('Unused label(s) %s in body %s(%d)' % (labelsUnused,filename,firstToken['line']));

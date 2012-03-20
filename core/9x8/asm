@@ -23,20 +23,12 @@ from fileDirectiveBlockIterator import fileDirectiveBlockIterator
 # Read the entire file, doing the following while reading the file:
 # - Store the raw content of each line or group of lines for output to the
 #   assembled memory initialization.
-#   Note: A group of lines consists the comment lines preceding a macro
-#         directive and the body of the macro directive.
+#   Note: A group of lines consists the comment lines preceding a directive and
+#         the body of the directive.
 # - Convert group of lines into an array of the raw tokens.
-# - For each array of tokens (which must begin with one of the macro directives)
-#   update the assembler dictionaries as required.  A malformed macro array is
-#   an error and immediately terminates the parser.  Add a report of the macro
-#   to the group of lines.  No more processing is done for a macro array.
-# - Accumulate the arrays of tokens comprising the body of a ".function" or
-#   ".main" body.
+# - Check the integrity of the bodies defined by the list of raw tokens.
+# - For each array of tokens update the assembler dictionaries as required.
 # - At the end of a ".function" or ".main" body, do the following:
-#   - Issue an error if a ".function" body does not end in a ".jump" or
-#     ".return".  Issue an error if a ".main" body does not end in a ".jump".
-#     Note:  ".interrupt" bodies prepend a "ena" instruction before the
-#            ".return" macro.
 #   - Perform full substitution for all user-defined macros.
 #   - Perform full substitution for ".fetch", ".fetchindexed", ".store", and
 #     ".storeindexed" pre-defined macros.
@@ -66,18 +58,14 @@ def Stage1(fp,ad):
   for bl in fdbi:
     startLine = bl[0];
     body = bl[1:];
-    tokens=asmDef.TokenList(filename,startLine,body,ad);
-    if tokens[0]['type'] != 'directive':
-      # If this occurs the line body splitting did not put a directive as the
-      # first line with content.
-      raise Exception('Program bug:  %s(%d)' % (filename,startLine));
-    inputGroups.append(dict(startLine=startLine, body=body, rawTokens=tokens));
+    rawTokens = asmDef.TokenList(filename,startLine,body,ad);
+    ad.CheckRawTokens(filename,rawTokens);
+    inputGroups.append(dict(startLine=startLine, body=body, rawTokens=rawTokens));
 
 ################################################################################
 #
 # Stage 2:  Perform the following consistency checks.
 #
-# - Ensure a ".main" body was defined.
 # - If interrupts are enabled for the processor, ensure a single ".interrupt"
 #   function was defined.
 # - If interrupts are not enabled and an ".interrupt" was defined, then issue a
