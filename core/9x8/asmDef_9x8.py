@@ -66,56 +66,78 @@ class asmDef_9x8:
   def fn_macroCall(methodName):
     if methodName == 'length':
       return 3;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroCallc(methodName):
     if methodName == 'length':
       return 3;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroFetch(methodName):
     if methodName == 'length':
       return 2;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroFetchIndexed(methodName):
     if methodName == 'length':
       return 3;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroInport(methodName):
     if methodName == 'length':
+      return 1;
+    if methodName == 'number of arguments':
       return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroJump(methodName):
     if methodName == 'length':
       return 3;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroJumpc(methodName):
     if methodName == 'length':
       return 3;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroOutport(methodName):
     if methodName == 'length':
       return 2;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroReturn(methodName):
     if methodName == 'length':
       return 2;
+    if methodName == 'number of arguments':
+      return 0;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroStore(methodName):
     if methodName == 'length':
       return 3;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroStoreIndexed(methodName):
     if methodName == 'length':
       return 4;
+    if methodName == 'number of arguments':
+      return 1;
     raise Exception('Wrong or unimplemented argument');
 
   macros = dict();
@@ -139,6 +161,12 @@ class asmDef_9x8:
 
   def IsMacro(self,name):
     return name in self.macros['list'];
+
+  def MacroNumberArgs(self,name):
+    if name not in self.macros['list']:
+      raise Exception('Program bug:  macro "%s" not a macro' % name);
+    i = self.macros['list'].index(name);
+    return self.macros['predefined'][i]['method']('number of arguments');
 
   ################################################################################
   #

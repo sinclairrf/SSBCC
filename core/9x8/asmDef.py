@@ -78,9 +78,12 @@ def TokenList(filename,startLineNumber,lines,ad):
           continue;
         if ad.IsMacro(b.group(0)):
           if b.group(0) == a.group(0):
-            tokens.append(dict(type='macro', value=a.group(0), line=lineNumber, col=col+1));
+            macroArgs = list();
           else:
-            tokens.append(dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=a.group(0)[len(b.group(0))+1:len(a.group(0))-1]));
+            macroArgs = re.findall(r'([^,]+)',a.group(0)[len(b.group(0))+1:]);
+          if len(macroArgs) != ad.MacroNumberArgs(b.group(0)):
+            raise Exception('Wrong number of arguments to macro in %s(%d), column %d' % (filename, lineNumber, col+1));
+          tokens.append(dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=macroArgs));
           col = col + len(a.group(0));
           continue;
         raise Exception('Unrecognized directive or macro "%s" in %s(%d), column(%d)' % (a.group(0), filename, lineNumber, col+1));
