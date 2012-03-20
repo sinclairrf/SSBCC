@@ -73,6 +73,8 @@ def TokenList(filename,startLineNumber,lines,ad):
         if ad.IsDirective(b.group(0)):
           if b.group(0) != a.group(0):
             raise Exception('Malformed directive in %s(%d), column %d' % (filename, lineNumber, col+1));
+          if len(tokens) > 0:
+            raise Exception('Directive must be first entry on line in %s(%d), column %d' % (filename, lineNumber, col+1));
           tokens.append(dict(type='directive', value=a.group(0), line=lineNumber, col=col+1));
           col = col + len(a.group(0));
           continue;
