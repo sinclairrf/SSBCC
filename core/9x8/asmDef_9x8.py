@@ -54,6 +54,9 @@ class asmDef_9x8:
   for directive in directives['predefined']:
     directives['list'].append(directive['name']);
 
+  def IsDirective(self,name):
+    return name in self.directives['list'];
+
   ################################################################################
   #
   # Configure the class for identifying and processing macros.
@@ -80,6 +83,11 @@ class asmDef_9x8:
       return 3;
     raise Exception('Wrong or unimplemented argument');
 
+  def fn_macroInport(methodName):
+    if methodName == 'length':
+      return 1;
+    raise Exception('Wrong or unimplemented argument');
+
   def fn_macroJump(methodName):
     if methodName == 'length':
       return 3;
@@ -88,6 +96,11 @@ class asmDef_9x8:
   def fn_macroJumpc(methodName):
     if methodName == 'length':
       return 3;
+    raise Exception('Wrong or unimplemented argument');
+
+  def fn_macroOutport(methodName):
+    if methodName == 'length':
+      return 2;
     raise Exception('Wrong or unimplemented argument');
 
   def fn_macroReturn(methodName):
@@ -112,18 +125,20 @@ class asmDef_9x8:
   macros['predefined'].append(dict(name='.callc',       method=fn_macroCallc));
   macros['predefined'].append(dict(name='.fetch',       method=fn_macroFetch));
   macros['predefined'].append(dict(name='.fetchindexed',method=fn_macroFetchIndexed));
+  macros['predefined'].append(dict(name='.inport',      method=fn_macroInport));
   macros['predefined'].append(dict(name='.jump',        method=fn_macroJump));
   macros['predefined'].append(dict(name='.jumpc',       method=fn_macroJumpc));
+  macros['predefined'].append(dict(name='.outport',     method=fn_macroOutport));
   macros['predefined'].append(dict(name='.return',      method=fn_macroReturn));
   macros['predefined'].append(dict(name='.store',       method=fn_macroStore));
   macros['predefined'].append(dict(name='.storeindexed',method=fn_macroStoreIndexed));
 
-  macros['directives'] = list();
+  macros['list'] = list();
   for macro in macros['predefined']:
-    macros['directives'].append(macro['name']);
+    macros['list'].append(macro['name']);
 
-  def IsDirective(self,macroName):
-    return macroName in self.macros['directives'];
+  def IsMacro(self,name):
+    return name in self.macros['list'];
 
   ################################################################################
   #
@@ -168,8 +183,8 @@ class asmDef_9x8:
   for instruction in instructions['opcodes']:
     instructions['list'].append(instruction['name']);
 
-  def IsInstruction(self,symbolName):
-    return symbolName in self.instructions['list'];
+  def IsInstruction(self,name):
+    return name in self.instructions['list'];
 
   def InstructionOpcode(self,symbolName,language):
     for instruction in self.instructions['opcodes']:
