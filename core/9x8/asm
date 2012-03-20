@@ -62,12 +62,11 @@ from fileDirectiveBlockIterator import fileDirectiveBlockIterator
 #
 ################################################################################
 
-inputGroups = list();
-
 #
 # Stage 1 processing functions
 #
 
+inputGroups = list();
 def Stage1(fp,ad):
   global inputGroups
   filename=fp.name;
@@ -76,7 +75,7 @@ def Stage1(fp,ad):
   for bl in fdbi:
     startLine = bl[0];
     body = bl[1:];
-    tokens=asmDef.TokenList(filename,startLine,body);
+    tokens=asmDef.TokenList(filename,startLine,body,ad);
     if tokens[0]['value'] in ad.directives['list']:
       tokens[0]['type']='directive';
     else:
