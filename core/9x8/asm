@@ -76,9 +76,9 @@ def Stage1(fp,ad):
     startLine = bl[0];
     body = bl[1:];
     tokens=asmDef.TokenList(filename,startLine,body,ad);
-    if tokens[0]['value'] in ad.directives['list']:
-      tokens[0]['type']='directive';
-    else:
+    if tokens[0]['type'] != 'directive':
+      # If this occurs the line body splitting did not put a directive as the
+      # first line with content.
       raise Exception('Program bug:  %s(%d)' % (filename,startLine));
     inputGroups.append(dict(startLine=startLine, body=body, rawTokens=tokens));
 
