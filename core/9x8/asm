@@ -35,11 +35,10 @@ from fileDirectiveBlockIterator import fileDirectiveBlockIterator
 #           .memory
 #           .variable
 # - Convert group of lines into an array of the raw tokens.
-# - For each array of tokens that begins with one of the macro directives
-#   update the assembler dictionaries as required and put the assembler in the
-#   appropriate state.  A malformed macro array is an error and immediately
-#   terminates the parser.  Add a report of the macro to the group of lines.  No
-#   more processing is done for a macro array.
+# - For each array of tokens (which must begin with one of the macro directives)
+#   update the assembler dictionaries as required.  A malformed macro array is
+#   an error and immediately terminates the parser.  Add a report of the macro
+#   to the group of lines.  No more processing is done for a macro array.
 # - Accumulate the arrays of tokens comprising the body of a ".function" or
 #   ".main" body.
 # - At the end of a ".function" or ".main" body, do the following:
@@ -82,7 +81,7 @@ def Stage1(fp,ad):
       tokens[0]['type']='directive';
     else:
       raise Exception('Program bug:  %s(%d)' % (filename,startLine));
-    inputGroups.append(dict(startLine=startLine, body=body));
+    inputGroups.append(dict(startLine=startLine, body=body, rawTokens=tokens));
 
 ################################################################################
 #
@@ -162,4 +161,9 @@ for fp in argList.filename:
   Stage1(fp,ad);
 
 for ig in inputGroups:
-  print ig;
+  if 'filename' in ig:
+    print ig['filename'];
+  else:
+    for tk in ig['rawTokens']:
+      print tk;
+    print
