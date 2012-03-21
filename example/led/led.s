@@ -8,7 +8,7 @@
   .return
 
 ; repeat "pause" 256 times
-.function repeat ; ( - )
+.function repause ; ( - )
   0 :inner .call(pause) 1 - dup .jumpc(inner) drop
   .return
 
