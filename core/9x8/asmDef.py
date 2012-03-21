@@ -40,14 +40,14 @@ def TokenList(filename,startLineNumber,lines,ad):
       # TODO -- get correct conversion function
       a = re.match(r'0[0-9]+',line[col:]);
       if a:
-        tokens.append(dict(type='value', value=int(a.group(0)), line=lineNumber, col=col+1));
+        tokens.append(dict(type='value', value=int(a.group(0),8), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # look for a hex value
       # TODO -- get correct conversion function
       a = re.match(r'0x[0-9A-Fa-f]+',line[col:]);
       if a:
-        tokens.append(dict(type='value', value=int(a.group(0)), line=lineNumber, col=col+1));
+        tokens.append(dict(type='value', value=int(a.group(0)[2:],16), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # capture double-quoted strings (won't capture embedded double quotes)
