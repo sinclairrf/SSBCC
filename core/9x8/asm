@@ -26,21 +26,10 @@ import asmDef
 #         the body of the directive.
 # - Convert group of lines into an array of the raw tokens.
 # - Check the integrity of the bodies defined by the list of raw tokens.
-# - For each array of tokens update the assembler dictionaries as required.
-# - At the end of a ".function" or ".main" body, do the following:
-#   - Perform full substitution for all user-defined macros.
-#   - Perform full substitution for ".fetch", ".fetchindexed", ".store", and
-#     ".storeindexed" pre-defined macros.
-#   - Perform preliminary substitution for ".call" and ".callc" pre-defeined
-#     macros and add the call index to the ".function" definition (to identify
-#     which functions are actually required by the program).
-#   - Make a list of jump targets within the ".function" or ".main" body.
-#   - Perform preliminary substitution for ".jump" and ".jumpc" pre-defined
-#     macros.  Issue an error if the jump target is not defined within the body.
+# - For each array of raw tokens, incorporate already-defined symbols and update
+#   the assembler dictionaries.
 #   Note: At this point the space required for the function or main program
-#     should be fully defined.
-#   - Compute the offset of each jump target within the ".function" or ".main"
-#     body.
+#     is fully computed.
 #
 ################################################################################
 
@@ -60,7 +49,9 @@ def Stage1(fdbi,ad):
     else:
       rawTokens = asmDef.TokenList(filename,startLine,body,ad);
       ad.CheckRawTokens(filename,rawTokens);
+      ad.FillRawTokens(filename,rawTokens);
       inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
+#  inputGroups.CheckAllDefined();
 
 ################################################################################
 #
@@ -140,11 +131,33 @@ fdbi = fileBodyIterator.fileBodyIterator(argList.filename,ad.directives['list'])
 # "Stage 1" parsing.
 Stage1(fdbi,ad);
 
-for ig in inputGroups:
-  print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
-  if 'rawTokens' not in ig:
-    print ig['body'][-1];
-  else:
-    for tk in ig['rawTokens']:
-      print tk;
+# diagnostic
+if False:
+  for ig in inputGroups:
+    print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
+    if 'rawTokens' not in ig:
+      print ig['body'][-1];
+    else:
+      for tk in ig['rawTokens']:
+        print tk;
+    print
+
+# diagnostic
+if True:
+  main = ad.Main();
+  print '.main, length=%d ' % main['length'];
+  for token in main['tokens']:
+    print token;
   print
+  interrupt = ad.Interrupt();
+  if interrupt:
+    print '.interrupt, length=%d' % interrupt['length'];
+    for token in interrupt:
+      print token;
+    print
+  symbols = ad.Symbols();
+  for ix in range(len(symbols['list'])):
+    print 'symbol %s: type=%s, length=%d' % (symbols['list'][ix], symbols['type'][ix], symbols['length'][ix])
+    for token in symbols['tokens'][ix]:
+      print token;
+    print
