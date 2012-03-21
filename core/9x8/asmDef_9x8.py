@@ -59,110 +59,25 @@ class asmDef_9x8:
   #
   ################################################################################
 
-  def fn_macroCall(methodName):
-    if methodName == 'length':
-      return 3;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroCallc(methodName):
-    if methodName == 'length':
-      return 3;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroFetch(methodName):
-    if methodName == 'length':
-      return 2;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroFetchIndexed(methodName):
-    if methodName == 'length':
-      return 3;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroInport(methodName):
-    if methodName == 'length':
-      return 1;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroJump(methodName):
-    if methodName == 'length':
-      return 3;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroJumpc(methodName):
-    if methodName == 'length':
-      return 3;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroOutport(methodName):
-    if methodName == 'length':
-      return 2;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroReturn(methodName):
-    if methodName == 'length':
-      return 2;
-    if methodName == 'number of arguments':
-      return 0;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroStore(methodName):
-    if methodName == 'length':
-      return 3;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_macroStoreIndexed(methodName):
-    if methodName == 'length':
-      return 4;
-    if methodName == 'number of arguments':
-      return 1;
-    raise Exception('Wrong or unimplemented argument');
-
-  macros = dict();
-
-  macros['predefined']= list();
-  macros['predefined'].append(dict(name='.call',        method=fn_macroCall));
-  macros['predefined'].append(dict(name='.callc',       method=fn_macroCallc));
-  macros['predefined'].append(dict(name='.fetch',       method=fn_macroFetch));
-  macros['predefined'].append(dict(name='.fetchindexed',method=fn_macroFetchIndexed));
-  macros['predefined'].append(dict(name='.inport',      method=fn_macroInport));
-  macros['predefined'].append(dict(name='.jump',        method=fn_macroJump));
-  macros['predefined'].append(dict(name='.jumpc',       method=fn_macroJumpc));
-  macros['predefined'].append(dict(name='.outport',     method=fn_macroOutport));
-  macros['predefined'].append(dict(name='.return',      method=fn_macroReturn));
-  macros['predefined'].append(dict(name='.store',       method=fn_macroStore));
-  macros['predefined'].append(dict(name='.storeindexed',method=fn_macroStoreIndexed));
-
-  macros['list'] = list();
-  for macro in macros['predefined']:
-    macros['list'].append(macro['name']);
+  def AddMacro(self,name,macroLength,nArgs=1):
+    self.macros['list'].append(name);
+    self.macros['length'].append(macroLength);
+    self.macros['nArgs'].append(nArgs);
 
   def IsMacro(self,name):
     return name in self.macros['list'];
 
+  def MacroLength(self,name):
+    if name not in self.macros['list']:
+      raise Exception('Program Bug');
+    ix = self.macros['list'].index(name);
+    return self.macros['length'][ix];
+
   def MacroNumberArgs(self,name):
     if name not in self.macros['list']:
-      raise Exception('Program bug:  macro "%s" not a macro' % name);
-    i = self.macros['list'].index(name);
-    return self.macros['predefined'][i]['method']('number of arguments');
+      raise Exception('Program bug' % name);
+    ix = self.macros['list'].index(name);
+    return self.macros['nArgs'][ix];
 
   ################################################################################
   #
@@ -241,7 +156,15 @@ class asmDef_9x8:
         raise Exception(errorMsg);
       if lastToken['value'] not in ('.jump','.return',):
         raise Exception(errorMsg);
-    # Ensure local lables are defined and used.
+    # Ensure no macros and no instructions in non-"functions".
+    # Byproduct:  No labels allowed in non-"functions".
+    if firstToken['value'] not in ('.function','.interrupt','.main',):
+      for token in rawTokens[2:]:
+        if (token['type'] == 'macro'):
+          raise Exception('Macro not allowed in directive at %s(%d), column %d' % (filename,token['line'],token['col']));
+        if token['type'] == 'instruction':
+          raise Exception('Instruction not allowed in directive at %s(%d), column %d' % (filename,token['line'],token['col']));
+    # Ensure local labels are defined and used.
     labelDefs = list();
     for token in rawTokens:
       if token['type'] == 'label':
@@ -259,3 +182,125 @@ class asmDef_9x8:
     labelsUnused = set(labelDefs) - set(labelsUsed);
     if labelsUnused:
       raise Exception('Unused label(s) %s in body %s(%d)' % (labelsUnused,filename,firstToken['line']));
+    # Ensure referenced symbols are already defined.
+    checkBody = False;
+    if (rawTokens[0]['type'] == 'directive') and (rawTokens[0]['value'] in ('.function','.interrupt','.main',)):
+      checkBody = True;
+    if checkBody:
+      for token in rawTokens[2:]:
+        if token['type'] == 'symbol':
+          name = token['value'];
+          if name not in symbols['list']:
+            raise Exception('Undefined symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
+          ixName = symbols['list'].index(name);
+          if symbols['type'][ixName] not in ('constant','macro','variable',):
+            raise Exception('Illegal symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
+
+  ################################################################################
+  #
+  # fill in symbols, etc. in the list of raw tokens.
+  #
+  ################################################################################
+
+  def ExpandTokens(self,filename,rawTokens):
+    tokens = list();
+    offset = 0;
+    for token in rawTokens:
+      if token['type'] == 'label':
+        tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
+        # labels don't change the offset
+      elif token['type'] in ('character','instruction','value',):
+        tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
+        offset = offset + 1;
+      elif token['type'] == 'string':
+        tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
+        offset = offset + len(token['value']) + 1;
+      elif token['type'] == 'macro':
+        tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument']));
+        offset = offset + self.MacroLength(token['value']);
+      elif token['type'] == 'symbol':
+        if token['value'] not in self.symbols['list']:
+          raise Exception('Program bug:  symbol %s not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
+        ix = symbols['list'].index(token['value']);
+        for lToken in symbols['tokens']:
+          tokens.append(dict(type=lToken['type'], value=lToken['value'], offset=offset+lToken['offset']));
+        offset = offset + symbols['length'][ix];
+      else:
+        raise Exception('Program bug:  unexpected token type "%s"' % token['type']);
+    return dict(tokens=tokens, length=offset);
+
+  def FillRawTokens(self,filename,rawTokens):
+    firstToken = rawTokens[0];
+    secondToken = rawTokens[1];
+    if firstToken['value'] == '.constant':
+      raise Exception('TODO -- implement ".constant"');
+    # Process ".function" definition.
+    elif firstToken['value'] == '.function':
+      if secondToken['type'] != 'symbol':
+        raise Exception('Expected symbol at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
+      if secondToken['value'] in self.symbols['list']:
+        raise Exception('Symbol %s already defined at %s(%d), column %d' % (secondToken['value'], filename, secondToken['line'], secondToken['col']));
+      et = self.ExpandTokens(filename,rawTokens[2:]);
+      self.symbols['list'].append(secondToken['value']);
+      self.symbols['type'].append('function');
+      self.symbols['tokens'].append(et['tokens']);
+      self.symbols['length'].append(et['length']);
+    elif firstToken['value'] == '.interrupt':
+      if self.interrupt:
+        raise Exception('Second definition of ".interrupt" at %s(%d)' % (filename,firstToken['line']));
+      self.interrupt = self.ExpandTokens(filename,rawTokens[1:]);
+    elif firstToken['value'] == '.main':
+      if self.main:
+        raise Exception('Second definition of ".main" at %s(%d)' % (filename,firstToken['line']));
+      self.main = self.ExpandTokens(filename,rawTokens[1:]);
+    elif firstToken['value'] == '.macro':
+      raise Exception('TODO -- implement ".macro"');
+    elif firstToken['value'] == '.memory':
+      raise Exception('TODO -- implement ".memory"');
+    elif firstToken['value'] == '.variable':
+      raise Exception('TODO -- implement ".variable"');
+    else:
+      raise Exception('Program Bug:  Unrecognized directive %s at %s(%d)' % (firstToken['value'],filename,firstToken['line']));
+
+  def Main(self):
+    return self.main;
+
+  def Interrupt(self):
+    return self.interrupt;
+
+  def Symbols(self):
+    return self.symbols;
+
+  ################################################################################
+  #
+  # Initialize the object.
+  #
+  ################################################################################
+
+  def __init__(self):
+
+    #
+    # Configure the pre-defined macros
+    #
+
+    self.macros = dict(list=list(), length=list(), nArgs=list());
+    self.AddMacro('.call',             3);
+    self.AddMacro('.callc',            3);
+    self.AddMacro('.fetch',            2);
+    self.AddMacro('.fetchindexed',     3);
+    self.AddMacro('.inport',           2);
+    self.AddMacro('.jump',             3);
+    self.AddMacro('.jumpc',            3);
+    self.AddMacro('.outport',          3);
+    self.AddMacro('.return',           2, nArgs=0);
+    self.AddMacro('.store',            3);
+    self.AddMacro('.storeindexed',     4);
+
+    #
+    # Configure the containers for the expanded main, interrupt, function,
+    # macro, etc. definitions.
+    #
+
+    self.interrupt = list();
+    self.main = list();
+    self.symbols = dict(list=list(), type=list(), tokens=list(), length=list(), used=list());
