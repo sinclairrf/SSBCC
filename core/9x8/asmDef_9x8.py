@@ -162,7 +162,9 @@ class asmDef_9x8:
   def FillRawTokens(self,filename,rawTokens):
     firstToken = rawTokens[0];
     secondToken = rawTokens[1];
-    if firstToken['value'] == '.constant':
+    if firstToken['value'] == '.abbr':
+      raise Exception('TODO -- implement ".abbr"');
+    elif firstToken['value'] == '.constant':
       raise Exception('TODO -- implement ".constant"');
     # Process ".function" definition.
     elif firstToken['value'] == '.function':
@@ -183,8 +185,6 @@ class asmDef_9x8:
       if self.main:
         raise Exception('Second definition of ".main" at %s(%d)' % (filename,firstToken['line']));
       self.main = self.ExpandTokens(filename,rawTokens[1:]);
-    elif firstToken['value'] == '.macro':
-      raise Exception('TODO -- implement ".macro"');
     elif firstToken['value'] == '.memory':
       raise Exception('TODO -- implement ".memory"');
     elif firstToken['value'] == '.variable':
@@ -217,10 +217,10 @@ class asmDef_9x8:
     self.directives = dict();
 
     self.directives['list']= list();
+    self.directives['list'].append('.abbr');
     self.directives['list'].append('.constant');
     self.directives['list'].append('.function');
     self.directives['list'].append('.interrupt');
-    self.directives['list'].append('.macro');
     self.directives['list'].append('.main');
     self.directives['list'].append('.memory');
     self.directives['list'].append('.variable');
