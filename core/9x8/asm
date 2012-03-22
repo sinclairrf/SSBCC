@@ -107,8 +107,8 @@ if False:
         print tk;
     print
 
-# diagnostic -- prilt filled token lists
-if True:
+# diagnostic -- print filled token lists
+if False:
   main = ad.Main();
   print '.main, length=%d ' % main['length'];
   for token in main['tokens']:
@@ -151,6 +151,13 @@ if True:
 #   for all the ".call" and ".callc" macros.
 #
 ################################################################################
+
+#
+# Create the list of required functions and their bodies.  Compute each of their
+# start addresses.  Fill in label addresses.
+#
+
+ad.EvaluateFunctionTree();
 
 ################################################################################
 #

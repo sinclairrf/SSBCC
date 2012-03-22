@@ -177,10 +177,12 @@ class asmDef_9x8:
       self.symbols['type'].append('function');
       self.symbols['tokens'].append(et['tokens']);
       self.symbols['length'].append(et['length']);
+    # Process ".interrupt" definition.
     elif firstToken['value'] == '.interrupt':
       if self.interrupt:
         raise Exception('Second definition of ".interrupt" at %s(%d)' % (filename,firstToken['line']));
       self.interrupt = self.ExpandTokens(filename,rawTokens[1:]);
+    # Process ".main" definition.
     elif firstToken['value'] == '.main':
       if self.main:
         raise Exception('Second definition of ".main" at %s(%d)' % (filename,firstToken['line']));
@@ -200,6 +202,73 @@ class asmDef_9x8:
 
   def Symbols(self):
     return self.symbols;
+
+  ################################################################################
+  #
+  # Generate the list of required functions from the ".main" and ".interrupt"
+  # bodies.
+  #
+  # Look for function calls with the bodies of the required functions.  If the
+  # function has not already been identified as a required function then (1)
+  # ensure it exists and is a function and then (2) add it to the list of
+  # required functions.
+  #
+  # Whenever a function is added to the list, set its start address and get its
+  # length.
+  #
+  ################################################################################
+
+  def EvaluateFunctionTree(self):
+    self.functionEvaluation = dict(list=list(), length=list(),body=list(), address=list());
+    # ".main" is always required.
+    self.functionEvaluation['list'].append('.main');
+    self.functionEvaluation['length'].append(self.main['length']);
+    self.functionEvaluation['body'].append(self.main['tokens']);
+    self.functionEvaluation['address'].append(0);
+    # ".interrupt" is optionally required (and is sure to exist by this function
+    # call if it is required).
+    if self.interrupt:
+      self.functionEvaluation['list'].append('.interrupt');
+      self.functionEvaluation['length'].append(self.interrupt['length']);
+      self.functionEvaluation['body'].append(self.interrupt['tokens']);
+      self.functionEvaluation['address'].append(self.functionEvaluation['length'][0]);
+    # Loop through the required function bodies as they are identified.
+    ix = 0;
+    while ix < len(self.functionEvaluation['body']):
+      for token in self.functionEvaluation['body'][ix]:
+        if (token['type'] == 'macro') and (token['value'] in ('.call','.callc',)):
+          callName = token['argument'][0];
+          if callName not in self.functionEvaluation['list']:
+            if callName not in self.symbols['list']:
+              raise Exception('Function "%s" not defined for function "%s"' % (callName,self.functionEvaluation['list'][ix],));
+            ixName = self.symbols['list'].index(callName);
+            if self.symbols['type'][ixName] != 'function':
+              raise Exception('Function "%s" called by "%s" is not a function', (callName, self.functionEvaluation['list'][ix],));
+            self.functionEvaluation['list'].append(callName);
+            self.functionEvaluation['length'].append(self.symbols['length'][ixName]);
+            self.functionEvaluation['body'].append(self.symbols['tokens'][ixName]);
+            self.functionEvaluation['address'].append(self.functionEvaluation['address'][ixName-1]+self.functionEvaluation['length'][ixName-1]);
+      ix = ix + 1;
+    # Within each function, compute the list of label addresses and then fill in
+    # the address for all jumps and calls.
+    for ix in range(len(self.functionEvaluation['list'])):
+      startAddress = self.functionEvaluation['address'][ix];
+      labelAddress = dict(list=list(), address=list());
+      for token in self.functionEvaluation['body'][ix]:
+        if token['type'] == 'label':
+          labelAddress['list'].append(token['value']);
+          labelAddress['address'].append(startAddress + token['offset']);
+      for token in self.functionEvaluation['body'][ix]:
+        if (token['type'] == 'macro') and (token['value'] in ('.jump','.jumpc',)):
+          ix = labelAddress['list'].index(token['argument'][0]);
+          token['address'] = labelAddress['address'][ix];
+        if (token['type'] == 'macro') and (token['value'] in ('.call','.callc',)):
+          ix = self.functionEvaluation['list'].index(token['argument'][0]);
+          token['address'] = self.functionEvaluation['address'][ix];
+    for ix in range(len(self.functionEvaluation['list'])):
+      print self.functionEvaluation['list'][ix], self.functionEvaluation['address'][ix], self.functionEvaluation['length'][ix];
+      for ix2 in range(len(self.functionEvaluation['body'][ix])):
+        print self.functionEvaluation['body'][ix][ix2];
 
   ################################################################################
   #
