@@ -28,6 +28,7 @@ import asmDef
 #
 
 argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
+argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
 argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
 argList = argListParser.parse_args();
 
@@ -72,8 +73,28 @@ for bl in fbi:
   else:
     rawTokens = asmDef.RawTokens(filename,startLine,body,ad);
     ad.CheckRawTokens(filename,rawTokens);
+    # FillRawTokens also ensures only one ".main" and ".interrupt" are defined.
     ad.FillRawTokens(filename,rawTokens);
     inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
+
+#
+# Ensure a ".main" body was declared.
+#
+
+if not ad.Main():
+  raise Exception('Required ".main" body not provided');
+
+#
+# Enforce consistency between the command-line "-i" flag and whether or not an
+# ".interrupt" body was declared.
+#
+
+if argList.i:
+  if not ad.Interrupt():
+    raise Exception('Required ".interrupt" body not provided');
+else:
+  if ad.Interrupt():
+    raise Exception('".interrupt" body not allowed');
 
 # diagnostic -- print raw token lists
 if False:
@@ -108,19 +129,7 @@ if True:
 
 ################################################################################
 #
-# Stage 2:  Perform the following consistency checks.
-#
-# - If interrupts are enabled for the processor, ensure a single ".interrupt"
-#   function was defined.
-# - If interrupts are not enabled and an ".interrupt" was defined, then issue a
-#   warning message.
-# - Ensure all required ".function"s are defined.
-#
-################################################################################
-
-################################################################################
-#
-# Stage 3:  Compute addresses.
+# Stage 2:  Compute addresses.
 #
 # Compute the addresses for the ".main" and required ".function" bodies as
 # follows:
@@ -145,7 +154,7 @@ if True:
 
 ################################################################################
 #
-# Stage 4:  Emit the program
+# Stage 3:  Emit the program
 #
 # Do the following:
 # - If interrupts are enabled, then set the first 4 instructions to be a "dis"
