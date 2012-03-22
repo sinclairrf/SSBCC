@@ -28,14 +28,36 @@ import asmDef
 #
 
 argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
+argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
+argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
 argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
+argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
 argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
-argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), help='output metafile');
 argList = argListParser.parse_args();
 
 # Construct the keyword parser
 from asmDef_9x8 import asmDef_9x8
 ad = asmDef_9x8();
+
+# Register the input and output port definitions.
+if argList.I:
+  for inport in argList.I:
+    a=re.findall(r'^(\w+)=(\d+)$',inport);
+    if not a:
+      raise Exception('Malformed -I argument: "%s"' % inport);
+    ix = int(a[0][1]);
+    if not (0 <= ix < 256):
+      raise Exception('Out-of-range inport index:  "%s"' % inport);
+    ad.RegisterInport(a[0][0],ix);
+if argList.O:
+  for outport in argList.O:
+    a=re.findall(r'^(\w+)=(\d+)$',outport);
+    if not a:
+      raise Exception('Malformed -O argument: "%s"' % outport);
+    ix = int(a[0][1]);
+    if not (0 <= ix < 256):
+      raise Exception('Out-of-range outport index:  "%s"' % outport);
+    ad.RegisterOutport(a[0][0],ix);
 
 # Construct the iterator that loops through the code bodies.
 fbi = asmDef.FileBodyIterator(argList.filename,ad);

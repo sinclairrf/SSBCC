@@ -65,6 +65,38 @@ class asmDef_9x8:
 
   ################################################################################
   #
+  # Register input and output port names and addresses.
+  #
+  ################################################################################
+
+  def IsInport(self,name):
+    return name in self.inports;
+
+  def IsOutport(self,name):
+    return name in self.outports;
+
+  def InportAddress(self,name):
+    if not self.IsInport(name):
+      raise Exception('Program Bug');
+    return self.inports[name];
+
+  def OutportAddress(self,name):
+    if not self.IsOutport(name):
+      raise Exception('Program Bug');
+    return self.outports[name];
+
+  def RegisterInport(self,name,address):
+    if self.IsInport(name):
+      raise Exception('Program Bug');
+    self.inports[name] = address;
+
+  def RegisterOutport(self,name,address):
+    if self.IsOutport(name):
+      raise Exception('Program Bug');
+    self.outports[name] = address;
+
+  ################################################################################
+  #
   # Check a list of raw tokens to ensure their proper format.
   #
   ################################################################################
@@ -112,6 +144,14 @@ class asmDef_9x8:
     labelsUnused = set(labelDefs) - set(labelsUsed);
     if labelsUnused:
       raise Exception('Unused label(s) %s in body %s(%d)' % (labelsUnused,filename,firstToken['line']));
+    # Ensure symbols referenced by ".input" and ".outport" are defined.
+    for token in rawTokens:
+      if (token['type'] == 'macro') and (token['value'] == '.inport'):
+        if self.IsInport(token['argument'][0]):
+          raise Exception('Input port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
+      if (token['type'] == 'macro') and (token['value'] == '.inport'):
+        if self.IsOutport(token['argument'][0]):
+          raise Exception('Output port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
     # Ensure referenced symbols are already defined.
     checkBody = False;
     if (rawTokens[0]['type'] == 'directive') and (rawTokens[0]['value'] in ('.function','.interrupt','.main',)):
@@ -310,7 +350,7 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.InstructionOpcode('+'));
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | (token['address'] >> 8));
           elif token['value'] == '.inport':
-            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.InportAddress(token['argument'][0]) & 0xFF);
             self.EmitOpcode(fp,self.specialInstructions['inport']);
           elif token['value'] == '.jump':
             self.EmitOpcode(fp,token['address'] & 0xFF);
@@ -321,7 +361,7 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8));
             self.EmitOpcode(fp,self.InstructionOpcode('drop'));
           elif token['value'] == '.outport':
-            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.OutportAddress(token['argument'][0]) & 0xFF);
             self.EmitOpcode(fp,self.specialInstructions['outport']);
             self.EmitOpcode(fp,self.InstructionOpcode('drop'));
           elif token['value'] == '.return':
@@ -432,3 +472,10 @@ class asmDef_9x8:
     self.specialInstructions['outport'] = 0x038;
     self.specialInstructions['return']  = 0x028;
     self.specialInstructions['store']   = 0x068;
+
+    #
+    # Create empty input and output port array definitions.
+    #
+
+    self.inports = dict();
+    self.outports = dict();
