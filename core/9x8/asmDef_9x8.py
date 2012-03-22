@@ -50,53 +50,18 @@ class asmDef_9x8:
   #
   ################################################################################
 
-  instructions = dict();
-
-  instructions['opcodes'] = list();
-  instructions['opcodes'].append(dict(name='&',         opcode=0x01A));
-  instructions['opcodes'].append(dict(name='+',         opcode=0x018));
-  instructions['opcodes'].append(dict(name='-',         opcode=0x019));
-  instructions['opcodes'].append(dict(name='-1=',       opcode=0x021));
-  instructions['opcodes'].append(dict(name='0=',        opcode=0x020));
-  instructions['opcodes'].append(dict(name='0>>',       opcode=0x004));
-  instructions['opcodes'].append(dict(name='1>>',       opcode=0x005));
-  instructions['opcodes'].append(dict(name='<<0',       opcode=0x001));
-  instructions['opcodes'].append(dict(name='<<1',       opcode=0x002));
-  instructions['opcodes'].append(dict(name='<<msb',     opcode=0x003));
-  instructions['opcodes'].append(dict(name='>r',        opcode=0x058));
-  instructions['opcodes'].append(dict(name='^',         opcode=0x01C));
-  instructions['opcodes'].append(dict(name='call',      opcode=0x040));
-  instructions['opcodes'].append(dict(name='callc',     opcode=0x048));
-  instructions['opcodes'].append(dict(name='dis',       opcode=0x01C));
-  instructions['opcodes'].append(dict(name='drop',      opcode=0x01E));
-  instructions['opcodes'].append(dict(name='dup',       opcode=0x008));
-  instructions['opcodes'].append(dict(name='ena',       opcode=0x019));
-  instructions['opcodes'].append(dict(name='inport',    opcode=0x030));
-  instructions['opcodes'].append(dict(name='lsb>>',     opcode=0x007));
-  instructions['opcodes'].append(dict(name='msb>>',     opcode=0x006));
-  instructions['opcodes'].append(dict(name='nip',       opcode=0x01F));
-  instructions['opcodes'].append(dict(name='nop',       opcode=0x000));
-  instructions['opcodes'].append(dict(name='or',        opcode=0x01B));
-  instructions['opcodes'].append(dict(name='outport',   opcode=0x038));
-  instructions['opcodes'].append(dict(name='over',      opcode=0x00A));
-  instructions['opcodes'].append(dict(name='r>',        opcode=0x061));
-  instructions['opcodes'].append(dict(name='r@',        opcode=0x009));
-  instructions['opcodes'].append(dict(name='swap',      opcode=0x012));
-
-  instructions['list'] = list();
-  for instruction in instructions['opcodes']:
-    instructions['list'].append(instruction['name']);
+  def AddInstruction(self,name,opcode):
+    self.instructions['list'].append(name);
+    self.instructions['opcode'].append(opcode);
 
   def IsInstruction(self,name):
     return name in self.instructions['list'];
 
   def InstructionOpcode(self,symbolName,language):
-    for instruction in self.instructions['opcodes']:
-      if instruction['name'] == symbolName:
-        if language == 'Verilog':
-          return '9\'h%03x' % (instruction['opcode']);
-        raise Exception('Unrecognized language: ' + language);
-    raise Exception('Wrong or unimplemented instruction');
+    if not self.IsInstruction(symbolName):
+      raise Exception('Program Bug:  %s not in instruction list' % symbolName);
+    ix = self.instruction['list'].index(symbolName);
+    return self.instruction['opcode'][ix];
 
   ################################################################################
   #
@@ -250,6 +215,7 @@ class asmDef_9x8:
     #
 
     self.directives = dict();
+
     self.directives['list']= list();
     self.directives['list'].append('.constant');
     self.directives['list'].append('.function');
@@ -284,3 +250,38 @@ class asmDef_9x8:
     self.interrupt = list();
     self.main = list();
     self.symbols = dict(list=list(), type=list(), tokens=list(), length=list(), used=list());
+
+    #
+    # Configure the instructions.
+    #
+
+    self.instructions = dict(list=list(), opcode=list());
+    self.AddInstruction('&',            0x01A);
+    self.AddInstruction('+',            0x018);
+    self.AddInstruction('-',            0x019);
+    self.AddInstruction('-1=',          0x021);
+    self.AddInstruction('0=',           0x020);
+    self.AddInstruction('0>>',          0x004);
+    self.AddInstruction('1>>',          0x005);
+    self.AddInstruction('<<0',          0x001);
+    self.AddInstruction('<<1',          0x002);
+    self.AddInstruction('<<msb',        0x003);
+    self.AddInstruction('>r',           0x058);
+    self.AddInstruction('^',            0x01C);
+    self.AddInstruction('call',         0x040);
+    self.AddInstruction('callc',        0x048);
+    self.AddInstruction('dis',          0x01C);
+    self.AddInstruction('drop',         0x01E);
+    self.AddInstruction('dup',          0x008);
+    self.AddInstruction('ena',          0x019);
+    self.AddInstruction('inport',       0x030);
+    self.AddInstruction('lsb>>',        0x007);
+    self.AddInstruction('msb>>',        0x006);
+    self.AddInstruction('nip',          0x01F);
+    self.AddInstruction('nop',          0x000);
+    self.AddInstruction('or',           0x01B);
+    self.AddInstruction('outport',      0x038);
+    self.AddInstruction('over',         0x00A);
+    self.AddInstruction('r>',           0x061);
+    self.AddInstruction('r@',           0x009);
+    self.AddInstruction('swap',         0x012);
