@@ -11,44 +11,9 @@ class asmDef_9x8:
 
   ################################################################################
   #
-  # Configure the class for processing directives.
+  # External interface to the directives.
   #
   ################################################################################
-
-  def fn_directiveConstant(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_directiveFunction(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_directiveInterrupt(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_directiveMacro(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_directiveMain(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_directiveMemory(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
-  def fn_directiveVariable(methodName):
-    raise Exception('Wrong or unimplemented argument');
-
-  directives = dict();
-  directives['predefined']= list();
-  directives['predefined'].append(dict(name='.constant',    method=fn_directiveConstant));
-  directives['predefined'].append(dict(name='.function',    method=fn_directiveFunction));
-  directives['predefined'].append(dict(name='.interrupt',   method=fn_directiveInterrupt));
-  directives['predefined'].append(dict(name='.macro',       method=fn_directiveMacro));
-  directives['predefined'].append(dict(name='.main',        method=fn_directiveMain));
-  directives['predefined'].append(dict(name='.memory',      method=fn_directiveMemory));
-  directives['predefined'].append(dict(name='.variable',    method=fn_directiveVariable));
-
-  directives['list'] = list();
-  for directive in directives['predefined']:
-    directives['list'].append(directive['name']);
 
   def IsDirective(self,name):
     return name in self.directives['list'];
@@ -278,6 +243,21 @@ class asmDef_9x8:
   ################################################################################
 
   def __init__(self):
+
+    #
+    # Enumerate the directives
+    # Note:  The ".include" directive is handled within fileBodyIterator.
+    #
+
+    self.directives = dict();
+    self.directives['list']= list();
+    self.directives['list'].append('.constant');
+    self.directives['list'].append('.function');
+    self.directives['list'].append('.interrupt');
+    self.directives['list'].append('.macro');
+    self.directives['list'].append('.main');
+    self.directives['list'].append('.memory');
+    self.directives['list'].append('.variable');
 
     #
     # Configure the pre-defined macros

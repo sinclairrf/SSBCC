@@ -21,13 +21,13 @@ import re
 
 class fileBodyIterator:
 
-  def __init__(self, fps, directivesList):
-    # Do sanity check on arguments
-    if ".include" in directivesList:
+  def __init__(self, fps, ad):
+    # Do sanity check on arguments.
+    if ad.IsDirective(".include"):
       raise Exception('".include" directive defined by fileBodyIterator');
     # Initialize the raw processing states
     self.fpPending = list(fps);
-    self.directivesList = directivesList;
+    self.ad = ad;
     self.current = list();
     self.pending = list();
     # Prepare the file parsing
@@ -97,7 +97,7 @@ class fileBodyIterator:
           continue;
         # See if the line starts with a directive.
         tokens = re.findall(r'\s*(\S+)',line);
-        if tokens[0] in self.directivesList:
+        if self.ad.IsDirective(tokens[0]):
           if not self.pending:
             self.pending.append(fp['fp'].name);
             self.pending.append(fp['line']);

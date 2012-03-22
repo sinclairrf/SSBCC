@@ -126,7 +126,7 @@ ad = asmDef_9x8();
 
 # Construct the iterator that loops through the code bodies.
 import fileBodyIterator
-fdbi = fileBodyIterator.fileBodyIterator(argList.filename,ad.directives['list']);
+fdbi = fileBodyIterator.fileBodyIterator(argList.filename,ad);
 
 # "Stage 1" parsing.
 Stage1(fdbi,ad);
