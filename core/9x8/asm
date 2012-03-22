@@ -30,6 +30,7 @@ import asmDef
 argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
 argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
 argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
+argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), help='output metafile');
 argList = argListParser.parse_args();
 
 # Construct the keyword parser
@@ -129,33 +130,10 @@ if False:
 
 ################################################################################
 #
-# Stage 2:  Compute addresses.
-#
-# Compute the addresses for the ".main" and required ".function" bodies as
-# follows:
-# - Set the function address to 0.
-# - If interrupts are enabled, then add 4 to the function address.
-# - Set the start address of the main program to the current function address,
-#   compute the addresses of all jump targets within the ".main" body, and then
-#   add the length of the ".main" body to the function address.
-# - Loop through the ".function" list in the order in which the functions were
-#   defined and do the following:
-#   - If the function was not used, then disabled its body.
-#   - Otherwise, set the start address of the ".function" to the current
-#     function address, compute the addresses of all jump targets within the
-#     ".function" body, and add then length of the ".function" body to the
-#     function address.
-# - If then total program length exceedes the allowable program length, then
-#   issue an error.
-# - Loop through the ".main" body and ".function" bodies, setting the addresses
-#   for all the ".call" and ".callc" macros.
+# Stage 2:  Identify the required functions, compute their addresses, and set
+# the addresses for all "jump" and "call" macros.
 #
 ################################################################################
-
-#
-# Create the list of required functions and their bodies.  Compute each of their
-# start addresses.  Fill in label addresses.
-#
 
 ad.EvaluateFunctionTree();
 
@@ -172,3 +150,6 @@ ad.EvaluateFunctionTree();
 # - Print the memory and instruction usage statistics.
 #
 ################################################################################
+
+ad.Emit(argList.o);
+argList.o.close();

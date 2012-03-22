@@ -57,11 +57,11 @@ class asmDef_9x8:
   def IsInstruction(self,name):
     return name in self.instructions['list'];
 
-  def InstructionOpcode(self,symbolName,language):
+  def InstructionOpcode(self,symbolName):
     if not self.IsInstruction(symbolName):
       raise Exception('Program Bug:  %s not in instruction list' % symbolName);
-    ix = self.instruction['list'].index(symbolName);
-    return self.instruction['opcode'][ix];
+    ix = self.instructions['list'].index(symbolName);
+    return self.instructions['opcode'][ix];
 
   ################################################################################
   #
@@ -265,10 +265,81 @@ class asmDef_9x8:
         if (token['type'] == 'macro') and (token['value'] in ('.call','.callc',)):
           ix = self.functionEvaluation['list'].index(token['argument'][0]);
           token['address'] = self.functionEvaluation['address'][ix];
+    # Sanity checks for address range
+    if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**14-1:
+      raise Exception('Max address for program requires more than 14 bits');
     for ix in range(len(self.functionEvaluation['list'])):
       print self.functionEvaluation['list'][ix], self.functionEvaluation['address'][ix], self.functionEvaluation['length'][ix];
       for ix2 in range(len(self.functionEvaluation['body'][ix])):
         print self.functionEvaluation['body'][ix][ix2];
+
+  ################################################################################
+  #
+  # Emit the metacode from the assembler.
+  #
+  ################################################################################
+
+  def EmitOpcode(self,fp,opcode):
+    fp.write('%03X\n' % opcode);
+
+  def Emit(self,fp):
+    # Emit the program code.
+    fp.write(':program\n');
+    for ix in range(len(self.functionEvaluation['list'])):
+      for token in self.functionEvaluation['body'][ix]:
+        if token['type'] == 'value':
+          fp.write('1%02X\n' % token['value']);
+        elif token['type'] == 'label':
+          pass;
+        elif token['type'] == 'instruction':
+          self.EmitOpcode(fp,self.InstructionOpcode(token['value']));
+        elif token['type'] == 'macro':
+          if token['value'] == '.call':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8));
+            self.EmitOpcode(fp,self.specialInstructions['call']);
+          elif token['value'] == '.callc':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8));
+            self.EmitOpcode(fp,self.specialInstructions['callc']);
+          elif token['value'] == '.fetch':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['fetch'] | (token['address'] >> 8));
+          elif token['value'] == '.fetchindexed':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.InstructionOpcode('+'));
+            self.EmitOpcode(fp,self.specialInstructions['fetch'] | (token['address'] >> 8));
+          elif token['value'] == '.inport':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['inport']);
+          elif token['value'] == '.jump':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8));
+            self.EmitOpcode(fp,self.InstructionOpcode('nop'));
+          elif token['value'] == '.jumpc':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8));
+            self.EmitOpcode(fp,self.InstructionOpcode('drop'));
+          elif token['value'] == '.outport':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['outport']);
+            self.EmitOpcode(fp,self.InstructionOpcode('drop'));
+          elif token['value'] == '.return':
+            self.EmitOpcode(fp,self.specialInstructions['return']);
+            self.EmitOpcode(fp,self.InstructionOpcode('nop'));
+          elif token['value'] == '.store':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.specialInstructions['store'] | (token['address'] >> 8));
+            fp.write('%03X\n', self.InstructionOpcode('nip'));
+          elif token['value'] == '.storeindexed':
+            self.EmitOpcode(fp,token['address'] & 0xFF);
+            self.EmitOpcode(fp,self.InstructionOpcode('+'));
+            self.EmitOpcode(fp,self.specialInstructions['store'] | (token['address'] >> 8));
+            self.EmitOpcode(fp,self.InstructionOpcode('nip'));
+          else:
+            raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
+        else:
+          raise Exception('Program Bug:  Unrecognized type "%s"' % token['type']);
 
   ################################################################################
   #
@@ -337,20 +408,27 @@ class asmDef_9x8:
     self.AddInstruction('<<msb',        0x003);
     self.AddInstruction('>r',           0x058);
     self.AddInstruction('^',            0x01C);
-    self.AddInstruction('call',         0x040);
-    self.AddInstruction('callc',        0x048);
     self.AddInstruction('dis',          0x01C);
     self.AddInstruction('drop',         0x01E);
     self.AddInstruction('dup',          0x008);
     self.AddInstruction('ena',          0x019);
-    self.AddInstruction('inport',       0x030);
     self.AddInstruction('lsb>>',        0x007);
     self.AddInstruction('msb>>',        0x006);
     self.AddInstruction('nip',          0x01F);
     self.AddInstruction('nop',          0x000);
     self.AddInstruction('or',           0x01B);
-    self.AddInstruction('outport',      0x038);
     self.AddInstruction('over',         0x00A);
     self.AddInstruction('r>',           0x061);
     self.AddInstruction('r@',           0x009);
     self.AddInstruction('swap',         0x012);
+
+    self.specialInstructions = dict();
+    self.specialInstructions['call']    = 0x040;
+    self.specialInstructions['callc']   = 0x048;
+    self.specialInstructions['fetch']   = 0x070;
+    self.specialInstructions['inport']  = 0x030;
+    self.specialInstructions['jump']    = 0x080;
+    self.specialInstructions['jumpc']   = 0x0C0;
+    self.specialInstructions['outport'] = 0x038;
+    self.specialInstructions['return']  = 0x028;
+    self.specialInstructions['store']   = 0x068;
