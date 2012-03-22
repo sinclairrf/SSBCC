@@ -211,7 +211,7 @@ class asmDef_9x8:
 
     #
     # Enumerate the directives
-    # Note:  The ".include" directive is handled within fileBodyIterator.
+    # Note:  The ".include" directive is handled within asmDef.FileBodyIterator.
     #
 
     self.directives = dict();

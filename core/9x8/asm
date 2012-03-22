@@ -38,9 +38,9 @@ import asmDef
 #
 
 inputGroups = list();
-def Stage1(fdbi,ad):
+def Stage1(fbi,ad):
   global inputGroups
-  for bl in fdbi:
+  for bl in fbi:
     filename = bl[0];
     startLine = bl[1];
     body = bl[2:];
@@ -125,11 +125,10 @@ from asmDef_9x8 import asmDef_9x8
 ad = asmDef_9x8();
 
 # Construct the iterator that loops through the code bodies.
-import fileBodyIterator
-fdbi = fileBodyIterator.fileBodyIterator(argList.filename,ad);
+fbi = asmDef.FileBodyIterator(argList.filename,ad);
 
 # "Stage 1" parsing.
-Stage1(fdbi,ad);
+Stage1(fbi,ad);
 
 # diagnostic
 if False:
