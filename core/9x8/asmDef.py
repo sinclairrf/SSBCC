@@ -136,7 +136,7 @@ class FileBodyIterator:
 #
 ################################################################################
 
-def TokenList(filename,startLineNumber,lines,ad):
+def RawTokens(filename,startLineNumber,lines,ad):
   """Extract the list of tokens from the provided list of lines"""
 
   tokens = list();

@@ -17,6 +17,29 @@ import asmDef
 
 ################################################################################
 #
+# The main loop:
+#
+# - Process the command line arguments.
+#
+################################################################################
+
+#
+# Construct the command-line argument list parser
+#
+
+argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
+argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
+argList = argListParser.parse_args();
+
+# Construct the keyword parser
+from asmDef_9x8 import asmDef_9x8
+ad = asmDef_9x8();
+
+# Construct the iterator that loops through the code bodies.
+fbi = asmDef.FileBodyIterator(argList.filename,ad);
+
+################################################################################
+#
 # Stage 1:  Parse the files.
 #
 # Read the entire file, doing the following while reading the file:
@@ -33,25 +56,55 @@ import asmDef
 #
 ################################################################################
 
-#
-# Stage 1 processing functions
-#
-
+# List of function bodies, variables, etc.
 inputGroups = list();
-def Stage1(fbi,ad):
-  global inputGroups
-  for bl in fbi:
-    filename = bl[0];
-    startLine = bl[1];
-    body = bl[2:];
-    if re.match(r'\s*\.include\s',bl[-1]):
-      inputGroups.append(dict(filename=filename, startLine=startLine, body=body));
+
+# Loop through the directive bodies in the input files (including ".include"d
+# files).
+for bl in fbi:
+  filename = bl[0];
+  startLine = bl[1];
+  body = bl[2:];
+  # ".include" directives don't have an associated body
+  if re.match(r'\s*\.include\s',body[-1]):
+    inputGroups.append(dict(filename=filename, startLine=startLine, body=body));
+  # Parse the body of all other directives.
+  else:
+    rawTokens = asmDef.RawTokens(filename,startLine,body,ad);
+    ad.CheckRawTokens(filename,rawTokens);
+    ad.FillRawTokens(filename,rawTokens);
+    inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
+
+# diagnostic -- print raw token lists
+if False:
+  for ig in inputGroups:
+    print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
+    if 'rawTokens' not in ig:
+      print ig['body'][-1];
     else:
-      rawTokens = asmDef.TokenList(filename,startLine,body,ad);
-      ad.CheckRawTokens(filename,rawTokens);
-      ad.FillRawTokens(filename,rawTokens);
-      inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
-#  inputGroups.CheckAllDefined();
+      for tk in ig['rawTokens']:
+        print tk;
+    print
+
+# diagnostic -- prilt filled token lists
+if True:
+  main = ad.Main();
+  print '.main, length=%d ' % main['length'];
+  for token in main['tokens']:
+    print token;
+  print
+  interrupt = ad.Interrupt();
+  if interrupt:
+    print '.interrupt, length=%d' % interrupt['length'];
+    for token in interrupt:
+      print token;
+    print
+  symbols = ad.Symbols();
+  for ix in range(len(symbols['list'])):
+    print 'symbol %s: type=%s, length=%d' % (symbols['list'][ix], symbols['type'][ix], symbols['length'][ix])
+    for token in symbols['tokens'][ix]:
+      print token;
+    print
 
 ################################################################################
 #
@@ -103,60 +156,3 @@ def Stage1(fbi,ad):
 # - Print the memory and instruction usage statistics.
 #
 ################################################################################
-
-################################################################################
-#
-# The main loop:
-#
-# - Process the command line arguments.
-#
-################################################################################
-
-#
-# Construct the command-line argument list parser
-#
-
-argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
-argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
-argList = argListParser.parse_args();
-
-# Construct the keyword parser
-from asmDef_9x8 import asmDef_9x8
-ad = asmDef_9x8();
-
-# Construct the iterator that loops through the code bodies.
-fbi = asmDef.FileBodyIterator(argList.filename,ad);
-
-# "Stage 1" parsing.
-Stage1(fbi,ad);
-
-# diagnostic
-if False:
-  for ig in inputGroups:
-    print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
-    if 'rawTokens' not in ig:
-      print ig['body'][-1];
-    else:
-      for tk in ig['rawTokens']:
-        print tk;
-    print
-
-# diagnostic
-if True:
-  main = ad.Main();
-  print '.main, length=%d ' % main['length'];
-  for token in main['tokens']:
-    print token;
-  print
-  interrupt = ad.Interrupt();
-  if interrupt:
-    print '.interrupt, length=%d' % interrupt['length'];
-    for token in interrupt:
-      print token;
-    print
-  symbols = ad.Symbols();
-  for ix in range(len(symbols['list'])):
-    print 'symbol %s: type=%s, length=%d' % (symbols['list'][ix], symbols['type'][ix], symbols['length'][ix])
-    for token in symbols['tokens'][ix]:
-      print token;
-    print
