@@ -260,18 +260,21 @@ class asmDef_9x8:
 
   def EvaluateFunctionTree(self):
     self.functionEvaluation = dict(list=list(), length=list(),body=list(), address=list());
+    nextStart = 0;
     # ".main" is always required.
     self.functionEvaluation['list'].append('.main');
     self.functionEvaluation['length'].append(self.main['length']);
     self.functionEvaluation['body'].append(self.main['tokens']);
-    self.functionEvaluation['address'].append(0);
+    self.functionEvaluation['address'].append(nextStart);
+    nextStart = nextStart + self.functionEvaluation['length'][-1];
     # ".interrupt" is optionally required (and is sure to exist by this function
     # call if it is required).
     if self.interrupt:
       self.functionEvaluation['list'].append('.interrupt');
       self.functionEvaluation['length'].append(self.interrupt['length']);
       self.functionEvaluation['body'].append(self.interrupt['tokens']);
-      self.functionEvaluation['address'].append(self.functionEvaluation['length'][0]);
+      self.functionEvaluation['address'].append(nextStart);
+      nextStart = nextStart + self.functionEvaluation['length'][-1];
     # Loop through the required function bodies as they are identified.
     ix = 0;
     while ix < len(self.functionEvaluation['body']):
@@ -287,7 +290,8 @@ class asmDef_9x8:
             self.functionEvaluation['list'].append(callName);
             self.functionEvaluation['length'].append(self.symbols['length'][ixName]);
             self.functionEvaluation['body'].append(self.symbols['tokens'][ixName]);
-            self.functionEvaluation['address'].append(self.functionEvaluation['address'][ixName-1]+self.functionEvaluation['length'][ixName-1]);
+            self.functionEvaluation['address'].append(nextStart);
+            nextStart = nextStart + self.functionEvaluation['length'][-1];
       ix = ix + 1;
     # Within each function, compute the list of label addresses and then fill in
     # the address for all jumps and calls.
@@ -326,8 +330,18 @@ class asmDef_9x8:
     fp.write('1%02X\n' % value);
 
   def Emit(self,fp):
-    # Emit the program code.
-    fp.write(':program\n');
+    """Emit the program code"""
+    # Write the program marker, address of .main, address or "[]" of .interrupt,
+    # and the total program length.
+    fp.write(':program');
+    fp.write(' %d' % self.functionEvaluation['address'][0]);
+    if self.interrupt:
+      fp.write(' %d' % self.functionEvaluation['address'][1]);
+    else:
+      fp.write(' []');
+    fp.write(' %d' % (self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1]));
+    fp.write('\n');
+    # Emit the bodies
     for ix in range(len(self.functionEvaluation['list'])):
       for token in self.functionEvaluation['body'][ix]:
         if token['type'] == 'value':
