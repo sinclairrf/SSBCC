@@ -27,7 +27,7 @@ MEMORY RETURN           32x9
 #        inside the Forth code.
 #
 
-OUTPORT 1-bit o_led C_LED;
+OUTPORT 1-bit o_led C_LED
 
 #
 # Run the assembler
@@ -39,4 +39,4 @@ ASSEMBLY -L led.lst led.s
 # Instruct the compiler to generate Verilog.
 #
 
-HDL Verilog
+HDL Verilog led
