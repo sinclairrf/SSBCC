@@ -51,16 +51,24 @@ for line in argList.filename:
     cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
     compiler = ('asm',cmd[0],);
   elif re.match(r'\s*HDL\s',line):
-    cmd = re.findall(r'\s*HDL\s+(\S*)', line);
-    if cmd[0] in ('Verilog','VHDL',):
-      hdl = cmd[0];
+    cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
+    if cmd[0][0] in ('Verilog','VHDL',):
+      hdl = cmd[0][0];
+      outCoreName = cmd[0][1];
     else:
       raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
+  # User-declared copyright
+  elif re.match(r'\s*COPYRIGHT\s',line):
+    copyright = re.findall(r'\s*COPYRIGHT\s+(\S+)\n',line)[0];
   # INPORT
   elif re.match(r'\s*INPORT\s',line):
-    cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\w+)\s+(\w+)',line);
-    inport['config'].append(cmd[0][0]);
-    inport['name'].append(cmd[0][1]);
+    cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
+    configs = re.findall(r'([^,]+)',cmd[0][0]);
+    names = re.findall(r'([^,]+)',cmd[0][1]);
+    if len(configs) != len(names):
+      raise Exception('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+    inport['config'].append(configs);
+    inport['name'].append(names);
     inport['id'].append(cmd[0][2]);
   # MEMORY
   elif re.match(r'\s*MEMORY\s',line):
@@ -70,24 +78,111 @@ for line in argList.filename:
     memories.append(cmd[0]);
   # OUTPORT
   elif re.match(r'\s*OUTPORT\s',line):
-    cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\w+)\s+(\w+)',line);
-    outport['config'].append(cmd[0][0]);
-    outport['name'].append(cmd[0][1]);
+    cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
+    configs = re.findall(r'([^,]+)',cmd[0][0]);
+    names = re.findall(r'([^,]+)',cmd[0][1]);
+    if len(configs) != len(names):
+      raise Exception('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+    outport['config'].append(configs);
+    outport['name'].append(names);
     outport['id'].append(cmd[0][2]);
   else:
     raise Exception('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
 argList.filename.close();
 
-print memories;
-print outport;
-print compiler;
-print hdl;
+corepath = '%s/%s' % (sys.path[0], architecture);
 
+################################################################################
+#
 # Compile the processor code.
-cmd = '%s/%s/%s' % (sys.path[0], architecture, compiler[0]);
+#
+################################################################################
+
+cmd = '%s/%s' % (corepath, compiler[0]);
 for ix in range(len(inport['config'])):
   cmd += (' -I %s=%d' % (inport['id'][ix],ix));
 for ix in range(len(outport['config'])):
   cmd += (' -O %s=%d' % (outport['id'][ix],ix));
 cmd += ' ' + compiler[1];
 print cmd;
+
+################################################################################
+#
+# Generate the processor core.
+#
+################################################################################
+
+if hdl == 'Verilog':
+  fpRawCore = open('%s/%s' % (corepath,'core.v'),'r');
+  fpOutCore = open(outCoreName+'.v','w');
+elif hdl == 'VHDL':
+  fpRawCore = open('%s/%s' % (corepath,'core.vhd'),'r');
+  fpOutCore = open(outCoreName+'.vhd','w');
+else:
+  raise Exception('Program Bug:  unrecognized hdl = "%s"', hdl);
+for line in fpRawCore:
+  if not re.match('..@SSBCC@',line):
+    fpOutCore.write(line);
+    continue;
+  fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
+  if fillCommand == 'copyright':
+    if hdl == 'Verilog':
+      fpOutCore.write(' * %s\n' % copyright);
+    if hdl == 'VHDL':
+      fpOutCore.write('-- %s\n' % copyright);
+  elif fillCommand == 'module':
+    if hdl == 'Verilog':
+      fpOutCore.write('module %s(\n' % outCoreName);
+      fpOutCore.write('  // synchronous reset and processor clock\n');
+      fpOutCore.write('  input         i_rst,\n');
+      fpOutCore.write('  input         i_clk');
+      if inport['config']:
+        for ix in range(len(inport['config'])):
+          fpOutCore.write(',\n');
+          fpOutCore.write('  // inport ports\n');
+          configs = inport['config'][ix];
+          names = inport['name'][ix];
+          for jx in range(len(configs)):
+            if (ix != 0) or (jx != 0):
+              fpOutCore.write(',\n');
+            if re.match(r'\d+-bit',configs[jx]):
+              a = re.findall(r'(\d+)',configs[jx]);
+              portLength = int(a[0]);
+              if portLength == 1:
+                fpOutCore.write('  input         %s' % names[jx]);
+              elif portLength < 10:
+                fpOutCore.write('  input   [%d:0] %s' % (portLength-1,names[jx]));
+              else:
+                fpOutCore.write('  input  [%d:0] %s' % (portLength-1,names[jx]));
+            elif configs[jx] == 'strobe':
+              fpOutCore.write('  output        %s' % names[jx]);
+            else:
+              raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+      if outport['config']:
+        for ix in range(len(outport['config'])):
+          fpOutCore.write(',\n');
+          fpOutCore.write('  // outport ports\n');
+          configs = outport['config'][ix];
+          names = outport['name'][ix];
+          for jx in range(len(configs)):
+            if (ix != 0) or (jx != 0):
+              fpOutCore.write(',\n');
+            if re.match(r'\d+-bit',configs[jx]):
+              a = re.findall(r'(\d+)',configs[jx]);
+              portLength = int(a[0]);
+              if portLength == 1:
+                fpOutCore.write('  output        %s' % names[jx]);
+              elif portLength < 10:
+                fpOutCore.write('  output  [%d:0] %s' % (portLength-1,names[jx]));
+              else:
+                fpOutCore.write('  output [%d:0] %s' % (portLength-1,names[jx]));
+            elif configs[jx] == 'strobe':
+              fpOutCore.write('  output        %s' % names[jx]);
+            else:
+              raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+      fpOutCore.write('\n');
+      fpOutCore.write(');\n');
+    if hdl == 'VHDL':
+      raise Exception('VHDL not implemented');
+  elif fillCommand == 'endmodule':
+    raise Exception('endmodule not implemented');
