@@ -1,0 +1,93 @@
+#!/usr/bin/python
+
+################################################################################
+#
+# Copyright 2012, Sinclair R.F., Inc.
+#
+# Build an SSBCC system.
+#
+################################################################################
+
+import re
+import sys
+
+################################################################################
+#
+# Parse the command line arguments
+#
+################################################################################
+
+#
+# Construct the command-line argument list parser
+#
+
+import argparse
+argListParser = argparse.ArgumentParser(description='SSBCC system builder');
+argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
+argList = argListParser.parse_args();
+
+#
+# Read the SSBCC configuration file.
+#
+
+ixLine = 0;
+compiler = [];
+inport = dict(config=list(), name=list(), id=list());
+memories = list();
+outport = dict(config=list(), name=list(), id=list());
+for line in argList.filename:
+  ixLine = ixLine + 1;
+  # Reject blank and comment lines
+  if re.match(r'\s*(#.*)?$',line):
+    pass;
+  # ARCHITECTURE
+  elif re.match(r'\s*ARCHITECTURE\s',line):
+    cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
+    if not cmd:
+      raise Exception('Malformed ARCHITECTURE statement on line %d: "%s"' % (ixLine,line));
+    architecture=cmd[0];
+  # ASSEMBLY language for processor code
+  elif re.match(r'\s*ASSEMBLY\s',line):
+    cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
+    compiler = ('asm',cmd[0],);
+  elif re.match(r'\s*HDL\s',line):
+    cmd = re.findall(r'\s*HDL\s+(\S*)', line);
+    if cmd[0] in ('Verilog','VHDL',):
+      hdl = cmd[0];
+    else:
+      raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
+  # INPORT
+  elif re.match(r'\s*INPORT\s',line):
+    cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\w+)\s+(\w+)',line);
+    inport['config'].append(cmd[0][0]);
+    inport['name'].append(cmd[0][1]);
+    inport['id'].append(cmd[0][2]);
+  # MEMORY
+  elif re.match(r'\s*MEMORY\s',line):
+    cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)',line);
+    if (not cmd) or (len(cmd[0])<2):
+      raise Exception('Malformed MEMORY statement on line %d: "%s"' % (ixLine,line));
+    memories.append(cmd[0]);
+  # OUTPORT
+  elif re.match(r'\s*OUTPORT\s',line):
+    cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\w+)\s+(\w+)',line);
+    outport['config'].append(cmd[0][0]);
+    outport['name'].append(cmd[0][1]);
+    outport['id'].append(cmd[0][2]);
+  else:
+    raise Exception('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
+argList.filename.close();
+
+print memories;
+print outport;
+print compiler;
+print hdl;
+
+# Compile the processor code.
+cmd = '%s/%s/%s' % (sys.path[0], architecture, compiler[0]);
+for ix in range(len(inport['config'])):
+  cmd += (' -I %s=%d' % (inport['id'][ix],ix));
+for ix in range(len(outport['config'])):
+  cmd += (' -O %s=%d' % (outport['id'][ix],ix));
+cmd += ' ' + compiler[1];
+print cmd;
