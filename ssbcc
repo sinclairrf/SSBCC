@@ -8,8 +8,10 @@
 #
 ################################################################################
 
+import os
 import re
 import sys
+import tempfile
 
 ################################################################################
 #
@@ -98,13 +100,32 @@ corepath = '%s/%s' % (sys.path[0], architecture);
 #
 ################################################################################
 
-cmd = '%s/%s' % (corepath, compiler[0]);
+# Generate a random name for the temporary file holding the compiler output.
+# Ensure the temporary file is located off of the project path instead of
+# accumulating in /tmp.
+assemblerOutput = tempfile.mktemp(prefix='tmp-',suffix='.asm');
+assemblerOutput = os.path.basename(assemblerOutput);
+assemblerOutput = os.path.join('tmp',assemblerOutput);
+print assemblerOutput;
+
+if not os.path.exists('tmp'):
+  os.mkdir('tmp');
+
+# Compute the command to invoke the compiler.
+cmd = os.path.join(corepath, compiler[0]);
 for ix in range(len(inport['config'])):
   cmd += (' -I %s=%d' % (inport['id'][ix],ix));
 for ix in range(len(outport['config'])):
   cmd += (' -O %s=%d' % (outport['id'][ix],ix));
+cmd += ' -o ' + assemblerOutput;
 cmd += ' ' + compiler[1];
+
+# Invoke the compiler and exit if it failed.
+print 'Invoking the assember with the following command:';
 print cmd;
+cmdStatus = os.system(cmd);
+if cmdStatus != 0:
+  raise Exception('FATAL ERROR running the assembler');
 
 ################################################################################
 #
@@ -113,10 +134,10 @@ print cmd;
 ################################################################################
 
 if hdl == 'Verilog':
-  fpRawCore = open('%s/%s' % (corepath,'core.v'),'r');
+  fpRawCore = open(os.path.join(corepath,'core.v'),'r');
   fpOutCore = open(outCoreName+'.v','w');
 elif hdl == 'VHDL':
-  fpRawCore = open('%s/%s' % (corepath,'core.vhd'),'r');
+  fpRawCore = open(os.path.join(corepath,'core.vhd'),'r');
   fpOutCore = open(outCoreName+'.vhd','w');
 else:
   raise Exception('Program Bug:  unrecognized hdl = "%s"', hdl);
