@@ -39,9 +39,9 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     required to indicate whether the jump is always performed or is
     conditionally performed.  Consuming these 3 bits leaves 6 bits additional
     address space for the jump instruction.<br/><br/>
-  This architecture also supports 0 to 8&nbsp;pages of memory.  Each of these
-    pages can be either a RAM or a ROM and can hold up to
-    256&nbsp;bytes of data.<br/><br/>
+  This architecture also supports 0 to 8&nbsp;pages of RAM and 0 to
+    16&nbsp;pages of ROM with a combined limit of 16 pages.  Each page of RAM or
+    ROM can hold up to 256&nbsp;bytes of data.<br/><br/>
 <h1>Design</h1>
   This section describes things the processor does not do and what is required
     in code to work around these restrictions:<br/><br/>
@@ -342,6 +342,10 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       <th align="left"><a href="#callc">callc</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
         <td align="left">convert the immediately preceding "<tt>jumpc</tt>" to a function call</td>
+        </tr>
+      <th align="left"></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">Unused</td>
         </tr>
       <th align="left"><a href="#>r">&gt;r</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
