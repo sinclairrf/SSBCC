@@ -1,16 +1,16 @@
-ssbcc
-  generate the memories for the program space, stack, and return stack
-  with "core/9x8/asm" fully process .memory and .variable directives
-  do VHDL
+  ssbcc
+1   generate the memories for the program space, stack, and return stack
+    generate memories for RAM and ROM
+    do VHDL
 
-core/9x8
-  core.v
-    finish the core
-    debug the core
-  asm
-    add locations of .main and .interrupt and program length to ':program'
-    add option to generate ".lst" files with code listing and generated instructions
-    implement .constant directive
-    implement .abbr directive
-    add optimizer -- ex: "dup push jump drop" ==> "push jump nop"
-  add VHDL core
+  core/9x8
+    core.v
+1     finish the core
+3     debug the core
+    asm
+      add option to generate ".lst" files with code listing and generated instructions
+      implement .constant directive
+      implement .abbr directive
+      fully process .memory and .variable directives
+      add optimizer -- example: "dup push jump drop" ==> "push jump nop"
+    add VHDL core
