@@ -37,6 +37,7 @@ compiler = [];
 inport = dict(config=list(), name=list(), id=list());
 memories = list();
 outport = dict(config=list(), name=list(), id=list());
+user_header = list();
 for line in argList.filename:
   ixLine = ixLine + 1;
   # Reject blank and comment lines
@@ -59,9 +60,6 @@ for line in argList.filename:
       outCoreName = cmd[0][1];
     else:
       raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
-  # User-declared copyright
-  elif re.match(r'\s*COPYRIGHT\s',line):
-    copyright = re.findall(r'\s*COPYRIGHT\s+(\S+)\n',line)[0];
   # INPORT
   elif re.match(r'\s*INPORT\s',line):
     cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
@@ -88,6 +86,15 @@ for line in argList.filename:
     outport['config'].append(configs);
     outport['name'].append(names);
     outport['id'].append(cmd[0][2]);
+  elif re.match(r'\s*USER_HEADER\s',line):
+    user_header_done = False;
+    for line in argList.filename:
+      if re.match(r'\s*END_USER_HEADER\s',line):
+        user_header_done = True;
+        break;
+      user_header.append(line[0:-1]);
+    if not user_header_done:
+      raise Exception('No "END_USER_HEADER" found for "USER_HEADER"');
   else:
     raise Exception('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
 argList.filename.close();
@@ -146,12 +153,7 @@ for line in fpRawCore:
     fpOutCore.write(line);
     continue;
   fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
-  if fillCommand == 'copyright':
-    if hdl == 'Verilog':
-      fpOutCore.write(' * %s\n' % copyright);
-    if hdl == 'VHDL':
-      fpOutCore.write('-- %s\n' % copyright);
-  elif fillCommand == 'module':
+  if fillCommand == 'module':
     if hdl == 'Verilog':
       fpOutCore.write('module %s(\n' % outCoreName);
       fpOutCore.write('  // synchronous reset and processor clock\n');
@@ -205,5 +207,13 @@ for line in fpRawCore:
       fpOutCore.write(');\n');
     if hdl == 'VHDL':
       raise Exception('VHDL not implemented');
-  elif fillCommand == 'endmodule':
-    raise Exception('endmodule not implemented');
+  elif fillCommand == 'user_header':
+    for ix in range(len(user_header)):
+      if hdl == 'Verilog':
+        fpOutCore.write('// %s\n' % user_header[ix]);
+      elif hdl == 'VHDL':
+        fpOutCore.write('-- %s\n' % user_header[ix]);
+      else:
+        raise Exception('Unimplemented language %s' % hdl);
+  else:
+    print 'WARNING:  Unimplemented command ' + fillCommand;
