@@ -191,14 +191,20 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#&">&amp;</a>,
     <a href="#+">+</a>,
     <a href="#-">-</a>,
-    <a href="#-1=">-1=</a>,
-    <a href="#0=">0=</a>,
+    <a href="#00=">00=</a>,
+    <a href="#01=">01=</a>,
     <a href="#0>>">0&gt;&gt;</a>,
     <a href="#1>>">1&gt;&gt;</a>,
+    <a href="#7E=">7E=</a>,
+    <a href="#7F=">7F=</a>,
+    <a href="#80=">80=</a>,
+    <a href="#81=">81=</a>,
     <a href="#<<0">&lt;&lt;0</a>,
     <a href="#<<1">&lt;&lt;1</a>,
     <a href="#<<msb">&lt;&lt;msb</a>,
     <a href="#>r">&gt;r</a>,
+    <a href="#FE=">FE=</a>,
+    <a href="#FF=">FF=</a>,
     <a href="#^">^</a>,
     <a href="#call">call</a>,
     <a href="#callc">callc</a>,
@@ -315,13 +321,37 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td>
         <td align="left">enable interrupts</td>
         </tr>
-      <th align="left"><a href="#0=">0=</a></th>
+      <th align="left"><a href="#00=">00=</a></th>
         <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
-        <td align="left">replace the top of the stack with all ones if it is all zeros and all zeros otherwise</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0x00</tt>" (i.e., it is zero), zero otherwise<br/>
         </tr>
-      <th align="left"><a href="#-1=">-1=</a></th>
+      <th align="left"><a href="#01=">01=</a></th>
         <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td>
-        <td align="left">replace the top of the stack with all ones if it is all ones and all zeros otherwise</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0x01</tt>" (i.e., it is one), zero otherwise<br/>
+        </tr>
+      <th align="left"><a href="#7E=">7E=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0x7E</tt>" (i.e., it is one less than the maximum unsigned value +126), zero otherwise<br/>
+        </tr>
+      <th align="left"><a href="#7F=">7F=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0x7F</tt>" (i.e., it is the maximum unsigned value +127), zero otherwise<br/>
+        </tr>
+      <th align="left"><a href="#80=">80=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0x80</tt>" (i.e., it is the most negative value -128), zero otherwise<br/>
+        </tr>
+      <th align="left"><a href="#81=">81=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0x81</tt>" (i.e., it is one more than the most negative value -127), zero otherwise<br/>
+        </tr>
+      <th align="left"><a href="#FE=">FE=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0xFE</tt>" (i.e., it is -2), zero otherwise<br/>
+        </tr>
+      <th align="left"><a href="#FF=">FF=</a></th>
+        <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td>
+        <td align="left">replace the top of the stack with all ones if it matches the value "<tt>0xFF</tt>" (i.e., it is all set or -1), zero otherwise<br/>
         </tr>
       <th align="left"><a href="#return">return</a></th>
         <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
@@ -403,22 +433,23 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       T &leftarrow; T - N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
-  <h2><a name="-1=">Instruction:  -1=</a></h2>
-    <b>Desription:</b>  Set the top of the stack to all ones if the previous
-      value was all ones, otherwise set it to all zeros.<br/><br/>
-    <b>Operation:</b><br/><br/>
-      PC &leftarrow; PC+1<br/>
-      R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; -1 if T=-1, 0 otherwise<br/>
-      N and <tt>stack</tt> unchanged<br/>
-      <br/>
-  <h2><a name="0=">Instruction:  0=</a></h2>
+  <h2><a name="00=">Instruction:  00=</a></h2>
     <b>Desription:</b>  Set the top of the stack to all ones if the previous
       value was all zeros, otherwise set it to all zeros.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; -1 if T=0, -1 otherwise<br/>
+      T &leftarrow; -1 if T=0x00, -1 otherwise<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="01=">Instruction:  01=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value matched the pattern "<tt>0000_0001</tt>", i.e. is one, otherwise
+      set it to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; -1 if T=0x01, -1 otherwise<br/>
       N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="0>>">Instruction:  0&gt;&gt;</a></h2>
@@ -437,6 +468,47 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
       T &leftarrow; { 1, T[7], T[6], ..., T[1] }<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="7E=">Instruction:  7E=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value matched the pattern "<tt>0111_1110</tt>", i.e. is one less than the
+      maximum signed value&nbsp;(+126), otherwise set it to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; -1 if T=0x7E, -1 otherwise<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="7F=">Instruction:  7F=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value matched the pattern "<tt>0111_1111</tt>", i.e. is the maximum
+      signed&nbsp;(+127), otherwise set it to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; -1 if T=0x7F, -1 otherwise<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="80=">Instruction:  80=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value matched the pattern "<tt>1000_0000</tt>", i.e. is the most negative
+      signed value&nbsp;(-128), otherwise set it to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; -1 if T=0x80, -1 otherwise<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="81=">Instruction:  81=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value matched the pattern "<tt>1000_0001</tt>", i.e. is one more than the
+      most negative signed value&nbsp;(-127), otherwise set it to all
+      zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; -1 if T=0x81, -1 otherwise<br/>
       N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="<<0">Instruction:  &lt;&lt;0</a></h2>
@@ -475,6 +547,28 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       <tt>++return</tt> &leftarrow; R<br/>
       T &leftarrow; N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
+  <h2><a name="FE=">Instruction:  FE=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value matched the pattern "<tt>1111_1110</tt>", i.e. is one less than the
+      largest unsigned value&nbsp;(254) or is the signed value&nbsp;-2,
+      otherwise set it to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; -1 if T=0xFE, -1 otherwise<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="FF=">Instruction:  FF=</a></h2>
+    <b>Desription:</b>  Set the top of the stack to all ones if the previous
+      value matched the pattern "<tt>1111_1111</tt>", i.e. is the largest
+      unsigned value&nbsp;(255) or is the signed value&nbsp;-1, otherwise set it
+      to all zeros.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; -1 if T=0xFF, -1 otherwise<br/>
+      N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="^">Instruction:  ^</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the bitwise
