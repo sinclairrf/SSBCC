@@ -2,9 +2,18 @@
 #
 # Copyright 2012, Sinclair R.F., Inc.
 #
-# Illustration of an SSBCC machine to blink an LED.
-#
 ################################################################################
+
+USER_HEADER
+
+Illustration of an SSBCC machine to blink an LED.
+
+o_led is the output LED state.
+
+This module was computer generated.  Bugs should be fixed in the source modules
+for this computer generated code, not in this module.
+
+END_USER_HEADER
 
 #
 # 9-bit opcodes and 8-bit data
@@ -33,7 +42,8 @@ OUTPORT 1-bit o_led C_LED
 # Run the assembler
 #
 
-ASSEMBLY -L led.lst led.s
+#ASSEMBLY -L led.lst led.s
+ASSEMBLY led.s
 
 #
 # Instruct the compiler to generate Verilog.
