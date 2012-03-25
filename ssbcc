@@ -103,7 +103,7 @@ corepath = '%s/%s' % (sys.path[0], architecture);
 
 ################################################################################
 #
-# Compile the processor code.
+# Compile the processor code and read the tables it generated.
 #
 ################################################################################
 
@@ -132,6 +132,25 @@ cmdStatus = os.system(cmd);
 if cmdStatus != 0:
   raise Exception('FATAL ERROR running the assembler');
 
+# Read the assembler output tables.
+fpAssemberOutput = open(assemblerOutput,'r');
+programBody = list();
+for line in fpAssemberOutput:
+  if re.match(':program',line):
+    cmd=re.findall(':program (\d+) (\S+) (\d+)',line);
+    mainStart = int(cmd[0][0]);
+    if cmd[0][1] == '[]':
+      interruptStart = -1;
+    else:
+      interruptStart = int(cmd[0][1]);
+    mainLength = int(cmd[0][2]);
+    for line in fpAssemberOutput:
+      if len(line) <= 1:
+        break;
+      programBody.append(int(line,16));
+    if len(programBody) != mainLength:
+      raise Exception('Program Bug:  program length doesn\'t match declared length');
+
 ################################################################################
 #
 # Generate the processor core.
@@ -151,12 +170,21 @@ for line in fpRawCore:
     fpOutCore.write(line);
     continue;
   fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
-  if fillCommand == 'module':
+  if fillCommand == 'memories':
+    # TODO -- add the remaining memory models.
+    fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (2048-1));
+    fpOutCore.write('initial begin\n');
+    for ix in range(len(programBody)):
+      fpOutCore.write('  s_opcodeMemory[%d] = 9\'h%03X;\n' % (ix,programBody[ix]));
+    for ix in range(len(programBody),2048):
+      fpOutCore.write('  s_opcodeMemory[%d] = 9\'h000;\n' % ix);
+    fpOutCore.write('end\n');
+  elif fillCommand == 'module':
     if hdl == 'Verilog':
       fpOutCore.write('module %s(\n' % outCoreName);
       fpOutCore.write('  // synchronous reset and processor clock\n');
-      fpOutCore.write('  input         i_rst,\n');
-      fpOutCore.write('  input         i_clk');
+      fpOutCore.write('  input  wire           i_rst,\n');
+      fpOutCore.write('  input  wire           i_clk');
       if inport['config']:
         for ix in range(len(inport['config'])):
           fpOutCore.write(',\n');
@@ -170,13 +198,13 @@ for line in fpRawCore:
               a = re.findall(r'(\d+)',configs[jx]);
               portLength = int(a[0]);
               if portLength == 1:
-                fpOutCore.write('  input         %s' % names[jx]);
+                fpOutCore.write('  input  wire           %s' % names[jx]);
               elif portLength < 10:
-                fpOutCore.write('  input   [%d:0] %s' % (portLength-1,names[jx]));
+                fpOutCore.write('  input  wire     [%d:0] %s' % (portLength-1,names[jx]));
               else:
-                fpOutCore.write('  input  [%d:0] %s' % (portLength-1,names[jx]));
+                fpOutCore.write('  input  wire    [%d:0] %s' % (portLength-1,names[jx]));
             elif configs[jx] == 'strobe':
-              fpOutCore.write('  output        %s' % names[jx]);
+              fpOutCore.write('  output reg            %s' % names[jx]);
             else:
               raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
       if outport['config']:
@@ -192,13 +220,13 @@ for line in fpRawCore:
               a = re.findall(r'(\d+)',configs[jx]);
               portLength = int(a[0]);
               if portLength == 1:
-                fpOutCore.write('  output        %s' % names[jx]);
+                fpOutCore.write('  output reg            %s' % names[jx]);
               elif portLength < 10:
-                fpOutCore.write('  output  [%d:0] %s' % (portLength-1,names[jx]));
+                fpOutCore.write('  output reg      [%d:0] %s' % (portLength-1,names[jx]));
               else:
-                fpOutCore.write('  output [%d:0] %s' % (portLength-1,names[jx]));
+                fpOutCore.write('  output reg     [%d:0] %s' % (portLength-1,names[jx]));
             elif configs[jx] == 'strobe':
-              fpOutCore.write('  output        %s' % names[jx]);
+              fpOutCore.write('  output reg            %s' % names[jx]);
             else:
               raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
       fpOutCore.write('\n');
