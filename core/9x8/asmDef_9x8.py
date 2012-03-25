@@ -312,10 +312,10 @@ class asmDef_9x8:
     # Sanity checks for address range
     if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**14-1:
       raise Exception('Max address for program requires more than 14 bits');
-    for ix in range(len(self.functionEvaluation['list'])):
-      print self.functionEvaluation['list'][ix], self.functionEvaluation['address'][ix], self.functionEvaluation['length'][ix];
-      for ix2 in range(len(self.functionEvaluation['body'][ix])):
-        print self.functionEvaluation['body'][ix][ix2];
+#    for ix in range(len(self.functionEvaluation['list'])):
+#      print self.functionEvaluation['list'][ix], self.functionEvaluation['address'][ix], self.functionEvaluation['length'][ix];
+#      for ix2 in range(len(self.functionEvaluation['body'][ix])):
+#        print self.functionEvaluation['body'][ix][ix2];
 
   ################################################################################
   #

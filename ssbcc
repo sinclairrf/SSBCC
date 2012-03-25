@@ -113,7 +113,6 @@ corepath = '%s/%s' % (sys.path[0], architecture);
 assemblerOutput = tempfile.mktemp(prefix='tmp-',suffix='.asm');
 assemblerOutput = os.path.basename(assemblerOutput);
 assemblerOutput = os.path.join('tmp',assemblerOutput);
-print assemblerOutput;
 
 if not os.path.exists('tmp'):
   os.mkdir('tmp');
@@ -128,8 +127,7 @@ cmd += ' -o ' + assemblerOutput;
 cmd += ' ' + compiler[1];
 
 # Invoke the compiler and exit if it failed.
-print 'Invoking the assember with the following command:';
-print cmd;
+print 'Invoking the assember with the following command:  ' + cmd;
 cmdStatus = os.system(cmd);
 if cmdStatus != 0:
   raise Exception('FATAL ERROR running the assembler');
