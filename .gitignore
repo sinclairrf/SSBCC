@@ -1,3 +1,6 @@
 *.pyc
+*.vcd
 .*.swp
 nohup.out
+tb
+tmp
