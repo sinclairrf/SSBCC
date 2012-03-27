@@ -1,0 +1,72 @@
+[timestart] 0
+[size] 1366 710
+[pos] -1 -1
+*-5.946693 140 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+@28
+tb.uut.i_rst
+tb.uut.i_clk
+tb.uut.o_led
+@800200
+-PC
+@22
+tb.uut.s_PC[10:0]
+tb.uut.s_opcode[8:0]
+tb.uut.s_PC_plus1[10:0]
+tb.uut.s_PC_jump[10:0]
+tb.uut.s_PC_next[10:0]
+@28
+tb.uut.s_bus_pc[1:0]
+@1000200
+-PC
+@800200
+-R
+@22
+tb.uut.s_R_ptr[5:0]
+@28
+tb.uut.s_R_hasValue
+@22
+tb.uut.s_R[10:0]
+tb.uut.s_R_next[10:0]
+tb.uut.s_R_pre[10:0]
+@28
+tb.uut.s_bus_r
+tb.uut.s_R_memWr
+@22
+tb.uut.s_R_ptr_next[5:0]
+@1000200
+-R
+@800200
+-T
+@22
+tb.uut.s_T[7:0]
+tb.uut.s_T_compare[7:0]
+tb.uut.s_T_pre[7:0]
+@28
+tb.uut.s_bus_t[2:0]
+@1000200
+-T
+@800200
+-N
+@22
+tb.uut.s_N[7:0]
+@28
+tb.uut.s_bus_n[1:0]
+@1000200
+-N
+@28
+tb.uut.s_interrupt_enabled
+tb.uut.s_interrupt_enabled_change
+tb.uut.s_interrupt_enabled_next
+tb.uut.s_interrupt_holdoff
+@22
+tb.uut.s_math_dual[7:0]
+tb.uut.s_math_rotate[7:0]
+@28
+tb.uut.s_outport
+@29
+tb.uut.s_return[1:0]
+@28
+tb.uut.s_stack[1:0]
+[pattern_trace] 1
+[pattern_trace] 0

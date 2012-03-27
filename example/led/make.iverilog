@@ -1,0 +1,3 @@
+#!/bin/bash
+
+iverilog -o tb tb.v led.v
