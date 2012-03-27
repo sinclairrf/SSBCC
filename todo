@@ -10,7 +10,6 @@
   core/9x8
     core.v
 1     finish the core
-1.1   add the instruction name to the opcode table and include that in the generated memory
 1.2   debug the core for example/led.s
 4     fully debug the core
     asm
@@ -18,5 +17,9 @@
       implement .constant directive
       implement .abbr directive
       fully process .memory and .variable directives
-      add optimizer -- example: "dup push jump drop" ==> "push jump nop"
+      add optimizer
+      - "dup push jump drop" ==> "push jump nop"
+      - "dup push outport drop" ==> "push outport"
+      - "drop return nop" ==> "return drop"
+      - "dup push store drop" ==> "push store"
     add VHDL core
