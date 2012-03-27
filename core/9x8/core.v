@@ -342,79 +342,142 @@ always @ (posedge i_clk)
  * Operate the return stack.
  */
 
-initial                         s_R             = {(C_RETURN_WIDTH){1'b0}};
-reg        [C_RETURN_WIDTH-1:0] s_R_next        = {(C_RETURN_WIDTH){1'b0}};
-reg                             s_R_hasValue    = 1'b0;
-reg    [C_RETURN_PTR_WIDTH-1:0] s_R_ptr         = {(C_RETURN_PTR_WIDTH){1'b0}};
-reg    [C_RETURN_PTR_WIDTH-1:0] s_R_ptr_next    = {(C_RETURN_PTR_WIDTH){1'b0}};
-
-always @ (posedge i_clk)
-  if (i_rst) begin
-    s_R          <= {(C_RETURN_WIDTH){1'b0}};
-    s_R_hasValue <= 1'b0;
-  end else case (s_return)
-    C_RETURN_NOP:
-      begin
-      s_R          <= s_R;
-      s_R_hasValue <= s_R_hasValue;
-      end
-    C_RETURN_INC:
-      begin
-      s_R          <= s_R_pre;
-      s_R_hasValue <= 1'b1;
-      end
-    C_RETURN_DEC:
-      begin
-      s_R          <= s_R_next;
-      s_R_hasValue <= |s_R_ptr;
-      end
-    default:
-      begin
-      s_R          <= s_R;
-      s_R_hasValue <= s_R_hasValue;
-      end
-  endcase
-
-reg s_R_memWr = 1'b0;
-always @ (*)
-  if (!s_R_hasValue) begin
-    s_R_ptr_next = {(C_RETURN_PTR_WIDTH){1'b0}};
-    s_R_memWr = 1'b0;
-  end else begin
-    s_R_memWr = 1'b0;
-    case (s_return)
-      C_RETURN_NOP:
-        s_R_ptr_next = s_R_ptr;
-      C_RETURN_INC:
-        begin
-          s_R_memWr = 1'b1;
-          if (s_R_hasValue)
-            s_R_ptr_next = s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-          else
-            s_R_ptr_next = s_R_ptr;
-        end
-      C_RETURN_DEC:
-        if (|s_R_ptr)
-          s_R_ptr_next = s_R_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-        else
-          s_R_ptr_next = s_R_ptr;
-      default:
-        s_R_ptr_next = s_R_ptr;
-    endcase
-  end
-
-always @ (posedge i_clk)
-  s_R_ptr <= s_R_ptr_next;
-
+//@SSBCC@ memory_return_stack
 // TODO -- replace this temporary implementation of the return stack
 reg [C_RETURN_WIDTH-1:0] s_R_stack[2**C_RETURN_PTR_WIDTH-1:0];
-always @ (posedge i_clk) begin
-  if (s_R_memWr) begin
-    s_R_stack[s_R_ptr] <= s_R;
-    s_R_next <= s_R;
-  end else
-    s_R_next <= s_R_stack[s_R_ptr];
+localparam C_SMALL_RETURN_STACK_IMPLEMENTATION = 1;
+
+generate
+if (C_SMALL_RETURN_STACK_IMPLEMENTATION) begin : gen_small_return_stack
+
+  //
+  // Low resource utilization, slow return stack implementation
+  //
+
+  // reference return stack pointer;
+  reg [C_RETURN_PTR_WIDTH-1:0] s_R_ptr = {(C_RETURN_PTR_WIDTH){1'b1}};
+  always @ (posedge i_clk)
+    if (i_rst)
+      s_R_ptr <= {(C_RETURN_PTR_WIDTH){1'b0}};
+    else
+      s_R_ptr <= s_R_ptr_next;
+
+  // pointer to top of return stack and next return stack;
+  reg s_R_memWr = 1'b0;
+  reg [C_RETURN_PTR_WIDTH-1:0] s_R_ptr_next = {(C_RETURN_PTR_WIDTH){1'b0}};
+  reg [C_RETURN_PTR_WIDTH-1:0] s_R_ptr_top  = {(C_RETURN_PTR_WIDTH){1'b0}};
+  always @ (*)
+    case (s_return)
+      C_RETURN_NOP: begin
+                    s_R_memWr    <= 1'b0;
+                    s_R_ptr_next <= s_R_ptr;
+                    s_R_ptr_top  <= s_R_ptr;
+                    end
+      C_RETURN_INC: begin
+                    s_R_memWr    <= 1'b1;
+                    s_R_ptr_next <= s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                    s_R_ptr_top  <= s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                    end
+      C_RETURN_DEC: begin
+                    s_R_memWr    <= 1'b0;
+                    s_R_ptr_next <= s_R_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                    s_R_ptr_top  <= s_R_ptr;
+                    end
+           default: begin
+                    s_R_memWr    <= 1'b0;
+                    s_R_ptr_next <= s_R_ptr;
+                    s_R_ptr_top  <= s_R_ptr;
+                    end
+    endcase
+
+  always @ (posedge i_clk)
+    if (s_R_memWr)
+      s_R_stack[s_R_ptr_top] <= s_R_pre;
+
+  initial s_R = {(C_RETURN_WIDTH){1'b0}};
+  always @ (*)
+    s_R <= s_R_stack[s_R_ptr_top];
+
+end else begin : gen_fast_return_stack
+  // TODO -- debug this section
+
+  //
+  // High resource utilization, fast return stack implementation
+  //
+
+  initial                         s_R             = {(C_RETURN_WIDTH){1'b0}};
+  reg        [C_RETURN_WIDTH-1:0] s_R_next        = {(C_RETURN_WIDTH){1'b0}};
+  reg                             s_R_hasValue    = 1'b0;
+  reg    [C_RETURN_PTR_WIDTH-1:0] s_R_ptr         = {(C_RETURN_PTR_WIDTH){1'b0}};
+  reg    [C_RETURN_PTR_WIDTH-1:0] s_R_ptr_next    = {(C_RETURN_PTR_WIDTH){1'b0}};
+
+  always @ (posedge i_clk)
+    if (i_rst) begin
+      s_R          <= {(C_RETURN_WIDTH){1'b0}};
+      s_R_hasValue <= 1'b0;
+    end else case (s_return)
+      C_RETURN_NOP:
+        begin
+        s_R          <= s_R;
+        s_R_hasValue <= s_R_hasValue;
+        end
+      C_RETURN_INC:
+        begin
+        s_R          <= s_R_pre;
+        s_R_hasValue <= 1'b1;
+        end
+      C_RETURN_DEC:
+        begin
+        s_R          <= s_R_next;
+        s_R_hasValue <= |s_R_ptr;
+        end
+      default:
+        begin
+        s_R          <= s_R;
+        s_R_hasValue <= s_R_hasValue;
+        end
+    endcase
+
+  reg s_R_memWr = 1'b0;
+  always @ (*)
+    if (!s_R_hasValue) begin
+      s_R_ptr_next = {(C_RETURN_PTR_WIDTH){1'b0}};
+      s_R_memWr = 1'b0;
+    end else begin
+      s_R_memWr = 1'b0;
+      case (s_return)
+        C_RETURN_NOP:
+          s_R_ptr_next = s_R_ptr;
+        C_RETURN_INC:
+          begin
+            s_R_memWr = 1'b1;
+            if (s_R_hasValue)
+              s_R_ptr_next = s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+            else
+              s_R_ptr_next = s_R_ptr;
+          end
+        C_RETURN_DEC:
+          if (|s_R_ptr)
+            s_R_ptr_next = s_R_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+          else
+            s_R_ptr_next = s_R_ptr;
+        default:
+          s_R_ptr_next = s_R_ptr;
+      endcase
+    end
+
+  always @ (posedge i_clk)
+    s_R_ptr <= s_R_ptr_next;
+
+  always @ (posedge i_clk) begin
+    if (s_R_memWr) begin
+      s_R_stack[s_R_ptr] <= s_R;
+      s_R_next <= s_R;
+    end else
+      s_R_next <= s_R_stack[s_R_ptr];
+  end
 end
+endgenerate
 
 /*
  * Operate the top of the data stack.
