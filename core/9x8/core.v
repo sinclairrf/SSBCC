@@ -86,7 +86,7 @@ wire [7:0] s_T_compare = {(8){&(~{ s_opcode[2], {(6){s_opcode[1]}}, s_opcode[0]}
 
 // increment PC
 reg [C_PC_WIDTH-1:0] s_PC_plus1 = {(C_PC_WIDTH){1'b0}};
-always @ (posedge i_clk)
+always @ (*)
   s_PC_plus1 <= s_PC + { {(C_PC_WIDTH-1){1'b0}}, 1'b1 };
 
 // Reduced-warning-message method to extract the jump address from the top of
@@ -157,8 +157,7 @@ reg s_interrupt_enabled_next    = 1'b0;
 reg s_interrupt_holdoff         = 1'b0;
 reg s_outport                   = 1'b0;
 
-reg s_output = 1'b0;
-always @ (s_opcode,s_T) begin
+always @ (*) begin
   // default operation is nop/math_rotate
   s_bus_pc      = C_BUS_PC_NORMAL;
   s_bus_r       = C_BUS_R_T;
@@ -175,16 +174,14 @@ always @ (s_opcode,s_T) begin
     s_bus_n     = C_BUS_N_T;
     s_stack     = C_STACK_INC;
   end else if (s_opcode[6+:2] == 2'b10) begin // jump
-    s_bus_r     = C_BUS_R_PC;
-    s_return    = C_RETURN_INC;
+    s_bus_pc    = C_BUS_PC_JUMP;
     s_bus_t     = C_BUS_T_N;
     s_bus_n     = C_BUS_N_STACK;
     s_stack     = C_STACK_DEC;
     s_interrupt_holdoff = 1'b1;
   end else if (s_opcode[6+:2] == 2'b11) begin // jumpc
     if (|s_T) begin
-      s_bus_r   = C_BUS_R_PC;
-      s_return  = C_RETURN_INC;
+      s_bus_pc  = C_BUS_PC_JUMP;
     end
     s_bus_t     = C_BUS_T_N;
     s_bus_n     = C_BUS_N_STACK;
@@ -224,14 +221,14 @@ always @ (s_opcode,s_T) begin
                 s_outport       = 1'b1;
                 end
       4'b1000:  begin // call
-                s_bus_pc        = C_BUS_PC_JUMP;
                 s_bus_r         = C_BUS_R_PC;
+                if (|s_T)
                 s_return        = C_RETURN_INC;
                 end
       4'b1001:  begin // callc
-                s_bus_pc        = C_BUS_PC_JUMP;
                 s_bus_r         = C_BUS_R_PC;
-                s_return        = C_RETURN_INC;
+                if (|s_T)
+                  s_return      = C_RETURN_INC;
                 s_bus_t         = C_BUS_T_N;
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
@@ -239,7 +236,6 @@ always @ (s_opcode,s_T) begin
       4'b1010:  // unused
                 ;
       4'b1011:  begin // >r
-                s_bus_r         = C_BUS_R_T;
                 s_return        = C_RETURN_INC;
                 s_bus_t         = C_BUS_T_N;
                 s_bus_n         = C_BUS_N_STACK;
@@ -284,6 +280,11 @@ always @ (*)
       s_PC_next = s_PC_plus1;
   endcase
 
+// Hold candidate value of PC for return stack.
+reg [C_PC_WIDTH-1:0] s_PC_return;
+always @ (posedge i_clk)
+  s_PC_return <= s_PC_plus1;
+
 // Return stack candidate
 reg [C_RETURN_WIDTH-1:0] s_R_pre;
 generate
@@ -293,7 +294,7 @@ generate
         C_BUS_R_T:
           s_R_pre = s_T;
         C_BUS_R_PC:
-          s_R_pre = { {(8-C_PC_WIDTH){1'b0}}, s_PC };
+          s_R_pre = { {(8-C_PC_WIDTH){1'b0}}, s_PC_return };
         default:
           s_R_pre = s_T;
       endcase
@@ -303,7 +304,7 @@ generate
         C_BUS_R_T:
           s_R_pre = s_T;
         C_BUS_R_PC:
-          s_R_pre = s_PC;
+          s_R_pre = s_PC_return;
         default:
           s_R_pre = s_T;
       endcase
@@ -313,7 +314,7 @@ generate
         C_BUS_R_T:
           s_R_pre = { {(C_PC_WIDTH-8){1'b0}}, s_T };
         C_BUS_R_PC:
-          s_R_pre = s_PC;
+          s_R_pre = s_PC_return;
         default:
           s_R_pre = { {(C_PC_WIDTH-8){1'b0}}, s_T };
       endcase
@@ -466,7 +467,7 @@ always @ (posedge i_clk)
   if (i_rst)
     o_led <= 1'b0;
   else if (s_outport)
-    o_led <= s_T[0];
+    o_led <= s_N[0];
   else
     o_led <= o_led;
 
