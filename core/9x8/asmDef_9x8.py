@@ -388,12 +388,12 @@ class asmDef_9x8:
           elif token['value'] == '.store':
             self.EmitPush(fp,token['address'] & 0xFF);
             self.EmitOpcode(fp,self.specialInstructions['store'] | (token['address'] >> 8),'store');
-            fp.write('%03X\n', self.InstructionOpcode('nip'),'nip');
+            fp.write('%03X\n', self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.storeindexed':
             self.EmitPush(fp,token['address'] & 0xFF);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
             self.EmitOpcode(fp,self.specialInstructions['store'] | (token['address'] >> 8),'store');
-            self.EmitOpcode(fp,self.InstructionOpcode('nip'),'nip');
+            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           else:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
         else:
