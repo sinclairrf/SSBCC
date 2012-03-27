@@ -135,6 +135,7 @@ if cmdStatus != 0:
 # Read the assembler output tables.
 fpAssemberOutput = open(assemblerOutput,'r');
 programBody = list();
+programBodyLength = 0;
 for line in fpAssemberOutput:
   if re.match(':program',line):
     cmd=re.findall(':program (\d+) (\S+) (\d+)',line);
@@ -147,8 +148,10 @@ for line in fpAssemberOutput:
     for line in fpAssemberOutput:
       if len(line) <= 1:
         break;
-      programBody.append(int(line,16));
-    if len(programBody) != mainLength:
+      programBody.append(line[0:-1]);
+      if line[0] != '-':
+        programBodyLength = programBodyLength + 1;
+    if programBodyLength != mainLength:
       raise Exception('Program Bug:  program length doesn\'t match declared length');
 
 ################################################################################
@@ -174,9 +177,17 @@ for line in fpRawCore:
     # TODO -- add the remaining memory models.
     fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (2048-1));
     fpOutCore.write('initial begin\n');
+    programBodyIx = 0;
     for ix in range(len(programBody)):
-      fpOutCore.write('  s_opcodeMemory[%d] = 9\'h%03X;\n' % (ix,programBody[ix]));
-    for ix in range(len(programBody),2048):
+      if programBody[ix][0] == '-':
+        fpOutCore.write('  // %s\n' % programBody[ix][2:]);
+      elif programBody[ix][0] == '1':
+        fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s;\n' % (programBodyIx,programBody[ix][0:3]));
+        programBodyIx = programBodyIx + 1;
+      else:
+        fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
+        programBodyIx = programBodyIx + 1;
+    for ix in range(programBodyIx,2048):
       fpOutCore.write('  s_opcodeMemory[%d] = 9\'h000;\n' % ix);
     fpOutCore.write('end\n');
   elif fillCommand == 'module':
