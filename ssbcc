@@ -181,9 +181,6 @@ for line in fpRawCore:
     for ix in range(len(programBody)):
       if programBody[ix][0] == '-':
         fpOutCore.write('  // %s\n' % programBody[ix][2:]);
-      elif programBody[ix][0] == '1':
-        fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s;\n' % (programBodyIx,programBody[ix][0:3]));
-        programBodyIx = programBodyIx + 1;
       else:
         fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
         programBodyIx = programBodyIx + 1;

@@ -327,7 +327,7 @@ class asmDef_9x8:
     fp.write('%03X %s\n' % (opcode,name));
 
   def EmitPush(self,fp,value):
-    fp.write('1%02X\n' % value);
+    fp.write('1%02X %02X\n' % (value,value));
 
   def Emit(self,fp):
     """Emit the program code"""
@@ -354,11 +354,11 @@ class asmDef_9x8:
         elif token['type'] == 'macro':
           if token['value'] == '.call':
             self.EmitPush(fp,token['address'] & 0xFF);
-            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump');
+            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump '+token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['call'],'call');
           elif token['value'] == '.callc':
             self.EmitPush(fp,token['address'] & 0xFF);
-            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc');
+            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc '+token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['callc'],'callc');
           elif token['value'] == '.fetch':
             self.EmitPush(fp,token['address'] & 0xFF);
