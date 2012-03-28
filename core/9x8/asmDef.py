@@ -180,11 +180,11 @@ def RawTokens(filename,startLineNumber,lines,ad):
         continue;
       # capture double-quoted strings (won't capture embedded double quotes)
       # TODO -- improve double-quoted string capture and escape character interpretation
-      if line[col] == '"':
-        a = re.match(r'"[^"]+"',line[col:]);
-        if ~a:
-          raise Exception('Unmatched " in %s(%d), column %d' % (filename, lineNumber, col+1));
-        tokens.append(dict(type='string', value=a.group(0)[1:len(a)-1], line=lineNumber, col=col+1));
+      if re.match(r'[CN]"',line[col:]):
+        a = re.match(r'[CN]"([^"]|\\")+[^\\\\]"',line[col:]);
+        if not a:
+          raise Exception('Unmatched \'"\' in %s(%d), column %d' % (filename, lineNumber, col+1));
+        tokens.append(dict(type='string', value=a.group(0)[1:len(a.group(0))-1], line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # capture single-quoted character
