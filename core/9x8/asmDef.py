@@ -159,21 +159,21 @@ def RawTokens(filename,startLineNumber,lines,ad):
       if line[col] == ';':
         break;
       # look for decimal value
-      a = re.match(r'([+\-]?[1-9]+|0)',line[col:]);
+      a = re.match(r'([+\-]?[1-9]\d*|0)\b',line[col:]);
       if a:
         tokens.append(dict(type='value', value=int(a.group(0)), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # look for an octal value
       # TODO -- get correct conversion function
-      a = re.match(r'0[0-9]+',line[col:]);
+      a = re.match(r'0[0-7]+\b',line[col:]);
       if a:
         tokens.append(dict(type='value', value=int(a.group(0),8), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # look for a hex value
       # TODO -- get correct conversion function
-      a = re.match(r'0x[0-9A-Fa-f]+',line[col:]);
+      a = re.match(r'0x[0-9A-Fa-f]+\b',line[col:]);
       if a:
         tokens.append(dict(type='value', value=int(a.group(0)[2:],16), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
@@ -190,13 +190,16 @@ def RawTokens(filename,startLineNumber,lines,ad):
       # capture single-quoted character
       if line[col] == "'":
         a = re.match(r'\'.\'',line[col:]);
-        if ~a:
+        if (not a) or ((col+3 < len(line)) and (not re.match(r'\s',line[col+3]))):
           raise Exception('Malformed \'.\' in %s(%d), column %d' % (filename, lineNumber, col+1));
-        tokens.append(dict(type='character', value=a.group(0)[1], line=lineNumber, col=col+1));
+        tokens.append(dict(type='value', value=ord(a.group(0)[1]), line=lineNumber, col=col+1));
+        col = col + 3;
         continue;
       # look for directives and macros
       a = re.match(r'\.[A-Za-z]\w*(\(\w+\))?',line[col:]);
       if a:
+        if (col+len(a.group(0)) < len(line)) and (not re.match(r'\s',line[col+len(a.group(0))])):
+          raise Exception('Malformed directive or macro in %s(%d), column %d' % (filename, lineNumber, col+1));
         b = re.match(r'\.[A-Za-z]\w*',a.group(0));
         if ad.IsDirective(b.group(0)):
           if b.group(0) != a.group(0):
@@ -224,8 +227,10 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + len(a.group(0));
         continue;
       # look for a label definition
-      a = re.match(r':[A-Za-z]\w+',line[col:]);
+      a = re.match(r':[A-Za-z]\w*',line[col:]);
       if a:
+        if (col+len(a.group(0))) and (not re.match(r'\s',line[col+len(a.group(0))])):
+          raise Exception('Malformed label in %s(%d), column %d' % (filename, lineNumber, col+1));
         tokens.append(dict(type='label', value=a.group(0)[1:], line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
@@ -234,6 +239,8 @@ def RawTokens(filename,startLineNumber,lines,ad):
       #        token should be recognizable
       a = re.match(r'[A-Za-z]\w+',line[col:]);
       if a:
+        if (col+len(a.group(0))) and (not re.match(r'\s',line[col+len(a.group(0))])):
+          raise Exception('Malformed symbol in %s(%d), column %d' % (filename, lineNumber, col+1));
         tokens.append(dict(type='symbol', value=a.group(0), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
