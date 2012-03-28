@@ -185,7 +185,7 @@ for line in fpRawCore:
         fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
         programBodyIx = programBodyIx + 1;
     for ix in range(programBodyIx,2048):
-      fpOutCore.write('  s_opcodeMemory[%d] = 9\'h000;\n' % ix);
+      fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
     fpOutCore.write('end\n');
   elif fillCommand == 'module':
     if hdl == 'Verilog':
