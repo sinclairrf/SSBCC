@@ -180,7 +180,7 @@ always @ (*) begin
     s_stack     = C_STACK_DEC;
     s_interrupt_holdoff = 1'b1;
   end else if (s_opcode[6+:2] == 2'b11) begin // jumpc
-    if (|s_T) begin
+    if (|s_N) begin
       s_bus_pc  = C_BUS_PC_JUMP;
     end
     s_bus_t     = C_BUS_T_N;
