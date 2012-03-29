@@ -2,8 +2,9 @@
 2   generate the memories for the program space, data stack, and return stack -- implement a slow data stack
 3   generate the I/O ports
     generate memories for RAM and ROM
+    process string and their escape characters correctly, process both counted and null-terminated strings
     add interrupt handling
-    add optional fast version of the data stack
+    add optional fast version of the data and return stacks
     add a way for users to include a substantial comment in the header of the output processor.
     do VHDL
 
@@ -12,6 +13,7 @@
 1     finish the core
 1.2   debug the core for example/led.s
 4     fully debug the core
+      resolve ISE synthesizing 50 slices instead of 36
     asm
       add option to generate ".lst" files with code listing and generated instructions
       implement .constant directive
