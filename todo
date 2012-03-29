@@ -20,8 +20,7 @@
       implement .abbr directive
       fully process .memory and .variable directives
       add optimizer
-      - "dup push jump drop" ==> "push jump nop"
       - "dup push outport drop" ==> "push outport"
-      - "drop return nop" ==> "return drop"
+      - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
       - "dup push store drop" ==> "push store"
     add VHDL core
