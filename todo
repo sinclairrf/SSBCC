@@ -8,6 +8,7 @@
 
   core/9x8
     core.v
+*     add +u16, +s16, -u16, -s16, *u8u8, *u8s8, *s8u8, and *s8s8 operators
 1     finish the core
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
