@@ -10,9 +10,10 @@
 
 //@SSBCC@ module
 
+// configuration file determined parameters
 //@SSBCC@ localparam
-localparam C_PC_WIDTH           = 11;
 
+// computed parameters
 localparam C_RETURN_WIDTH = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;
 
 /*******************************************************************************
@@ -341,11 +342,8 @@ always @ (posedge i_clk)
  * Operate the return stack.
  */
 
-//@SSBCC@ memory_return_stack
-// TODO -- replace this temporary implementation of the return stack
-localparam C_RETURN_PTR_WIDTH   =  5;
+// Declare the return stack.
 reg [C_RETURN_WIDTH-1:0] s_R_stack[2**C_RETURN_PTR_WIDTH-1:0];
-localparam C_SMALL_RETURN_STACK_IMPLEMENTATION = 1;
 
 generate
 if (C_SMALL_RETURN_STACK_IMPLEMENTATION) begin : gen_small_return_stack
@@ -505,11 +503,8 @@ always @ (posedge i_clk)
  * Operate the next-to-top of the data stack.
  */
 
-//@SSBCC@ memory_data_stack
 // TODO -- replace this temporary implementation of the data stack
-localparam C_DATA_PTR_WIDTH = 6;
 reg [7:0] s_N_stack[2**C_DATA_PTR_WIDTH-1:0];
-localparam C_SMALL_DATA_STACK_IMPLEMENTATION = 1;
 
 generate
 if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
@@ -602,12 +597,12 @@ always @ (posedge i_clk)
 
 /*******************************************************************************
  *
- * Instantiate the memories.
+ * Instantiate the instruction memory and the PC access of that memory.
  *
  ******************************************************************************/
 
-//@SSBCC@ memories
-// TODO -- replace this temporary access of the program space.
+//@SSBCC@ instructions
+
 initial s_opcode = 9'h000;
 always @ (posedge i_clk)
   if (i_rst)

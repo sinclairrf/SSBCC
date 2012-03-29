@@ -8,10 +8,26 @@
 #
 ################################################################################
 
+import math
 import os
 import re
 import sys
 import tempfile
+
+################################################################################
+#
+# Useful functions.
+#
+################################################################################
+
+def CeilLog2(v):
+  tmp = int(math.log(v,2));
+  while 2**tmp < v:
+    tmp = tmp + 1;
+  return tmp;
+
+def IsPowerOf2(v):
+  return v == 2**int(math.log(v,2)+0.5);
 
 ################################################################################
 #
@@ -34,9 +50,12 @@ argList = argListParser.parse_args();
 
 ixLine = 0;
 compiler = [];
+data_stack = 0;
 inport = dict(config=list(), name=list(), id=list());
+instruction = 0;
 memories = list();
 outport = dict(config=list(), name=list(), id=list());
+return_stack = 0;
 user_header = list();
 for line in argList.filename:
   ixLine = ixLine + 1;
@@ -44,15 +63,28 @@ for line in argList.filename:
   if re.match(r'\s*(#.*)?$',line):
     pass;
   # ARCHITECTURE
-  elif re.match(r'\s*ARCHITECTURE\s',line):
+  elif re.match(r'\s*ARCHITECTURE\b',line):
     cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
     if not cmd:
       raise Exception('Malformed ARCHITECTURE statement on line %d: "%s"' % (ixLine,line));
     architecture=cmd[0];
   # ASSEMBLY language for processor code
-  elif re.match(r'\s*ASSEMBLY\s',line):
+  elif re.match(r'\s*ASSEMBLY\b',line):
     cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
     compiler = ('asm',cmd[0],);
+  # COMBINE
+  elif re.match(r'\s*COMBINE\b',line):
+    cmd = re.findall(r'\s*COMBINE\s+(\S+),(\S+)',line);
+    if (not cmd) or (len(cmd[0]) < 2):
+      raise Exception('Malformed "COMBINE" command on line %d: "%s"' % (ixLine,line));
+    combine = (cmd[0][0],cmd[0][1],);
+  # DATA_STACK
+  elif re.match(r'\s*DATA_STACK\b',line):
+    cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
+    if not cmd:
+      raise Exception('Malformed "DATA_STACK" command on line %d: "%s"' % (ixLine,line));
+    data_stack = int(cmd[0]);
+  # HDL
   elif re.match(r'\s*HDL\s',line):
     cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
     if cmd[0][0] in ('Verilog','VHDL',):
@@ -61,7 +93,7 @@ for line in argList.filename:
     else:
       raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
   # INPORT
-  elif re.match(r'\s*INPORT\s',line):
+  elif re.match(r'\s*INPORT\b',line):
     cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
     configs = re.findall(r'([^,]+)',cmd[0][0]);
     names = re.findall(r'([^,]+)',cmd[0][1]);
@@ -70,14 +102,20 @@ for line in argList.filename:
     inport['config'].append(configs);
     inport['name'].append(names);
     inport['id'].append(cmd[0][2]);
+  # INSTRUCTION
+  elif re.match(r'\s*INSTRUCTION\b',line):
+    cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
+    if not cmd:
+      raise Exception('Malformed "INSTRUCTION" command on line %d: "%s"' % (ixLine,line));
+    instruction = int(cmd[0]);
   # MEMORY
-  elif re.match(r'\s*MEMORY\s',line):
+  elif re.match(r'\s*MEMORY\b',line):
     cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)',line);
     if (not cmd) or (len(cmd[0])<2):
       raise Exception('Malformed MEMORY statement on line %d: "%s"' % (ixLine,line));
     memories.append(cmd[0]);
   # OUTPORT
-  elif re.match(r'\s*OUTPORT\s',line):
+  elif re.match(r'\s*OUTPORT\b',line):
     cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
     configs = re.findall(r'([^,]+)',cmd[0][0]);
     names = re.findall(r'([^,]+)',cmd[0][1]);
@@ -86,7 +124,16 @@ for line in argList.filename:
     outport['config'].append(configs);
     outport['name'].append(names);
     outport['id'].append(cmd[0][2]);
-  elif re.match(r'\s*USER_HEADER\s',line):
+  # RETURN_STACK
+  elif re.match(r'\s*RETURN_STACK\b',line):
+    cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
+    if not cmd:
+      raise Exception('Malformed "RETURN_STACK" command on line %d: "%s"' % (ixLine,line));
+    return_stack = int(cmd[0]);
+    if not IsPowerOf2(return_stack):
+      raise Exception('"RETURN_STACK" value must be a power of 2 on line %d: "%s"' % (ixLine,line));
+  # USER_HEADER
+  elif re.match(r'\s*USER_HEADER\b',line):
     user_header_done = False;
     for line in argList.filename:
       if re.match(r'\s*END_USER_HEADER\s',line):
@@ -95,6 +142,7 @@ for line in argList.filename:
       user_header.append(line[0:-1]);
     if not user_header_done:
       raise Exception('No "END_USER_HEADER" found for "USER_HEADER"');
+  # error
   else:
     raise Exception('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
 argList.filename.close();
@@ -153,6 +201,8 @@ for line in fpAssemberOutput:
         programBodyLength = programBodyLength + 1;
     if programBodyLength != mainLength:
       raise Exception('Program Bug:  program length doesn\'t match declared length');
+    if programBodyLength > instruction:
+      raise Exception('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,instruction));
 
 ################################################################################
 #
@@ -173,9 +223,8 @@ for line in fpRawCore:
     fpOutCore.write(line);
     continue;
   fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
-  if fillCommand == 'memories':
-    # TODO -- add the remaining memory models.
-    fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (2048-1));
+  # instructions
+  if fillCommand == 'instructions':
     fpOutCore.write('initial begin\n');
     programBodyIx = 0;
     for ix in range(len(programBody)):
@@ -184,9 +233,18 @@ for line in fpRawCore:
       else:
         fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
         programBodyIx = programBodyIx + 1;
-    for ix in range(programBodyIx,2048):
+    for ix in range(programBodyIx,instruction):
       fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
     fpOutCore.write('end\n');
+  # localparam
+  elif fillCommand == 'localparam':
+    fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(instruction));
+    fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(return_stack));
+    fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(data_stack));
+    fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
+    fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
+    fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (instruction-1));
+  # module
   elif fillCommand == 'module':
     if hdl == 'Verilog':
       fpOutCore.write('module %s(\n' % outCoreName);
@@ -241,6 +299,7 @@ for line in fpRawCore:
       fpOutCore.write(');\n');
     if hdl == 'VHDL':
       raise Exception('VHDL not implemented');
+  # user_header
   elif fillCommand == 'user_header':
     for ix in range(len(user_header)):
       if hdl == 'Verilog':
@@ -249,5 +308,6 @@ for line in fpRawCore:
         fpOutCore.write('-- %s\n' % user_header[ix]);
       else:
         raise Exception('Unimplemented language %s' % hdl);
+  # error
   else:
     print 'WARNING:  Unimplemented command ' + fillCommand;
