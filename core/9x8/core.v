@@ -108,6 +108,7 @@ endgenerate
  *
  ******************************************************************************/
 
+reg [7:0] s_T_inport = 8'h00;
 //@SSBCC@ inports
 
 /*******************************************************************************
@@ -494,7 +495,7 @@ always @ (posedge i_clk)
     C_BUS_T_PRE:                s_T <= s_T_pre;
     C_BUS_T_MATH_DUAL:          s_T <= s_math_dual;
     C_BUS_T_COMPARE:            s_T <= s_T_compare;
-    C_BUS_T_INPORT:             s_T <= 8'h00; // TODO -- change
+    C_BUS_T_INPORT:             s_T <= s_T_inport;
     C_BUS_T_MEMORY:             s_T <= 8'h00; // TODO -- change
     default:                    s_T <= s_T;
   endcase

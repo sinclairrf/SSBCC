@@ -210,6 +210,8 @@ for line in fpAssemberOutput:
 #
 ################################################################################
 
+inports_have_bitsignals = False;
+
 if hdl == 'Verilog':
   fpRawCore = open(os.path.join(corepath,'core.v'),'r');
   fpOutCore = open(outCoreName+'.v','w');
@@ -223,8 +225,48 @@ for line in fpRawCore:
     fpOutCore.write(line);
     continue;
   fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
+  # inports
+  if fillCommand == 'inports':
+    if inport['config']:
+      if inports_have_bitsignals:
+        fpOutCore.write('always @ (*)\n');
+        fpOutCore.write('  case (s_T)\n');
+        for ix in range(len(inport['config'])):
+          configs = inport['config'][ix];
+          names = inport['name'][ix];
+          for jx in range(len(configs)):
+            if re.match(r'\d+-bit',configs[jx]):
+              a = re.findall(r'(\d+)',configs[jx]);
+              portLength = int(a[0]);
+              if portLength < 8:
+                fpOutCore.write('      8\'h%02X : s_T_inport <= { %d\'h0, %s };\n' % (ix,8-portLength,inport['name'][ix][jx]));
+              else:
+                fpOutCore.write('      8\'h%02X : s_T_inport <= %s;\n' % (ix,inport['name'][ix][jx]));
+        fpOutCore.write('    default : s_T_inport <= 8\'h00;\n');
+        fpOutCore.write('  endcase\n');
+        fpOutCore.write('\n');
+      for ix in range(len(inport['config'])):
+        configs = inport['config'][ix];
+        names = inport['name'][ix];
+        for jx in range(len(configs)):
+          if re.match(r'\d+-bit',configs[jx]):
+            pass;
+          elif configs[jx] == 'strobe':
+            fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('always @ (posedge i_clk)\n');
+            fpOutCore.write('  if (i_rst)\n');
+            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('  else if (s_outport)\n');
+            fpOutCore.write('    %s = (s_T == 8\'h%02X);\n' % (names[jx],ix));
+            fpOutCore.write('  else\n');
+            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('\n');
+          else:
+            raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+    else:
+      fpOutCore('// no input ports\n');
   # instructions
-  if fillCommand == 'instructions':
+  elif fillCommand == 'instructions':
     fpOutCore.write('initial begin\n');
     programBodyIx = 0;
     for ix in range(len(programBody)):
@@ -261,6 +303,7 @@ for line in fpRawCore:
             if (ix != 0) or (jx != 0):
               fpOutCore.write(',\n');
             if re.match(r'\d+-bit',configs[jx]):
+              inports_have_bitsignals = True;
               a = re.findall(r'(\d+)',configs[jx]);
               portLength = int(a[0]);
               if portLength == 1:
@@ -300,7 +343,7 @@ for line in fpRawCore:
     if hdl == 'VHDL':
       raise Exception('VHDL not implemented');
   # outports
-  if fillCommand == 'outports':
+  elif fillCommand == 'outports':
     if outport['config']:
       for ix in range(len(outport['config'])):
         configs = outport['config'][ix];
