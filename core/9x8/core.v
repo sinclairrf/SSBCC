@@ -12,7 +12,6 @@
 
 //@SSBCC@ localparam
 localparam C_PC_WIDTH           = 11;
-localparam C_RETURN_PTR_WIDTH   =  6;
 
 localparam C_RETURN_WIDTH = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;
 
@@ -344,6 +343,7 @@ always @ (posedge i_clk)
 
 //@SSBCC@ memory_return_stack
 // TODO -- replace this temporary implementation of the return stack
+localparam C_RETURN_PTR_WIDTH   =  5;
 reg [C_RETURN_WIDTH-1:0] s_R_stack[2**C_RETURN_PTR_WIDTH-1:0];
 localparam C_SMALL_RETURN_STACK_IMPLEMENTATION = 1;
 
@@ -354,17 +354,19 @@ if (C_SMALL_RETURN_STACK_IMPLEMENTATION) begin : gen_small_return_stack
   // Low resource utilization, slow return stack implementation
   //
 
+  reg [C_RETURN_PTR_WIDTH-1:0] s_R_ptr_next;
+
   // reference return stack pointer;
   reg [C_RETURN_PTR_WIDTH-1:0] s_R_ptr = {(C_RETURN_PTR_WIDTH){1'b1}};
   always @ (posedge i_clk)
     if (i_rst)
-      s_R_ptr <= {(C_RETURN_PTR_WIDTH){1'b0}};
+      s_R_ptr <= {(C_RETURN_PTR_WIDTH){1'b1}};
     else
       s_R_ptr <= s_R_ptr_next;
 
   // pointer to top of return stack and next return stack;
-  reg s_R_memWr = 1'b0;
-  reg [C_RETURN_PTR_WIDTH-1:0] s_R_ptr_next = {(C_RETURN_PTR_WIDTH){1'b0}};
+  reg                          s_R_memWr    = 1'b0;
+  initial                      s_R_ptr_next = {(C_RETURN_PTR_WIDTH){1'b0}};
   reg [C_RETURN_PTR_WIDTH-1:0] s_R_ptr_top  = {(C_RETURN_PTR_WIDTH){1'b0}};
   always @ (*)
     case (s_return)
@@ -503,16 +505,80 @@ always @ (posedge i_clk)
  * Operate the next-to-top of the data stack.
  */
 
-initial s_N = 8'h00;
-always @ (posedge i_clk)
-  if (i_rst)
-    s_N <= 8'h00;
-  else case (s_bus_n)
-    C_BUS_N_N:          s_N <= s_N;
-    C_BUS_N_T:          s_N <= s_T;
-    C_BUS_N_STACK:      s_N <= s_N; // fix this
-    default:            s_N <= s_N;
-  endcase
+//@SSBCC@ memory_data_stack
+// TODO -- replace this temporary implementation of the data stack
+localparam C_DATA_PTR_WIDTH = 6;
+reg [7:0] s_N_stack[2**C_DATA_PTR_WIDTH-1:0];
+localparam C_SMALL_DATA_STACK_IMPLEMENTATION = 1;
+
+generate
+if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
+
+  //
+  // Low resource utilization, slow data stack implementation
+  //
+
+  reg [C_DATA_PTR_WIDTH-1:0] s_N_stack_ptr_next;
+
+  // reference data stack pointer
+  reg [C_DATA_PTR_WIDTH-1:0] s_N_stack_ptr = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+  always @ (posedge i_clk)
+    if (i_rst)
+      s_N_stack_ptr <= { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+    else
+      s_N_stack_ptr <= s_N_stack_ptr_next;
+
+  // pointer to top of data stack and next data stack
+  reg                        s_N_memWr          = 1'b0;
+  initial                    s_N_stack_ptr_next = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+  reg [C_DATA_PTR_WIDTH-1:0] s_N_stack_ptr_top  = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+  always @ (*)
+    case (s_stack)
+      C_STACK_NOP: begin
+                   s_N_memWr <= 1'b0;
+                   s_N_stack_ptr_next <= s_N_stack_ptr;
+                   s_N_stack_ptr_top  <= s_N_stack_ptr;
+                   end
+      C_STACK_INC: begin
+                   s_N_memWr <= 1'b1;
+                   s_N_stack_ptr_next <= s_N_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_N_stack_ptr_top  <= s_N_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   end
+      C_STACK_DEC: begin
+                   s_N_memWr <= 1'b0;
+                   s_N_stack_ptr_next <= s_N_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_N_stack_ptr_top  <= s_N_stack_ptr;
+                   end
+          default: begin
+                   s_N_memWr <= 1'b0;
+                   s_N_stack_ptr_next <= s_N_stack_ptr;
+                   s_N_stack_ptr_top  <= s_N_stack_ptr;
+                   end
+    endcase
+
+  always @ (posedge i_clk)
+    if (s_N_memWr)
+      s_N_stack[s_N_stack_ptr_top] <= s_T;
+
+  initial s_N = 8'h00;
+  always @ (*)
+    s_N <= s_N_stack[s_N_stack_ptr_top];
+
+end else begin : gen_fast_data_stack
+
+  initial s_N = 8'h00;
+  always @ (posedge i_clk)
+    if (i_rst)
+      s_N <= 8'h00;
+    else case (s_bus_n)
+      C_BUS_N_N:          s_N <= s_N;
+      C_BUS_N_T:          s_N <= s_T;
+      C_BUS_N_STACK:      s_N <= s_N; // fix this
+      default:            s_N <= s_N;
+    endcase
+
+end
+endgenerate
 
 
 /*******************************************************************************
