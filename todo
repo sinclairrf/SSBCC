@@ -1,7 +1,5 @@
   ssbcc
-2   generate the memories for the program space, data stack, and return stack -- implement a slow data stack
-3   generate the I/O ports
-    generate memories for RAM and ROM
+1   generate memories for RAM and ROM
     process string and their escape characters correctly, process both counted and null-terminated strings
     add interrupt handling
     add optional fast version of the data and return stacks
@@ -11,16 +9,15 @@
   core/9x8
     core.v
 1     finish the core
-1.2   debug the core for example/led.s
-4     fully debug the core
+2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
       add option to generate ".lst" files with code listing and generated instructions
       implement .constant directive
       implement .abbr directive
-      fully process .memory and .variable directives
+1     fully process .memory and .variable directives
       add optimizer
-      - "dup push outport drop" ==> "push outport"
-      - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
-      - "dup push store drop" ==> "push store"
+        - "dup push outport drop" ==> "push outport"
+        - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
+        - "dup push store drop" ==> "push store"
     add VHDL core
