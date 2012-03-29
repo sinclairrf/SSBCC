@@ -299,6 +299,39 @@ for line in fpRawCore:
       fpOutCore.write(');\n');
     if hdl == 'VHDL':
       raise Exception('VHDL not implemented');
+  # outports
+  if fillCommand == 'outports':
+    if outport['config']:
+      for ix in range(len(outport['config'])):
+        configs = outport['config'][ix];
+        names = outport['name'][ix];
+        for jx in range(len(configs)):
+          if re.match(r'\d+-bit',configs[jx]):
+            a = re.findall(r'(\d+)',configs[jx]);
+            portLength = int(a[0]);
+            fpOutCore.write('initial %s = %d\'h0;\n' % (names[jx],portLength));
+            fpOutCore.write('always @ (posedge i_clk)\n');
+            fpOutCore.write('  if (i_rst)\n');
+            fpOutCore.write('    %s = %d\'h0;\n' % (names[jx],portLength));
+            fpOutCore.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
+            fpOutCore.write('    %s = s_N[0+:%d];\n' % (names[jx],portLength));
+            fpOutCore.write('  else\n');
+            fpOutCore.write('    %s = %s;\n' % (names[jx],names[jx]));
+            fpOutCore.write('\n');
+          elif configs[jx] == 'strobe':
+            fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('always @ (posedge i_clk)\n');
+            fpOutCore.write('  if (i_rst)\n');
+            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('  else if (s_outport)\n');
+            fpOutCore.write('    %s = (s_T == 8\'h%02X);\n' % (names[jx],ix));
+            fpOutCore.write('  else\n');
+            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('\n');
+          else:
+            raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+    else:
+      fpOutCore('// no output ports\n');
   # user_header
   elif fillCommand == 'user_header':
     for ix in range(len(user_header)):

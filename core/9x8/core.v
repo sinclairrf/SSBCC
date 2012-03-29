@@ -580,20 +580,9 @@ endgenerate
  *
  * Instantiate the output signals.
  *
- * Note:  This includes output strobes associated with input ports.
- *
  ******************************************************************************/
 
 //@SSBCC@ outports
-// TODO -- replace this temporary hard-wired "o_led" port
-initial o_led = 1'b0;
-always @ (posedge i_clk)
-  if (i_rst)
-    o_led <= 1'b0;
-  else if (s_outport)
-    o_led <= s_N[0];
-  else
-    o_led <= o_led;
 
 /*******************************************************************************
  *
