@@ -6,7 +6,7 @@
 
 USER_HEADER
 
-Illustration of an SSBCC machine to blink an LED.
+Illustration of an SSBCC.9x8 machine to blink an LED.
 
 o_led is the output LED state.
 
@@ -25,8 +25,11 @@ ARCHITECTURE core/9x8
 # Define the memory widths and the structure of the associated ROMs and RAMs.
 #
 
-MEMORY CODE+STACK       1024x9+64x8
-MEMORY RETURN           32x9
+INSTRUCTION             2048
+RETURN_STACK            32
+DATA_STACK              32
+
+COMBINE                 INSTRUCTION,DATA
 
 #
 # Define the I/O ports.
@@ -39,7 +42,7 @@ MEMORY RETURN           32x9
 OUTPORT 1-bit o_led C_LED
 
 #
-# Run the assembler
+# Run the assembler for the embedded code.
 #
 
 #ASSEMBLY -L led.lst led.s
