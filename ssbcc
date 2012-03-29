@@ -264,7 +264,7 @@ for line in fpRawCore:
           else:
             raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
     else:
-      fpOutCore('// no input ports\n');
+      fpOutCore.write('// no input ports\n');
   # instructions
   elif fillCommand == 'instructions':
     fpOutCore.write('initial begin\n');
@@ -374,7 +374,7 @@ for line in fpRawCore:
           else:
             raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
     else:
-      fpOutCore('// no output ports\n');
+      fpOutCore.write('// no output ports\n');
   # user_header
   elif fillCommand == 'user_header':
     for ix in range(len(user_header)):
