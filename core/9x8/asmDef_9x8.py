@@ -456,7 +456,15 @@ class asmDef_9x8:
     self.instructions = dict(list=list(), opcode=list());
     self.AddInstruction('&',            0x01A);
     self.AddInstruction('+',            0x018);
+    self.AddInstruction('+ss',          0x056);
+    self.AddInstruction('+su',          0x054);
+    self.AddInstruction('+us',          0x052);
+    self.AddInstruction('+uu',          0x050);
     self.AddInstruction('-',            0x019);
+    self.AddInstruction('-ss',          0x057);
+    self.AddInstruction('-su',          0x055);
+    self.AddInstruction('-us',          0x053);
+    self.AddInstruction('-uu',          0x051);
     self.AddInstruction('00=',          0x020);
     self.AddInstruction('01=',          0x021);
     self.AddInstruction('0>>',          0x004);

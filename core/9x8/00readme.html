@@ -204,6 +204,14 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#&">&amp;</a>,
     <a href="#+">+</a>,
     <a href="#-">-</a>,
+    <a href='#+ss'>+ss</a>,
+    <a href='#+su'>+su</a>,
+    <a href='#+us'>+us</a>,
+    <a href='#+uu'>+uu</a>,
+    <a href='#-ss'>-ss</a>,
+    <a href='#-su'>-su</a>,
+    <a href='#-us'>-us</a>,
+    <a href='#-uu'>-uu</a>,
     <a href="#00=">00=</a>,
     <a href="#01=">01=</a>,
     <a href="#0>>">0&gt;&gt;</a>,
@@ -386,9 +394,37 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
         <td align="left">convert the immediately preceding "<tt>jumpc</tt>" to a function call</td>
         </tr>
-      <th align="left"></th>
+      <th align="left"><a href="#+uu">+uu</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
-        <td align="left">Unused</td>
+        <td align="left">16 bit result of unsigned(N) + unsigned(T)</td>
+        </tr>
+      <th align="left"><a href="#-uu">-uu</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">16 bit result of unsigned(N) - unsigned(T)</td>
+        </tr>
+      <th align="left"><a href="#+us">+us</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">16 bit result of unsigned(N) + signed(T)</td>
+        </tr>
+      <th align="left"><a href="#-us">-us</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        <td align="left">16 bit result of unsigned(N) - signed(T)</td>
+        </tr>
+      <th align="left"><a href="#+su">+su</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td>
+        <td align="left">16 bit result of signed(N) + unsigned(T)</td>
+        </tr>
+      <th align="left"><a href="#-su">-su</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td>
+        <td align="left">16 bit result of signed(N) - unsigned(T)</td>
+        </tr>
+      <th align="left"><a href="#+ss">+ss</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td>
+        <td align="left">16 bit result of signed(N) + signed(T)</td>
+        </tr>
+      <th align="left"><a href="#-ss">-ss</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td>
+        <td align="left">16 bit result of signed(N) - signed(T)</td>
         </tr>
       <th align="left"><a href="#>r">&gt;r</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
@@ -434,8 +470,46 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; T + N<br/>
+      T &leftarrow; N + T<br/>
       N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
+  <h2><a name="+ss">Instruction:  +ss</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit signed sum.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(signed(N)+signed(T))<br/>
+      N &leftarrow; LSB(signed(N)+signed(T))<br/><br/>
+      <br/>
+  <h2><a name="+su">Instruction:  +su</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit sum where N is treated as signed and T is treated as
+      unsigned.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(signed(N)+unsigned(T))<br/>
+      N &leftarrow; LSB(signed(N)+unsigned(T))<br/><br/>
+      <br/>
+  <h2><a name="+us">Instruction:  +us</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit sum where N is treated as unsigned and T is treated as
+      signed.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(unsigned(N)+signed(T))<br/>
+      N &leftarrow; LSB(unsigned(N)+signed(T))<br/><br/>
+      <br/>
+  <h2><a name="+uu">Instruction:  +uu</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit unsigned sum.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(unsigned(N)+unsigned(T))<br/>
+      N &leftarrow; LSB(unsigned(N)+unsigned(T))<br/><br/>
       <br/>
   <h2><a name="-">Instruction:  -</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the
@@ -443,8 +517,46 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; T - N<br/>
+      T &leftarrow; N - T<br/>
       N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
+  <h2><a name="-ss">Instruction:  -ss</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit signed difference.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(signed(N)-signed(T))<br/>
+      N &leftarrow; LSB(signed(N)-signed(T))<br/><br/>
+      <br/>
+  <h2><a name="-su">Instruction:  -su</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit difference where N is treated as signed and T is treated as
+      unsigned.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(signed(N)-unsigned(T))<br/>
+      N &leftarrow; LSB(signed(N)-unsigned(T))<br/><br/>
+      <br/>
+  <h2><a name="-us">Instruction:  -us</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit difference where N is treated as unsigned and T is treated as
+      signed.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(unsigned(N)-signed(T))<br/>
+      N &leftarrow; LSB(unsigned(N)-signed(T))<br/><br/>
+      <br/>
+  <h2><a name="-uu">Instruction:  -uu</a></h2>
+    <b>Desription:</b>  Replace the top and next-to-top of the data stack with
+      their 16-bit unsigned difference.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; MSB(unsigned(N)-unsigned(T))<br/>
+      N &leftarrow; LSB(unsigned(N)-unsigned(T))<br/><br/>
       <br/>
   <h2><a name="00=">Instruction:  00=</a></h2>
     <b>Desription:</b>  Set the top of the stack to all ones if the previous

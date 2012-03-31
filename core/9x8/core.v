@@ -84,6 +84,17 @@ always @ (s_T,s_N,s_opcode)
 // 1_000000_0, 1_000000_1, 1_111111_0, and 1_111111_1.
 wire [7:0] s_T_compare = {(8){&(~{ s_opcode[2], {(6){s_opcode[1]}}, s_opcode[0]} ^ s_T)}};
 
+// opcode = 001010_xxx
+// 10-bit adder required for 16-bit addition and subtraction results
+wire [9:0] s_adder_a = { {(2){s_opcode[2] & N[7]}}, N };
+wire [9:0] s_adder_b = { {(2){s_opcode[1] & T[7]}}, T };
+reg [9:0] s_adder = 10'd0;
+always @ (*)
+  if (s_opcode[0] = 1'b0)
+    s_adder <= s_adder_a + s_adder_b;
+  else
+    s_adder <= s_adder_a - s_adder_b;
+
 // increment PC
 reg [C_PC_WIDTH-1:0] s_PC_plus1 = {(C_PC_WIDTH){1'b0}};
 always @ (*)
@@ -132,19 +143,21 @@ localparam C_RETURN_INC         = 2'b01;        // add element to return stack
 localparam C_RETURN_DEC         = 2'b10;        // remove element from return stack
 reg [1:0] s_return;
 
-localparam C_BUS_T_MATH_ROTATE  = 3'b000;       // nop and rotate operations
-localparam C_BUS_T_OPCODE       = 3'b001;
-localparam C_BUS_T_N            = 3'b010;
-localparam C_BUS_T_PRE          = 3'b011;
-localparam C_BUS_T_MATH_DUAL    = 3'b100;
-localparam C_BUS_T_COMPARE      = 3'b101;
-localparam C_BUS_T_INPORT       = 3'b110;
-localparam C_BUS_T_MEMORY       = 3'b111;
-reg [2:0] s_bus_t;
+localparam C_BUS_T_MATH_ROTATE  = 4'b0000;      // nop and rotate operations
+localparam C_BUS_T_OPCODE       = 4'b0001;
+localparam C_BUS_T_N            = 4'b0010;
+localparam C_BUS_T_PRE          = 4'b0011;
+localparam C_BUS_T_MATH_DUAL    = 3'b0100;
+localparam C_BUS_T_COMPARE      = 4'b0101;
+localparam C_BUS_T_INPORT       = 4'b0110;
+localparam C_BUS_T_16BITMATH    = 4'b0111;
+localparam C_BUS_T_MEMORY       = 4'b1000;
+reg [3:0] s_bus_t;
 
 localparam C_BUS_N_N            = 2'b00;        // don't change N
 localparam C_BUS_N_T            = 2'b01;        // replace N with T
 localparam C_BUS_N_STACK        = 2'b10;        // replace N with third-on-stack
+localparam C_BUS_N_16BITMATH    = 2'b11;        // extended LSB of 10-bit adder
 reg [1:0] s_bus_n;
 
 localparam C_STACK_NOP          = 2'b00;        // don't change internal data stack pointer
@@ -234,8 +247,10 @@ always @ (*) begin
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 end
-      4'b1010:  // unused
-                ;
+      4'b1010:  begin // 16-bit adder
+                s_bus_t         = C_BUS_T_16BITMATH;
+                s_bus_n         = C_BUS_N_16BITMATH;
+                end
       4'b1011:  begin // >r
                 s_return        = C_RETURN_INC;
                 s_bus_t         = C_BUS_T_N;
@@ -496,6 +511,7 @@ always @ (posedge i_clk)
     C_BUS_T_MATH_DUAL:          s_T <= s_math_dual;
     C_BUS_T_COMPARE:            s_T <= s_T_compare;
     C_BUS_T_INPORT:             s_T <= s_T_inport;
+    C_BUS_T_16BITMATH:          s_t <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_MEMORY:             s_T <= 8'h00; // TODO -- change
     default:                    s_T <= s_T;
   endcase
@@ -531,7 +547,10 @@ if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
   always @ (*)
     case (s_stack)
       C_STACK_NOP: begin
-                   s_N_memWr <= 1'b0;
+                   if (s_bus_n == C_BUS_N_16BITMATH)
+                     s_N_memWr <= 1'b1;
+                   else
+                     s_N_memWr <= 1'b0;
                    s_N_stack_ptr_next <= s_N_stack_ptr;
                    s_N_stack_ptr_top  <= s_N_stack_ptr;
                    end
@@ -554,7 +573,7 @@ if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
 
   always @ (posedge i_clk)
     if (s_N_memWr)
-      s_N_stack[s_N_stack_ptr_top] <= s_T;
+      s_N_stack[s_N_stack_ptr_top] <= (s_bus_n == C_BUS_N_16BITMATH) ? s_adder[7:0] ? s_T;
 
   initial s_N = 8'h00;
   always @ (*)
@@ -570,6 +589,7 @@ end else begin : gen_fast_data_stack
       C_BUS_N_N:          s_N <= s_N;
       C_BUS_N_T:          s_N <= s_T;
       C_BUS_N_STACK:      s_N <= s_N; // fix this
+      C_BUS_N_16BITMATH:  s_N <= s_adder[7:0];
       default:            s_N <= s_N;
     endcase
 
