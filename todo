@@ -9,6 +9,8 @@
   core/9x8
     core.v
 *     add +u16, +s16, -u16, -s16, *u8u8, *u8s8, *s8u8, and *s8s8 operators
+*     change jump and jumpc to include the call and callc opcodes by pushing the PC onto the return stack and
+        - this reduces the jump address space by 1 bit (from 16K to 8K)
 1     finish the core
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
