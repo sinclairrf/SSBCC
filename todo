@@ -1,27 +1,33 @@
   ssbcc
 1   generate memories for RAM and ROM
-    process string and their escape characters correctly, process both counted and null-terminated strings
     add interrupt handling
     add optional fast version of the data and return stacks
-    add a way for users to include a substantial comment in the header of the output processor.
     do VHDL
+    add exception handler
+    clean up temporary files
 
   core/9x8
     core.v
-*     add +u16, +s16, -u16, -s16, *u8u8, *u8s8, *s8u8, and *s8s8 operators
+*     add 16-bit addition/subtraction unsigned/signed operators
+        - debug
+        - what's the new speed?
+        - add and debug 32-bit math library
 *     change jump and jumpc to include the call and callc opcodes by pushing the PC onto the return stack and
         - this reduces the jump address space by 1 bit (from 16K to 8K)
 1     finish the core
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
-      add option to generate ".lst" files with code listing and generated instructions
+      add loop labels to the output instruction list
       implement .constant directive
       implement .abbr directive
 1     fully process .memory and .variable directives
-      add .fetch(name,N) and .store(name,N) instructions
+      add .fetch(name,N) and .store(name,N) macros
+      process strings and their escape characters correctly, process both counted and null-terminated strings
       add optimizer
         - "dup push outport drop" ==> "push outport"
         - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
         - "dup push store drop" ==> "push store"
-    add VHDL core
+      add exception handler
+    core.vhd
+      do this once core.v is completed

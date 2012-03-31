@@ -45,7 +45,6 @@ OUTPORT 1-bit o_led C_LED
 # Run the assembler for the embedded code.
 #
 
-#ASSEMBLY -L led.lst led.s
 ASSEMBLY led.s
 
 #
