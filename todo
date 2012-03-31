@@ -17,6 +17,7 @@
       implement .constant directive
       implement .abbr directive
 1     fully process .memory and .variable directives
+      add .fetch(name,N) and .store(name,N) instructions
       add optimizer
         - "dup push outport drop" ==> "push outport"
         - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
