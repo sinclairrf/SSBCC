@@ -9,39 +9,52 @@ Copyright 2012, Sinclair R.F., Inc.<br/><br/>
 This document describes the 9-bit opcode, 8-bit data, stack-based
   microcontroller.
 <h1>Directory Contents</h1>
-  This directory contains the assembler and the Verilog and VHD templates for
+  This directory contains the assembler and the Verilog and VHDL templates for
     the processor.  While the assember can be run by itself, it is more
-    typically run within the "<tt>../../ssbcc</tt>" script.<br/><br/>
+    typically run within the "<tt>../../ssbcc</tt>" script as part of making a
+    compute computer core.<br/><br/>
   The "<tt>core.v</tt>" and "<tt>core.vhd</tt>" files in this directory are not
     complete modules.  They cannot be compiled.<br/><br/>
 <h1>Introduction</h1>
-  The objective of this design is to provide a minimalist FPGA-based
-    microcontroller.<br/><br/>
+  This processor is a minimalist FPGA-based microcontroller.  It&nbsp;provides
+    8-bit data manipulation operations and function calls.  There are no
+    condition registers as the results of tests are on the data stack.  The
+    instruction space, data stack size, return stack size, and existence and
+    sizes of RAMs and ROMs are controlled by a configuration file so that the
+    processor can be sized for the problem at hand.  The configuration file also
+    describes the input and output ports and include 0&nbsp; to&nbsp;8 bit port
+    widths and strobes.  A&nbsp;complete processor can be implemented using just
+    the configuration file and the assembly file.<br/><br/>
   A&nbsp;9-bit opcode was chosen because (1)&nbsp;it works well with Altera,
     Lattice, and Xilinx SRAM widths and (2)&nbsp;it allows pushing 8-bit data
     onto the stack with a single instruction.<br/><br/>
-  An&nbsp;8-bit data width was chosen because that's a practical minimal sizes
-    and is common to many hardware interfaces such as I2C devices.<br/><br/>
+  An&nbsp;8-bit data width was chosen because that's a practical minimal
+    size.  It&nbsp;is also common to many hardware interfaces such as I2C
+    devices.<br/><br/>
   The machine has single-cycle instruction execution for all
-    instructions.<br/><br/>
+    instructions.  However, some operations, such as a jump, require pushing the
+    8 lsb of the target address onto the stack in one instruction, executing the
+    jump with the remaining 5 msb of the target address, and then a <tt>nop</tt>
+    during the following instruction.<br/><br/>
   Only one data stack shift can be achieved per instruction cycle.  This means
     that all operations that consume the top two elements of the stack, such as
     a store instruction, can only remove one element from the stack and must be
     immediately followed by a "<tt>drop</tt>" instruction to remove what had
     been the second element on the data stack.<br/><br/>
-  This architecture accommodates up to a 14-bit instructions address space by
+  This architecture accommodates up to a 13-bit instruction address space by
     first pushing the 8 least significant bits of the destination address onto
-    the stack and then encoding the 6 most significant bits in the jump
+    the stack and then encoding the 5&nbsp;most significant bits in the jump
     instruction.  This is the largest practicable instruction address width
     because (1)&nbsp;one bit of the opcode is required to indicate pushing an
     8-bit value onto the stack, (2)&nbsp;one bit of the remaining 8 bits is
-    required to indicate a jump instructions, and (3)&nbsp;one more bit is
-    required to indicate whether the jump is always performed or is
-    conditionally performed.  Consuming these 3 bits leaves 6 bits additional
+    required to indicate a jump instructions, (3)&nbsp;one bit is required to
+    indicate whether the jump is always performed or is conditionally performed,
+    and (4)&nbsp;one more bit is required to indicate whether the jump is a jump
+    or a call.  This consumes 4&nbsp;bits and leaves 5&nbsp;bits of additional
     address space for the jump instruction.<br/><br/>
-  This architecture also supports 0 to 8&nbsp;pages of RAM and 0 to
-    16&nbsp;pages of ROM with a combined limit of 16 pages.  Each page of RAM or
-    ROM can hold up to 256&nbsp;bytes of data.<br/><br/>
+  This architecture also supports 0 to 8&nbsp;pages of RAM and ROM with a
+    combined limit of 8&nbsp;pages.  Each page of RAM or ROM can hold up to
+    256&nbsp;bytes of data.<br/><br/>
 <h1>Design</h1>
   This section describes things the processor does not do and what is required
     in code to work around these restrictions:<br/><br/>
