@@ -1,4 +1,5 @@
   ssbcc
+*   add search paths for includes
 1   generate memories for RAM and ROM
     add interrupt handling
     add optional fast version of the data and return stacks
