@@ -89,7 +89,7 @@ class FileBodyIterator:
             self.pending.append(fp['fp'].name);
             self.pending.append(fp['line']);
           self.pending.append(line);
-          self.pendingInclude = a[0][1];
+          self.pendingInclude = a[0][0];
           if not self.current:
             self.current = self.pending;
             self.pending = list();
