@@ -31,3 +31,7 @@
       add exception handler
     core.vhd
       do this once core.v is completed
+
+  license
+    - look at http://creativecommons.org/licenses/by-sa/
+      - used by Gumstix
