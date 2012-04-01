@@ -86,11 +86,11 @@ wire [7:0] s_T_compare = {(8){&(~{ s_opcode[2], {(6){s_opcode[1]}}, s_opcode[0]}
 
 // opcode = 001010_xxx
 // 10-bit adder required for 16-bit addition and subtraction results
-wire [9:0] s_adder_a = { {(2){s_opcode[2] & N[7]}}, N };
-wire [9:0] s_adder_b = { {(2){s_opcode[1] & T[7]}}, T };
+wire [9:0] s_adder_a = { {(2){s_opcode[2] & s_N[7]}}, s_N };
+wire [9:0] s_adder_b = { {(2){s_opcode[1] & s_T[7]}}, s_T };
 reg [9:0] s_adder = 10'd0;
 always @ (*)
-  if (s_opcode[0] = 1'b0)
+  if (s_opcode[0] == 1'b0)
     s_adder <= s_adder_a + s_adder_b;
   else
     s_adder <= s_adder_a - s_adder_b;
@@ -147,7 +147,7 @@ localparam C_BUS_T_MATH_ROTATE  = 4'b0000;      // nop and rotate operations
 localparam C_BUS_T_OPCODE       = 4'b0001;
 localparam C_BUS_T_N            = 4'b0010;
 localparam C_BUS_T_PRE          = 4'b0011;
-localparam C_BUS_T_MATH_DUAL    = 3'b0100;
+localparam C_BUS_T_MATH_DUAL    = 4'b0100;
 localparam C_BUS_T_COMPARE      = 4'b0101;
 localparam C_BUS_T_INPORT       = 4'b0110;
 localparam C_BUS_T_16BITMATH    = 4'b0111;
@@ -511,7 +511,7 @@ always @ (posedge i_clk)
     C_BUS_T_MATH_DUAL:          s_T <= s_math_dual;
     C_BUS_T_COMPARE:            s_T <= s_T_compare;
     C_BUS_T_INPORT:             s_T <= s_T_inport;
-    C_BUS_T_16BITMATH:          s_t <= { {(7){s_adder[9]}}, s_adder[8] };
+    C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_MEMORY:             s_T <= 8'h00; // TODO -- change
     default:                    s_T <= s_T;
   endcase
@@ -571,9 +571,11 @@ if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
                    end
     endcase
 
+  // WARNING:  The value of s_N displayed in simulation may be wrong because
+  // s_N_stack_ptr_top is pointing to the next memory location during pushes.
   always @ (posedge i_clk)
     if (s_N_memWr)
-      s_N_stack[s_N_stack_ptr_top] <= (s_bus_n == C_BUS_N_16BITMATH) ? s_adder[7:0] ? s_T;
+      s_N_stack[s_N_stack_ptr_top] <= (s_bus_n == C_BUS_N_16BITMATH) ? s_adder[7:0] : s_T;
 
   initial s_N = 8'h00;
   always @ (*)
