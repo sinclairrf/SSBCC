@@ -1,5 +1,5 @@
 ; Copyright 2012, Sinclair R.F., Inc.
-
+;
 ; Example LED flasher using 8-bit data
 
 ; consume for 256*6+3 clock cycles
