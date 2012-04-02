@@ -29,6 +29,7 @@ import asmDef
 
 argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
 argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
+argListParser.add_argument('-L', metavar='librarypath', action='append', help='Library search path');
 argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
 argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
 argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
@@ -61,6 +62,9 @@ if argList.O:
 
 # Construct the iterator that loops through the code bodies.
 fbi = asmDef.FileBodyIterator(argList.filename,ad);
+if argList.L:
+  for path in argList.L:
+    fbi.AddSearchPath(path);
 
 ################################################################################
 #

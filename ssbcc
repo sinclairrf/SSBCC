@@ -172,6 +172,7 @@ for ix in range(len(inport['config'])):
 for ix in range(len(outport['config'])):
   cmd += (' -O %s=%d' % (outport['id'][ix],ix));
 cmd += ' -o ' + assemblerOutput;
+cmd += ' -L %s/%s' % (sys.path[0], 'lib/9x8');
 cmd += ' ' + compiler[1];
 
 # Invoke the compiler and exit if it failed.

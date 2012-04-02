@@ -6,6 +6,7 @@
 #
 ################################################################################
 
+import os
 import re
 
 ################################################################################
@@ -36,6 +37,9 @@ class FileBodyIterator:
     self.ad = ad;
     self.current = list();
     self.pending = list();
+    # Initialize the include search paths
+    self.searchPaths = list();
+    self.searchPaths.append('.');
     # Prepare the file parsing
     self.included = list();
     for fp in self.fpPending:
@@ -70,7 +74,14 @@ class FileBodyIterator:
         if self.pendingInclude in self.included:
           raise Exception('File "%s" already included' % self.pendingInclude);
         self.included.append(self.pendingInclude);
-        fp_pending = open(self.pendingInclude,'r');
+        fp_pending = None;
+        for path in self.searchPaths:
+          fullInclude = os.path.join(path,self.pendingInclude);
+          if os.path.exists(fullInclude):
+            fp_pending = open('%s/%s' % (path,self.pendingInclude),'r');
+            break;
+        if not fp_pending:
+          raise Exception('%s not found' % self.pendingInclude);
         self.fpStack.append(dict(fp=fp_pending, line=0));
         self.pendingInclude = str();
       # Get the next file to process if fpStack is empty.
@@ -127,6 +138,9 @@ class FileBodyIterator:
         self.current = self.pending;
         self.pending = list();
     raise StopIteration;
+
+  def AddSearchPath(self,path):
+    self.searchPaths.append(path);
 
 ################################################################################
 #
