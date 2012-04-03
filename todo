@@ -8,10 +8,6 @@
 
   core/9x8
     core.v
-*     add 16-bit addition/subtraction unsigned/signed operators
-        - debug
-        - what's the new speed?
-        - add and debug 32-bit math library
 *     change comparisons to 0=, 0<>, -1=, and -1<>
 *     change jump and jumpc to include the call and callc opcodes by pushing the PC onto the return stack and
         - this reduces the jump address space by 1 bit (from 16K to 8K)
