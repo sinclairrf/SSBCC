@@ -108,6 +108,8 @@ for line in argList.filename:
     if not cmd:
       raise Exception('Malformed "INSTRUCTION" command on line %d: "%s"' % (ixLine,line));
     instruction = int(cmd[0]);
+    if instruction > 2**13:
+      raise Exception('Instruction space cannot exceed %d' % (2**13));
   # MEMORY
   elif re.match(r'\s*MEMORY\b',line):
     cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)',line);

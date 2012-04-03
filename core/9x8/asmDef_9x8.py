@@ -111,7 +111,7 @@ class asmDef_9x8:
     if firstToken['value'] == '.main':
       if (lastToken['type'] != 'macro') or (lastToken['value'] != '.jump'):
         raise Exception('.main body does not end in ".jump" at %s(%d), column %d' % (filename,lastToken['line'],lastToken['col']));
-    # Ensure functions and interrupts end in a ".jumpc" or ".return".
+    # Ensure functions and interrupts end in a ".jump" or ".return".
     if firstToken['value'] in ('.function','.interrupt',):
       errorMsg = 'Last entry in ".function" or ".interrupt" must be a ".jump" or ".return" at %s(%d), column %d' % (filename,lastToken['line'],lastToken['col']);
       if lastToken['type'] != 'macro':
@@ -354,12 +354,12 @@ class asmDef_9x8:
         elif token['type'] == 'macro':
           if token['value'] == '.call':
             self.EmitPush(fp,token['address'] & 0xFF);
-            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump '+token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['call'],'call');
+            self.EmitOpcode(fp,self.specialInstructions['call'] | (token['address'] >> 8),'call '+token['argument'][0]);
+            self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
           elif token['value'] == '.callc':
             self.EmitPush(fp,token['address'] & 0xFF);
-            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc '+token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['callc'],'callc');
+            self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
+            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.fetch':
             self.EmitPush(fp,token['address'] & 0xFF);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | (token['address'] >> 8),'fetch');
@@ -495,12 +495,12 @@ class asmDef_9x8:
     self.AddInstruction('swap',         0x012);
 
     self.specialInstructions = dict();
-    self.specialInstructions['call']    = 0x040;
-    self.specialInstructions['callc']   = 0x048;
+    self.specialInstructions['call']    = 0x0C0;
+    self.specialInstructions['callc']   = 0x0E0;
     self.specialInstructions['fetch']   = 0x070;
     self.specialInstructions['inport']  = 0x030;
     self.specialInstructions['jump']    = 0x080;
-    self.specialInstructions['jumpc']   = 0x0C0;
+    self.specialInstructions['jumpc']   = 0x0A0;
     self.specialInstructions['outport'] = 0x038;
     self.specialInstructions['return']  = 0x028;
     self.specialInstructions['store']   = 0x068;

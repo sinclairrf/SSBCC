@@ -386,14 +386,6 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
         <td align="left">write the next-to-top of the data stack to the output port specified by the top of the data stack</td>
         </tr>
-      <th align="left"><a href="#call">call</a></th>
-        <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
-        <td align="left">convert the immediately preceding "<tt>jump</tt>" to a function call</td>
-        </tr>
-      <th align="left"><a href="#callc">callc</a></th>
-        <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
-        <td align="left">convert the immediately preceding "<tt>jumpc</tt>" to a function call</td>
-        </tr>
       <th align="left"><a href="#+uu">+uu</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
         <td align="left">16 bit result of unsigned(N) + unsigned(T)</td>
@@ -443,12 +435,20 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bbbb</tt>"</td>
         </tr>
       <th align="left"><a href="#jump">jump</a></th>
-        <td>0</td><td>1</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
-        <td align="left">Jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
+        <td>0</td><td>1</td><td>0</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        <td align="left">Jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>"</td>
         </tr>
       <th align="left"><a href="#jumpc">jumpc</a></th>
-        <td>0</td><td>1</td><td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
-        <td align="left">Conditionally jump to the address "<tt>xx_xxxx_TTTT_TTTT</tt>"</td>
+        <td>0</td><td>1</td><td>0</td><td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        <td align="left">Conditionally jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>"</td>
+        </tr>
+      <th align="left"><a href="#call">call</a></th>
+        <td>0</td><td>1</td><td>1</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        <td align="left">Call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>"</td>
+        </tr>
+      <th align="left"><a href="#callc">callc</a></th>
+        <td>0</td><td>1</td><td>1</td><td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
+        <td align="left">Conditionally call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>"</td>
         </tr>
       <th align="left"><a href="#push">push</a></th>
         <td>1</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
@@ -705,46 +705,42 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
   <h2><a name="call">Instruction:  call</a></h2>
-    <b>Desription:</b>  Convert the immediately preceding "<tt>jump</tt>"
-      instruction into a function call by pushing the PC onto the return
-      stack.<br/><br/>
+    <b>Desription:</b>  Call the function at the address constructed from the
+      opcode and <tt>T</tt>.  Discard&nbsp;<tt>T</tt> and push the PC onto the
+      return stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      PC &leftarrow; PC + 1<br/>
-      R &leftarrow; PC<br/>
+      PC &leftarrow; { O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
+      R &leftarrow; PC+1<br/>
       <tt>++return</tt> &leftarrow; R<br/>
-      T, N, and <tt>stack</tt> unchanged<br/>
-      <br/>
-    <b>Special:</b><br/><br/>
-      A&nbsp;function call consists of the following 3 opcode instruction
-      sequence:  "<tt>LL&nbsp;jump_MM&nbsp;call</tt>" where "<tt>LL</tt>" is the
-      instruction to push the 8&nbsp;lsb of the function address onto the stack,
-      "<tt>jump_MM</tt>" is the jump instruction along with the 6&nbsp;msb of
-      the function address, and "<tt>call</tt>" is the instruction to push the
-      PC onto the return stack.<br/><br/>
-  <h2><a name="callc">Instruction:  callc</a></h2>
-    <b>Desription:</b>  Convert the immediately preceding "<tt>jumpc</tt>"
-      instruction into a function call by pushing the PC onto the return
-      stack and dropping the conditional for the jump from the data
-      stack.<br/><br/>
-    <b>Operation:</b><br/><br/>
-      PC &leftarrow; PC + 1<br/>
-      if T != 0 then<br/>
-      &nbsp;&nbsp;R &leftarrow; PC<br/>
-      &nbsp;&nbsp;<tt>++return</tt> &leftarrow; R<br/>
-      else<br/>
-      &nbsp;&nbsp;R and <tt>return</tt> unchanged<br/>
-      endif<br/>
-      T &leftarrow; T<br/>
+      T &leftarrow; N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
     <b>Special:</b><br/><br/>
-      A&nbsp;conditional function call consists of the following 3 opcode
-      instruction sequence:  "<tt>LL&nbsp;jumpc_MM&nbsp;callc</tt>" where
-      "<tt>LL</tt>" is the instruction to push the 8&nbsp;lsb of the function
-      address onto the stack, "<tt>jumpc_MM</tt>" is the jump instruction along
-      with the 6&nbsp;msb of the function address, and "<tt>callc</tt>" is the
-      instruction to push the PC onto the return stack and to drop the
-      conditional for the jump from the top of the stack.<br/><br/>
+      Interrupts are disabled during the clock cycle immediately following a
+      call instruction.<br/><br/>
+      The assembler normally places a "<tt>nop</tt>" instruction immediately
+      after the "<tt>call</tt>" instruction.<br/><br/>
+  <h2><a name="callc">Instruction:  callc</a></h2>
+    <b>Desription:</b>  Conditionally call the function at the address
+      constructed from the opcode and <tt>T</tt>.  Discard&nbsp;<tt>T</tt> and
+      conditionally push the next PC onto the return stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      if N != 0 then<br/>
+      &nbsp;&nbsp;PC &leftarrow; { O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
+      &nbsp;&nbsp;R &leftarrow; PC<br/>
+      &nbsp;&nbsp;<tt>++return</tt> &leftarrow; R<br/>
+      else<br/>
+      &nbsp;&nbsp;PC &leftarrow; PC+1<br/>
+      &nbsp;&nbsp;R and <tt>return</tt> unchanged<br/>
+      endif<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      <br/>
+    <b>Special:</b><br/><br/>
+      Interrupts are disabled during the clock cycle immediately following a
+      callc instruction.<br/><br/>
+      The assembler normally places a "<tt>drop</tt>" instruction immediately
+      after the "<tt>callc</tt>" instruction.<br/><br/>
   <h2><a name="dis">Instruction:  dis</a></h2>
     <b>Desription:</b>  Disable interrupts.<br/><br/>
     <b>Operation:</b><br/><br/>
@@ -803,40 +799,38 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       "<tt>.inport</tt>" macro.<br/><br/>
   <h2><a name="jump">Instruction:  jump</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
-      <tt>S</tt>.  Discard&nbsp;<tt>S</tt>.<br/><br/>
+      <tt>T</tt>.  Discard&nbsp;<tt>T</tt>.<br/><br/>
     <b>Operation:</b><br/><br/>
-      PC &leftarrow; { O[5], O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
+      PC &leftarrow; { O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; T &amp; N<br/>
+      T &leftarrow; N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
     <b>Special:</b><br/><br/>
       Interrupts are disabled during the clock cycle immediately following a
       jump instruction.<br/><br/>
-      The "<tt>jump</tt>" instruction should be followed by a "<tt>nop</tt>"
-      instruction for normal jumps or a "<tt>call</tt>" instruction to complete
-      a function call.<br/><br/>
+      The assembler normally places a "<tt>nop</tt>" instruction immediately
+      after the "<tt>jump</tt>" instruction.<br/><br/>
   <h2><a name="jumpc">Instruction:  jumpc</a></h2>
     <b>Desription:</b>  Jump to the address constructed from the opcode and
-      <tt>S</tt> if <tt>N</tt> is non-zero.  Discard <tt>S</tt>
+      <tt>T</tt> if <tt>N</tt> is non-zero.  Discard <tt>S</tt>
       and&nbsp;<tt>N</tt>.<br/><br/>
     <b>Operation:</b><br/><br/>
-      if T != 0 then<br/>
-      &nbsp;&nbsp;PC &leftarrow; { O[5], O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
+      if N != 0 then<br/>
+      &nbsp;&nbsp;PC &leftarrow; { O[4], ..., O[0], T[7], T[6], ..., T[0] }<br/>
       else<br/>
       &nbsp;&nbsp;PC &leftarrow; PC+1<br/>
       end if<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; T &amp; N<br/>
+      T &leftarrow; N<br/>
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
     <b>Special:</b><br/><br/>
       Interrupts are disabled during the clock cycle immediately following a
       jumpc instruction.<br/><br/>
-      The "<tt>jumpc</tt>" instruction should be followed by a "<tt>drop</tt>"
-      instruction to drop the conditional from the top of the stack for normal
-      jumps or a "<tt>callc</tt>" instruction to complete a conditional function
-      call.<br/><br/>
+      The assembler normally places a "<tt>drop</tt>" instruction immediately
+      after the "<tt>jump</tt>" instruction so that the conditional is dropped
+      from the data stack.<br/><br/>
   <h2><a name="lsb>>">Instruction:  lsb&gt;&gt;</a></h2>
     <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
       left-most bit with the previous value of the right-most bit.<br/><br/>

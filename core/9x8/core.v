@@ -187,16 +187,13 @@ always @ (*) begin
     s_bus_t     = C_BUS_T_OPCODE;
     s_bus_n     = C_BUS_N_T;
     s_stack     = C_STACK_INC;
-  end else if (s_opcode[6+:2] == 2'b10) begin // jump
-    s_bus_pc    = C_BUS_PC_JUMP;
-    s_bus_t     = C_BUS_T_N;
-    s_bus_n     = C_BUS_N_STACK;
-    s_stack     = C_STACK_DEC;
-    s_interrupt_holdoff = 1'b1;
-  end else if (s_opcode[6+:2] == 2'b11) begin // jumpc
-    if (|s_N) begin
+  end else if (s_opcode[7] == 1'b1) begin // jump, jumpc, call, callc
+    if (!s_opcode[5] || (|s_N)) begin // always or conditional
       s_bus_pc  = C_BUS_PC_JUMP;
+      if (s_opcode[6])                  // call or callc
+        s_return = C_RETURN_INC;
     end
+    s_bus_r     = C_BUS_R_PC;
     s_bus_t     = C_BUS_T_N;
     s_bus_n     = C_BUS_N_STACK;
     s_stack     = C_STACK_DEC;
@@ -233,18 +230,6 @@ always @ (*) begin
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 s_outport       = 1'b1;
-                end
-      4'b1000:  begin // call
-                s_bus_r         = C_BUS_R_PC;
-                s_return        = C_RETURN_INC;
-                end
-      4'b1001:  begin // callc
-                s_bus_r         = C_BUS_R_PC;
-                if (|s_T)
-                  s_return      = C_RETURN_INC;
-                s_bus_t         = C_BUS_T_N;
-                s_bus_n         = C_BUS_N_STACK;
-                s_stack         = C_STACK_DEC;
                 end
       4'b1010:  begin // 16-bit adder
                 s_bus_t         = C_BUS_T_16BITMATH;
