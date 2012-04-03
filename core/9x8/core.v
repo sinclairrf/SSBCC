@@ -236,7 +236,6 @@ always @ (*) begin
                 end
       4'b1000:  begin // call
                 s_bus_r         = C_BUS_R_PC;
-                if (|s_T)
                 s_return        = C_RETURN_INC;
                 end
       4'b1001:  begin // callc
