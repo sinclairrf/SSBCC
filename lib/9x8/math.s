@@ -26,7 +26,7 @@
 .return
 
 .function add_u24_u8__u32 ; ( u0[0] u0[1] u0[2] u1[0] - us[0] us[1] us[2] u[3] )
-  swap >r .call(add_u16_u8__u24) r> .call(add_u16_u8_u24)
+  swap >r .call(add_u16_u8__u24) r> .call(add_u16_u8__u24)
 .return
 
 .function add_u24_u16__u24 ; ( u0[0] u0[1] u0[2] u1[0] u1[1] - us[0] us[1] us[2] )
