@@ -13,6 +13,7 @@
         - debug
         - what's the new speed?
         - add and debug 32-bit math library
+*     change comparisons to 0=, 0<>, -1=, and -1<>
 *     change jump and jumpc to include the call and callc opcodes by pushing the PC onto the return stack and
         - this reduces the jump address space by 1 bit (from 16K to 8K)
 1     finish the core
@@ -23,6 +24,7 @@
       implement .constant directive
       implement .abbr directive
 1     fully process .memory and .variable directives
+      reduce range of fetch instruction
       add .fetch(name,N) and .store(name,N) macros
       process strings and their escape characters correctly, process both counted and null-terminated strings
       add optimizer
