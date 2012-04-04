@@ -66,7 +66,7 @@ always @ (*)
 // opcode = 000011_xxx
 // add,sub,and,or,xor,TBD,drop,nip
 reg [7:0] s_math_dual;
-always @ (s_T,s_N,s_opcode)
+always @ (*)
   case (s_opcode[0+:3])
      3'b000 : s_math_dual = s_N + s_T;  // add
      3'b001 : s_math_dual = s_N - s_T;  // sub
@@ -500,7 +500,7 @@ always @ (posedge i_clk)
  */
 
 // TODO -- replace this temporary implementation of the data stack
-reg [7:0] s_N_stack[2**C_DATA_PTR_WIDTH-1:0];
+reg [7:0] s_data_stack[2**C_DATA_PTR_WIDTH-1:0];
 
 generate
 if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
@@ -509,59 +509,60 @@ if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
   // Low resource utilization, slow data stack implementation
   //
 
-  reg [C_DATA_PTR_WIDTH-1:0] s_N_stack_ptr_next;
+  reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_next;
 
   // reference data stack pointer
-  reg [C_DATA_PTR_WIDTH-1:0] s_N_stack_ptr = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+  reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
   always @ (posedge i_clk)
     if (i_rst)
-      s_N_stack_ptr <= { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+      s_Np_stack_ptr <= { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
     else
-      s_N_stack_ptr <= s_N_stack_ptr_next;
-
-  // indications of when to write values to the next-to-top on the data stack
-  reg s_N_memWr = 1'b0;
-  always @ (*)
-    case (s_bus_n)
-      C_BUS_N_N:         s_N_memWr <= 1'b0;
-      C_BUS_N_STACK:     s_N_memWr <= 1'b0;
-      C_BUS_N_T:         s_N_memWr <= 1'b1;
-      C_BUS_N_16BITMATH: s_N_memWr <= 1'b1;
-      default:           s_N_memWr <= 1'b0;
-    endcase
+      s_Np_stack_ptr <= s_Np_stack_ptr_next;
 
   // pointer to top of data stack and next data stack
-  initial                    s_N_stack_ptr_next = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
-  reg [C_DATA_PTR_WIDTH-1:0] s_N_stack_ptr_top  = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+  initial                    s_Np_stack_ptr_next = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
+  reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top  = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
   always @ (*)
     case (s_stack)
       C_STACK_NOP: begin
-                   s_N_stack_ptr_next <= s_N_stack_ptr;
-                   s_N_stack_ptr_top  <= s_N_stack_ptr;
+                   s_Np_stack_ptr_next <= s_Np_stack_ptr;
+                   s_Np_stack_ptr_top  <= s_Np_stack_ptr;
                    end
       C_STACK_INC: begin
-                   s_N_stack_ptr_next <= s_N_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                   s_N_stack_ptr_top  <= s_N_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_Np_stack_ptr_next <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_Np_stack_ptr_top  <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
                    end
       C_STACK_DEC: begin
-                   s_N_stack_ptr_next <= s_N_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                   s_N_stack_ptr_top  <= s_N_stack_ptr;
+                   s_Np_stack_ptr_next <= s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_Np_stack_ptr_top  <= s_Np_stack_ptr;
                    end
           default: begin
-                   s_N_stack_ptr_next <= s_N_stack_ptr;
-                   s_N_stack_ptr_top  <= s_N_stack_ptr;
+                   s_Np_stack_ptr_next <= s_Np_stack_ptr;
+                   s_Np_stack_ptr_top  <= s_Np_stack_ptr;
                    end
     endcase
 
-  // WARNING:  The value of s_N displayed in simulation may be wrong because
-  // s_N_stack_ptr_top is pointing to the next memory location during pushes.
   always @ (posedge i_clk)
-    if (s_N_memWr)
-      s_N_stack[s_N_stack_ptr_top] <= (s_bus_n == C_BUS_N_16BITMATH) ? s_adder[7:0] : s_T;
+    if (s_stack == C_STACK_INC)
+      s_data_stack[s_Np_stack_ptr_top] <= s_N;
+
+  // WARNING:  The value of s_Np displayed in simulation may be wrong because
+  // s_N_stack_ptr_top is pointing to the next memory location during pushes.
+  reg [7:0] s_Np = 8'h00;
+  always @ (*)
+    s_Np <= s_data_stack[s_Np_stack_ptr_top];
 
   initial s_N = 8'h00;
-  always @ (*)
-    s_N <= s_N_stack[s_N_stack_ptr_top];
+  always @ (posedge i_clk)
+    if (i_rst)
+      s_N <= 8'h00;
+    else case (s_bus_n)
+      C_BUS_N_N:          s_N <= s_N;
+      C_BUS_N_STACK:      s_N <= s_Np;
+      C_BUS_N_T:          s_N <= s_T;
+      C_BUS_N_16BITMATH:  s_N <= s_adder[0+:8];
+      default:            s_N <= s_N;
+    endcase
 
 end else begin : gen_fast_data_stack
 
@@ -573,7 +574,7 @@ end else begin : gen_fast_data_stack
       C_BUS_N_N:          s_N <= s_N;
       C_BUS_N_STACK:      s_N <= s_N; // fix this
       C_BUS_N_T:          s_N <= s_T;
-      C_BUS_N_16BITMATH:  s_N <= s_adder[7:0];
+      C_BUS_N_16BITMATH:  s_N <= s_adder[0+:8];
       default:            s_N <= s_N;
     endcase
 
