@@ -95,6 +95,22 @@ always @ (*)
   else
     s_adder <= s_adder_a - s_adder_b;
 
+// opcode = 001011_xxx
+// 8-bit incrementer
+reg [7:0] s_T_increment = 8'h00;
+always @ (*)
+  case (s_opcode[0+:3])
+     3'b000: s_T_increment <= s_T + 8'h01;
+     3'b001: s_T_increment <= s_T + 8'h02;
+     3'b010: s_T_increment <= s_T + 8'h04;
+     3'b011: s_T_increment <= s_T + 8'h08;
+     3'b100: s_T_increment <= s_T - 8'h01;
+     3'b101: s_T_increment <= s_T - 8'h02;
+     3'b110: s_T_increment <= s_T - 8'h04;
+     3'b111: s_T_increment <= s_T - 8'h08;
+    default: s_T_increment <= s_T + 8'h01;
+  endcase
+
 // increment PC
 reg [C_PC_WIDTH-1:0] s_PC_plus1 = {(C_PC_WIDTH){1'b0}};
 always @ (*)
@@ -152,6 +168,7 @@ localparam C_BUS_T_COMPARE      = 4'b0101;
 localparam C_BUS_T_INPORT       = 4'b0110;
 localparam C_BUS_T_16BITMATH    = 4'b0111;
 localparam C_BUS_T_MEMORY       = 4'b1000;
+localparam C_BUS_T_INCREMENT    = 4'b1001;
 reg [3:0] s_bus_t;
 
 localparam C_BUS_N_N            = 2'b00;        // don't change N
@@ -246,6 +263,9 @@ always @ (*) begin
       4'b1010:  begin // 16-bit adder
                 s_bus_t         = C_BUS_T_16BITMATH;
                 s_bus_n         = C_BUS_N_16BITMATH;
+                end
+      4'b1011:  begin // 8-bit increment/decrement
+                s_bus_t         = C_BUS_T_INCREMENT;
                 end
       4'b1101:  // store
                 ; // TODO -- implement this instruction
@@ -492,6 +512,7 @@ always @ (posedge i_clk)
     C_BUS_T_INPORT:             s_T <= s_T_inport;
     C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_MEMORY:             s_T <= 8'h00; // TODO -- change
+    C_BUS_T_INCREMENT:          s_T <= s_T_increment;
     default:                    s_T <= s_T;
   endcase
 

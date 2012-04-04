@@ -217,7 +217,15 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#0<>">0&lt;&gt;</a>,
     <a href="#0=">0=</a>,
     <a href="#0>>">0&gt;&gt;</a>,
+    <a href="#1+">1+&gt;</a>,
+    <a href="#1-">1-&gt;</a>,
     <a href="#1>>">1&gt;&gt;</a>,
+    <a href="#2+">2+&gt;</a>,
+    <a href="#2-">2-&gt;</a>,
+    <a href="#4+">4+&gt;</a>,
+    <a href="#4-">4-&gt;</a>,
+    <a href="#8+">8+&gt;</a>,
+    <a href="#8-">8-&gt;</a>,
     <a href="#<<0">&lt;&lt;0</a>,
     <a href="#<<1">&lt;&lt;1</a>,
     <a href="#<<msb">&lt;&lt;msb</a>,
@@ -408,6 +416,38 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td>
         <td align="left">16 bit result of signed(N) - signed(T)</td>
         </tr>
+      <th align="left"><a href="#1+">1+</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">Add 1 to T</td>
+        </tr>
+      <th align="left"><a href="#2+">2+</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">Add 2 to T</td>
+        </tr>
+      <th align="left"><a href="#4+">4+</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">Add 4 to T</td>
+        </tr>
+      <th align="left"><a href="#8+">8+</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td>
+        <td align="left">Add 8 to T</td>
+        </tr>
+      <th align="left"><a href="#1-">1-</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td>
+        <td align="left">Subtract 1 from T</td>
+        </tr>
+      <th align="left"><a href="#2-">2-</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td>
+        <td align="left">Subtract 2 from T</td>
+        </tr>
+      <th align="left"><a href="#4-">4-</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td>
+        <td align="left">Subtract 4 from T</td>
+        </tr>
+      <th align="left"><a href="#8-">8-</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
+        <td align="left">Subtract 8 from T</td>
+        </tr>
       <th align="left"><a href="#store">store</a></th>
         <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>b</td><td>b</td><td>b</td>
         <td align="left">Store N in the T'th entry in bank "<tt>bbb</tt>" and pop the data stack</td>
@@ -585,6 +625,22 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       T &leftarrow; { 0, T[7], T[6], ..., T[1] }<br/>
       N and <tt>stack</tt> unchanged<br/>
       <br/>
+  <h2><a name="1+">Instruction:  1+</a></h2>
+    <b>Desription:</b>  Add 1 to T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T+1<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="1-">Instruction:  1-</a></h2>
+    <b>Desription:</b>  Subtract 1 from T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T-1<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
   <h2><a name="1>>">Instruction:  1&gt;&gt;</a></h2>
     <b>Desription:</b>  Right shift the top of the stack one bit, replacing the
       left-most bit with a zero.<br/><br/>
@@ -592,6 +648,54 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
       T &leftarrow; { 1, T[7], T[6], ..., T[1] }<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="2+">Instruction:  2+</a></h2>
+    <b>Desription:</b>  Add 2 to T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T+2<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="2-">Instruction:  2-</a></h2>
+    <b>Desription:</b>  Subtract 2 from T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T-2<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="4+">Instruction:  4+</a></h2>
+    <b>Desription:</b>  Add 4 to T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T+4<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="4-">Instruction:  4-</a></h2>
+    <b>Desription:</b>  Subtract 4 from T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T-4<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="8+">Instruction:  8+</a></h2>
+    <b>Desription:</b>  Add 8 to T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T+8<br/>
+      N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="8-">Instruction:  8-</a></h2>
+    <b>Desription:</b>  Subtract 8 from T.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T-8<br/>
       N and <tt>stack</tt> unchanged<br/>
       <br/>
   <h2><a name="<<0">Instruction:  &lt;&lt;0</a></h2>

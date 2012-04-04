@@ -470,7 +470,15 @@ class asmDef_9x8:
     self.AddInstruction('0<>',          0x021);
     self.AddInstruction('0=',           0x020);
     self.AddInstruction('0>>',          0x004);
+    self.AddInstruction('1+',           0x058);
+    self.AddInstruction('1-',           0x05C);
     self.AddInstruction('1>>',          0x005);
+    self.AddInstruction('2+',           0x059);
+    self.AddInstruction('2-',           0x05D);
+    self.AddInstruction('4+',           0x05A);
+    self.AddInstruction('4-',           0x05E);
+    self.AddInstruction('8+',           0x05B);
+    self.AddInstruction('8-',           0x05F);
     self.AddInstruction('<<0',          0x001);
     self.AddInstruction('<<1',          0x002);
     self.AddInstruction('<<msb',        0x003);
