@@ -8,7 +8,6 @@
 
   core/9x8
     core.v
-*     change comparisons to 0=, 0<>, -1=, and -1<>
 *     register s_N -- experiments show much faster and less logic
 1     finish the core
         - store and fetch
