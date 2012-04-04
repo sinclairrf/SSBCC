@@ -280,11 +280,6 @@ always @ (*)
       s_PC_next = s_PC_plus1;
   endcase
 
-// Hold candidate value of PC for return stack.
-reg [C_PC_WIDTH-1:0] s_PC_return;
-always @ (posedge i_clk)
-  s_PC_return <= s_PC_plus1;
-
 // Return stack candidate
 reg [C_RETURN_WIDTH-1:0] s_R_pre;
 generate
@@ -294,7 +289,7 @@ generate
         C_BUS_R_T:
           s_R_pre = s_T;
         C_BUS_R_PC:
-          s_R_pre = { {(8-C_PC_WIDTH){1'b0}}, s_PC_return };
+          s_R_pre = { {(8-C_PC_WIDTH){1'b0}}, s_PC_plus1 };
         default:
           s_R_pre = s_T;
       endcase
@@ -304,7 +299,7 @@ generate
         C_BUS_R_T:
           s_R_pre = s_T;
         C_BUS_R_PC:
-          s_R_pre = s_PC_return;
+          s_R_pre = s_PC_plus1;
         default:
           s_R_pre = s_T;
       endcase
@@ -314,7 +309,7 @@ generate
         C_BUS_R_T:
           s_R_pre = { {(C_PC_WIDTH-8){1'b0}}, s_T };
         C_BUS_R_PC:
-          s_R_pre = s_PC_return;
+          s_R_pre = s_PC_plus1;
         default:
           s_R_pre = { {(C_PC_WIDTH-8){1'b0}}, s_T };
       endcase
