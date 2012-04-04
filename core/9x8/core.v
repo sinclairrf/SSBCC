@@ -231,21 +231,21 @@ always @ (*) begin
                 s_stack         = C_STACK_DEC;
                 s_outport       = 1'b1;
                 end
-      4'b1010:  begin // 16-bit adder
-                s_bus_t         = C_BUS_T_16BITMATH;
-                s_bus_n         = C_BUS_N_16BITMATH;
-                end
-      4'b1011:  begin // >r
+      4'b1000:  begin // >r
                 s_return        = C_RETURN_INC;
                 s_bus_t         = C_BUS_T_N;
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 end
-      4'b1100:  begin // r> (pop the return stack and push it onto the data stack)
+      4'b1001:  begin // r> (pop the return stack and push it onto the data stack)
                 s_return        = C_RETURN_DEC;
                 s_bus_t         = C_BUS_T_PRE;
                 s_bus_n         = C_BUS_N_T;
                 s_stack         = C_STACK_INC;
+                end
+      4'b1010:  begin // 16-bit adder
+                s_bus_t         = C_BUS_T_16BITMATH;
+                s_bus_n         = C_BUS_N_16BITMATH;
                 end
       4'b1101:  // store
                 ; // TODO -- implement this instruction

@@ -368,6 +368,14 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
         <td align="left">write the next-to-top of the data stack to the output port specified by the top of the data stack</td>
         </tr>
+      <th align="left"><a href="#>r">&gt;r</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">Pop the top of the data stack and push it onto the return stack</td>
+        </tr>
+      <th align="left"><a href="#r>">r&gt;</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">Pop the top of the return stack and push it onto the data stack</td>
+        </tr>
       <th align="left"><a href="#+uu">+uu</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
         <td align="left">16 bit result of unsigned(N) + unsigned(T)</td>
@@ -399,14 +407,6 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       <th align="left"><a href="#-ss">-ss</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td>
         <td align="left">16 bit result of signed(N) - signed(T)</td>
-        </tr>
-      <th align="left"><a href="#>r">&gt;r</a></th>
-        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
-        <td align="left">Pop the top of the data stack and push it onto the return stack</td>
-        </tr>
-      <th align="left"><a href="#r>">r&gt;</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td>
-        <td align="left">Pop the top of the return stack and push it onto the data stack</td>
         </tr>
       <th align="left"><a href="#store">store</a></th>
         <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>b</td><td>b</td><td>b</td>
