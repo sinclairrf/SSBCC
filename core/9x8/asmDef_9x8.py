@@ -327,7 +327,7 @@ class asmDef_9x8:
     fp.write('%03X %s\n' % (opcode,name));
 
   def EmitPush(self,fp,value):
-    fp.write('1%02X %02X\n' % (value,value));
+    fp.write('1%02X %02X\n' % ((value % 0x100),value));
 
   def Emit(self,fp):
     """Emit the program code"""
@@ -461,18 +461,16 @@ class asmDef_9x8:
     self.AddInstruction('+us',          0x052);
     self.AddInstruction('+uu',          0x050);
     self.AddInstruction('-',            0x019);
+    self.AddInstruction('-1<>',         0x023);
+    self.AddInstruction('-1=',          0x022);
     self.AddInstruction('-ss',          0x057);
     self.AddInstruction('-su',          0x055);
     self.AddInstruction('-us',          0x053);
     self.AddInstruction('-uu',          0x051);
-    self.AddInstruction('00=',          0x020);
-    self.AddInstruction('01=',          0x021);
+    self.AddInstruction('0<>',          0x021);
+    self.AddInstruction('0=',           0x020);
     self.AddInstruction('0>>',          0x004);
     self.AddInstruction('1>>',          0x005);
-    self.AddInstruction('7E=',          0x022);
-    self.AddInstruction('7F=',          0x023);
-    self.AddInstruction('80=',          0x024);
-    self.AddInstruction('81=',          0x025);
     self.AddInstruction('<<0',          0x001);
     self.AddInstruction('<<1',          0x002);
     self.AddInstruction('<<msb',        0x003);

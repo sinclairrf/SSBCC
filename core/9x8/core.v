@@ -79,10 +79,10 @@ always @ (s_T,s_N,s_opcode)
     default : s_math_dual = s_T;
   endcase
 
-// opcode = 000100_xxx
-// Test for for the patterns 0_000000_0, 0_000000_1, 0_111111_0, 0_111111_1,
-// 1_000000_0, 1_000000_1, 1_111111_0, and 1_111111_1.
-wire [7:0] s_T_compare = {(8){&(~{ s_opcode[2], {(6){s_opcode[1]}}, s_opcode[0]} ^ s_T)}};
+// opcode = 000100_0xx
+//                   ^ 0 ==> "=", 1 ==> "<>"
+//                  ^  0 ==> all zero, 1 ==> all ones
+wire s_T_compare = s_opcode[0] ^ &(s_T == {(8){s_opcode[1]}});
 
 // opcode = 001010_xxx
 // 10-bit adder required for 16-bit addition and subtraction results
@@ -488,7 +488,7 @@ always @ (posedge i_clk)
     C_BUS_T_N:                  s_T <= s_N;
     C_BUS_T_PRE:                s_T <= s_T_pre;
     C_BUS_T_MATH_DUAL:          s_T <= s_math_dual;
-    C_BUS_T_COMPARE:            s_T <= s_T_compare;
+    C_BUS_T_COMPARE:            s_T <= {(8){s_T_compare}};
     C_BUS_T_INPORT:             s_T <= s_T_inport;
     C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_MEMORY:             s_T <= 8'h00; // TODO -- change
