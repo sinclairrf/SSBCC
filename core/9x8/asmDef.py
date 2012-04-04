@@ -172,6 +172,12 @@ def RawTokens(filename,startLineNumber,lines,ad):
       # ignore comments
       if line[col] == ';':
         break;
+      # look for instructions
+      a = re.match(r'\S+',line[col:]);
+      if ad.IsInstruction(a.group(0)):
+        tokens.append(dict(type='instruction', value=a.group(0), line=lineNumber, col=col+1));
+        col = col + len(a.group(0));
+        continue;
       # look for decimal value
       a = re.match(r'([+\-]?[1-9]\d*|0)\b',line[col:]);
       if a:
@@ -234,12 +240,6 @@ def RawTokens(filename,startLineNumber,lines,ad):
           col = col + len(a.group(0));
           continue;
         raise Exception('Unrecognized directive or macro "%s" in %s(%d), column(%d)' % (a.group(0), filename, lineNumber, col+1));
-      # look for instructions
-      a = re.match(r'\S+',line[col:]);
-      if ad.IsInstruction(a.group(0)):
-        tokens.append(dict(type='instruction', value=a.group(0), line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
       # look for a label definition
       a = re.match(r':[A-Za-z]\w*',line[col:]);
       if a:
