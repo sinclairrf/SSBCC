@@ -31,6 +31,14 @@
     core.vhd
       do this once core.v is completed
 
+  lib/9x8/math.s
+    -- add_u8_u32__u32, ...
+    -- sub_uX_uY__uZ, X,Y,Z \in {8,16,24,32}, Z \in min(X,Y)+{0,8}, Z<=32
+    -- add signed versions
+
+  lib/9x8/forth.s
+    -- identify good instructions to include
+
   license
     - look at http://creativecommons.org/licenses/by-sa/
       - used by Gumstix
