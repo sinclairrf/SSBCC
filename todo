@@ -9,9 +9,9 @@
   core/9x8
     core.v
 *     change comparisons to 0=, 0<>, -1=, and -1<>
-*     change jump and jumpc to include the call and callc opcodes by pushing the PC onto the return stack and
-        - this reduces the jump address space by 1 bit (from 16K to 8K)
+*     register s_N -- experiments show much faster and less logic
 1     finish the core
+        - store and fetch
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
@@ -26,6 +26,7 @@
         - "dup push outport drop" ==> "push outport"
         - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
         - "dup push store drop" ==> "push store"
+        - "push+outport+drop push+jump/call+nop" ==> "push+outport push+jump/call+drop"
       add exception handler
     core.vhd
       do this once core.v is completed
