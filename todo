@@ -8,6 +8,7 @@
 
   core/9x8
     core.v
+*     use a register for s_R
 1     finish the core
         - store and fetch
 2     fully debug the core
