@@ -188,13 +188,13 @@ class asmDef_9x8:
       elif token['type'] == 'macro':
         tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument']));
         offset = offset + self.MacroLength(token['value']);
-      elif token['type'] == 'symbol':
-        if token['value'] not in self.symbols['list']:
-          raise Exception('Program bug:  symbol %s not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
-        ix = symbols['list'].index(token['value']);
-        for lToken in symbols['tokens']:
-          tokens.append(dict(type=lToken['type'], value=lToken['value'], offset=offset+lToken['offset']));
-        offset = offset + symbols['length'][ix];
+#      elif token['type'] == 'symbol':
+#        if token['value'] not in self.symbols['list']:
+#          raise Exception('Program bug:  symbol %s not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
+#        ix = symbols['list'].index(token['value']);
+#        for lToken in symbols['tokens']:
+#          tokens.append(dict(type=lToken['type'], value=lToken['value'], offset=offset+lToken['offset']));
+#        offset = offset + symbols['length'][ix];
       else:
         raise Exception('Program bug:  unexpected token type "%s"' % token['type']);
     return dict(tokens=tokens, length=offset);
@@ -212,11 +212,9 @@ class asmDef_9x8:
         raise Exception('Expected symbol at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
       if secondToken['value'] in self.symbols['list']:
         raise Exception('Symbol %s already defined at %s(%d), column %d' % (secondToken['value'], filename, secondToken['line'], secondToken['col']));
-      et = self.ExpandTokens(filename,rawTokens[2:]);
       self.symbols['list'].append(secondToken['value']);
       self.symbols['type'].append('function');
-      self.symbols['tokens'].append(et['tokens']);
-      self.symbols['length'].append(et['length']);
+      self.symbols['body'].append(self.ExpandTokens(filename,rawTokens[2:]));
     # Process ".interrupt" definition.
     elif firstToken['value'] == '.interrupt':
       if self.interrupt:
@@ -288,8 +286,8 @@ class asmDef_9x8:
             if self.symbols['type'][ixName] != 'function':
               raise Exception('Function "%s" called by "%s" is not a function', (callName, self.functionEvaluation['list'][ix],));
             self.functionEvaluation['list'].append(callName);
-            self.functionEvaluation['length'].append(self.symbols['length'][ixName]);
-            self.functionEvaluation['body'].append(self.symbols['tokens'][ixName]);
+            self.functionEvaluation['length'].append(self.symbols['body'][ixName]['length']);
+            self.functionEvaluation['body'].append(self.symbols['body'][ixName]['tokens']);
             self.functionEvaluation['address'].append(nextStart);
             nextStart = nextStart + self.functionEvaluation['length'][-1];
       ix = ix + 1;
@@ -447,7 +445,7 @@ class asmDef_9x8:
 
     self.interrupt = list();
     self.main = list();
-    self.symbols = dict(list=list(), type=list(), tokens=list(), length=list(), used=list());
+    self.symbols = dict(list=list(), type=list(), body=list());
 
     #
     # Configure the instructions.
