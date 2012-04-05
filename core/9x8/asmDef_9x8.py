@@ -147,10 +147,10 @@ class asmDef_9x8:
     # Ensure symbols referenced by ".input" and ".outport" are defined.
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] == '.inport'):
-        if self.IsInport(token['argument'][0]):
+        if not self.IsInport(token['argument'][0]):
           raise Exception('Input port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
-      if (token['type'] == 'macro') and (token['value'] == '.inport'):
-        if self.IsOutport(token['argument'][0]):
+      if (token['type'] == 'macro') and (token['value'] == '.outport'):
+        if not self.IsOutport(token['argument'][0]):
           raise Exception('Output port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
     # Ensure referenced symbols are already defined.
     checkBody = False;
