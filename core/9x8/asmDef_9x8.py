@@ -70,30 +70,38 @@ class asmDef_9x8:
   ################################################################################
 
   def IsInport(self,name):
-    return name in self.inports;
+    if name not in self.symbols['list']:
+      return False;
+    ix = self.symbols['list'].index(name);
+    return self.symbols['type'][ix] == 'inport';
 
   def IsOutport(self,name):
-    return name in self.outports;
+    if name not in self.symbols['list']:
+      return False;
+    ix = self.symbols['list'].index(name);
+    return self.symbols['type'][ix] == 'outport';
 
   def InportAddress(self,name):
     if not self.IsInport(name):
       raise Exception('Program Bug');
-    return self.inports[name];
+    ix = self.symbols['list'].index(name);
+    return self.symbols['body'][ix]['address'];
 
   def OutportAddress(self,name):
     if not self.IsOutport(name):
       raise Exception('Program Bug');
-    return self.outports[name];
+    ix = self.symbols['list'].index(name);
+    return self.symbols['body'][ix]['address'];
 
   def RegisterInport(self,name,address):
     if self.IsInport(name):
       raise Exception('Program Bug');
-    self.inports[name] = address;
+    self.AddSymbol(name,'inport',dict(address=address));
 
   def RegisterOutport(self,name,address):
     if self.IsOutport(name):
       raise Exception('Program Bug');
-    self.outports[name] = address;
+    self.AddSymbol(name,'outport',dict(address=address));
 
   ################################################################################
   #
@@ -237,6 +245,11 @@ class asmDef_9x8:
 
   def Interrupt(self):
     return self.interrupt;
+
+  def AddSymbol(self,name,stype,body):
+    self.symbols['list'].append(name);
+    self.symbols['type'].append(stype);
+    self.symbols['body'].append(body);
 
   def Symbols(self):
     return self.symbols;
@@ -508,10 +521,3 @@ class asmDef_9x8:
     self.specialInstructions['outport'] = 0x038;
     self.specialInstructions['return']  = 0x028;
     self.specialInstructions['store']   = 0x068;
-
-    #
-    # Create empty input and output port array definitions.
-    #
-
-    self.inports = dict();
-    self.outports = dict();
