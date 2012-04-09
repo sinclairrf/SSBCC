@@ -1,5 +1,11 @@
   ssbcc
 1   generate memories for RAM and ROM
+    add multi-port I/O (i.e., 24-bit I/O ports)
+      - ex:  INPORT 17-bit,latch i_count I_COUNT
+             asm:  .inport(I_COUNT,3) ==> I_COUNT inport_incr inport_incr inport
+             OUTPORT 24-bit,strobe o_count O_COUNT
+             asm:  .outport(O_COUNT,3) ==> O_COUNT+2 outport_decr outport_decr outport drop
+             asm:  O_COUNT_2 2+ .outport(,3) ==> O_COUNT_2 ...
     add interrupt handling
     add optional fast version of the data and return stacks
     do VHDL
