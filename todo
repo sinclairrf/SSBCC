@@ -9,11 +9,14 @@
   core/9x8
     core.v
 *     use a register for s_R
+*     add inport/outport w/ nip instead of drop and w/ auto increment/decrement for the port number
 1     finish the core
         - store and fetch
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
+*     access inport/outport w/o macro
+        - need this for general-purpose I/O such as I2C I/F
       add loop labels to the output instruction list
       implement .constant directive
       implement .abbr directive
