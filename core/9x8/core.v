@@ -267,14 +267,10 @@ always @ (*) begin
       4'b1011:  begin // 8-bit increment/decrement
                 s_bus_t         = C_BUS_T_INCREMENT;
                 end
-      4'b1101:  // store
-                ; // TODO -- implement this instruction
-                //s_interrupt_enabled_change = 1'b1;
-                //s_interrupt_enabled_next = s_opcode[0];
-      4'b1110:  // fetch (low)
-                ; // TODO -- implement this instruction
-      4'b1111:  // fetch (high) -- same as fetch (low)
-                ; // TODO -- implement this instruction
+    //4'b1100:  // reserved
+    //4'b1101:  // reserved
+    //4'b1110:  // store
+    //4'b1111:  // fetch
       default:  // nop
                 ;
     endcase
