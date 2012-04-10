@@ -33,7 +33,6 @@
 1     fully process .memory and .variable directives
       reduce range of fetch instruction
       add .fetch(name,N) and .store(name,N) macros
-      process strings and their escape characters correctly, process both counted and null-terminated strings
       add optimizer
         - "dup push outport drop" ==> "push outport"
         - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
