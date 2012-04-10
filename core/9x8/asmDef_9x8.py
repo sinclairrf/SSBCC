@@ -6,6 +6,9 @@
 #
 ################################################################################
 
+import copy
+import string
+
 class asmDef_9x8:
   """SSBCC 9x8 specific parsing"""
 
@@ -180,29 +183,57 @@ class asmDef_9x8:
   #
   ################################################################################
 
+  def ByteList(self,filename,rawTokens):
+    tokens=list();
+    for token in rawTokens:
+      if token['type'] == 'value':
+        if type(token['value']) == int:
+          tokens.append(token['value']);
+        else:
+          for lToken in token['value']:
+            tokens.append(lToken);
+      else:
+        raise Exception('Illegal token "%s" at %s(%d), column %d', (token['type'],filename,token['line'],token['col']));
+    return tokens;
+
   def ExpandTokens(self,filename,rawTokens):
     tokens = list();
     offset = 0;
     for token in rawTokens:
+      # insert labels
       if token['type'] == 'label':
         tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
         # labels don't change the offset
-      elif token['type'] in ('character','instruction','value',):
+      # append instructions
+      elif token['type'] == 'instruction':
         tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
         offset = offset + 1;
-      elif token['type'] == 'string':
-        tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
-        offset = offset + len(token['value']) + 1;
+      # append values
+      elif token['type'] == 'value':
+        if type(token['value']) == int:
+          tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
+          offset = offset + 1;
+        else:
+          revTokens = copy.copy(token['value']);
+          revTokens.reverse();
+          for lToken in revTokens:
+            tokens.append(dict(type=token['type'], value=lToken, offset=offset));
+            offset = offset + 1;
+      # append macros
       elif token['type'] == 'macro':
         tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument']));
         offset = offset + self.MacroLength(token['value']);
-#      elif token['type'] == 'symbol':
-#        if token['value'] not in self.symbols['list']:
-#          raise Exception('Program bug:  symbol %s not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
-#        ix = symbols['list'].index(token['value']);
-#        for lToken in symbols['tokens']:
-#          tokens.append(dict(type=lToken['type'], value=lToken['value'], offset=offset+lToken['offset']));
-#        offset = offset + symbols['length'][ix];
+      # interpret and append symbols
+      elif token['type'] == 'symbol':
+        if token['value'] not in self.symbols['list']:
+          raise Exception('Program bug:  symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
+        ix = self.symbols['list'].index(token['value']);
+        if self.symbols['type'][ix] == 'variable':
+          tokens.append(dict(type='symbol', value=self.symbols['body'][ix]['start'], offset=offset, name=token['value']));
+          offset = offset + 1;
+        else:
+          raise Exception('Unrecognized symbol type "%s" for %s" at %s(%d), column %d' % (token['type'],token['value'],filename,token['line'],token['col']));
+      # everything else is an error
       else:
         raise Exception('Program bug:  unexpected token type "%s"' % token['type']);
     return dict(tokens=tokens, length=offset);
@@ -233,10 +264,37 @@ class asmDef_9x8:
       if self.main:
         raise Exception('Second definition of ".main" at %s(%d)' % (filename,firstToken['line']));
       self.main = self.ExpandTokens(filename,rawTokens[1:]);
+    # Process ".memory" declaration.
     elif firstToken['value'] == '.memory':
-      raise Exception('TODO -- implement ".memory"');
+      if len(rawTokens) != 3:
+        raise Exception('".memory" directive requires exactly two arguments at %s(%d)' % (filename, firstToken['line']));
+      if (secondToken['type'] != 'symbol') or (secondToken['value'] not in ('RAM','ROM',)):
+        raise Exception('First argument to ".memory" directive must be "RAM" or "RAM" at %s(%d), column %d' % (filename,secondToken['line'],secondToken['col']));
+      thirdToken = rawTokens[2];
+      if thirdToken['type'] != 'symbol':
+        raise Exception('".memory" directive requires name for second argument at %s(%d)' % (filename,thirdToken['line']));
+      if thirdToken['value'] in self.symbols['list']:
+        ix = self.symbols['list'].index(thirdToken['value']);
+        if self.symbols['type'] != secondToken['value']:
+          raise Exception('Redefinition of ".memory %s %s" not allowed at %s(%d)' % (filename,firstToken['line']));
+      else:
+        self.AddSymbol(thirdToken['value'],secondToken['value'],dict(length=0));
+      self.currentMemory = thirdToken['value'];
+    # Process ".variable" declaration.
     elif firstToken['value'] == '.variable':
-      raise Exception('TODO -- implement ".variable"');
+      if not self.currentMemory:
+        raise Exception('".memory" directive required before ".variable" directive at %s(%d)' % (filename,firstToken('line')));
+      if secondToken['type'] != 'symbol':
+        raise Exception('Bad variable name at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
+      ixMem = self.symbols['list'].index(self.currentMemory);
+      currentMemoryBody = self.symbols['body'][ixMem];
+      byteList = self.ByteList(filename,rawTokens[2:]);
+      body = dict(memory=self.currentMemory, start=currentMemoryBody['length'], value=byteList);
+      self.AddSymbol(secondToken['value'], 'variable', body=body);
+      currentMemoryBody['length'] = currentMemoryBody['length'] + len(byteList);
+      if currentMemoryBody['length'] > 256:
+        raise Exception('Memory "%s" becomes too long at %s(%d)' % (filename,firstToken['line']));
+    # Everything else is an error.
     else:
       raise Exception('Program Bug:  Unrecognized directive %s at %s(%d)' % (firstToken['value'],filename,firstToken['line']));
 
@@ -337,8 +395,13 @@ class asmDef_9x8:
   def EmitOpcode(self,fp,opcode,name):
     fp.write('%03X %s\n' % (opcode,name));
 
-  def EmitPush(self,fp,value):
-    fp.write('1%02X %02X\n' % ((value % 0x100),value));
+  def EmitPush(self,fp,value,name=None):
+    if name:
+      fp.write('1%02X %02X %s\n' % ((value % 0x100),value,name));
+    elif (chr(value) in string.printable) and (chr(value) not in string.whitespace):
+      fp.write('1%02X %02X \'%c\'\n' % ((value % 0x100),value,value));
+    else:
+      fp.write('1%02X %02X\n' % ((value % 0x100),value));
 
   def Emit(self,fp):
     """Emit the program code"""
@@ -407,6 +470,8 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           else:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
+        elif token['type'] == 'symbol':
+          self.EmitPush(fp,token['value'],name=token['name']);
         else:
           raise Exception('Program Bug:  Unrecognized type "%s"' % token['type']);
 
@@ -459,6 +524,7 @@ class asmDef_9x8:
     self.interrupt = list();
     self.main = list();
     self.symbols = dict(list=list(), type=list(), body=list());
+    self.currentMemory = None;
 
     #
     # Configure the instructions.
