@@ -197,6 +197,42 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       TODO -- should "TBD" be a "nop", a "drop", or push the PC onto the return
         stack?<br/><br/>
       </li>
+    <li><a name="memory">Memory Operations</a>:<br/><br/>
+      The fetch and store memory access instructions are designed such that four
+        banks of memory can be accessed, each of which can hold up to
+        256&nbsp;bytes.  This allows up to a total of 1&nbsp;kB of
+        memory to be accessed by the processor.<br/><br/>
+      There are two variants of the fetch instruction and two variants of the
+        store instruction.<br/><br/>
+      The simplest fetch instruction exchanges the top of the data stack with
+        the value it had indexed from the memory bank encoded in the store
+        instruction.  For example, the instruction sequence<br/><br/>
+        <tt>&nbsp;&nbsp;0x10 .fetch(0)</tt><br/><br/>
+        has the effect of pushing the value from <tt>00_0001_0000</tt> onto the
+        data stack.<br/><br/>
+      The remaining fetch instruction and both store instructions are designed
+        to facilitate storing and fetching multi-byte values.  The vectorized
+        fetch instruction increments the top of the stack while pushing the
+        value it had indexed from the memory bank as&nbsp;N.  For example, the
+        instruction sequence<br/><br/>
+        <tt>&nbsp;&nbsp;0x10&nbsp;.fetch+(0)&nbsp;.fetch+(0)&nbsp;.fetch+(0)&nbsp;.fetch(0)</tt><br/><br/>
+        will push the memory values from <tt>00_0001_0000</tt>,
+        <tt>00_0001_0001</tt>, <tt>00_0001_0010</tt>, and <tt>00_0001_0011</tt>
+        onto the data stack with the value from <tt>00_0001_0011</tt> on the
+        top of the stack.<br/><br/>
+      The corresponding instruction sequence to store these values back into
+        memory in the same sequence is:<br/><br/>
+        <tt>&nbsp;&nbsp;0x13&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;drop</tt><br/><br/>
+      If the values were in the reverse order on the stack the instruction
+        sequence would have been<br/><br/>
+        <tt>&nbsp;&nbsp;0x10&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;drop</tt><br/><br/>
+      The two variants of the store instruction allow multi-byte values or
+        records to be stored in the desired order in memory.  For example, the
+        math library relies on the MSB of the values to be closer to the top of
+        the data stack.  If&nbsp;a multi-byte number on the stack has the LSB on
+        the top of the stack then the <tt>.store+</tt> instruction will store
+        the values in memory so that the <tt>.fetch+</tt> instructions read it
+        with the MSB on the top of the data stack.<br/><br/>
     </ul>
 <h1>OPCODES</h1>
   This section documents the opcodes.<br/><br/>
