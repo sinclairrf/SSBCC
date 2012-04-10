@@ -240,6 +240,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#dup">dup</a>,
     <a href="#ena">ena</a>,
     <a href="#fetch">fetch</a>,
+    <a href="#fetch+">fetch+</a>,
     <a href="#inport">inport</a>,
     <a href="#jump">jump</a>,
     <a href="#jumpc">jumpc</a>,
@@ -254,7 +255,8 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#r>">r&gt;</a>,
     <a href="#r@">r@</a>,
     <a href="#return">return</a>,
-    <a href="#store">store</a>,
+    <a href="#store+">store+</a>,
+    <a href="#store-">store-</a>,
     <a href="#swap">swap</a>
     <br/><br/>
   <h2><a name="opcode_mapping">Opcode Mapping</a></h2>
@@ -448,13 +450,21 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
         <td align="left">Subtract 4 from T</td>
         </tr>
-      <th align="left"><a href="#store">store</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>b</td><td>b</td><td>b</td>
-        <td align="left">Store N in the T'th entry in bank "<tt>bbb</tt>" and pop the data stack</td>
+      <th align="left"><a href="#store+">store+</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>b</td><td>b</td>
+        <td align="left">Store N in the T'th entry in bank "<tt>bb</tt>", nip the data stack, and increment T</td>
+        </tr>
+      <th align="left"><a href="#store-">store-</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>b</td><td>b</td>
+        <td align="left">Store N in the T'th entry in bank "<tt>bb</tt>" and nip the data stack, and decrement T</td>
+        </tr>
+      <th align="left"><a href="#fetch+">fetch+</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>b</td><td>b</td>
+        <td align="left">Push the T'th entry from bank "<tt>bb</tt>" into the data stack as N and increment T</td>
         </tr>
       <th align="left"><a href="#fetch">fetch</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td><td>b</td><td>b</td>
-        <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bbbb</tt>"</td>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td>
+        <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bb</tt>"</td>
         </tr>
       <th align="left"><a href="#jump">jump</a></th>
         <td>0</td><td>1</td><td>0</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
@@ -814,15 +824,32 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       <br/>
   <h2><a name="fetch">Instruction:  fetch</a></h2>
     <b>Desription:</b>  Replace the top of the data stack with an 8&nbsp;bit
-      value from memory.  The memory bank is specified by the four
+      value from memory.  The memory bank is specified by the two
       least-significant bits of the opcode.  The index within the memory bank is
       specified by the previous value of the top of the stack.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; bbbb[T] where "bbbb" is the bank<br/>
+      T &leftarrow; bb[T] where "bb" is the bank<br/>
       N and <tt>stack</tt> unchanged<br/>
+    <b>Special:</b>
+      See <a href="#memory">memory</a> for instructions on using the fetch and
+      vectorized fetch macros.<br/>
+      <br/>
+  <h2><a name="fetch+">Instruction:  fetch+</a></h2>
+    <b>Desription:</b>  Push the T'th entry from bank "<tt>bb</tt>" onto the
+      data stack as N and increment the top of the data stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T+1<br/>
+      N &leftarrow; bb[T] where "bb" is the bank<br/>
+      <tt>++stack</tt><br/>
+    <b>Special:</b>
+      See <a href="#memory">memory</a> for instructions on using the fetch and
+      vectorized fetch macros.<br/>
       <br/>
   <h2><a name="inport">Instruction:  inport</a></h2>
     <b>Desription:</b>  Replace the top of the data stack with the 8&nbsp;value
@@ -978,20 +1005,38 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <b>Special:</b>
       This instruction must be followed by a "<tt>nop</tt>"
       instruction.<br/><br/>
-  <h2><a name="store">Instruction:  store</a></h2>
-    <b>Desription:</b>  Pop the data stack and store the previous next-to-top of
-      the data stack at the memory location specified by the previous top of the
-      data stack.  The memory bank is specified by the three least significant
-      bits of the opcode.<br/><br/>
+  <h2><a name="store+">Instruction:  store+</a></h2>
+    <b>Desription:</b>  Nip the data stack and store the previous next-to-top of
+      the data stack at the memory location specified by the top of the data
+      stack.  Increment the top of the data stack  The memory bank is specified
+      by the two least significant bits of the opcode.<br/><br/>
     <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; N<br/>
+      T &leftarrow; T+1<br/>
       N &leftarrow; <tt>stack--</tt><br/>
-      bbb[T] &leftarrow; N where "<tt>bbb</tt>" is the bank<br/>
+      bb[T] &leftarrow; N where "<tt>bb</tt>" is the bank<br/>
       <br/>
     <b>Special:</b>
-      The recommended procecure is to use the "<tt>.store</tt>" macro.<br/><br/>
+      See <a href="#memory">memory</a> for instructions on using the store and
+      vectorized store macros.<br/>
+      <br/>
+  <h2><a name="store-">Instruction:  store-</a></h2>
+    <b>Desription:</b>  Nip the data stack and store the previous next-to-top of
+      the data stack at the memory location specified by the top of the data
+      stack.  Decrement the top of the data stack  The memory bank is specified
+      by the two least significant bits of the opcode.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T-1<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      bb[T] &leftarrow; N where "<tt>bb</tt>" is the bank<br/>
+      <br/>
+    <b>Special:</b>
+      See <a href="#memory">memory</a> for instructions on using the store and
+      vectorized store macros.<br/>
+      <br/>
   <h2><a name="swap">Instruction:  swap</a></h2>
     <b>Desription:</b>  Swap the top two values on the data stack.<br/><br/>
     <b>Operation:</b><br/><br/>
