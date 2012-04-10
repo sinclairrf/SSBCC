@@ -160,7 +160,6 @@ def RawTokens(filename,startLineNumber,lines,ad):
     col = 0;
     spaceFound = True;
     while col < len(line):
-      # TODO -- ensure tokens are separated by whitespace
       # ignore white-space characters
       if re.match(r'\s',line[col:]):
         spaceFound = True;
@@ -185,14 +184,12 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + len(a.group(0));
         continue;
       # look for an octal value
-      # TODO -- get correct conversion function
       a = re.match(r'0[0-7]+\b',line[col:]);
       if a:
         tokens.append(dict(type='value', value=int(a.group(0),8), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # look for a hex value
-      # TODO -- get correct conversion function
       a = re.match(r'0x[0-9A-Fa-f]+\b',line[col:]);
       if a:
         tokens.append(dict(type='value', value=int(a.group(0)[2:],16), line=lineNumber, col=col+1));
