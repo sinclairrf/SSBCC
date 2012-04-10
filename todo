@@ -17,7 +17,6 @@
 *     use a register for s_R
 *     add inport/outport w/ nip instead of drop and w/ auto increment/decrement for the port number
 *     add an instruction to put of copy of T in R?
-*     change 1+,  ... to 1+, 2+, 3+, 4+, 1-, 2-, 3-, 4-
 *     change .jumpc, callc to .jumpc_drop, .jumpc_nop, ...?
 *     add r>N operator?
 1     finish the core

@@ -102,12 +102,12 @@ always @ (*)
   case (s_opcode[0+:3])
      3'b000: s_T_increment <= s_T + 8'h01;
      3'b001: s_T_increment <= s_T + 8'h02;
-     3'b010: s_T_increment <= s_T + 8'h04;
-     3'b011: s_T_increment <= s_T + 8'h08;
+     3'b010: s_T_increment <= s_T + 8'h03;
+     3'b011: s_T_increment <= s_T + 8'h04;
      3'b100: s_T_increment <= s_T - 8'h01;
      3'b101: s_T_increment <= s_T - 8'h02;
-     3'b110: s_T_increment <= s_T - 8'h04;
-     3'b111: s_T_increment <= s_T - 8'h08;
+     3'b110: s_T_increment <= s_T - 8'h03;
+     3'b111: s_T_increment <= s_T - 8'h04;
     default: s_T_increment <= s_T + 8'h01;
   endcase
 
