@@ -144,10 +144,28 @@ class FileBodyIterator:
 
 ################################################################################
 #
-# Turn a counted, null-terminated, or regular string into a list of single-byte
-# values.
+# Parse strings into the desired types.
 #
 ################################################################################
+
+def ParseNumber(inString):
+  # look for single-digit 0
+  if inString == '0':
+    return 0;
+  # look for decimal value
+  a = re.match(r'[+\-]?[1-9]\d*\b',inString);
+  if a:
+    return int(a.group(0),10);
+  # look for an octal value
+  a = re.match(r'0[0-7]+\b',inString);
+  if a:
+    return int(a.group(0),8);
+  # look for a hex value
+  a = re.match(r'0x[0-9A-Fa-f]+\b',inString);
+  if a:
+    return int(a.group(0),16);
+  # Everything else is an error
+  return None;
 
 def ParseString(inString):
   isCounted = (inString[0] == 'C');
@@ -245,22 +263,27 @@ def RawTokens(filename,startLineNumber,lines,ad):
         tokens.append(dict(type='instruction', value=a.group(0), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
-      # look for decimal value
-      a = re.match(r'([+\-]?[1-9]\d*|0)\b',line[col:]);
+      # look for a repeated single-byte numeric value
+      a = re.match(r'[1-9][0-9]*\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',line[col:]);
       if a:
-        tokens.append(dict(type='value', value=int(a.group(0)), line=lineNumber, col=col+1));
+        b = re.findall(r'([1-9][0-9]*)\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',a.group(0));
+        b = b[0];
+        tParseNumber = ParseNumber(b[1]);
+        if type(tParseNumber) != int:
+          raise Exception('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+len(b[0])+2));
+        tValue = list();
+        for ix in range(int(b[0])):
+          tValue.append(tParseNumber);
+        tokens.append(dict(type='value', value=tValue, line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
-      # look for an octal value
-      a = re.match(r'0[0-7]+\b',line[col:]);
+      # look for a single-byte numeric value
+      a = re.match(r'(0|[+\-]?[1-9]\d*|0[07]+|0x[0-9A-Fa-f]{1,2})\b',line[col:]);
       if a:
-        tokens.append(dict(type='value', value=int(a.group(0),8), line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
-      # look for a hex value
-      a = re.match(r'0x[0-9A-Fa-f]+\b',line[col:]);
-      if a:
-        tokens.append(dict(type='value', value=int(a.group(0)[2:],16), line=lineNumber, col=col+1));
+        tParseNumber = ParseNumber(a.group(0));
+        if type(tParseNumber) != int:
+          raise Exception('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+1));
+        tokens.append(dict(type='value', value=tParseNumber, line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # capture double-quoted strings
