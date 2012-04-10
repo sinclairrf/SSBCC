@@ -209,29 +209,29 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         instruction.  For example, the instruction sequence<br/><br/>
         <tt>&nbsp;&nbsp;0x10 .fetch(0)</tt><br/><br/>
         has the effect of pushing the value from <tt>00_0001_0000</tt> onto the
-        data stack.<br/><br/>
+        data stack where the leading two zeros are the bank number.<br/><br/>
       The remaining fetch instruction and both store instructions are designed
         to facilitate storing and fetching multi-byte values.  The vectorized
-        fetch instruction increments the top of the stack while pushing the
+        fetch instruction decrements the top of the stack while pushing the
         value it had indexed from the memory bank as&nbsp;N.  For example, the
         instruction sequence<br/><br/>
-        <tt>&nbsp;&nbsp;0x10&nbsp;.fetch+(0)&nbsp;.fetch+(0)&nbsp;.fetch+(0)&nbsp;.fetch(0)</tt><br/><br/>
-        will push the memory values from <tt>00_0001_0000</tt>,
-        <tt>00_0001_0001</tt>, <tt>00_0001_0010</tt>, and <tt>00_0001_0011</tt>
-        onto the data stack with the value from <tt>00_0001_0011</tt> on the
+        <tt>&nbsp;&nbsp;0x10&nbsp;.fetch-(0)&nbsp;.fetch-(0)&nbsp;.fetch-(0)&nbsp;.fetch(0)</tt><br/><br/>
+        will push the memory values from <tt>00_0001_0011</tt>,
+        <tt>00_0001_0010</tt>, <tt>00_0001_0001</tt>, and <tt>00_0001_0000</tt>
+        onto the data stack with the value from <tt>00_0001_0000</tt> on the
         top of the stack.<br/><br/>
       The corresponding instruction sequence to store these values back into
         memory in the same sequence is:<br/><br/>
-        <tt>&nbsp;&nbsp;0x13&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;drop</tt><br/><br/>
+        <tt>&nbsp;&nbsp;0x10&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;drop</tt><br/><br/>
       If the values were in the reverse order on the stack the instruction
         sequence would have been<br/><br/>
-        <tt>&nbsp;&nbsp;0x10&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;drop</tt><br/><br/>
+        <tt>&nbsp;&nbsp;0x13&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;drop</tt><br/><br/>
       The two variants of the store instruction allow multi-byte values or
-        records to be stored in the desired order in memory.  For example, the
+        records to be stored in the required order in memory.  For example, the
         math library relies on the MSB of the values to be closer to the top of
         the data stack.  If&nbsp;a multi-byte number on the stack has the LSB on
-        the top of the stack then the <tt>.store+</tt> instruction will store
-        the values in memory so that the <tt>.fetch+</tt> instructions read it
+        the top of the stack then the <tt>.store-</tt> instruction will store
+        the values in memory so that the <tt>.fetch-</tt> instructions read it
         with the MSB on the top of the data stack.<br/><br/>
     </ul>
 <h1>OPCODES</h1>
@@ -276,7 +276,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#dup">dup</a>,
     <a href="#ena">ena</a>,
     <a href="#fetch">fetch</a>,
-    <a href="#fetch+">fetch+</a>,
+    <a href="#fetch-">fetch-</a>,
     <a href="#inport">inport</a>,
     <a href="#jump">jump</a>,
     <a href="#jumpc">jumpc</a>,
@@ -494,13 +494,13 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>b</td><td>b</td>
         <td align="left">Store N in the T'th entry in bank "<tt>bb</tt>" and nip the data stack, and decrement T</td>
         </tr>
-      <th align="left"><a href="#fetch+">fetch+</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>b</td><td>b</td>
-        <td align="left">Push the T'th entry from bank "<tt>bb</tt>" into the data stack as N and increment T</td>
-        </tr>
       <th align="left"><a href="#fetch">fetch</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>b</td><td>b</td>
         <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bb</tt>"</td>
+        </tr>
+      <th align="left"><a href="#fetch-">fetch-</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td>
+        <td align="left">Push the T'th entry from bank "<tt>bb</tt>" into the data stack as N and increment T</td>
         </tr>
       <th align="left"><a href="#jump">jump</a></th>
         <td>0</td><td>1</td><td>0</td><td>0</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td>
@@ -873,14 +873,14 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       See <a href="#memory">memory</a> for instructions on using the fetch and
       vectorized fetch macros.<br/>
       <br/>
-  <h2><a name="fetch+">Instruction:  fetch+</a></h2>
+  <h2><a name="fetch-">Instruction:  fetch-</a></h2>
     <b>Desription:</b>  Push the T'th entry from bank "<tt>bb</tt>" onto the
       data stack as N and increment the top of the data stack.<br/><br/>
     <b>Operation:</b><br/><br/>
       TODO<br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
-      T &leftarrow; T+1<br/>
+      T &leftarrow; T-1<br/>
       N &leftarrow; bb[T] where "bb" is the bank<br/>
       <tt>++stack</tt><br/>
     <b>Special:</b>
