@@ -314,6 +314,33 @@ class asmDef_9x8:
 
   ################################################################################
   #
+  # Compute the memory bank indices.
+  #
+  ################################################################################
+
+  def EvaluateMemoryTree(self):
+    self.memories = dict(list=list(), type=list(), length=list(), bank=list());
+    ramBank = 0;
+    romBank = 3;
+    for ix in range(len(self.symbols['list'])):
+      if self.symbols['type'][ix] in ('RAM','ROM',):
+        memBody = self.symbols['body'][ix];
+        if memBody['length'] == 0:
+          raise Exception('Empty memory:  %s' % self.symbols['list'][ix]);
+        self.memories['list'].append(self.symbols['list'][ix]);
+        self.memories['type'].append(self.symbols['type'][ix]);
+        self.memories['length'].append(memBody['length']);
+        if self.symbols['type'][ix] == 'RAM':
+          self.memories['bank'].append(ramBank);
+          ramBank = ramBank + 1;
+        else:
+          self.memories['bank'].append(romBank);
+          romBank = romBank - 1;
+    if len(self.memories['list']) > 4:
+      raise Exception('Too many memory banks');
+
+  ################################################################################
+  #
   # Generate the list of required functions from the ".main" and ".interrupt"
   # bodies.
   #
@@ -328,7 +355,7 @@ class asmDef_9x8:
   ################################################################################
 
   def EvaluateFunctionTree(self):
-    self.functionEvaluation = dict(list=list(), length=list(),body=list(), address=list());
+    self.functionEvaluation = dict(list=list(), length=list(), body=list(), address=list());
     nextStart = 0;
     # ".main" is always required.
     self.functionEvaluation['list'].append('.main');
@@ -388,7 +415,35 @@ class asmDef_9x8:
 
   ################################################################################
   #
-  # Emit the metacode from the assembler.
+  # Emit the meta code for the memories.
+  #
+  ################################################################################
+
+  def EmitMemories(self,fp):
+    """Emit the memories"""
+    # Emit the total number of memories and their bank numbers.
+    fp.write(':memories %d' % len(self.memories['list']));
+    for ixMem in range(len(self.memories['list'])):
+      fp.write(' %d' % self.memories['bank'][ixMem]);
+    fp.write('\n\n');
+    # Emit the individual memories.
+    for ixMem in range(len(self.memories['list'])):
+      fp.write(':memory %s %s %d\n' % (self.memories['type'][ixMem], self.memories['list'][ixMem], self.memories['length'][ixMem]));
+      memName = self.memories['list'][ixMem];
+      for ixSymbol in range(len(self.symbols['list'])):
+        if self.symbols['type'][ixSymbol] != 'variable':
+          continue;
+        vBody = self.symbols['body'][ixSymbol];
+        if vBody['memory'] != memName:
+          continue;
+        fp.write('- %s\n' % self.symbols['list'][ixSymbol]);
+        for v in vBody['value']:
+          fp.write('%02X\n' % v);
+      fp.write('\n');
+
+  ################################################################################
+  #
+  # Emit the metacode for the program.
   #
   ################################################################################
 
@@ -403,7 +458,7 @@ class asmDef_9x8:
     else:
       fp.write('1%02X %02X\n' % ((value % 0x100),value));
 
-  def Emit(self,fp):
+  def EmitProgram(self,fp):
     """Emit the program code"""
     # Write the program marker, address of .main, address or "[]" of .interrupt,
     # and the total program length.

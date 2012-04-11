@@ -161,6 +161,7 @@ if False:
 #
 ################################################################################
 
+ad.EvaluateMemoryTree();
 ad.EvaluateFunctionTree();
 
 ################################################################################
@@ -177,5 +178,6 @@ ad.EvaluateFunctionTree();
 #
 ################################################################################
 
-ad.Emit(argList.o);
+ad.EmitMemories(argList.o);
+ad.EmitProgram(argList.o);
 argList.o.close();
