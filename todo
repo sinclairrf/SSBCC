@@ -25,6 +25,7 @@
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
+*     variant .jumpc(addr,op) w/ op instead of "drop"
 *     access inport/outport w/o macro
         - need this for general-purpose I/O such as I2C I/F
       add loop labels to the output instruction list
