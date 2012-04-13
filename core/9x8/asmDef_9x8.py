@@ -451,7 +451,7 @@ class asmDef_9x8:
     fp.write('%03X %s\n' % (opcode,name));
 
   def EmitPush(self,fp,value,name=None):
-    if name:
+    if type(name) == str:
       fp.write('1%02X %02X %s\n' % ((value % 0x100),value,name));
     elif (chr(value) in string.printable) and (chr(value) not in string.whitespace):
       fp.write('1%02X %02X \'%c\'\n' % ((value % 0x100),value,value));
@@ -482,11 +482,11 @@ class asmDef_9x8:
           self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
         elif token['type'] == 'macro':
           if token['value'] == '.call':
-            self.EmitPush(fp,token['address'] & 0xFF);
+            self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['call'] | (token['address'] >> 8),'call '+token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
           elif token['value'] == '.callc':
-            self.EmitPush(fp,token['address'] & 0xFF);
+            self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.fetch':
@@ -497,18 +497,18 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | (token['address'] >> 8),'fetch');
           elif token['value'] == '.inport':
-            self.EmitPush(fp,self.InportAddress(token['argument'][0]) & 0xFF);
+            self.EmitPush(fp,self.InportAddress(token['argument'][0]) & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['inport'],'inport');
           elif token['value'] == '.jump':
-            self.EmitPush(fp,token['address'] & 0xFF);
+            self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump');
             self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
           elif token['value'] == '.jumpc':
-            self.EmitPush(fp,token['address'] & 0xFF);
+            self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc');
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.outport':
-            self.EmitPush(fp,self.OutportAddress(token['argument'][0]) & 0xFF);
+            self.EmitPush(fp,self.OutportAddress(token['argument'][0]) & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['outport'],'outport');
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.return':
