@@ -237,15 +237,25 @@ for line in fpRawCore:
         for ix in range(len(inport['config'])):
           configs = inport['config'][ix];
           names = inport['name'][ix];
+          bitsString = '';
+          nBits = 0;
           for jx in range(len(configs)):
             if re.match(r'\d+-bit',configs[jx]):
               a = re.findall(r'(\d+)',configs[jx]);
               portLength = int(a[0]);
-              if portLength < 8:
-                fpOutCore.write('      8\'h%02X : s_T_inport <= { %d\'h0, %s };\n' % (ix,8-portLength,inport['name'][ix][jx]));
-              else:
-                fpOutCore.write('      8\'h%02X : s_T_inport <= %s;\n' % (ix,inport['name'][ix][jx]));
-        fpOutCore.write('    default : s_T_inport <= 8\'h00;\n');
+              if len(bitsString) != 0:
+                bitsString = bitsString + ', ';
+              bitsString = bitsString + inport['name'][ix][jx];
+              nBits = nBits + portLength;
+          if nBits == 0:
+            pass;
+          elif nBits < 8:
+            fpOutCore.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitsString));
+          elif nBits == 8:
+            fpOutCore.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
+          else:
+            raise Exception('Too many bits in %s' % (inport['id'][ix]));
+        fpOutCore.write('    default : s_T_inport = 8\'h00;\n');
         fpOutCore.write('  endcase\n');
         fpOutCore.write('\n');
       for ix in range(len(inport['config'])):
@@ -258,11 +268,11 @@ for line in fpRawCore:
             fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
             fpOutCore.write('always @ (posedge i_clk)\n');
             fpOutCore.write('  if (i_rst)\n');
-            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
-            fpOutCore.write('  else if (s_outport)\n');
-            fpOutCore.write('    %s = (s_T == 8\'h%02X);\n' % (names[jx],ix));
+            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
+            fpOutCore.write('  else if (s_inport)\n');
+            fpOutCore.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
             fpOutCore.write('  else\n');
-            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
             fpOutCore.write('\n');
           else:
             raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
@@ -297,9 +307,9 @@ for line in fpRawCore:
       fpOutCore.write('  input  wire           i_rst,\n');
       fpOutCore.write('  input  wire           i_clk');
       if inport['config']:
+        fpOutCore.write(',\n');
+        fpOutCore.write('  // inport ports\n');
         for ix in range(len(inport['config'])):
-          fpOutCore.write(',\n');
-          fpOutCore.write('  // inport ports\n');
           configs = inport['config'][ix];
           names = inport['name'][ix];
           for jx in range(len(configs)):
@@ -320,9 +330,9 @@ for line in fpRawCore:
             else:
               raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
       if outport['config']:
+        fpOutCore.write(',\n');
+        fpOutCore.write('  // outport ports\n');
         for ix in range(len(outport['config'])):
-          fpOutCore.write(',\n');
-          fpOutCore.write('  // outport ports\n');
           configs = outport['config'][ix];
           names = outport['name'][ix];
           for jx in range(len(configs)):
@@ -358,21 +368,21 @@ for line in fpRawCore:
             fpOutCore.write('initial %s = %d\'h0;\n' % (names[jx],portLength));
             fpOutCore.write('always @ (posedge i_clk)\n');
             fpOutCore.write('  if (i_rst)\n');
-            fpOutCore.write('    %s = %d\'h0;\n' % (names[jx],portLength));
+            fpOutCore.write('    %s <= %d\'h0;\n' % (names[jx],portLength));
             fpOutCore.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
-            fpOutCore.write('    %s = s_N[0+:%d];\n' % (names[jx],portLength));
+            fpOutCore.write('    %s <= s_N[0+:%d];\n' % (names[jx],portLength));
             fpOutCore.write('  else\n');
-            fpOutCore.write('    %s = %s;\n' % (names[jx],names[jx]));
+            fpOutCore.write('    %s <= %s;\n' % (names[jx],names[jx]));
             fpOutCore.write('\n');
           elif configs[jx] == 'strobe':
             fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
             fpOutCore.write('always @ (posedge i_clk)\n');
             fpOutCore.write('  if (i_rst)\n');
-            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
             fpOutCore.write('  else if (s_outport)\n');
-            fpOutCore.write('    %s = (s_T == 8\'h%02X);\n' % (names[jx],ix));
+            fpOutCore.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
             fpOutCore.write('  else\n');
-            fpOutCore.write('    %s = 1\'b0;\n' % names[jx]);
+            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
             fpOutCore.write('\n');
           else:
             raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
