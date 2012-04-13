@@ -186,6 +186,7 @@ reg s_interrupt_enabled         = 1'b0;
 reg s_interrupt_enabled_change  = 1'b0;
 reg s_interrupt_enabled_next    = 1'b0;
 reg s_interrupt_holdoff         = 1'b0;
+reg s_inport                    = 1'b0;
 reg s_outport                   = 1'b0;
 
 always @ (*) begin
@@ -199,6 +200,7 @@ always @ (*) begin
   s_interrupt_enabled_change    = 1'b1;
   s_interrupt_enabled_next      = s_interrupt_enabled;
   s_interrupt_holdoff           = 1'b0;
+  s_inport      = 1'b0;
   s_outport     = 1'b0;
   if (s_opcode[8] == 1'b1) begin // push
     s_bus_t     = C_BUS_T_OPCODE;
@@ -232,7 +234,7 @@ always @ (*) begin
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 end
-      4'b0100:  begin // 0=, -1=
+      4'b0100:  begin // 0=, -1=, 0<>, -1<>
                 s_bus_t         = C_BUS_T_COMPARE;
                 end
       4'b0101:  begin // return
@@ -241,6 +243,7 @@ always @ (*) begin
                 end
       4'b0110:  begin // inport
                 s_bus_t         = C_BUS_T_INPORT;
+                s_inport        = 1'b1;
                 end
       4'b0111:  begin // outport
                 s_bus_t         = C_BUS_T_N;
