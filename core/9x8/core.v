@@ -185,9 +185,8 @@ localparam C_BUS_T_MATH_DUAL    = 4'b0100;
 localparam C_BUS_T_COMPARE      = 4'b0101;
 localparam C_BUS_T_INPORT       = 4'b0110;
 localparam C_BUS_T_16BITMATH    = 4'b0111;
-localparam C_BUS_T_MEMORY       = 4'b1000;
-localparam C_BUS_T_INCREMENT    = 4'b1001;
-localparam C_BUS_T_MEMINCREMENT = 4'b1010;
+localparam C_BUS_T_INCREMENT    = 4'b1000;
+localparam C_BUS_T_MEMINCREMENT = 4'b1001;
 reg [3:0] s_bus_t;
 
 localparam C_BUS_N_N            = 3'b000;       // don't change N
@@ -540,7 +539,6 @@ always @ (posedge i_clk)
     C_BUS_T_COMPARE:            s_T <= {(8){s_T_compare}};
     C_BUS_T_INPORT:             s_T <= s_T_inport;
     C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
-    C_BUS_T_MEMORY:             s_T <= 8'h00; // TODO -- change
     C_BUS_T_INCREMENT:          s_T <= s_T_increment;
     C_BUS_T_MEMINCREMENT:       s_T <= s_T_memincrement;
     default:                    s_T <= s_T;
