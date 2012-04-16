@@ -229,7 +229,7 @@ class asmDef_9x8:
           raise Exception('Program bug:  symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
         ix = self.symbols['list'].index(token['value']);
         if self.symbols['type'][ix] == 'variable':
-          tokens.append(dict(type='symbol', value=self.symbols['body'][ix]['start'], offset=offset, name=token['value']));
+          tokens.append(dict(type='variable', value=token['value'], offset=offset));
           offset = offset + 1;
         else:
           raise Exception('Unrecognized symbol type "%s" for %s" at %s(%d), column %d' % (token['type'],token['value'],filename,token['line'],token['col']));
@@ -453,8 +453,7 @@ class asmDef_9x8:
     else:
       fp.write('1%02X %02X\n' % ((value % 0x100),value));
 
-  def EmitVariable(self,fp,token):
-    name = token['argument'][0];
+  def EmitVariable(self,fp,name):
     if name not in self.symbols['list']:
       raise Exception('Variable "%s" not recognized' + name);
     ixName = self.symbols['list'].index(name);
@@ -495,10 +494,10 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.fetch':
-            ixBank = self.EmitVariable(fp,token);
+            ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.fetchindexed':
-            ixBank = self.EmitVariable(fp,token);
+            ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.inport':
@@ -520,11 +519,11 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
             self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
           elif token['value'] == '.store':
-            ixBank = self.EmitVariable(fp,token);
+            ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
             self.EmitOpCode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.storeindexed':
-            ixBank = self.EmitVariable(fp,token);
+            ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
             self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
             self.EmitOpCode(fp,self.InstructionOpcode('drop'),'drop');
@@ -532,6 +531,8 @@ class asmDef_9x8:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
         elif token['type'] == 'symbol':
           self.EmitPush(fp,token['value'],name=token['name']);
+        elif token['type'] == 'variable':
+          self.EmitVariable(fp,token['value']);
         else:
           raise Exception('Program Bug:  Unrecognized type "%s"' % token['type']);
 
