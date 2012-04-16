@@ -14,20 +14,7 @@ import re
 import sys
 import tempfile
 
-################################################################################
-#
-# Useful functions.
-#
-################################################################################
-
-def CeilLog2(v):
-  tmp = int(math.log(v,2));
-  while 2**tmp < v:
-    tmp = tmp + 1;
-  return tmp;
-
-def IsPowerOf2(v):
-  return v == 2**int(math.log(v,2)+0.5);
+from ssbccUtil import *;
 
 ################################################################################
 #
@@ -53,7 +40,7 @@ compiler = [];
 data_stack = 0;
 inport = dict(config=list(), name=list(), id=list());
 instruction = 0;
-memories = list();
+memories = dict(list=list(), type=list(), arch=list());
 outport = dict(config=list(), name=list(), id=list());
 return_stack = 0;
 user_header = list();
@@ -112,10 +99,15 @@ for line in argList.filename:
       raise Exception('Instruction space cannot exceed %d' % (2**13));
   # MEMORY
   elif re.match(r'\s*MEMORY\b',line):
-    cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)',line);
-    if (not cmd) or (len(cmd[0])<2):
+    if len(memories['list']) >= 4:
+      raise Exception('Program is limited to 4 memories');
+    cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)\s+(\S+)\s*$',line);
+    if (not cmd) or (len(cmd[0]) != 3):
       raise Exception('Malformed MEMORY statement on line %d: "%s"' % (ixLine,line));
-    memories.append(cmd[0]);
+    cmd = cmd[0];
+    memories['type'].append(cmd[0]);
+    memories['list'].append(cmd[1]);
+    memories['arch'].append(cmd[2]);
   # OUTPORT
   elif re.match(r'\s*OUTPORT\b',line):
     cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
@@ -149,7 +141,30 @@ for line in argList.filename:
     raise Exception('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
 argList.filename.close();
 
-corepath = '%s/%s' % (sys.path[0], architecture);
+#
+# end-of-file processing
+#
+
+# Path to the processor-specific assembler, core, etc.
+corepath = os.path.join(sys.path[0],architecture);
+
+# Compute the memory bank indices.
+ixRAM = 0;
+ixROM = 3;
+memories['bank'] = list();
+memories['length'] = list();
+memories['body'] = list();
+for memType in memories['type']:
+  if memType == 'RAM':
+    memories['bank'].append(ixRAM);
+    ixRAM = ixRAM + 1;
+  elif memType == 'ROM':
+    memories['bank'].append(ixROM);
+    ixROM = ixROM - 1;
+  else:
+    raise Exception('Program Bug: "%s"' % memType);
+  memories['length'].append(None);
+  memories['body'].append(None);
 
 ################################################################################
 #
@@ -185,11 +200,43 @@ if cmdStatus != 0:
 
 # Read the assembler output tables.
 fpAssemberOutput = open(assemblerOutput,'r');
+ixLine = 0;
+nRAM = 0;
+nROM = 0;
 programBody = list();
 programBodyLength = 0;
 for line in fpAssemberOutput:
-  if re.match(':program',line):
-    cmd=re.findall(':program (\d+) (\S+) (\d+)',line);
+  ixLine = ixLine + 1;
+  # blank line
+  if re.match('^\s*$',line):
+    continue;
+  # number of memories
+  if re.match(':memories',line):
+    cmd = re.findall(':memories (\d+) (\d+)',line);
+    nRAM = cmd[0][0];
+    nROM = cmd[0][1];
+  # memory type, name, and length
+  elif re.match(':memory',line):
+    cmd = re.findall(':memory (\S+) (\S+) (\S+)',line);
+    cmd = cmd[0];
+    if cmd[1] not in memories['list']:
+      raise Exception('%s "%s" not declared %s' % (cmd[0],cmd[1],argList.filename));
+    ixMem = memories['list'].index(cmd[1]);
+    if memories['type'][ixMem] != cmd[0]:
+      raise Exception('Type of memory "%s" is inconsistent' % cmd[1]);
+    if int(cmd[2]) > eval(memories['arch'][ixMem]):
+      raise Exception('Length of memory "%s" = %s which exceeds limit of %d' % (cmd[1],cmd[2],eval(memories['arch'][ixMem])));
+    memories['length'][ixMem] = cmd[2];
+    memoryBody = list();
+    for line in fpAssemberOutput:
+      ixLine = ixLine + 1;
+      if len(line) <= 1:
+        memories['body'][ixMem] = memoryBody;
+        break;
+      memoryBody.append(line)
+  # program .main, optional .interrupt, and length
+  elif re.match(':program',line):
+    cmd = re.findall(':program (\d+) (\S+) (\d+)',line);
     mainStart = int(cmd[0][0]);
     if cmd[0][1] == '[]':
       interruptStart = -1;
@@ -197,6 +244,7 @@ for line in fpAssemberOutput:
       interruptStart = int(cmd[0][1]);
     mainLength = int(cmd[0][2]);
     for line in fpAssemberOutput:
+      ixLine = ixLine + 1;
       if len(line) <= 1:
         break;
       programBody.append(line[0:-1]);
@@ -206,6 +254,19 @@ for line in fpAssemberOutput:
       raise Exception('Program Bug:  program length doesn\'t match declared length');
     if programBodyLength > instruction:
       raise Exception('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,instruction));
+  else:
+    raise Exception('Unrecognized line %s(%d):  %s' % (fpAssemberOutput.filename,ixLine,line));
+
+################################################################################
+#
+# Ensure the processor has been consistently defined.
+#
+################################################################################
+
+# Ensure all desired memories are used.
+for ixMem in range(len(memories['list'])):
+  if not memories['length'][ixMem]:
+    raise Exception('Memory "%s" not used in program' % memories['list'][ixMem]);
 
 ################################################################################
 #
@@ -214,6 +275,11 @@ for line in fpAssemberOutput:
 ################################################################################
 
 inports_have_bitsignals = False;
+
+if hdl == 'Verilog':
+  from ssbccGenVerilog import *;
+else:
+  raise Exception('Unrecognized hdl = "%s"' % hdl);
 
 if hdl == 'Verilog':
   fpRawCore = open(os.path.join(corepath,'core.v'),'r');
@@ -230,75 +296,88 @@ for line in fpRawCore:
   fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
   # inports
   if fillCommand == 'inports':
-    if inport['config']:
-      if inports_have_bitsignals:
-        fpOutCore.write('always @ (*)\n');
-        fpOutCore.write('  case (s_T)\n');
+    if hdl == 'Verilog':
+      if inport['config']:
+        if inports_have_bitsignals:
+          fpOutCore.write('always @ (*)\n');
+          fpOutCore.write('  case (s_T)\n');
+          for ix in range(len(inport['config'])):
+            configs = inport['config'][ix];
+            names = inport['name'][ix];
+            bitsString = '';
+            nBits = 0;
+            for jx in range(len(configs)):
+              if re.match(r'\d+-bit',configs[jx]):
+                a = re.findall(r'(\d+)',configs[jx]);
+                portLength = int(a[0]);
+                if len(bitsString) != 0:
+                  bitsString = bitsString + ', ';
+                bitsString = bitsString + inport['name'][ix][jx];
+                nBits = nBits + portLength;
+            if nBits == 0:
+              pass;
+            elif nBits < 8:
+              fpOutCore.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitsString));
+            elif nBits == 8:
+              fpOutCore.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
+            else:
+              raise Exception('Too many bits in %s' % (inport['id'][ix]));
+          fpOutCore.write('    default : s_T_inport = 8\'h00;\n');
+          fpOutCore.write('  endcase\n');
+          fpOutCore.write('\n');
         for ix in range(len(inport['config'])):
           configs = inport['config'][ix];
           names = inport['name'][ix];
-          bitsString = '';
-          nBits = 0;
           for jx in range(len(configs)):
             if re.match(r'\d+-bit',configs[jx]):
-              a = re.findall(r'(\d+)',configs[jx]);
-              portLength = int(a[0]);
-              if len(bitsString) != 0:
-                bitsString = bitsString + ', ';
-              bitsString = bitsString + inport['name'][ix][jx];
-              nBits = nBits + portLength;
-          if nBits == 0:
-            pass;
-          elif nBits < 8:
-            fpOutCore.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitsString));
-          elif nBits == 8:
-            fpOutCore.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
-          else:
-            raise Exception('Too many bits in %s' % (inport['id'][ix]));
-        fpOutCore.write('    default : s_T_inport = 8\'h00;\n');
-        fpOutCore.write('  endcase\n');
-        fpOutCore.write('\n');
-      for ix in range(len(inport['config'])):
-        configs = inport['config'][ix];
-        names = inport['name'][ix];
-        for jx in range(len(configs)):
-          if re.match(r'\d+-bit',configs[jx]):
-            pass;
-          elif configs[jx] == 'strobe':
-            fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
-            fpOutCore.write('always @ (posedge i_clk)\n');
-            fpOutCore.write('  if (i_rst)\n');
-            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
-            fpOutCore.write('  else if (s_inport)\n');
-            fpOutCore.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
-            fpOutCore.write('  else\n');
-            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
-            fpOutCore.write('\n');
-          else:
-            raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
-    else:
-      fpOutCore.write('// no input ports\n');
+              pass;
+            elif configs[jx] == 'strobe':
+              fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
+              fpOutCore.write('always @ (posedge i_clk)\n');
+              fpOutCore.write('  if (i_rst)\n');
+              fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
+              fpOutCore.write('  else if (s_inport)\n');
+              fpOutCore.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
+              fpOutCore.write('  else\n');
+              fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
+              fpOutCore.write('\n');
+            else:
+              raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+      else:
+        fpOutCore.write('// no input ports\n');
+    if hdl == 'VHDL':
+      raise Exception('VHDL not implemented');
   # instructions
   elif fillCommand == 'instructions':
-    fpOutCore.write('initial begin\n');
-    programBodyIx = 0;
-    for ix in range(len(programBody)):
-      if programBody[ix][0] == '-':
-        fpOutCore.write('  // %s\n' % programBody[ix][2:]);
-      else:
-        fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
-        programBodyIx = programBodyIx + 1;
-    for ix in range(programBodyIx,instruction):
-      fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
-    fpOutCore.write('end\n');
+    if hdl == 'Verilog':
+      fpOutCore.write('initial begin\n');
+      programBodyIx = 0;
+      for ix in range(len(programBody)):
+        if programBody[ix][0] == '-':
+          fpOutCore.write('  // %s\n' % programBody[ix][2:]);
+        else:
+          fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
+          programBodyIx = programBodyIx + 1;
+      for ix in range(programBodyIx,instruction):
+        fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
+      fpOutCore.write('end\n');
+    if hdl == 'VHDL':
+      raise Exception('VHDL not implemented');
   # localparam
   elif fillCommand == 'localparam':
-    fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(instruction));
-    fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(return_stack));
-    fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(data_stack));
-    fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
-    fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
-    fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (instruction-1));
+    if hdl == 'Verilog':
+      fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(instruction));
+      fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(return_stack));
+      fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(data_stack));
+      fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
+      fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
+      fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (instruction-1));
+    if hdl == 'VHDL':
+      raise Exception('VHDL not implemented');
+  # memory
+  elif fillCommand == 'memory':
+    if (nRAM > 0) or (nROM > 0):
+      genMemory(fpOutCore,memories);
   # module
   elif fillCommand == 'module':
     if hdl == 'Verilog':

@@ -111,6 +111,14 @@ always @ (*)
     default: s_T_increment <= s_T + 8'h01;
   endcase
 
+// opcode = 01111x_xxx
+reg [7:0] s_T_memincrement = 8'h00;
+always @ (*)
+  if (s_opcode[2] == 1'b0)
+    s_T_memincrement <= s_T + 8'h01;
+  else
+    s_T_memincrement <= s_T - 8'h01;
+
 // increment PC
 reg [C_PC_WIDTH-1:0] s_PC_plus1 = {(C_PC_WIDTH){1'b0}};
 always @ (*)
@@ -140,7 +148,17 @@ reg [7:0] s_T_inport = 8'h00;
 
 /*******************************************************************************
  *
- * Define the states for the bus muxes and then compute these stated from the
+ * Instantiate the memory banks.
+ *
+ ******************************************************************************/
+
+reg s_mem_wr = 1'b0;
+
+//@SSBCC@ memory
+
+/*******************************************************************************
+ *
+ * Define the states for the bus muxes and then compute these states from the
  * 6 msb of the opcode.
  *
  ******************************************************************************/
@@ -169,12 +187,14 @@ localparam C_BUS_T_INPORT       = 4'b0110;
 localparam C_BUS_T_16BITMATH    = 4'b0111;
 localparam C_BUS_T_MEMORY       = 4'b1000;
 localparam C_BUS_T_INCREMENT    = 4'b1001;
+localparam C_BUS_T_MEMINCREMENT = 4'b1010;
 reg [3:0] s_bus_t;
 
-localparam C_BUS_N_N            = 2'b00;        // don't change N
-localparam C_BUS_N_STACK        = 2'b01;        // replace N with third-on-stack
-localparam C_BUS_N_T            = 2'b10;        // replace N with T
-localparam C_BUS_N_16BITMATH    = 2'b11;        // extended LSB of 10-bit adder
+localparam C_BUS_N_N            = 3'b000;       // don't change N
+localparam C_BUS_N_STACK        = 3'b001;       // replace N with third-on-stack
+localparam C_BUS_N_T            = 3'b010;       // replace N with T
+localparam C_BUS_N_16BITMATH    = 3'b011;       // extended LSB of 10-bit adder
+localparam C_BUS_N_MEM          = 3'b100;       // from memory
 reg [1:0] s_bus_n;
 
 localparam C_STACK_NOP          = 2'b00;        // don't change internal data stack pointer
@@ -202,6 +222,7 @@ always @ (*) begin
   s_interrupt_holdoff           = 1'b0;
   s_inport      = 1'b0;
   s_outport     = 1'b0;
+  s_mem_wr      = 1'b0;
   if (s_opcode[8] == 1'b1) begin // push
     s_bus_t     = C_BUS_T_OPCODE;
     s_bus_n     = C_BUS_N_T;
@@ -272,8 +293,17 @@ always @ (*) begin
                 end
     //4'b1100:  // reserved
     //4'b1101:  // reserved
-    //4'b1110:  // store
-    //4'b1111:  // fetch
+      4'b1110:  begin // store
+                s_bus_t         = C_BUS_T_MEMINCREMENT;
+                s_bus_n         = C_BUS_N_STACK;
+                s_stack         = C_STACK_DEC;
+                s_mem_wr        = 1'b1;
+                end
+      4'b1111:  begin // fetch
+                s_bus_t         = C_BUS_T_MEMINCREMENT;
+                s_bus_n         = C_BUS_N_MEM;
+                s_stack         = C_STACK_INC;
+                end
       default:  // nop
                 ;
     endcase
@@ -512,6 +542,7 @@ always @ (posedge i_clk)
     C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_MEMORY:             s_T <= 8'h00; // TODO -- change
     C_BUS_T_INCREMENT:          s_T <= s_T_increment;
+    C_BUS_T_MEMINCREMENT:       s_T <= s_T_memincrement;
     default:                    s_T <= s_T;
   endcase
 
@@ -581,6 +612,7 @@ if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
       C_BUS_N_STACK:      s_N <= s_Np;
       C_BUS_N_T:          s_N <= s_T;
       C_BUS_N_16BITMATH:  s_N <= s_adder[0+:8];
+      C_BUS_N_MEM:        s_N <= s_memory;
       default:            s_N <= s_N;
     endcase
 
@@ -595,12 +627,12 @@ end else begin : gen_fast_data_stack
       C_BUS_N_STACK:      s_N <= s_N; // fix this
       C_BUS_N_T:          s_N <= s_T;
       C_BUS_N_16BITMATH:  s_N <= s_adder[0+:8];
+      C_BUS_N_MEM:        s_N <= s_memory;
       default:            s_N <= s_N;
     endcase
 
 end
 endgenerate
-
 
 /*******************************************************************************
  *
