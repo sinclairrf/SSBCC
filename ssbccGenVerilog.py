@@ -48,7 +48,9 @@ def genMemory(fp,memories):
     else:
       fp.write('wire [7:0] s_mem%d_out = %s[s_T];\n' % (ixBank,memName));
     fp.write('\n');
-  if len(memories['list']) == 1:
+  if len(memories['list']) == 0:
+    fp.write('wire [7:0] s_memory = 8\'h00;\n');
+  elif len(memories['list']) == 1:
     fp.write('wire [7:0] s_memory = s_mem%d_out;\n' % memories['bank'][0]);
   else:
     fp.write('reg [7:0] s_memory = 8\'h00;\n');
