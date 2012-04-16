@@ -421,14 +421,9 @@ class asmDef_9x8:
 
   def EmitMemories(self,fp):
     """Emit the memories"""
-    # Emit the total number of memories and their bank numbers.
-    fp.write(':memories %d' % len(self.memories['list']));
-    for ixMem in range(len(self.memories['list'])):
-      fp.write(' %d' % self.memories['bank'][ixMem]);
-    fp.write('\n\n');
     # Emit the individual memories.
     for ixMem in range(len(self.memories['list'])):
-      fp.write(':memory %s %s %d\n' % (self.memories['type'][ixMem], self.memories['list'][ixMem], self.memories['length'][ixMem]));
+      fp.write(':memory %s %s %d %d\n' % (self.memories['type'][ixMem],self.memories['list'][ixMem],self.memories['bank'][ixMem],self.memories['length'][ixMem]));
       memName = self.memories['list'][ixMem];
       for ixSymbol in range(len(self.symbols['list'])):
         if self.symbols['type'][ixSymbol] != 'variable':

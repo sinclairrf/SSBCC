@@ -155,14 +155,7 @@ memories['bank'] = list();
 memories['length'] = list();
 memories['body'] = list();
 for memType in memories['type']:
-  if memType == 'RAM':
-    memories['bank'].append(ixRAM);
-    ixRAM = ixRAM + 1;
-  elif memType == 'ROM':
-    memories['bank'].append(ixROM);
-    ixROM = ixROM - 1;
-  else:
-    raise Exception('Program Bug: "%s"' % memType);
+  memories['bank'].append(None);
   memories['length'].append(None);
   memories['body'].append(None);
 
@@ -201,8 +194,6 @@ if cmdStatus != 0:
 # Read the assembler output tables.
 fpAssemberOutput = open(assemblerOutput,'r');
 ixLine = 0;
-nRAM = 0;
-nROM = 0;
 programBody = list();
 programBodyLength = 0;
 for line in fpAssemberOutput:
@@ -210,14 +201,9 @@ for line in fpAssemberOutput:
   # blank line
   if re.match('^\s*$',line):
     continue;
-  # number of memories
-  if re.match(':memories',line):
-    cmd = re.findall(':memories (\d+) (\d+)',line);
-    nRAM = cmd[0][0];
-    nROM = cmd[0][1];
   # memory type, name, and length
   elif re.match(':memory',line):
-    cmd = re.findall(':memory (\S+) (\S+) (\S+)',line);
+    cmd = re.findall(':memory (\S+) (\S+) (\S+) (\S+)',line);
     cmd = cmd[0];
     if cmd[1] not in memories['list']:
       raise Exception('%s "%s" not declared %s' % (cmd[0],cmd[1],argList.filename));
@@ -226,7 +212,8 @@ for line in fpAssemberOutput:
       raise Exception('Type of memory "%s" is inconsistent' % cmd[1]);
     if int(cmd[2]) > eval(memories['arch'][ixMem]):
       raise Exception('Length of memory "%s" = %s which exceeds limit of %d' % (cmd[1],cmd[2],eval(memories['arch'][ixMem])));
-    memories['length'][ixMem] = cmd[2];
+    memories['bank'][ixMem] = int(cmd[2]);
+    memories['length'][ixMem] = cmd[3];
     memoryBody = list();
     for line in fpAssemberOutput:
       ixLine = ixLine + 1;
@@ -376,8 +363,7 @@ for line in fpRawCore:
       raise Exception('VHDL not implemented');
   # memory
   elif fillCommand == 'memory':
-    if (nRAM > 0) or (nROM > 0):
-      genMemory(fpOutCore,memories);
+    genMemory(fpOutCore,memories);
   # module
   elif fillCommand == 'module':
     if hdl == 'Verilog':
