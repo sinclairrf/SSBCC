@@ -493,7 +493,7 @@ class asmDef_9x8:
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
-          elif token['value'] == '.fetch':
+          elif token['value'] == '.fetchV':
             ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.fetchindexed':
@@ -518,7 +518,7 @@ class asmDef_9x8:
           elif token['value'] == '.return':
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
             self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
-          elif token['value'] == '.store':
+          elif token['value'] == '.storeV':
             ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
             self.EmitOpCode(fp,self.InstructionOpcode('drop'),'drop');
@@ -567,14 +567,14 @@ class asmDef_9x8:
     self.macros = dict(list=list(), length=list(), nArgs=list());
     self.AddMacro('.call',             3);
     self.AddMacro('.callc',            3);
-    self.AddMacro('.fetch',            2);
+    self.AddMacro('.fetchV',           2);
     self.AddMacro('.fetchindexed',     3);
     self.AddMacro('.inport',           2);
     self.AddMacro('.jump',             3);
     self.AddMacro('.jumpc',            3);
     self.AddMacro('.outport',          3);
     self.AddMacro('.return',           2, nArgs=0);
-    self.AddMacro('.store',            3);
+    self.AddMacro('.storeV',           3);
     self.AddMacro('.storeindexed',     4);
 
     #
