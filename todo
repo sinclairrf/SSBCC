@@ -1,5 +1,4 @@
   ssbcc
-*   finish splitting out core generation modules
     add multi-port I/O (i.e., 24-bit I/O ports)
       - exmpl:  INPORT 17-bit,latch i_count I_COUNT
                 asm:  .inport(I_COUNT,3) ==> I_COUNT inport_incr inport_incr inport

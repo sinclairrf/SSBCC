@@ -39,7 +39,7 @@ ixLine = 0;
 compiler = [];
 data_stack = 0;
 inport = dict(config=list(), name=list(), id=list());
-instruction = 0;
+nInstructions = 0;
 memories = dict(list=list(), type=list(), arch=list());
 outport = dict(config=list(), name=list(), id=list());
 return_stack = 0;
@@ -94,8 +94,8 @@ for line in argList.filename:
     cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
     if not cmd:
       raise Exception('Malformed "INSTRUCTION" command on line %d: "%s"' % (ixLine,line));
-    instruction = int(cmd[0]);
-    if instruction > 2**13:
+    nInstructions = int(cmd[0]);
+    if nInstructions > 2**13:
       raise Exception('Instruction space cannot exceed %d' % (2**13));
   # MEMORY
   elif re.match(r'\s*MEMORY\b',line):
@@ -239,8 +239,8 @@ for line in fpAssemberOutput:
         programBodyLength = programBodyLength + 1;
     if programBodyLength != mainLength:
       raise Exception('Program Bug:  program length doesn\'t match declared length');
-    if programBodyLength > instruction:
-      raise Exception('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,instruction));
+    if programBodyLength > nInstructions:
+      raise Exception('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,nInstructions));
   else:
     raise Exception('Unrecognized line %s(%d):  %s' % (fpAssemberOutput.filename,ixLine,line));
 
@@ -261,12 +261,12 @@ for ixMem in range(len(memories['list'])):
 #
 ################################################################################
 
-inports_have_bitsignals = False;
-
 if hdl == 'Verilog':
   from ssbccGenVerilog import *;
 else:
   raise Exception('Unrecognized hdl = "%s"' % hdl);
+
+inport['haveBitSignals'] = False;
 
 if hdl == 'Verilog':
   fpRawCore = open(os.path.join(corepath,'core.v'),'r');
@@ -276,6 +276,7 @@ elif hdl == 'VHDL':
   fpOutCore = open(outCoreName+'.vhd','w');
 else:
   raise Exception('Program Bug:  unrecognized hdl = "%s"', hdl);
+
 for line in fpRawCore:
   if not re.match('..@SSBCC@',line):
     fpOutCore.write(line);
@@ -283,82 +284,19 @@ for line in fpRawCore:
   fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
   # inports
   if fillCommand == 'inports':
-    if hdl == 'Verilog':
-      if inport['config']:
-        if inports_have_bitsignals:
-          fpOutCore.write('always @ (*)\n');
-          fpOutCore.write('  case (s_T)\n');
-          for ix in range(len(inport['config'])):
-            configs = inport['config'][ix];
-            names = inport['name'][ix];
-            bitsString = '';
-            nBits = 0;
-            for jx in range(len(configs)):
-              if re.match(r'\d+-bit',configs[jx]):
-                a = re.findall(r'(\d+)',configs[jx]);
-                portLength = int(a[0]);
-                if len(bitsString) != 0:
-                  bitsString = bitsString + ', ';
-                bitsString = bitsString + inport['name'][ix][jx];
-                nBits = nBits + portLength;
-            if nBits == 0:
-              pass;
-            elif nBits < 8:
-              fpOutCore.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitsString));
-            elif nBits == 8:
-              fpOutCore.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
-            else:
-              raise Exception('Too many bits in %s' % (inport['id'][ix]));
-          fpOutCore.write('    default : s_T_inport = 8\'h00;\n');
-          fpOutCore.write('  endcase\n');
-          fpOutCore.write('\n');
-        for ix in range(len(inport['config'])):
-          configs = inport['config'][ix];
-          names = inport['name'][ix];
-          for jx in range(len(configs)):
-            if re.match(r'\d+-bit',configs[jx]):
-              pass;
-            elif configs[jx] == 'strobe':
-              fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
-              fpOutCore.write('always @ (posedge i_clk)\n');
-              fpOutCore.write('  if (i_rst)\n');
-              fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
-              fpOutCore.write('  else if (s_inport)\n');
-              fpOutCore.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
-              fpOutCore.write('  else\n');
-              fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
-              fpOutCore.write('\n');
-            else:
-              raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
-      else:
-        fpOutCore.write('// no input ports\n');
-    if hdl == 'VHDL':
-      raise Exception('VHDL not implemented');
+    genInports(fpOutCore,inport);
   # instructions
   elif fillCommand == 'instructions':
-    if hdl == 'Verilog':
-      fpOutCore.write('initial begin\n');
-      programBodyIx = 0;
-      for ix in range(len(programBody)):
-        if programBody[ix][0] == '-':
-          fpOutCore.write('  // %s\n' % programBody[ix][2:]);
-        else:
-          fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
-          programBodyIx = programBodyIx + 1;
-      for ix in range(programBodyIx,instruction):
-        fpOutCore.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
-      fpOutCore.write('end\n');
-    if hdl == 'VHDL':
-      raise Exception('VHDL not implemented');
+    genInstructions(fpOutCore,programBody,nInstructions);
   # localparam
   elif fillCommand == 'localparam':
     if hdl == 'Verilog':
-      fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(instruction));
+      fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(nInstructions));
       fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(return_stack));
       fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(data_stack));
       fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
       fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
-      fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (instruction-1));
+      fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
     if hdl == 'VHDL':
       raise Exception('VHDL not implemented');
   # memory
@@ -366,102 +304,13 @@ for line in fpRawCore:
     genMemory(fpOutCore,memories);
   # module
   elif fillCommand == 'module':
-    if hdl == 'Verilog':
-      fpOutCore.write('module %s(\n' % outCoreName);
-      fpOutCore.write('  // synchronous reset and processor clock\n');
-      fpOutCore.write('  input  wire           i_rst,\n');
-      fpOutCore.write('  input  wire           i_clk');
-      if inport['config']:
-        fpOutCore.write(',\n');
-        fpOutCore.write('  // inport ports\n');
-        for ix in range(len(inport['config'])):
-          configs = inport['config'][ix];
-          names = inport['name'][ix];
-          for jx in range(len(configs)):
-            if (ix != 0) or (jx != 0):
-              fpOutCore.write(',\n');
-            if re.match(r'\d+-bit',configs[jx]):
-              inports_have_bitsignals = True;
-              a = re.findall(r'(\d+)',configs[jx]);
-              portLength = int(a[0]);
-              if portLength == 1:
-                fpOutCore.write('  input  wire           %s' % names[jx]);
-              elif portLength < 10:
-                fpOutCore.write('  input  wire     [%d:0] %s' % (portLength-1,names[jx]));
-              else:
-                fpOutCore.write('  input  wire    [%d:0] %s' % (portLength-1,names[jx]));
-            elif configs[jx] == 'strobe':
-              fpOutCore.write('  output reg            %s' % names[jx]);
-            else:
-              raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
-      if outport['config']:
-        fpOutCore.write(',\n');
-        fpOutCore.write('  // outport ports\n');
-        for ix in range(len(outport['config'])):
-          configs = outport['config'][ix];
-          names = outport['name'][ix];
-          for jx in range(len(configs)):
-            if (ix != 0) or (jx != 0):
-              fpOutCore.write(',\n');
-            if re.match(r'\d+-bit',configs[jx]):
-              a = re.findall(r'(\d+)',configs[jx]);
-              portLength = int(a[0]);
-              if portLength == 1:
-                fpOutCore.write('  output reg            %s' % names[jx]);
-              elif portLength < 10:
-                fpOutCore.write('  output reg      [%d:0] %s' % (portLength-1,names[jx]));
-              else:
-                fpOutCore.write('  output reg     [%d:0] %s' % (portLength-1,names[jx]));
-            elif configs[jx] == 'strobe':
-              fpOutCore.write('  output reg            %s' % names[jx]);
-            else:
-              raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
-      fpOutCore.write('\n');
-      fpOutCore.write(');\n');
-    if hdl == 'VHDL':
-      raise Exception('VHDL not implemented');
+    genModule(fpOutCore,outCoreName,inport,outport);
   # outports
   elif fillCommand == 'outports':
-    if outport['config']:
-      for ix in range(len(outport['config'])):
-        configs = outport['config'][ix];
-        names = outport['name'][ix];
-        for jx in range(len(configs)):
-          if re.match(r'\d+-bit',configs[jx]):
-            a = re.findall(r'(\d+)',configs[jx]);
-            portLength = int(a[0]);
-            fpOutCore.write('initial %s = %d\'h0;\n' % (names[jx],portLength));
-            fpOutCore.write('always @ (posedge i_clk)\n');
-            fpOutCore.write('  if (i_rst)\n');
-            fpOutCore.write('    %s <= %d\'h0;\n' % (names[jx],portLength));
-            fpOutCore.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
-            fpOutCore.write('    %s <= s_N[0+:%d];\n' % (names[jx],portLength));
-            fpOutCore.write('  else\n');
-            fpOutCore.write('    %s <= %s;\n' % (names[jx],names[jx]));
-            fpOutCore.write('\n');
-          elif configs[jx] == 'strobe':
-            fpOutCore.write('initial %s = 1\'b0;\n' % names[jx]);
-            fpOutCore.write('always @ (posedge i_clk)\n');
-            fpOutCore.write('  if (i_rst)\n');
-            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
-            fpOutCore.write('  else if (s_outport)\n');
-            fpOutCore.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
-            fpOutCore.write('  else\n');
-            fpOutCore.write('    %s <= 1\'b0;\n' % names[jx]);
-            fpOutCore.write('\n');
-          else:
-            raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
-    else:
-      fpOutCore.write('// no output ports\n');
+    genOutports(fpOutCore,outport);
   # user_header
   elif fillCommand == 'user_header':
-    for ix in range(len(user_header)):
-      if hdl == 'Verilog':
-        fpOutCore.write('// %s\n' % user_header[ix]);
-      elif hdl == 'VHDL':
-        fpOutCore.write('-- %s\n' % user_header[ix]);
-      else:
-        raise Exception('Unimplemented language %s' % hdl);
+    genUserHeader(fpOutCore,user_header);
   # error
   else:
     print 'WARNING:  Unimplemented command ' + fillCommand;
