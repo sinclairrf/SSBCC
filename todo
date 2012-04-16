@@ -1,5 +1,5 @@
   ssbcc
-1   generate memories for RAM and ROM
+*   finish splitting out core generation modules
     add multi-port I/O (i.e., 24-bit I/O ports)
       - exmpl:  INPORT 17-bit,latch i_count I_COUNT
                 asm:  .inport(I_COUNT,3) ==> I_COUNT inport_incr inport_incr inport
@@ -17,28 +17,18 @@
 *     use a register for s_R
 *     add inport/outport w/ nip instead of drop and w/ auto increment/decrement for the port number
 *     add an instruction to put of copy of T in R?
-*     change .jumpc, callc to .jumpc_drop, .jumpc_nop, ...?
 *     add r>N operator?
-1     finish the core
-        - store and fetch
-        - also:  store_incr, store_decr, fetch_incr, fetch_decr
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
-*     variant .jumpc(addr,op) w/ op instead of "drop"
+*     variant macros to reduce code space:  .jump(addr), .jump(addr,op), etc.
 *     access inport/outport w/o macro
         - need this for general-purpose I/O such as I2C I/F
       add loop labels to the output instruction list
       implement .constant directive
       implement .abbr directive
-1     fully process .memory and .variable directives
-      reduce range of fetch instruction
-      add .fetch(name,N) and .store(name,N) macros
-      add optimizer
-        - "dup push outport drop" ==> "push outport"
-        - "XXX return nop" ==> "return XXX" where XXX doesn't involve the return stack
-        - "dup push store drop" ==> "push store"
-        - "push+outport+drop push+jump/call+nop" ==> "push+outport push+jump/call+drop"
+      add .fetch-(name,N) and .store+/-(name,N) macros
+      allow direct use of fetch, fetch-, store+, and store-
       add exception handler
     core.vhd
       do this once core.v is completed
