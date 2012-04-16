@@ -35,10 +35,10 @@ class asmDef_9x8:
   def IsMacro(self,name):
     return name in self.macros['list'];
 
-  def MacroLength(self,name):
-    if name not in self.macros['list']:
+  def MacroLength(self,token):
+    if token['value'] not in self.macros['list']:
       raise Exception('Program Bug');
-    ix = self.macros['list'].index(name);
+    ix = self.macros['list'].index(token['value']);
     return self.macros['length'][ix];
 
   def MacroNumberArgs(self,name):
@@ -222,7 +222,7 @@ class asmDef_9x8:
       # append macros
       elif token['type'] == 'macro':
         tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument']));
-        offset = offset + self.MacroLength(token['value']);
+        offset = offset + self.MacroLength(token);
       # interpret and append symbols
       elif token['type'] == 'symbol':
         if token['value'] not in self.symbols['list']:
@@ -406,8 +406,8 @@ class asmDef_9x8:
           ix = self.functionEvaluation['list'].index(token['argument'][0]);
           token['address'] = self.functionEvaluation['address'][ix];
     # Sanity checks for address range
-    if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**14-1:
-      raise Exception('Max address for program requires more than 14 bits');
+    if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**13-1:
+      raise Exception('Max address for program requires more than 13 bits');
 #    for ix in range(len(self.functionEvaluation['list'])):
 #      print self.functionEvaluation['list'][ix], self.functionEvaluation['address'][ix], self.functionEvaluation['length'][ix];
 #      for ix2 in range(len(self.functionEvaluation['body'][ix])):
@@ -453,6 +453,16 @@ class asmDef_9x8:
     else:
       fp.write('1%02X %02X\n' % ((value % 0x100),value));
 
+  def EmitVariable(self,fp,token):
+    name = token['argument'][0];
+    if name not in self.symbols['list']:
+      raise Exception('Variable "%s" not recognized' + name);
+    ixName = self.symbols['list'].index(name);
+    body = self.symbols['body'][ixName];
+    fp.write('1%02X %s\n' % (body['start'],name));
+    ixMem = self.memories['list'].index(body['memory']);
+    return self.memories['bank'][ixMem];
+
   def EmitProgram(self,fp):
     """Emit the program code"""
     # Write the program marker, address of .main, address or "[]" of .interrupt,
@@ -485,12 +495,12 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.fetch':
-            self.EmitPush(fp,token['address'] & 0xFF);
-            self.EmitOpcode(fp,self.specialInstructions['fetch'] | (token['address'] >> 8),'fetch');
+            ixBank = self.EmitVariable(fp,token);
+            self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.fetchindexed':
-            self.EmitPush(fp,token['address'] & 0xFF);
+            ixBank = self.EmitVariable(fp,token);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
-            self.EmitOpcode(fp,self.specialInstructions['fetch'] | (token['address'] >> 8),'fetch');
+            self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.inport':
             self.EmitPush(fp,self.InportAddress(token['argument'][0]) & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['inport'],'inport');
@@ -510,14 +520,14 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
             self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
           elif token['value'] == '.store':
-            self.EmitPush(fp,token['address'] & 0xFF);
-            self.EmitOpcode(fp,self.specialInstructions['store'] | (token['address'] >> 8),'store');
-            fp.write('%03X\n', self.InstructionOpcode('drop'),'drop');
+            ixBank = self.EmitVariable(fp,token);
+            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
+            self.EmitOpCode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.storeindexed':
-            self.EmitPush(fp,token['address'] & 0xFF);
+            ixBank = self.EmitVariable(fp,token);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
-            self.EmitOpcode(fp,self.specialInstructions['store'] | (token['address'] >> 8),'store');
-            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
+            self.EmitOpCode(fp,self.InstructionOpcode('drop'),'drop');
           else:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
         elif token['type'] == 'symbol':
@@ -630,10 +640,12 @@ class asmDef_9x8:
     self.specialInstructions = dict();
     self.specialInstructions['call']    = 0x0C0;
     self.specialInstructions['callc']   = 0x0E0;
-    self.specialInstructions['fetch']   = 0x070;
+    self.specialInstructions['fetch']   = 0x078;
+    self.specialInstructions['fetch+']  = 0x07C;
     self.specialInstructions['inport']  = 0x030;
     self.specialInstructions['jump']    = 0x080;
     self.specialInstructions['jumpc']   = 0x0A0;
     self.specialInstructions['outport'] = 0x038;
     self.specialInstructions['return']  = 0x028;
-    self.specialInstructions['store']   = 0x068;
+    self.specialInstructions['store+']  = 0x070;
+    self.specialInstructions['store-']  = 0x074;
