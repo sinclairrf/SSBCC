@@ -213,6 +213,6 @@ def genOutports(fp,outport):
       else:
         raise Exception('Unrecognized OUTPORT type: "%s"' % configs[jx]);
 
-def genUserHeader(fp,header):
+def genUserHeader(fp,user_header):
   for ix in range(len(user_header)):
-    fpOutCore.write('// %s\n' % user_header[ix]);
+    fp.write('// %s\n' % user_header[ix]);
