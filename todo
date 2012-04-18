@@ -20,14 +20,13 @@
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
+**    implement .constant directive
+**    add $(...) evaluation
 *     variant macros to reduce code space:  .jump(addr), .jump(addr,op), etc.
 *     access inport/outport w/o macro
         - need this for general-purpose I/O such as I2C I/F
       add loop labels to the output instruction list
-      implement .constant directive
       implement .abbr directive
-      add .fetch-(name,N) and .store+/-(name,N) macros
-      allow direct use of fetch, fetch-, store+, and store-
       add exception handler
     core.vhd
       do this once core.v is completed
