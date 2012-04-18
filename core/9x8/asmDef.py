@@ -306,11 +306,11 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + 3;
         continue;
       # look for directives and macros
-      a = re.match(r'\.[A-Za-z]\w*(\(\w+(,\w+)*\))?',line[col:]);
+      a = re.match(r'\.[A-Za-z]\S*(\(\w\S*(,\w\S*)*\))?',line[col:]);
       if a:
         if (col+len(a.group(0)) < len(line)) and (not re.match(r'\s',line[col+len(a.group(0))])):
           raise Exception('Malformed directive or macro in %s(%d), column %d' % (filename, lineNumber, col+1));
-        b = re.match(r'\.[A-Za-z]\w*',a.group(0));
+        b = re.match(r'\.[^(]+',a.group(0));
         if ad.IsDirective(b.group(0)):
           if b.group(0) != a.group(0):
             raise Exception('Malformed directive in %s(%d), column %d' % (filename, lineNumber, col+1));
