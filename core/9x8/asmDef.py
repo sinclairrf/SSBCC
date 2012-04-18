@@ -306,7 +306,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + 3;
         continue;
       # look for directives and macros
-      a = re.match(r'\.[A-Za-z]\w*(\(\w+\))?',line[col:]);
+      a = re.match(r'\.[A-Za-z]\w*(\(\w+(,\w+)*\))?',line[col:]);
       if a:
         if (col+len(a.group(0)) < len(line)) and (not re.match(r'\s',line[col+len(a.group(0))])):
           raise Exception('Malformed directive or macro in %s(%d), column %d' % (filename, lineNumber, col+1));
