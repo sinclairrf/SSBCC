@@ -277,6 +277,15 @@ def RawTokens(filename,startLineNumber,lines,ad):
         tokens.append(dict(type='instruction', value=a.group(0), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
+      # look for computation
+      a = re.match(r'\$\(\S+\)',line[col:]);
+      if a:
+        tParseNumber = eval(a.group(0)[1:],ad.SymbolDict());
+        if type(tParseNumber) != int:
+          raise AsmException('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+1));
+        tokens.append(dict(type='value', value=tParseNumber, line=lineNumber, col=col+1));
+        col = col + len(a.group(0));
+        continue;
       # look for a repeated single-byte numeric value
       a = re.match(r'[1-9][0-9]*\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',line[col:]);
       if a:

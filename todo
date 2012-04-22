@@ -13,7 +13,6 @@
       resolve ISE synthesizing 50 slices instead of 36
     asm
 **    implement .constant directive
-**    add $(...) evaluation
 *     variant macros to reduce code space:  .jump(addr), .jump(addr,op), etc.
       add loop labels to the output instruction list
       implement .abbr directive

@@ -321,6 +321,16 @@ class asmDef_9x8:
   def Symbols(self):
     return self.symbols;
 
+  def SymbolDict(self):
+    """return a dict object usable by the eval function with the currently defines symbols"""
+    t = dict();
+    for ixSymbol in range(len(self.symbols['list'])):
+      name = self.symbols['list'][ixSymbol];
+      stype = self.symbols['type'][ixSymbol];
+      if stype == 'variable':
+        t[name] = self.symbols['body'][ixSymbol]['start'];
+    return t;
+
   ################################################################################
   #
   # Compute the memory bank indices.
