@@ -18,13 +18,19 @@ import asmDef
 
 ################################################################################
 #
-# The main loop:
-#
-# - Process the command line arguments.
+# Surround the program with a try ... except clause
 #
 ################################################################################
 
 try:
+
+  ################################################################################
+  #
+  # The main loop:
+  #
+  # - Process the command line arguments.
+  #
+  ################################################################################
 
   #
   # Construct the command-line argument list parser
@@ -184,6 +190,12 @@ try:
   ad.EmitMemories(argList.o);
   ad.EmitProgram(argList.o);
   argList.o.close();
+
+################################################################################
+#
+# Terminating except clause
+#
+################################################################################
 
 except asmDef.AsmException, msg:
   print >> sys.stderr, 'FATAL ERROR:  ' + str(msg);
