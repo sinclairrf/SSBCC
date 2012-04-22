@@ -1,10 +1,4 @@
   ssbcc
-    add multi-port I/O (i.e., 24-bit I/O ports)
-      - exmpl:  INPORT 17-bit,latch i_count I_COUNT
-                asm:  .inport(I_COUNT,3) ==> I_COUNT inport_incr inport_incr inport
-                OUTPORT 24-bit,strobe o_count O_COUNT
-                asm:  .outport(O_COUNT,3) ==> O_COUNT+2 outport_decr outport_decr outport drop
-                asm:  O_COUNT_2 2+ .outport(,3) ==> O_COUNT_2 ...
     add interrupt handling
     add optional fast version of the data and return stacks
     do VHDL
@@ -14,7 +8,6 @@
   core/9x8
     core.v
 *     use a register for s_R
-*     add inport/outport w/ nip instead of drop and w/ auto increment/decrement for the port number
 *     add an instruction to put of copy of T in R?
 *     add r>N operator?
 2     fully debug the core
@@ -48,3 +41,4 @@
     - github
     - ssbcc.net
     - ssbcc@sinclairrf.com or rodney@ssbcc.net
+    - EETimes and other e-rags
