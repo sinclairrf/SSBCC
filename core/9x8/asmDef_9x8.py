@@ -541,7 +541,7 @@ class asmDef_9x8:
           elif token['value'] == '.inport':
             name = token['argument'][0];
             self.EmitPush(fp,self.InportAddress(name) & 0xFF,name);
-            self.EmitOpcode(fp,self.specialInstructions['inport'],'inport');
+            self.EmitOpcode(fp,self.InstructionOpcode('inport'),'inport');
           elif token['value'] == '.jump':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump');
@@ -553,7 +553,7 @@ class asmDef_9x8:
           elif token['value'] == '.outport':
             name = token['argument'][0];
             self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
-            self.EmitOpcode(fp,self.specialInstructions['outport'],'outport');
+            self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport');
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.return':
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
@@ -687,11 +687,13 @@ class asmDef_9x8:
     self.AddInstruction('drop',         0x01E);
     self.AddInstruction('dup',          0x008);
     self.AddInstruction('ena',          0x019);
+    self.AddInstruction('inport',       0x030);
     self.AddInstruction('lsb>>',        0x007);
     self.AddInstruction('msb>>',        0x006);
     self.AddInstruction('nip',          0x01F);
     self.AddInstruction('nop',          0x000);
     self.AddInstruction('or',           0x01B);
+    self.AddInstruction('outport',      0x038);
     self.AddInstruction('over',         0x00A);
     self.AddInstruction('r>',           0x049);
     self.AddInstruction('r@',           0x009);
@@ -702,10 +704,8 @@ class asmDef_9x8:
     self.specialInstructions['callc']   = 0x0E0;
     self.specialInstructions['fetch']   = 0x078;
     self.specialInstructions['fetch-']  = 0x07C;
-    self.specialInstructions['inport']  = 0x030;
     self.specialInstructions['jump']    = 0x080;
     self.specialInstructions['jumpc']   = 0x0A0;
-    self.specialInstructions['outport'] = 0x038;
     self.specialInstructions['return']  = 0x028;
     self.specialInstructions['store+']  = 0x070;
     self.specialInstructions['store-']  = 0x074;
