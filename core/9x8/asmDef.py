@@ -11,6 +11,18 @@ import re
 
 ################################################################################
 #
+# Exception class for the assembler.
+#
+################################################################################
+
+class AsmException(Exception):
+  def __init__(self,message):
+    self.msg = message;
+  def __str__(self):
+    return self.msg;
+
+################################################################################
+#
 # Iterator for files that returns bodies of lines of the file.  Each body
 # contains optional comment lines preceding the directive, the line with the
 # directive, and optional lines following the directive up to the optional
@@ -31,7 +43,7 @@ class FileBodyIterator:
   def __init__(self, fps, ad):
     # Do sanity check on arguments.
     if ad.IsDirective(".include"):
-      raise Exception('".include" directive defined by FileBodyIterator');
+      raise AsmException('".include" directive defined by FileBodyIterator');
     # Initialize the raw processing states
     self.fpPending = list(fps);
     self.ad = ad;
@@ -44,7 +56,7 @@ class FileBodyIterator:
     self.included = list();
     for fp in self.fpPending:
       if fp.name in self.included:
-        raise Exception('Input file %s listed more than once' % fp.name);
+        raise AsmException('Input file %s listed more than once' % fp.name);
       self.included.append(fp.name);
     self.fpStack = list();
     self.fpStack.append(dict(fp=self.fpPending.pop(0), line=0));
@@ -72,7 +84,7 @@ class FileBodyIterator:
         if self.current:
           return self.current;
         if self.pendingInclude in self.included:
-          raise Exception('File "%s" already included' % self.pendingInclude);
+          raise AsmException('File "%s" already included' % self.pendingInclude);
         self.included.append(self.pendingInclude);
         fp_pending = None;
         for path in self.searchPaths:
@@ -81,7 +93,7 @@ class FileBodyIterator:
             fp_pending = open('%s/%s' % (path,self.pendingInclude),'r');
             break;
         if not fp_pending:
-          raise Exception('%s not found' % self.pendingInclude);
+          raise AsmException('%s not found' % self.pendingInclude);
         self.fpStack.append(dict(fp=fp_pending, line=0));
         self.pendingInclude = str();
       # Get the next file to process if fpStack is empty.
@@ -95,7 +107,7 @@ class FileBodyIterator:
         if re.match(r'\s*\.include\s', line):
           a = re.findall(r'\s*\.include\s+(\S+)(\s*|\s*;.*)$', line);
           if not a:
-            raise Exception('Malformed .include directive at %s(%d)' % (fp['fp'].name, fp['line']));
+            raise AsmException('Malformed .include directive at %s(%d)' % (fp['fp'].name, fp['line']));
           if not self.pending:
             self.pending.append(fp['fp'].name);
             self.pending.append(fp['line']);
@@ -252,7 +264,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + 1;
         continue;
       if not spaceFound:
-        raise Exception('Missing space in %s(%d), column %d' % (filename, lineNumber, col+1));
+        raise AsmException('Missing space in %s(%d), column %d' % (filename, lineNumber, col+1));
       spaceFound = False;
       # ignore comments
       if line[col] == ';':
@@ -270,7 +282,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
         b = b[0];
         tParseNumber = ParseNumber(b[1]);
         if type(tParseNumber) != int:
-          raise Exception('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+len(b[0])+2));
+          raise AsmException('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+len(b[0])+2));
         tValue = list();
         for ix in range(int(b[0])):
           tValue.append(tParseNumber);
@@ -282,7 +294,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
       if a:
         tParseNumber = ParseNumber(a.group(0));
         if type(tParseNumber) != int:
-          raise Exception('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+1));
+          raise AsmException('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+1));
         tokens.append(dict(type='value', value=tParseNumber, line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
@@ -290,10 +302,10 @@ def RawTokens(filename,startLineNumber,lines,ad):
       if re.match(r'[CN]?"',line[col:]):
         a = re.match(r'[CN]?"([^"]|\\")+[^\\\\]"',line[col:]);
         if not a:
-          raise Exception('Unmatched \'"\' in %s(%d), column %d' % (filename, lineNumber, col+1));
+          raise AsmException('Unmatched \'"\' in %s(%d), column %d' % (filename, lineNumber, col+1));
         parsedString = ParseString(a.group(0));
         if type(parsedString) == int:
-          raise Exception('Malformed string at %s(%d), column %d' % (filename, lineNumber, col+parsedString));
+          raise AsmException('Malformed string at %s(%d), column %d' % (filename, lineNumber, col+parsedString));
         tokens.append(dict(type='value', value=parsedString, line=lineNumber, col=col));
         col = col + len(a.group(0));
         continue;
@@ -301,7 +313,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
       if line[col] == "'":
         a = re.match(r'\'.\'',line[col:]);
         if (not a) or ((col+3 < len(line)) and (not re.match(r'\s',line[col+3]))):
-          raise Exception('Malformed \'.\' in %s(%d), column %d' % (filename, lineNumber, col+1));
+          raise AsmException('Malformed \'.\' in %s(%d), column %d' % (filename, lineNumber, col+1));
         tokens.append(dict(type='value', value=ord(a.group(0)[1]), line=lineNumber, col=col+1));
         col = col + 3;
         continue;
@@ -309,13 +321,13 @@ def RawTokens(filename,startLineNumber,lines,ad):
       a = re.match(r'\.[A-Za-z]\S*(\(\w\S*(,\w\S*)*\))?',line[col:]);
       if a:
         if (col+len(a.group(0)) < len(line)) and (not re.match(r'\s',line[col+len(a.group(0))])):
-          raise Exception('Malformed directive or macro in %s(%d), column %d' % (filename, lineNumber, col+1));
+          raise AsmException('Malformed directive or macro in %s(%d), column %d' % (filename, lineNumber, col+1));
         b = re.match(r'\.[^(]+',a.group(0));
         if ad.IsDirective(b.group(0)):
           if b.group(0) != a.group(0):
-            raise Exception('Malformed directive in %s(%d), column %d' % (filename, lineNumber, col+1));
+            raise AsmException('Malformed directive in %s(%d), column %d' % (filename, lineNumber, col+1));
           if len(tokens) > 0:
-            raise Exception('Directive must be first entry on line in %s(%d), column %d' % (filename, lineNumber, col+1));
+            raise AsmException('Directive must be first entry on line in %s(%d), column %d' % (filename, lineNumber, col+1));
           tokens.append(dict(type='directive', value=a.group(0), line=lineNumber, col=col+1));
           col = col + len(a.group(0));
           continue;
@@ -325,16 +337,16 @@ def RawTokens(filename,startLineNumber,lines,ad):
           else:
             macroArgs = re.findall(r'([^,)]+)',a.group(0)[len(b.group(0))+1:]);
           if len(macroArgs) != ad.MacroNumberArgs(b.group(0)):
-            raise Exception('Wrong number of arguments to macro in %s(%d), column %d' % (filename, lineNumber, col+1));
+            raise AsmException('Wrong number of arguments to macro in %s(%d), column %d' % (filename, lineNumber, col+1));
           tokens.append(dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=macroArgs));
           col = col + len(a.group(0));
           continue;
-        raise Exception('Unrecognized directive or macro "%s" in %s(%d), column(%d)' % (a.group(0), filename, lineNumber, col+1));
+        raise AsmException('Unrecognized directive or macro "%s" in %s(%d), column(%d)' % (a.group(0), filename, lineNumber, col+1));
       # look for a label definition
       a = re.match(r':[A-Za-z]\w*',line[col:]);
       if a:
         if (col+len(a.group(0))) and (not re.match(r'\s',line[col+len(a.group(0))])):
-          raise Exception('Malformed label in %s(%d), column %d' % (filename, lineNumber, col+1));
+          raise AsmException('Malformed label in %s(%d), column %d' % (filename, lineNumber, col+1));
         tokens.append(dict(type='label', value=a.group(0)[1:], line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
@@ -344,10 +356,10 @@ def RawTokens(filename,startLineNumber,lines,ad):
       a = re.match(r'[A-Za-z]\w+',line[col:]);
       if a:
         if (col+len(a.group(0))) and (not re.match(r'\s',line[col+len(a.group(0))])):
-          raise Exception('Malformed symbol in %s(%d), column %d' % (filename, lineNumber, col+1));
+          raise AsmException('Malformed symbol in %s(%d), column %d' % (filename, lineNumber, col+1));
         tokens.append(dict(type='symbol', value=a.group(0), line=lineNumber, col=col+1));
         col = col + len(a.group(0));
         continue;
       # anything else is an error
-      raise Exception('Malformed statement in %s(%d), column %d' % (filename, lineNumber, col+1));
+      raise AsmException('Malformed statement in %s(%d), column %d' % (filename, lineNumber, col+1));
   return tokens;

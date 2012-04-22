@@ -9,6 +9,8 @@
 import copy
 import string
 
+import asmDef
+
 class asmDef_9x8:
   """SSBCC 9x8 specific parsing"""
 
@@ -128,48 +130,48 @@ class asmDef_9x8:
     lastToken = rawTokens[-1];
     if firstToken['value'] == '.main':
       if (lastToken['type'] != 'macro') or (lastToken['value'] != '.jump'):
-        raise Exception('.main body does not end in ".jump" at %s(%d), column %d' % (filename,lastToken['line'],lastToken['col']));
+        raise asmDef.AsmException('.main body does not end in ".jump" at %s(%d), column %d' % (filename,lastToken['line'],lastToken['col']));
     # Ensure functions and interrupts end in a ".jump" or ".return".
     if firstToken['value'] in ('.function','.interrupt',):
       errorMsg = 'Last entry in ".function" or ".interrupt" must be a ".jump" or ".return" at %s(%d), column %d' % (filename,lastToken['line'],lastToken['col']);
       if lastToken['type'] != 'macro':
-        raise Exception(errorMsg);
+        raise asmDef.AsmException(errorMsg);
       if lastToken['value'] not in ('.jump','.return',):
-        raise Exception(errorMsg);
+        raise asmDef.AsmException(errorMsg);
     # Ensure no macros and no instructions in non-"functions".
     # Byproduct:  No labels allowed in non-"functions".
     if firstToken['value'] not in ('.function','.interrupt','.main',):
       for token in rawTokens[2:]:
         if (token['type'] == 'macro'):
-          raise Exception('Macro not allowed in directive at %s(%d), column %d' % (filename,token['line'],token['col']));
+          raise asmDef.AsmException('Macro not allowed in directive at %s(%d), column %d' % (filename,token['line'],token['col']));
         if token['type'] == 'instruction':
-          raise Exception('Instruction not allowed in directive at %s(%d), column %d' % (filename,token['line'],token['col']));
+          raise asmDef.AsmException('Instruction not allowed in directive at %s(%d), column %d' % (filename,token['line'],token['col']));
     # Ensure local labels are defined and used.
     labelDefs = list();
     for token in rawTokens:
       if token['type'] == 'label':
         name = token['value'];
         if name in labelDefs:
-          raise Exception('Repeated label definition at %s(%d), column %d', (filename,token['line'],token['col']));
+          raise asmDef.AsmException('Repeated label definition at %s(%d), column %d', (filename,token['line'],token['col']));
         labelDefs.append(name);
     labelsUsed = list();
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] in ('.jump','.jumpc',)):
         target = token['argument'][0];
         if target not in labelDefs:
-          raise Exception('label definition for target missing at %s(%d), column %d' % (filename,token['line'],token['col']));
+          raise asmDef.AsmException('label definition for target missing at %s(%d), column %d' % (filename,token['line'],token['col']));
         labelsUsed.append(target);
     labelsUnused = set(labelDefs) - set(labelsUsed);
     if labelsUnused:
-      raise Exception('Unused label(s) %s in body %s(%d)' % (labelsUnused,filename,firstToken['line']));
+      raise asmDef.AsmException('Unused label(s) %s in body %s(%d)' % (labelsUnused,filename,firstToken['line']));
     # Ensure symbols referenced by ".input" and ".outport" are defined.
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] == '.inport'):
         if not self.IsInport(token['argument'][0]):
-          raise Exception('Input port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Input port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
       if (token['type'] == 'macro') and (token['value'] == '.outport'):
         if not self.IsOutport(token['argument'][0]):
-          raise Exception('Output port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Output port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
     # Ensure referenced symbols are already defined.
     checkBody = False;
     if (rawTokens[0]['type'] == 'directive') and (rawTokens[0]['value'] in ('.function','.interrupt','.main',)):
@@ -179,10 +181,10 @@ class asmDef_9x8:
         if token['type'] == 'symbol':
           name = token['value'];
           if name not in symbols['list']:
-            raise Exception('Undefined symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
+            raise asmDef.AsmException('Undefined symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
           ixName = symbols['list'].index(name);
           if symbols['type'][ixName] not in ('constant','macro','variable',):
-            raise Exception('Illegal symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
+            raise asmDef.AsmException('Illegal symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
 
   ################################################################################
   #
@@ -200,7 +202,7 @@ class asmDef_9x8:
           for lToken in token['value']:
             tokens.append(lToken);
       else:
-        raise Exception('Illegal token "%s" at %s(%d), column %d', (token['type'],filename,token['line'],token['col']));
+        raise asmDef.AsmException('Illegal token "%s" at %s(%d), column %d', (token['type'],filename,token['line'],token['col']));
     return tokens;
 
   def ExpandTokens(self,filename,rawTokens):
@@ -233,13 +235,13 @@ class asmDef_9x8:
       # interpret and append symbols
       elif token['type'] == 'symbol':
         if token['value'] not in self.symbols['list']:
-          raise Exception('Program bug:  symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
         ix = self.symbols['list'].index(token['value']);
         if self.symbols['type'][ix] == 'variable':
           tokens.append(dict(type='variable', value=token['value'], offset=offset));
           offset = offset + 1;
         else:
-          raise Exception('Unrecognized symbol type "%s" for %s" at %s(%d), column %d' % (token['type'],token['value'],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Unrecognized symbol type "%s" for %s" at %s(%d), column %d' % (token['type'],token['value'],filename,token['line'],token['col']));
       # everything else is an error
       else:
         raise Exception('Program bug:  unexpected token type "%s"' % token['type']);
@@ -255,44 +257,44 @@ class asmDef_9x8:
     # Process ".function" definition.
     elif firstToken['value'] == '.function':
       if secondToken['type'] != 'symbol':
-        raise Exception('Expected symbol at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
+        raise asmDef.AsmException('Expected symbol at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
       if secondToken['value'] in self.symbols['list']:
-        raise Exception('Symbol %s already defined at %s(%d), column %d' % (secondToken['value'], filename, secondToken['line'], secondToken['col']));
+        raise asmDef.AsmException('Symbol %s already defined at %s(%d), column %d' % (secondToken['value'], filename, secondToken['line'], secondToken['col']));
       self.symbols['list'].append(secondToken['value']);
       self.symbols['type'].append('function');
       self.symbols['body'].append(self.ExpandTokens(filename,rawTokens[2:]));
     # Process ".interrupt" definition.
     elif firstToken['value'] == '.interrupt':
       if self.interrupt:
-        raise Exception('Second definition of ".interrupt" at %s(%d)' % (filename,firstToken['line']));
+        raise asmDef.AsmException('Second definition of ".interrupt" at %s(%d)' % (filename,firstToken['line']));
       self.interrupt = self.ExpandTokens(filename,rawTokens[1:]);
     # Process ".main" definition.
     elif firstToken['value'] == '.main':
       if self.main:
-        raise Exception('Second definition of ".main" at %s(%d)' % (filename,firstToken['line']));
+        raise asmDef.AsmException('Second definition of ".main" at %s(%d)' % (filename,firstToken['line']));
       self.main = self.ExpandTokens(filename,rawTokens[1:]);
     # Process ".memory" declaration.
     elif firstToken['value'] == '.memory':
       if len(rawTokens) != 3:
-        raise Exception('".memory" directive requires exactly two arguments at %s(%d)' % (filename, firstToken['line']));
+        raise asmDef.AsmException('".memory" directive requires exactly two arguments at %s(%d)' % (filename, firstToken['line']));
       if (secondToken['type'] != 'symbol') or (secondToken['value'] not in ('RAM','ROM',)):
-        raise Exception('First argument to ".memory" directive must be "RAM" or "RAM" at %s(%d), column %d' % (filename,secondToken['line'],secondToken['col']));
+        raise asmDef.AsmException('First argument to ".memory" directive must be "RAM" or "RAM" at %s(%d), column %d' % (filename,secondToken['line'],secondToken['col']));
       thirdToken = rawTokens[2];
       if thirdToken['type'] != 'symbol':
-        raise Exception('".memory" directive requires name for second argument at %s(%d)' % (filename,thirdToken['line']));
+        raise asmDef.AsmException('".memory" directive requires name for second argument at %s(%d)' % (filename,thirdToken['line']));
       if thirdToken['value'] in self.symbols['list']:
         ix = self.symbols['list'].index(thirdToken['value']);
         if self.symbols['type'] != secondToken['value']:
-          raise Exception('Redefinition of ".memory %s %s" not allowed at %s(%d)' % (filename,firstToken['line']));
+          raise asmDef.AsmException('Redefinition of ".memory %s %s" not allowed at %s(%d)' % (filename,firstToken['line']));
       else:
         self.AddSymbol(thirdToken['value'],secondToken['value'],dict(length=0));
       self.currentMemory = thirdToken['value'];
     # Process ".variable" declaration.
     elif firstToken['value'] == '.variable':
       if not self.currentMemory:
-        raise Exception('".memory" directive required before ".variable" directive at %s(%d)' % (filename,firstToken('line')));
+        raise asmDef.AsmException('".memory" directive required before ".variable" directive at %s(%d)' % (filename,firstToken('line')));
       if secondToken['type'] != 'symbol':
-        raise Exception('Bad variable name at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
+        raise asmDef.AsmException('Bad variable name at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
       ixMem = self.symbols['list'].index(self.currentMemory);
       currentMemoryBody = self.symbols['body'][ixMem];
       byteList = self.ByteList(filename,rawTokens[2:]);
@@ -300,7 +302,7 @@ class asmDef_9x8:
       self.AddSymbol(secondToken['value'], 'variable', body=body);
       currentMemoryBody['length'] = currentMemoryBody['length'] + len(byteList);
       if currentMemoryBody['length'] > 256:
-        raise Exception('Memory "%s" becomes too long at %s(%d)' % (filename,firstToken['line']));
+        raise asmDef.AsmException('Memory "%s" becomes too long at %s(%d)' % (filename,firstToken['line']));
     # Everything else is an error.
     else:
       raise Exception('Program Bug:  Unrecognized directive %s at %s(%d)' % (firstToken['value'],filename,firstToken['line']));
@@ -333,7 +335,7 @@ class asmDef_9x8:
       if self.symbols['type'][ix] in ('RAM','ROM',):
         memBody = self.symbols['body'][ix];
         if memBody['length'] == 0:
-          raise Exception('Empty memory:  %s' % self.symbols['list'][ix]);
+          raise asmDef.AsmException('Empty memory:  %s' % self.symbols['list'][ix]);
         self.memories['list'].append(self.symbols['list'][ix]);
         self.memories['type'].append(self.symbols['type'][ix]);
         self.memories['length'].append(memBody['length']);
@@ -344,7 +346,7 @@ class asmDef_9x8:
           self.memories['bank'].append(romBank);
           romBank = romBank - 1;
     if len(self.memories['list']) > 4:
-      raise Exception('Too many memory banks');
+      raise asmDef.AsmException('Too many memory banks');
 
   ################################################################################
   #
@@ -386,10 +388,10 @@ class asmDef_9x8:
           callName = token['argument'][0];
           if callName not in self.functionEvaluation['list']:
             if callName not in self.symbols['list']:
-              raise Exception('Function "%s" not defined for function "%s"' % (callName,self.functionEvaluation['list'][ix],));
+              raise asmDef.AsmException('Function "%s" not defined for function "%s"' % (callName,self.functionEvaluation['list'][ix],));
             ixName = self.symbols['list'].index(callName);
             if self.symbols['type'][ixName] != 'function':
-              raise Exception('Function "%s" called by "%s" is not a function', (callName, self.functionEvaluation['list'][ix],));
+              raise asmDef.AsmException('Function "%s" called by "%s" is not a function', (callName, self.functionEvaluation['list'][ix],));
             self.functionEvaluation['list'].append(callName);
             self.functionEvaluation['length'].append(self.symbols['body'][ixName]['length']);
             self.functionEvaluation['body'].append(self.symbols['body'][ixName]['tokens']);
@@ -414,7 +416,7 @@ class asmDef_9x8:
           token['address'] = self.functionEvaluation['address'][ix];
     # Sanity checks for address range
     if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**13-1:
-      raise Exception('Max address for program requires more than 13 bits');
+      raise asmDef.AsmException('Max address for program requires more than 13 bits');
 #    for ix in range(len(self.functionEvaluation['list'])):
 #      print self.functionEvaluation['list'][ix], self.functionEvaluation['address'][ix], self.functionEvaluation['length'][ix];
 #      for ix2 in range(len(self.functionEvaluation['body'][ix])):
@@ -451,17 +453,17 @@ class asmDef_9x8:
 
   def Emit_GetAddrAndBank(self,name):
     if name not in self.symbols['list']:
-      raise Exception('"%s" is not a recognized symbol' % name);
+      raise asmDef.AsmException('"%s" is not a recognized symbol' % name);
     ixName = self.symbols['list'].index(name);
     if self.symbols['type'][ixName] != 'variable':
-      raise Exception('"%s" is not a variable' % name);
+      raise asmDef.AsmException('"%s" is not a variable' % name);
     body = self.symbols['body'][ixName];
     ixMem = self.memories['list'].index(body['memory']);
     return (self.memories['bank'][ixMem],body['start'],);
 
   def Emit_GetBank(self,name):
     if name not in self.memories['list']:
-      raise Exception('"%s" not a memory' % name);
+      raise asmDef.AsmException('"%s" not a memory' % name);
     ixMem = self.memories['list'].index(name);
     return self.memories['bank'][ixMem];
 
@@ -478,7 +480,7 @@ class asmDef_9x8:
 
   def EmitVariable(self,fp,name):
     if name not in self.symbols['list']:
-      raise Exception('Variable "%s" not recognized' + name);
+      raise asmDef.AsmException('Variable "%s" not recognized' + name);
     ixName = self.symbols['list'].index(name);
     body = self.symbols['body'][ixName];
     fp.write('1%02X %s\n' % (body['start'],name));

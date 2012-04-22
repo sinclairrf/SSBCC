@@ -20,7 +20,6 @@
         - need this for general-purpose I/O such as I2C I/F
       add loop labels to the output instruction list
       implement .abbr directive
-      add exception handler
     core.vhd
       do this once core.v is completed
 

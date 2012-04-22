@@ -11,6 +11,7 @@
 # global modules
 import argparse
 import re
+import sys
 
 # User defined modules
 import asmDef
@@ -23,161 +24,167 @@ import asmDef
 #
 ################################################################################
 
-#
-# Construct the command-line argument list parser
-#
+try:
 
-argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
-argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
-argListParser.add_argument('-L', metavar='librarypath', action='append', help='Library search path');
-argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
-argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
-argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
-argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
-argList = argListParser.parse_args();
+  #
+  # Construct the command-line argument list parser
+  #
 
-# Construct the keyword parser
-from asmDef_9x8 import asmDef_9x8
-ad = asmDef_9x8();
+  argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
+  argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
+  argListParser.add_argument('-L', metavar='librarypath', action='append', help='Library search path');
+  argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
+  argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
+  argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
+  argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
+  argList = argListParser.parse_args();
 
-# Register the input and output port definitions.
-if argList.I:
-  for inport in argList.I:
-    a=re.findall(r'^(\w+)=(\d+)$',inport);
-    if not a:
-      raise Exception('Malformed -I argument: "%s"' % inport);
-    ix = int(a[0][1]);
-    if not (0 <= ix < 256):
-      raise Exception('Out-of-range inport index:  "%s"' % inport);
-    ad.RegisterInport(a[0][0],ix);
-if argList.O:
-  for outport in argList.O:
-    a=re.findall(r'^(\w+)=(\d+)$',outport);
-    if not a:
-      raise Exception('Malformed -O argument: "%s"' % outport);
-    ix = int(a[0][1]);
-    if not (0 <= ix < 256):
-      raise Exception('Out-of-range outport index:  "%s"' % outport);
-    ad.RegisterOutport(a[0][0],ix);
+  # Construct the keyword parser
+  from asmDef_9x8 import asmDef_9x8
+  ad = asmDef_9x8();
 
-# Construct the iterator that loops through the code bodies.
-fbi = asmDef.FileBodyIterator(argList.filename,ad);
-if argList.L:
-  for path in argList.L:
-    fbi.AddSearchPath(path);
+  # Register the input and output port definitions.
+  if argList.I:
+    for inport in argList.I:
+      a=re.findall(r'^(\w+)=(\d+)$',inport);
+      if not a:
+        raise asmDef.AsmException('Malformed -I argument: "%s"' % inport);
+      ix = int(a[0][1]);
+      if not (0 <= ix < 256):
+        raise asmDef.AsmException('Out-of-range inport index:  "%s"' % inport);
+      ad.RegisterInport(a[0][0],ix);
+  if argList.O:
+    for outport in argList.O:
+      a=re.findall(r'^(\w+)=(\d+)$',outport);
+      if not a:
+        raise asmDef.AsmException('Malformed -O argument: "%s"' % outport);
+      ix = int(a[0][1]);
+      if not (0 <= ix < 256):
+        raise asmDef.AsmException('Out-of-range outport index:  "%s"' % outport);
+      ad.RegisterOutport(a[0][0],ix);
 
-################################################################################
-#
-# Stage 1:  Parse the files.
-#
-# Read the entire file, doing the following while reading the file:
-# - Store the raw content of each line or group of lines for output to the
-#   assembled memory initialization.
-#   Note: A group of lines consists the comment lines preceding a directive and
-#         the body of the directive.
-# - Convert group of lines into an array of the raw tokens.
-# - Check the integrity of the bodies defined by the list of raw tokens.
-# - For each array of raw tokens, incorporate already-defined symbols and update
-#   the assembler dictionaries.
-#   Note: At this point the space required for the function or main program
-#     is fully computed.
-#
-################################################################################
+  # Construct the iterator that loops through the code bodies.
+  fbi = asmDef.FileBodyIterator(argList.filename,ad);
+  if argList.L:
+    for path in argList.L:
+      fbi.AddSearchPath(path);
 
-# List of function bodies, variables, etc.
-inputGroups = list();
+  ################################################################################
+  #
+  # Stage 1:  Parse the files.
+  #
+  # Read the entire file, doing the following while reading the file:
+  # - Store the raw content of each line or group of lines for output to the
+  #   assembled memory initialization.
+  #   Note: A group of lines consists the comment lines preceding a directive and
+  #         the body of the directive.
+  # - Convert group of lines into an array of the raw tokens.
+  # - Check the integrity of the bodies defined by the list of raw tokens.
+  # - For each array of raw tokens, incorporate already-defined symbols and update
+  #   the assembler dictionaries.
+  #   Note: At this point the space required for the function or main program
+  #     is fully computed.
+  #
+  ################################################################################
 
-# Loop through the directive bodies in the input files (including ".include"d
-# files).
-for bl in fbi:
-  filename = bl[0];
-  startLine = bl[1];
-  body = bl[2:];
-  # ".include" directives don't have an associated body
-  if re.match(r'\s*\.include\s',body[-1]):
-    inputGroups.append(dict(filename=filename, startLine=startLine, body=body));
-  # Parse the body of all other directives.
-  else:
-    rawTokens = asmDef.RawTokens(filename,startLine,body,ad);
-    ad.CheckRawTokens(filename,rawTokens);
-    # FillRawTokens also ensures only one ".main" and ".interrupt" are defined.
-    ad.FillRawTokens(filename,rawTokens);
-    inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
+  # List of function bodies, variables, etc.
+  inputGroups = list();
 
-#
-# Ensure a ".main" body was declared.
-#
-
-if not ad.Main():
-  raise Exception('Required ".main" body not provided');
-
-#
-# Enforce consistency between the command-line "-i" flag and whether or not an
-# ".interrupt" body was declared.
-#
-
-if argList.i:
-  if not ad.Interrupt():
-    raise Exception('Required ".interrupt" body not provided');
-else:
-  if ad.Interrupt():
-    raise Exception('".interrupt" body not allowed');
-
-# diagnostic -- print raw token lists
-if False:
-  for ig in inputGroups:
-    print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
-    if 'rawTokens' not in ig:
-      print ig['body'][-1];
+  # Loop through the directive bodies in the input files (including ".include"d
+  # files).
+  for bl in fbi:
+    filename = bl[0];
+    startLine = bl[1];
+    body = bl[2:];
+    # ".include" directives don't have an associated body
+    if re.match(r'\s*\.include\s',body[-1]):
+      inputGroups.append(dict(filename=filename, startLine=startLine, body=body));
+    # Parse the body of all other directives.
     else:
-      for tk in ig['rawTokens']:
-        print tk;
-    print
+      rawTokens = asmDef.RawTokens(filename,startLine,body,ad);
+      ad.CheckRawTokens(filename,rawTokens);
+      # FillRawTokens also ensures only one ".main" and ".interrupt" are defined.
+      ad.FillRawTokens(filename,rawTokens);
+      inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
 
-# diagnostic -- print filled token lists
-if False:
-  main = ad.Main();
-  print '.main, length=%d ' % main['length'];
-  for token in main['tokens']:
-    print token;
-  print
-  interrupt = ad.Interrupt();
-  if interrupt:
-    print '.interrupt, length=%d' % interrupt['length'];
-    for token in interrupt:
+  #
+  # Ensure a ".main" body was declared.
+  #
+
+  if not ad.Main():
+    raise asmDef.AsmException('Required ".main" body not provided');
+
+  #
+  # Enforce consistency between the command-line "-i" flag and whether or not an
+  # ".interrupt" body was declared.
+  #
+
+  if argList.i:
+    if not ad.Interrupt():
+      raise asmDef.AsmException('Required ".interrupt" body not provided');
+  else:
+    if ad.Interrupt():
+      raise asmDef.AsmException('".interrupt" body not allowed');
+
+  # diagnostic -- print raw token lists
+  if False:
+    for ig in inputGroups:
+      print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
+      if 'rawTokens' not in ig:
+        print ig['body'][-1];
+      else:
+        for tk in ig['rawTokens']:
+          print tk;
+      print
+
+  # diagnostic -- print filled token lists
+  if False:
+    main = ad.Main();
+    print '.main, length=%d ' % main['length'];
+    for token in main['tokens']:
       print token;
     print
-  symbols = ad.Symbols();
-  for ix in range(len(symbols['list'])):
-    print 'symbol %s: type=%s, length=%d' % (symbols['list'][ix], symbols['type'][ix], symbols['length'][ix])
-    for token in symbols['tokens'][ix]:
-      print token;
-    print
+    interrupt = ad.Interrupt();
+    if interrupt:
+      print '.interrupt, length=%d' % interrupt['length'];
+      for token in interrupt:
+        print token;
+      print
+    symbols = ad.Symbols();
+    for ix in range(len(symbols['list'])):
+      print 'symbol %s: type=%s, length=%d' % (symbols['list'][ix], symbols['type'][ix], symbols['length'][ix])
+      for token in symbols['tokens'][ix]:
+        print token;
+      print
 
-################################################################################
-#
-# Stage 2:  Identify the required functions, compute their addresses, and set
-# the addresses for all "jump" and "call" macros.
-#
-################################################################################
+  ################################################################################
+  #
+  # Stage 2:  Identify the required functions, compute their addresses, and set
+  # the addresses for all "jump" and "call" macros.
+  #
+  ################################################################################
 
-ad.EvaluateMemoryTree();
-ad.EvaluateFunctionTree();
+  ad.EvaluateMemoryTree();
+  ad.EvaluateFunctionTree();
 
-################################################################################
-#
-# Stage 3:  Emit the program
-#
-# Do the following:
-# - If interrupts are enabled, then set the first 4 instructions to be a "dis"
-#   and a ".jump" instruction to the ".interrupt" function.
-# - Write the instructions for the ".main" body.
-# - Loop through the ".function" list in the order in which they were defined
-#   and write their instructions.
-# - Print the memory and instruction usage statistics.
-#
-################################################################################
+  ################################################################################
+  #
+  # Stage 3:  Emit the program
+  #
+  # Do the following:
+  # - If interrupts are enabled, then set the first 4 instructions to be a "dis"
+  #   and a ".jump" instruction to the ".interrupt" function.
+  # - Write the instructions for the ".main" body.
+  # - Loop through the ".function" list in the order in which they were defined
+  #   and write their instructions.
+  # - Print the memory and instruction usage statistics.
+  #
+  ################################################################################
 
-ad.EmitMemories(argList.o);
-ad.EmitProgram(argList.o);
-argList.o.close();
+  ad.EmitMemories(argList.o);
+  ad.EmitProgram(argList.o);
+  argList.o.close();
+
+except asmDef.AsmException, msg:
+  print >> sys.stderr, 'FATAL ERROR:  ' + str(msg);
+  exit(1);
