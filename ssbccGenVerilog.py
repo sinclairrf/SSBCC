@@ -37,7 +37,7 @@ def genInports(fp,inport):
       elif nBits == 8:
         fp.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
       else:
-        raise Exception('Too many bits in %s' % (inport['id'][ix]));
+        raise SSBCCException('Too many bits in %s' % (inport['id'][ix]));
     fp.write('    default : s_T_inport = 8\'h00;\n');
     fp.write('  endcase\n');
     fp.write('\n');
@@ -58,7 +58,7 @@ def genInports(fp,inport):
         fp.write('    %s <= 1\'b0;\n' % names[jx]);
         fp.write('\n');
       else:
-        raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+        raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
 
 def genInstructions(fp,programBody,nInstructions):
   fp.write('initial begin\n');
@@ -154,7 +154,7 @@ def genModule(fp,outCoreName,inport,outport):
         elif configs[jx] == 'strobe':
           fp.write('  output reg            %s' % names[jx]);
         else:
-          raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+          raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
   if outport['config']:
     fp.write(',\n');
     fp.write('  // outport ports\n');
@@ -176,7 +176,7 @@ def genModule(fp,outCoreName,inport,outport):
         elif configs[jx] == 'strobe':
           fp.write('  output reg            %s' % names[jx]);
         else:
-          raise Exception('Unrecognized INPORT type: "%s"' % configs[jx]);
+          raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
   fp.write('\n');
   fp.write(');\n');
 
@@ -211,7 +211,7 @@ def genOutports(fp,outport):
         fp.write('    %s <= 1\'b0;\n' % names[jx]);
         fp.write('\n');
       else:
-        raise Exception('Unrecognized OUTPORT type: "%s"' % configs[jx]);
+        raise SSBCCException('Unrecognized OUTPORT type: "%s"' % configs[jx]);
 
 def genUserHeader(fp,user_header):
   for ix in range(len(user_header)):

@@ -8,6 +8,12 @@
 
 import math
 
+class SSBCCException(Exception):
+  def __init__(self,message):
+    self.message = message;
+  def __str__(self):
+    return self.message;
+
 def CeilLog2(v):
   tmp = int(math.log(v,2));
   while 2**tmp < v:

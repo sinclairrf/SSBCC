@@ -2,7 +2,6 @@
     add interrupt handling
     add optional fast version of the data and return stacks
     do VHDL
-    add exception handler
     clean up temporary files
 
   core/9x8

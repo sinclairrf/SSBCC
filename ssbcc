@@ -18,299 +18,317 @@ from ssbccUtil import *;
 
 ################################################################################
 #
-# Parse the command line arguments
+# Surround the program with a try ... except clause
 #
 ################################################################################
 
-#
-# Construct the command-line argument list parser
-#
+try:
 
-import argparse
-argListParser = argparse.ArgumentParser(description='SSBCC system builder');
-argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
-argList = argListParser.parse_args();
+  ################################################################################
+  #
+  # Parse the command line arguments
+  #
+  ################################################################################
 
-#
-# Read the SSBCC configuration file.
-#
+  #
+  # Construct the command-line argument list parser
+  #
 
-ixLine = 0;
-compiler = [];
-data_stack = 0;
-inport = dict(config=list(), name=list(), id=list());
-nInstructions = 0;
-memories = dict(list=list(), type=list(), arch=list());
-outport = dict(config=list(), name=list(), id=list());
-return_stack = 0;
-user_header = list();
-for line in argList.filename:
-  ixLine = ixLine + 1;
-  # Reject blank and comment lines
-  if re.match(r'\s*(#.*)?$',line):
-    pass;
-  # ARCHITECTURE
-  elif re.match(r'\s*ARCHITECTURE\b',line):
-    cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
-    if not cmd:
-      raise Exception('Malformed ARCHITECTURE statement on line %d: "%s"' % (ixLine,line));
-    architecture=cmd[0];
-  # ASSEMBLY language for processor code
-  elif re.match(r'\s*ASSEMBLY\b',line):
-    cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
-    compiler = ('asm',cmd[0],);
-  # COMBINE
-  elif re.match(r'\s*COMBINE\b',line):
-    cmd = re.findall(r'\s*COMBINE\s+(\S+),(\S+)',line);
-    if (not cmd) or (len(cmd[0]) < 2):
-      raise Exception('Malformed "COMBINE" command on line %d: "%s"' % (ixLine,line));
-    combine = (cmd[0][0],cmd[0][1],);
-  # DATA_STACK
-  elif re.match(r'\s*DATA_STACK\b',line):
-    cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
-    if not cmd:
-      raise Exception('Malformed "DATA_STACK" command on line %d: "%s"' % (ixLine,line));
-    data_stack = int(cmd[0]);
-  # HDL
-  elif re.match(r'\s*HDL\s',line):
-    cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
-    if cmd[0][0] in ('Verilog','VHDL',):
-      hdl = cmd[0][0];
-      outCoreName = cmd[0][1];
+  import argparse
+  argListParser = argparse.ArgumentParser(description='SSBCC system builder');
+  argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
+  argList = argListParser.parse_args();
+
+  #
+  # Read the SSBCC configuration file.
+  #
+
+  ixLine = 0;
+  compiler = [];
+  data_stack = 0;
+  inport = dict(config=list(), name=list(), id=list());
+  nInstructions = 0;
+  memories = dict(list=list(), type=list(), arch=list());
+  outport = dict(config=list(), name=list(), id=list());
+  return_stack = 0;
+  user_header = list();
+  for line in argList.filename:
+    ixLine = ixLine + 1;
+    # Reject blank and comment lines
+    if re.match(r'\s*(#.*)?$',line):
+      pass;
+    # ARCHITECTURE
+    elif re.match(r'\s*ARCHITECTURE\b',line):
+      cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
+      if not cmd:
+        raise SSBCCException('Malformed ARCHITECTURE statement on line %d: "%s"' % (ixLine,line));
+      architecture=cmd[0];
+    # ASSEMBLY language for processor code
+    elif re.match(r'\s*ASSEMBLY\b',line):
+      cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
+      compiler = ('asm',cmd[0],);
+    # COMBINE
+    elif re.match(r'\s*COMBINE\b',line):
+      cmd = re.findall(r'\s*COMBINE\s+(\S+),(\S+)',line);
+      if (not cmd) or (len(cmd[0]) < 2):
+        raise SSBCCException('Malformed "COMBINE" command on line %d: "%s"' % (ixLine,line));
+      combine = (cmd[0][0],cmd[0][1],);
+    # DATA_STACK
+    elif re.match(r'\s*DATA_STACK\b',line):
+      cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
+      if not cmd:
+        raise SSBCCException('Malformed "DATA_STACK" command on line %d: "%s"' % (ixLine,line));
+      data_stack = int(cmd[0]);
+    # HDL
+    elif re.match(r'\s*HDL\s',line):
+      cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
+      if cmd[0][0] in ('Verilog','VHDL',):
+        hdl = cmd[0][0];
+        outCoreName = cmd[0][1];
+      else:
+        raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
+    # INPORT
+    elif re.match(r'\s*INPORT\b',line):
+      cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
+      configs = re.findall(r'([^,]+)',cmd[0][0]);
+      names = re.findall(r'([^,]+)',cmd[0][1]);
+      if len(configs) != len(names):
+        raise SSBCCException('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+      inport['config'].append(configs);
+      inport['name'].append(names);
+      inport['id'].append(cmd[0][2]);
+    # INSTRUCTION
+    elif re.match(r'\s*INSTRUCTION\b',line):
+      cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
+      if not cmd:
+        raise SSBCCException('Malformed "INSTRUCTION" command on line %d: "%s"' % (ixLine,line));
+      nInstructions = int(cmd[0]);
+      if nInstructions > 2**13:
+        raise SSBCCException('Instruction space cannot exceed %d' % (2**13));
+    # MEMORY
+    elif re.match(r'\s*MEMORY\b',line):
+      if len(memories['list']) >= 4:
+        raise SSBCCException('Program is limited to 4 memories');
+      cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)\s+(\S+)\s*$',line);
+      if (not cmd) or (len(cmd[0]) != 3):
+        raise SSBCCException('Malformed MEMORY statement on line %d: "%s"' % (ixLine,line));
+      cmd = cmd[0];
+      memories['type'].append(cmd[0]);
+      memories['list'].append(cmd[1]);
+      memories['arch'].append(cmd[2]);
+    # OUTPORT
+    elif re.match(r'\s*OUTPORT\b',line):
+      cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
+      configs = re.findall(r'([^,]+)',cmd[0][0]);
+      names = re.findall(r'([^,]+)',cmd[0][1]);
+      if len(configs) != len(names):
+        raise SSBCCException('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+      outport['config'].append(configs);
+      outport['name'].append(names);
+      outport['id'].append(cmd[0][2]);
+    # RETURN_STACK
+    elif re.match(r'\s*RETURN_STACK\b',line):
+      cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
+      if not cmd:
+        raise SSBCCException('Malformed "RETURN_STACK" command on line %d: "%s"' % (ixLine,line));
+      return_stack = int(cmd[0]);
+      if not IsPowerOf2(return_stack):
+        raise SSBCCException('"RETURN_STACK" value must be a power of 2 on line %d: "%s"' % (ixLine,line));
+    # USER_HEADER
+    elif re.match(r'\s*USER_HEADER\b',line):
+      user_header_done = False;
+      for line in argList.filename:
+        if re.match(r'\s*END_USER_HEADER\s',line):
+          user_header_done = True;
+          break;
+        user_header.append(line[0:-1]);
+      if not user_header_done:
+        raise SSBCCException('No "END_USER_HEADER" found for "USER_HEADER"');
+    # error
     else:
-      raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
-  # INPORT
-  elif re.match(r'\s*INPORT\b',line):
-    cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
-    configs = re.findall(r'([^,]+)',cmd[0][0]);
-    names = re.findall(r'([^,]+)',cmd[0][1]);
-    if len(configs) != len(names):
-      raise Exception('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
-    inport['config'].append(configs);
-    inport['name'].append(names);
-    inport['id'].append(cmd[0][2]);
-  # INSTRUCTION
-  elif re.match(r'\s*INSTRUCTION\b',line):
-    cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
-    if not cmd:
-      raise Exception('Malformed "INSTRUCTION" command on line %d: "%s"' % (ixLine,line));
-    nInstructions = int(cmd[0]);
-    if nInstructions > 2**13:
-      raise Exception('Instruction space cannot exceed %d' % (2**13));
-  # MEMORY
-  elif re.match(r'\s*MEMORY\b',line):
-    if len(memories['list']) >= 4:
-      raise Exception('Program is limited to 4 memories');
-    cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)\s+(\S+)\s*$',line);
-    if (not cmd) or (len(cmd[0]) != 3):
-      raise Exception('Malformed MEMORY statement on line %d: "%s"' % (ixLine,line));
-    cmd = cmd[0];
-    memories['type'].append(cmd[0]);
-    memories['list'].append(cmd[1]);
-    memories['arch'].append(cmd[2]);
-  # OUTPORT
-  elif re.match(r'\s*OUTPORT\b',line):
-    cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
-    configs = re.findall(r'([^,]+)',cmd[0][0]);
-    names = re.findall(r'([^,]+)',cmd[0][1]);
-    if len(configs) != len(names):
-      raise Exception('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
-    outport['config'].append(configs);
-    outport['name'].append(names);
-    outport['id'].append(cmd[0][2]);
-  # RETURN_STACK
-  elif re.match(r'\s*RETURN_STACK\b',line):
-    cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
-    if not cmd:
-      raise Exception('Malformed "RETURN_STACK" command on line %d: "%s"' % (ixLine,line));
-    return_stack = int(cmd[0]);
-    if not IsPowerOf2(return_stack):
-      raise Exception('"RETURN_STACK" value must be a power of 2 on line %d: "%s"' % (ixLine,line));
-  # USER_HEADER
-  elif re.match(r'\s*USER_HEADER\b',line):
-    user_header_done = False;
-    for line in argList.filename:
-      if re.match(r'\s*END_USER_HEADER\s',line):
-        user_header_done = True;
-        break;
-      user_header.append(line[0:-1]);
-    if not user_header_done:
-      raise Exception('No "END_USER_HEADER" found for "USER_HEADER"');
-  # error
-  else:
-    raise Exception('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
-argList.filename.close();
+      raise SSBCCException('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
+  argList.filename.close();
 
-#
-# end-of-file processing
-#
+  #
+  # end-of-file processing
+  #
 
-# Path to the processor-specific assembler, core, etc.
-corepath = os.path.join(sys.path[0],architecture);
+  # Path to the processor-specific assembler, core, etc.
+  corepath = os.path.join(sys.path[0],architecture);
 
-# Compute the memory bank indices.
-ixRAM = 0;
-ixROM = 3;
-memories['bank'] = list();
-memories['length'] = list();
-memories['body'] = list();
-for memType in memories['type']:
-  memories['bank'].append(None);
-  memories['length'].append(None);
-  memories['body'].append(None);
+  # Compute the memory bank indices.
+  ixRAM = 0;
+  ixROM = 3;
+  memories['bank'] = list();
+  memories['length'] = list();
+  memories['body'] = list();
+  for memType in memories['type']:
+    memories['bank'].append(None);
+    memories['length'].append(None);
+    memories['body'].append(None);
 
-################################################################################
-#
-# Compile the processor code and read the tables it generated.
-#
-################################################################################
+  ################################################################################
+  #
+  # Compile the processor code and read the tables it generated.
+  #
+  ################################################################################
 
-# Generate a random name for the temporary file holding the compiler output.
-# Ensure the temporary file is located off of the project path instead of
-# accumulating in /tmp.
-assemblerOutput = tempfile.mktemp(prefix='tmp-',suffix='.asm');
-assemblerOutput = os.path.basename(assemblerOutput);
-assemblerOutput = os.path.join('tmp',assemblerOutput);
+  # Generate a random name for the temporary file holding the compiler output.
+  # Ensure the temporary file is located off of the project path instead of
+  # accumulating in /tmp.
+  assemblerOutput = tempfile.mktemp(prefix='tmp-',suffix='.asm');
+  assemblerOutput = os.path.basename(assemblerOutput);
+  assemblerOutput = os.path.join('tmp',assemblerOutput);
 
-if not os.path.exists('tmp'):
-  os.mkdir('tmp');
+  if not os.path.exists('tmp'):
+    os.mkdir('tmp');
 
-# Compute the command to invoke the compiler.
-cmd = os.path.join(corepath, compiler[0]);
-for ix in range(len(inport['config'])):
-  cmd += (' -I %s=%d' % (inport['id'][ix],ix));
-for ix in range(len(outport['config'])):
-  cmd += (' -O %s=%d' % (outport['id'][ix],ix));
-cmd += ' -o ' + assemblerOutput;
-cmd += ' -L %s/%s' % (sys.path[0], 'lib/9x8');
-cmd += ' ' + compiler[1];
+  # Compute the command to invoke the compiler.
+  cmd = os.path.join(corepath, compiler[0]);
+  for ix in range(len(inport['config'])):
+    cmd += (' -I %s=%d' % (inport['id'][ix],ix));
+  for ix in range(len(outport['config'])):
+    cmd += (' -O %s=%d' % (outport['id'][ix],ix));
+  cmd += ' -o ' + assemblerOutput;
+  cmd += ' -L %s/%s' % (sys.path[0], 'lib/9x8');
+  cmd += ' ' + compiler[1];
 
-# Invoke the compiler and exit if it failed.
-print 'Invoking the assember with the following command:  ' + cmd;
-cmdStatus = os.system(cmd);
-if cmdStatus != 0:
-  raise Exception('FATAL ERROR running the assembler');
+  # Invoke the compiler and exit if it failed.
+  print 'Invoking the assember with the following command:  ' + cmd;
+  cmdStatus = os.system(cmd);
+  if cmdStatus != 0:
+    raise SSBCCException('Running the assembler');
 
-# Read the assembler output tables.
-fpAssemberOutput = open(assemblerOutput,'r');
-ixLine = 0;
-programBody = list();
-programBodyLength = 0;
-for line in fpAssemberOutput:
-  ixLine = ixLine + 1;
-  # blank line
-  if re.match('^\s*$',line):
-    continue;
-  # memory type, name, and length
-  elif re.match(':memory',line):
-    cmd = re.findall(':memory (\S+) (\S+) (\S+) (\S+)',line);
-    cmd = cmd[0];
-    if cmd[1] not in memories['list']:
-      raise Exception('%s "%s" not declared %s' % (cmd[0],cmd[1],argList.filename));
-    ixMem = memories['list'].index(cmd[1]);
-    if memories['type'][ixMem] != cmd[0]:
-      raise Exception('Type of memory "%s" is inconsistent' % cmd[1]);
-    if int(cmd[2]) > eval(memories['arch'][ixMem]):
-      raise Exception('Length of memory "%s" = %s which exceeds limit of %d' % (cmd[1],cmd[2],eval(memories['arch'][ixMem])));
-    memories['bank'][ixMem] = int(cmd[2]);
-    memories['length'][ixMem] = cmd[3];
-    memoryBody = list();
-    for line in fpAssemberOutput:
-      ixLine = ixLine + 1;
-      if len(line) <= 1:
-        memories['body'][ixMem] = memoryBody;
-        break;
-      memoryBody.append(line)
-  # program .main, optional .interrupt, and length
-  elif re.match(':program',line):
-    cmd = re.findall(':program (\d+) (\S+) (\d+)',line);
-    mainStart = int(cmd[0][0]);
-    if cmd[0][1] == '[]':
-      interruptStart = -1;
+  # Read the assembler output tables.
+  fpAssemberOutput = open(assemblerOutput,'r');
+  ixLine = 0;
+  programBody = list();
+  programBodyLength = 0;
+  for line in fpAssemberOutput:
+    ixLine = ixLine + 1;
+    # blank line
+    if re.match('^\s*$',line):
+      continue;
+    # memory type, name, and length
+    elif re.match(':memory',line):
+      cmd = re.findall(':memory (\S+) (\S+) (\S+) (\S+)',line);
+      cmd = cmd[0];
+      if cmd[1] not in memories['list']:
+        raise SSBCCException('%s "%s" not declared %s' % (cmd[0],cmd[1],argList.filename));
+      ixMem = memories['list'].index(cmd[1]);
+      if memories['type'][ixMem] != cmd[0]:
+        raise SSBCCException('Type of memory "%s" is inconsistent' % cmd[1]);
+      if int(cmd[2]) > eval(memories['arch'][ixMem]):
+        raise SSBCCException('Length of memory "%s" = %s which exceeds limit of %d' % (cmd[1],cmd[2],eval(memories['arch'][ixMem])));
+      memories['bank'][ixMem] = int(cmd[2]);
+      memories['length'][ixMem] = cmd[3];
+      memoryBody = list();
+      for line in fpAssemberOutput:
+        ixLine = ixLine + 1;
+        if len(line) <= 1:
+          memories['body'][ixMem] = memoryBody;
+          break;
+        memoryBody.append(line)
+    # program .main, optional .interrupt, and length
+    elif re.match(':program',line):
+      cmd = re.findall(':program (\d+) (\S+) (\d+)',line);
+      mainStart = int(cmd[0][0]);
+      if cmd[0][1] == '[]':
+        interruptStart = -1;
+      else:
+        interruptStart = int(cmd[0][1]);
+      mainLength = int(cmd[0][2]);
+      for line in fpAssemberOutput:
+        ixLine = ixLine + 1;
+        if len(line) <= 1:
+          break;
+        programBody.append(line[0:-1]);
+        if line[0] != '-':
+          programBodyLength = programBodyLength + 1;
+      if programBodyLength != mainLength:
+        raise SSBCCException('Program Bug:  program length doesn\'t match declared length');
+      if programBodyLength > nInstructions:
+        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,nInstructions));
     else:
-      interruptStart = int(cmd[0][1]);
-    mainLength = int(cmd[0][2]);
-    for line in fpAssemberOutput:
-      ixLine = ixLine + 1;
-      if len(line) <= 1:
-        break;
-      programBody.append(line[0:-1]);
-      if line[0] != '-':
-        programBodyLength = programBodyLength + 1;
-    if programBodyLength != mainLength:
-      raise Exception('Program Bug:  program length doesn\'t match declared length');
-    if programBodyLength > nInstructions:
-      raise Exception('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,nInstructions));
+      raise SSBCCException('Unrecognized line %s(%d):  %s' % (fpAssemberOutput.filename,ixLine,line));
+
+  ################################################################################
+  #
+  # Ensure the processor has been consistently defined.
+  #
+  ################################################################################
+
+  # Ensure all desired memories are used.
+  for ixMem in range(len(memories['list'])):
+    if not memories['length'][ixMem]:
+      raise SSBCCException('Memory "%s" not used in program' % memories['list'][ixMem]);
+
+  ################################################################################
+  #
+  # Generate the processor core.
+  #
+  ################################################################################
+
+  if hdl == 'Verilog':
+    from ssbccGenVerilog import *;
   else:
-    raise Exception('Unrecognized line %s(%d):  %s' % (fpAssemberOutput.filename,ixLine,line));
+    raise SSBCCException('Unrecognized hdl = "%s"' % hdl);
 
-################################################################################
-#
-# Ensure the processor has been consistently defined.
-#
-################################################################################
+  inport['haveBitSignals'] = False;
 
-# Ensure all desired memories are used.
-for ixMem in range(len(memories['list'])):
-  if not memories['length'][ixMem]:
-    raise Exception('Memory "%s" not used in program' % memories['list'][ixMem]);
-
-################################################################################
-#
-# Generate the processor core.
-#
-################################################################################
-
-if hdl == 'Verilog':
-  from ssbccGenVerilog import *;
-else:
-  raise Exception('Unrecognized hdl = "%s"' % hdl);
-
-inport['haveBitSignals'] = False;
-
-if hdl == 'Verilog':
-  fpRawCore = open(os.path.join(corepath,'core.v'),'r');
-  fpOutCore = open(outCoreName+'.v','w');
-elif hdl == 'VHDL':
-  fpRawCore = open(os.path.join(corepath,'core.vhd'),'r');
-  fpOutCore = open(outCoreName+'.vhd','w');
-else:
-  raise Exception('Program Bug:  unrecognized hdl = "%s"', hdl);
-
-for line in fpRawCore:
-  if not re.match('..@SSBCC@',line):
-    fpOutCore.write(line);
-    continue;
-  fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
-  # inports
-  if fillCommand == 'inports':
-    genInports(fpOutCore,inport);
-  # instructions
-  elif fillCommand == 'instructions':
-    genInstructions(fpOutCore,programBody,nInstructions);
-  # localparam
-  elif fillCommand == 'localparam':
-    if hdl == 'Verilog':
-      fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(nInstructions));
-      fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(return_stack));
-      fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(data_stack));
-      fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
-      fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
-      fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
-    if hdl == 'VHDL':
-      raise Exception('VHDL not implemented');
-  # memory
-  elif fillCommand == 'memory':
-    genMemory(fpOutCore,memories);
-  # module
-  elif fillCommand == 'module':
-    genModule(fpOutCore,outCoreName,inport,outport);
-  # outports
-  elif fillCommand == 'outports':
-    genOutports(fpOutCore,outport);
-  # user_header
-  elif fillCommand == 'user_header':
-    genUserHeader(fpOutCore,user_header);
-  # error
+  if hdl == 'Verilog':
+    fpRawCore = open(os.path.join(corepath,'core.v'),'r');
+    fpOutCore = open(outCoreName+'.v','w');
+  elif hdl == 'VHDL':
+    fpRawCore = open(os.path.join(corepath,'core.vhd'),'r');
+    fpOutCore = open(outCoreName+'.vhd','w');
   else:
-    print 'WARNING:  Unimplemented command ' + fillCommand;
+    raise Exception('Program Bug:  unrecognized hdl = "%s"', hdl);
+
+  for line in fpRawCore:
+    if not re.match('..@SSBCC@',line):
+      fpOutCore.write(line);
+      continue;
+    fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
+    # inports
+    if fillCommand == 'inports':
+      genInports(fpOutCore,inport);
+    # instructions
+    elif fillCommand == 'instructions':
+      genInstructions(fpOutCore,programBody,nInstructions);
+    # localparam
+    elif fillCommand == 'localparam':
+      if hdl == 'Verilog':
+        fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(nInstructions));
+        fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(return_stack));
+        fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(data_stack));
+        fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
+        fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
+        fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
+      if hdl == 'VHDL':
+        raise Exception('VHDL not implemented');
+    # memory
+    elif fillCommand == 'memory':
+      genMemory(fpOutCore,memories);
+    # module
+    elif fillCommand == 'module':
+      genModule(fpOutCore,outCoreName,inport,outport);
+    # outports
+    elif fillCommand == 'outports':
+      genOutports(fpOutCore,outport);
+    # user_header
+    elif fillCommand == 'user_header':
+      genUserHeader(fpOutCore,user_header);
+    # error
+    else:
+      print 'WARNING:  Unimplemented command ' + fillCommand;
+
+################################################################################
+#
+# Terminating except clause
+#
+################################################################################
+
+except SSBCCException, msg:
+  print >> sys.stderr, 'FATAL ERROR:  ' + str(msg);
+  exit(1);
