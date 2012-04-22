@@ -43,7 +43,7 @@ class FileBodyIterator:
   def __init__(self, fps, ad):
     # Do sanity check on arguments.
     if ad.IsDirective(".include"):
-      raise AsmException('".include" directive defined by FileBodyIterator');
+      raise Exception('".include" directive defined by FileBodyIterator');
     # Initialize the raw processing states
     self.fpPending = list(fps);
     self.ad = ad;
@@ -270,6 +270,8 @@ def RawTokens(filename,startLineNumber,lines,ad):
       if line[col] == ';':
         break;
       # look for instructions
+      # Note:  Do this before anything else because instructions can be a
+      #        strange mix of symbols.
       a = re.match(r'\S+',line[col:]);
       if ad.IsInstruction(a.group(0)):
         tokens.append(dict(type='instruction', value=a.group(0), line=lineNumber, col=col+1));
