@@ -292,16 +292,18 @@ always @ (*) begin
                 end
     //4'b1100:  // reserved
     //4'b1101:  // reserved
-      4'b1110:  begin // store
+      4'b1110:  begin // store+/store-
                 s_bus_t         = C_BUS_T_MEMINCREMENT;
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 s_mem_wr        = 1'b1;
                 end
-      4'b1111:  begin // fetch
-                s_bus_t         = C_BUS_T_MEMINCREMENT;
-                s_bus_n         = C_BUS_N_MEM;
-                s_stack         = C_STACK_INC;
+      4'b1111:  if (s_opcode[2] == 1'b0) begin // fetch/fetch-
+                  s_bus_t       = C_BUS_T_MEM;
+                else
+                  s_bus_t       = C_BUS_T_MEMINCREMENT;
+                  s_bus_n       = C_BUS_N_MEM;
+                  s_stack       = C_STACK_INC;
                 end
       default:  // nop
                 ;
