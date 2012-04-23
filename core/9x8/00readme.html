@@ -291,6 +291,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#r>">r&gt;</a>,
     <a href="#r@">r@</a>,
     <a href="#return">return</a>,
+    <a href="#store">store</a>,
     <a href="#store+">store+</a>,
     <a href="#store-">store-</a>,
     <a href="#swap">swap</a>
@@ -485,6 +486,10 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       <th align="left"><a href="#4-">4-</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
         <td align="left">Subtract 4 from T</td>
+        </tr>
+      <th align="left"><a href="#store">store</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>b</td><td>b</td>
+        <td align="left">Store N in the T'th entry in bank "<tt>bb</tt>", drop the top of the data stack</td>
         </tr>
       <th align="left"><a href="#store+">store+</a></th>
         <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>b</td><td>b</td>
@@ -1041,6 +1046,22 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <b>Special:</b>
       This instruction must be followed by a "<tt>nop</tt>"
       instruction.<br/><br/>
+  <h2><a name="store">Instruction:  store</a></h2>
+    <b>Desription:</b>  Drop the top of the data stack and store the previous
+      next-to-top of the data stack at the memory location specified by the top
+      of the data stack.  The memory bank is specified by the two least
+      significant bits of the opcode.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; N<br/>
+      N &leftarrow; <tt>stack--</tt><br/>
+      bb[T] &leftarrow; N where "<tt>bb</tt>" is the bank<br/>
+      <br/>
+    <b>Special:</b>
+      See <a href="#memory">memory</a> for instructions on using the store and
+      vectorized store macros.<br/>
+      <br/>
   <h2><a name="store+">Instruction:  store+</a></h2>
     <b>Desription:</b>  Nip the data stack and store the previous next-to-top of
       the data stack at the memory location specified by the top of the data

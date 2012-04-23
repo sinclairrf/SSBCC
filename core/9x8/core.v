@@ -187,6 +187,7 @@ localparam C_BUS_T_INPORT       = 4'b0110;
 localparam C_BUS_T_16BITMATH    = 4'b0111;
 localparam C_BUS_T_INCREMENT    = 4'b1000;
 localparam C_BUS_T_MEMINCREMENT = 4'b1001;
+localparam C_BUS_T_MEM          = 4'b1010;
 reg [3:0] s_bus_t;
 
 localparam C_BUS_N_N            = 3'b000;       // don't change N
@@ -291,19 +292,26 @@ always @ (*) begin
                 s_bus_t         = C_BUS_T_INCREMENT;
                 end
     //4'b1100:  // reserved
-    //4'b1101:  // reserved
+      4'b1101:  begin // store
+                s_bus_t         = C_BUS_T_N;
+                s_bus_n         = C_BUS_N_STACK;
+                s_stack         = C_STACK_DEC;
+                s_mem_wr        = 1'b1;
+                end
       4'b1110:  begin // store+/store-
                 s_bus_t         = C_BUS_T_MEMINCREMENT;
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 s_mem_wr        = 1'b1;
                 end
-      4'b1111:  if (s_opcode[2] == 1'b0) begin // fetch/fetch-
+      4'b1111:  begin // fetch/fetch-
+                if (s_opcode[2] == 1'b0) begin
                   s_bus_t       = C_BUS_T_MEM;
                 else
                   s_bus_t       = C_BUS_T_MEMINCREMENT;
                   s_bus_n       = C_BUS_N_MEM;
                   s_stack       = C_STACK_INC;
+                end
                 end
       default:  // nop
                 ;
@@ -543,6 +551,7 @@ always @ (posedge i_clk)
     C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_INCREMENT:          s_T <= s_T_increment;
     C_BUS_T_MEMINCREMENT:       s_T <= s_T_memincrement;
+    C_BUS_T_MEM                 s_T <= s_memory;
     default:                    s_T <= s_T;
   endcase
 

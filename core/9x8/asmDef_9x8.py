@@ -534,12 +534,12 @@ class asmDef_9x8:
           elif token['value'] == '.fetch-':
             ixBank = self.Emit_GetBank(token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-');
-          elif token['value'] == '.fetchV':
-            ixBank = self.EmitVariable(fp,token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.fetchindexed':
             ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
+            self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
+          elif token['value'] == '.fetchvalue':
+            ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.fetchvector':
             (addr,ixBank) = self.Emit_GetAddrAndBank(token['argument'][0]);
@@ -568,20 +568,23 @@ class asmDef_9x8:
           elif token['value'] == '.return':
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
             self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
+          elif token['value'] == '.store':
+            ixBank = self.Emit_GetBank(token['argument'][0]);
+            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
           elif token['value'] == '.store+':
             ixBank = self.Emit_GetBank(token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
           elif token['value'] == '.store-':
             ixBank = self.Emit_GetBank(token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['store-'] | ixBank,'store-');
-          elif token['value'] == '.storeV':
-            ixBank = self.EmitVariable(fp,token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
-            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.storeindexed':
             ixBank = self.EmitVariable(fp,token['argument'][0]);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
             self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
+            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+          elif token['value'] == '.storevalue':
+            ixBank = self.EmitVariable(fp,token['argument'][0]);
+            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.storevector':
             (addr,ixBank) = self.Emit_GetAddrAndBank(token['argument'][0]);
@@ -632,18 +635,19 @@ class asmDef_9x8:
     self.AddMacro('.callc',            3);
     self.AddMacro('.fetch',            1);
     self.AddMacro('.fetch-',           1);
-    self.AddMacro('.fetchV',           2);
     self.AddMacro('.fetchindexed',     3);
+    self.AddMacro('.fetchvalue',       2);
     self.AddMacro('.fetchvector',     -1, nArgs=2);
     self.AddMacro('.inport',           2);
     self.AddMacro('.jump',             3);
     self.AddMacro('.jumpc',            3);
     self.AddMacro('.outport',          3);
     self.AddMacro('.return',           2, nArgs=0);
+    self.AddMacro('.store',            1);
     self.AddMacro('.store+',           1);
     self.AddMacro('.store-',           1);
-    self.AddMacro('.storeV',           3);
     self.AddMacro('.storeindexed',     4);
+    self.AddMacro('.storevalue',       3);
     self.AddMacro('.storevector',     -1, nArgs=2);
 
     #
@@ -717,5 +721,6 @@ class asmDef_9x8:
     self.specialInstructions['jump']    = 0x080;
     self.specialInstructions['jumpc']   = 0x0A0;
     self.specialInstructions['return']  = 0x028;
+    self.specialInstructions['store']   = 0x068;
     self.specialInstructions['store+']  = 0x070;
     self.specialInstructions['store-']  = 0x074;
