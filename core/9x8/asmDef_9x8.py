@@ -32,10 +32,28 @@ class asmDef_9x8:
   def AddMacro(self,name,macroLength,nArgs=1):
     self.macros['list'].append(name);
     self.macros['length'].append(macroLength);
-    self.macros['nArgs'].append(nArgs);
+    self.macros['nArgs'].append((nArgs,));
+
+  def AddMacroDefault(self,name,default):
+    if not self.IsInstruction(default):
+      raise Exception('Program bug');
+    if name not in self.macros['list']:
+      raise Exception('Program Bug');
+    ix = self.macros['list'].index(name);
+    nArgs = self.macros['nArgs'][ix];
+    nArgs+=(nArgs[-1]+1,);
+    self.macros['nArgs'][ix] = nArgs;
+    self.macroDefault['list'].append(name);
+    self.macroDefault['default'].append(default);
 
   def IsMacro(self,name):
     return name in self.macros['list'];
+
+  def MacroDefault(self,name):
+    if name not in self.macroDefault['list']:
+      raise Exception('Program Bug');
+    ix = self.macroDefault['list'].index(name);
+    return self.macroDefault['default'][ix];
 
   def MacroLength(self,token):
     if token['value'] not in self.macros['list']:
@@ -168,10 +186,10 @@ class asmDef_9x8:
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] == '.inport'):
         if not self.IsInport(token['argument'][0]):
-          raise asmDef.AsmException('Input port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Input port "%s" not defined at %s(%d), column %d' % (token['argument'][0],filename,token['line'],token['col']));
       if (token['type'] == 'macro') and (token['value'] == '.outport'):
         if not self.IsOutport(token['argument'][0]):
-          raise asmDef.AsmException('Output port "%s" not defined at %s(%d), column %d', (token['argument'][0],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Output port "%s" not defined at %s(%d), column %d' % (token['argument'][0],filename,token['line'],token['col']));
     # Ensure referenced symbols are already defined.
     checkBody = False;
     if (rawTokens[0]['type'] == 'directive') and (rawTokens[0]['value'] in ('.function','.interrupt','.main',)):
@@ -180,10 +198,10 @@ class asmDef_9x8:
       for token in rawTokens[2:]:
         if token['type'] == 'symbol':
           name = token['value'];
-          if name not in symbols['list']:
+          if name not in self.symbols['list']:
             raise asmDef.AsmException('Undefined symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
-          ixName = symbols['list'].index(name);
-          if symbols['type'][ixName] not in ('constant','macro','variable',):
+          ixName = self.symbols['list'].index(name);
+          if self.symbols['type'][ixName] not in ('constant','inport','macro','outport','variable',):
             raise asmDef.AsmException('Illegal symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
 
   ################################################################################
@@ -237,7 +255,16 @@ class asmDef_9x8:
         if token['value'] not in self.symbols['list']:
           raise asmDef.AsmException('Symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
         ix = self.symbols['list'].index(token['value']);
-        if self.symbols['type'][ix] == 'variable':
+        if self.symbols['type'][ix] == 'constant':
+          tokens.append(dict(type='constant', value=token['value'], offset=offset));
+          offset = offset + len(self.symbols['body'][ix]);
+        elif self.symbols['type'][ix] == 'inport':
+          tokens.append(dict(type='inport', value=token['value'], offset=offset));
+          offset = offset + 1;
+        elif self.symbols['type'][ix] == 'outport':
+          tokens.append(dict(type='outport', value=token['value'], offset=offset));
+          offset = offset + 1;
+        elif self.symbols['type'][ix] == 'variable':
           tokens.append(dict(type='variable', value=token['value'], offset=offset));
           offset = offset + 1;
         else:
@@ -253,7 +280,10 @@ class asmDef_9x8:
     if firstToken['value'] == '.abbr':
       raise Exception('TODO -- implement ".abbr"');
     elif firstToken['value'] == '.constant':
-      raise Exception('TODO -- implement ".constant"');
+      if secondToken['type'] != 'symbol':
+        raise asmDef.AsmException('Bad constant name at %s(%d), column %d' % (filename, secondToken['line'], secondToken['col']));
+      byteList = self.ByteList(filename,rawTokens[2:]);
+      self.AddSymbol(secondToken['value'], 'constant', body=byteList);
     # Process ".function" definition.
     elif firstToken['value'] == '.function':
       if secondToken['type'] != 'symbol':
@@ -327,7 +357,9 @@ class asmDef_9x8:
     for ixSymbol in range(len(self.symbols['list'])):
       name = self.symbols['list'][ixSymbol];
       stype = self.symbols['type'][ixSymbol];
-      if stype == 'variable':
+      if stype == 'constant':
+        t[name] = self.symbols['body'][ixSymbol];
+      elif stype == 'variable':
         t[name] = self.symbols['body'][ixSymbol]['start'];
     return t;
 
@@ -517,17 +549,32 @@ class asmDef_9x8:
           self.EmitPush(fp,token['value']);
         elif token['type'] == 'label':
           pass;
+        elif token['type'] == 'constant':
+          if token['value'] not in self.symbols['list']:
+            raise Exception('Program Bug');
+          ix = self.symbols['list'].index(token['value']);
+          body = self.symbols['body'][ix];
+          self.EmitPush(fp,body[-1],token['value']);
+          for v in body[-2::-1]:
+            self.EmitPush(fp,v);
+        elif token['type'] in ('inport','outport',):
+          if token['value'] not in self.symbols['list']:
+            raise Exception('Program Bug');
+          ix = self.symbols['list'].index(token['value']);
+          self.EmitPush(fp,self.symbols['body'][ix]['address'],token['value']);
         elif token['type'] == 'instruction':
           self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
         elif token['type'] == 'macro':
           if token['value'] == '.call':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['call'] | (token['address'] >> 8),'call '+token['argument'][0]);
-            self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
+            op = token['argument'][1];
+            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
           elif token['value'] == '.callc':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
-            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+            op = token['argument'][1];
+            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
           elif token['value'] == '.fetch':
             ixBank = self.Emit_GetBank(token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
@@ -555,11 +602,13 @@ class asmDef_9x8:
           elif token['value'] == '.jump':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump');
-            self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
+            op = token['argument'][1];
+            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
           elif token['value'] == '.jumpc':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc');
-            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+            op = token['argument'][1];
+            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
           elif token['value'] == '.outport':
             name = token['argument'][0];
             self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
@@ -567,7 +616,8 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.return':
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
-            self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
+            op = token['argument'][0];
+            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
           elif token['value'] == '.store':
             ixBank = self.Emit_GetBank(token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
@@ -609,56 +659,6 @@ class asmDef_9x8:
   ################################################################################
 
   def __init__(self):
-
-    #
-    # Enumerate the directives
-    # Note:  The ".include" directive is handled within asmDef.FileBodyIterator.
-    #
-
-    self.directives = dict();
-
-    self.directives['list']= list();
-    self.directives['list'].append('.abbr');
-    self.directives['list'].append('.constant');
-    self.directives['list'].append('.function');
-    self.directives['list'].append('.interrupt');
-    self.directives['list'].append('.main');
-    self.directives['list'].append('.memory');
-    self.directives['list'].append('.variable');
-
-    #
-    # Configure the pre-defined macros
-    #
-
-    self.macros = dict(list=list(), length=list(), nArgs=list());
-    self.AddMacro('.call',             3);
-    self.AddMacro('.callc',            3);
-    self.AddMacro('.fetch',            1);
-    self.AddMacro('.fetch-',           1);
-    self.AddMacro('.fetchindexed',     3);
-    self.AddMacro('.fetchvalue',       2);
-    self.AddMacro('.fetchvector',     -1, nArgs=2);
-    self.AddMacro('.inport',           2);
-    self.AddMacro('.jump',             3);
-    self.AddMacro('.jumpc',            3);
-    self.AddMacro('.outport',          3);
-    self.AddMacro('.return',           2, nArgs=0);
-    self.AddMacro('.store',            1);
-    self.AddMacro('.store+',           1);
-    self.AddMacro('.store-',           1);
-    self.AddMacro('.storeindexed',     4);
-    self.AddMacro('.storevalue',       3);
-    self.AddMacro('.storevector',     -1, nArgs=2);
-
-    #
-    # Configure the containers for the expanded main, interrupt, function,
-    # macro, etc. definitions.
-    #
-
-    self.interrupt = list();
-    self.main = list();
-    self.symbols = dict(list=list(), type=list(), body=list());
-    self.currentMemory = None;
 
     #
     # Configure the instructions.
@@ -724,3 +724,60 @@ class asmDef_9x8:
     self.specialInstructions['store']   = 0x068;
     self.specialInstructions['store+']  = 0x070;
     self.specialInstructions['store-']  = 0x074;
+
+    #
+    # Enumerate the directives
+    # Note:  The ".include" directive is handled within asmDef.FileBodyIterator.
+    #
+
+    self.directives = dict();
+
+    self.directives['list']= list();
+    self.directives['list'].append('.abbr');
+    self.directives['list'].append('.constant');
+    self.directives['list'].append('.function');
+    self.directives['list'].append('.interrupt');
+    self.directives['list'].append('.main');
+    self.directives['list'].append('.memory');
+    self.directives['list'].append('.variable');
+
+    #
+    # Configure the pre-defined macros
+    #
+
+    self.macros = dict(list=list(), length=list(), nArgs=list());
+    self.AddMacro('.call',              3);
+    self.AddMacro('.callc',             3);
+    self.AddMacro('.fetch',             1);
+    self.AddMacro('.fetch-',            1);
+    self.AddMacro('.fetchindexed',      3);
+    self.AddMacro('.fetchvalue',        2);
+    self.AddMacro('.fetchvector',      -1, nArgs=2);
+    self.AddMacro('.inport',            2);
+    self.AddMacro('.jump',              3);
+    self.AddMacro('.jumpc',             3);
+    self.AddMacro('.outport',           3);
+    self.AddMacro('.return',            2, nArgs=0);
+    self.AddMacro('.store',             1);
+    self.AddMacro('.store+',            1);
+    self.AddMacro('.store-',            1);
+    self.AddMacro('.storeindexed',      4);
+    self.AddMacro('.storevalue',        3);
+    self.AddMacro('.storevector',      -1, nArgs=2);
+
+    self.macroDefault = dict(list=list(), default=list());
+    self.AddMacroDefault('.call',       'nop');
+    self.AddMacroDefault('.callc',      'drop');
+    self.AddMacroDefault('.jump',       'nop');
+    self.AddMacroDefault('.jumpc',      'drop');
+    self.AddMacroDefault('.return',     'nop');
+
+    #
+    # Configure the containers for the expanded main, interrupt, function,
+    # macro, etc. definitions.
+    #
+
+    self.interrupt = list();
+    self.main = list();
+    self.symbols = dict(list=list(), type=list(), body=list());
+    self.currentMemory = None;

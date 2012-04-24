@@ -7,14 +7,12 @@
   core/9x8
     core.v
 *     use a register for s_R
-*     add an instruction to put of copy of T in R?
+*     add an instruction to put of copy of T in R (r!)?
 *     add r>N operator?
 2     fully debug the core
       resolve ISE synthesizing 50 slices instead of 36
     asm
-**    implement .constant directive
-*     variant macros to reduce code space:  .jump(addr), .jump(addr,op), etc.
-      add loop labels to the output instruction list
+*     add loop labels to the output instruction list
       implement .abbr directive
     core.vhd
       do this once core.v is completed
@@ -37,3 +35,4 @@
     - ssbcc.net
     - ssbcc@sinclairrf.com or rodney@ssbcc.net
     - EETimes and other e-rags
+    - add to resume
