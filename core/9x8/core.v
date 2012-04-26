@@ -195,7 +195,7 @@ localparam C_BUS_N_STACK        = 3'b001;       // replace N with third-on-stack
 localparam C_BUS_N_T            = 3'b010;       // replace N with T
 localparam C_BUS_N_16BITMATH    = 3'b011;       // extended LSB of 10-bit adder
 localparam C_BUS_N_MEM          = 3'b100;       // from memory
-reg [1:0] s_bus_n;
+reg [2:0] s_bus_n;
 
 localparam C_STACK_NOP          = 2'b00;        // don't change internal data stack pointer
 localparam C_STACK_INC          = 2'b01;        // add element to internal data stack
@@ -304,14 +304,12 @@ always @ (*) begin
                 s_stack         = C_STACK_DEC;
                 s_mem_wr        = 1'b1;
                 end
-      4'b1111:  begin // fetch/fetch-
-                if (s_opcode[2] == 1'b0) begin
+      4'b1111:  if (s_opcode[2] == 1'b0) begin // fetch/fetch-
                   s_bus_t       = C_BUS_T_MEM;
-                else
+                end else begin
                   s_bus_t       = C_BUS_T_MEMINCREMENT;
                   s_bus_n       = C_BUS_N_MEM;
                   s_stack       = C_STACK_INC;
-                end
                 end
       default:  // nop
                 ;
@@ -551,7 +549,7 @@ always @ (posedge i_clk)
     C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_INCREMENT:          s_T <= s_T_increment;
     C_BUS_T_MEMINCREMENT:       s_T <= s_T_memincrement;
-    C_BUS_T_MEM                 s_T <= s_memory;
+    C_BUS_T_MEM:                s_T <= s_memory;
     default:                    s_T <= s_T;
   endcase
 
