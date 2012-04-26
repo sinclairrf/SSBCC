@@ -108,6 +108,8 @@ try:
     # Parse the body of all other directives.
     else:
       rawTokens = asmDef.RawTokens(filename,startLine,body,ad);
+      if not rawTokens:
+        continue;
       ad.CheckRawTokens(filename,rawTokens);
       # FillRawTokens also ensures only one ".main" and ".interrupt" are defined.
       ad.FillRawTokens(filename,rawTokens);
