@@ -134,7 +134,7 @@ def genModule(fp,outCoreName,inport,outport):
   fp.write('  input  wire           i_clk');
   if inport['config']:
     fp.write(',\n');
-    fp.write('  // inport ports\n');
+    fp.write('  // inports\n');
     for ix in range(len(inport['config'])):
       configs = inport['config'][ix];
       names = inport['name'][ix];
@@ -157,7 +157,7 @@ def genModule(fp,outCoreName,inport,outport):
           raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
   if outport['config']:
     fp.write(',\n');
-    fp.write('  // outport ports\n');
+    fp.write('  // outports\n');
     for ix in range(len(outport['config'])):
       configs = outport['config'][ix];
       names = outport['name'][ix];
