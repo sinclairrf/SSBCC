@@ -6,7 +6,7 @@
 
   core/9x8
     core.v
-*     use a register for s_R
+**    use a register for s_R
 *     add an instruction to put of copy of T in R (r!)?
 *     add r>N operator?
 2     fully debug the core
