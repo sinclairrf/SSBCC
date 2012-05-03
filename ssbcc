@@ -44,6 +44,7 @@ try:
   #
 
   ixLine = 0;
+  bufLine = "";
   compiler = [];
   data_stack = 0;
   inport = dict(config=list(), name=list(), id=list());
@@ -52,8 +53,15 @@ try:
   outport = dict(config=list(), name=list(), id=list());
   return_stack = 0;
   user_header = list();
-  for line in argList.filename:
+  for tmpLine in argList.filename:
     ixLine = ixLine + 1;
+    # Merge continuation lines.
+    bufLine += tmpLine;
+    if bufLine[-2:] == '\\\n':
+      bufLine = bufLine[:-2];
+      continue;
+    line = bufLine;
+    bufLine = "";
     # Reject blank and comment lines
     if re.match(r'\s*(#.*)?$',line):
       pass;
