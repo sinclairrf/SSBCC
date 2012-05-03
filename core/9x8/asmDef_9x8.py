@@ -358,7 +358,7 @@ class asmDef_9x8:
       name = self.symbols['list'][ixSymbol];
       stype = self.symbols['type'][ixSymbol];
       if stype == 'constant':
-        t[name] = self.symbols['body'][ixSymbol];
+        t[name] = self.symbols['body'][ixSymbol][0];
       elif stype == 'variable':
         t[name] = self.symbols['body'][ixSymbol]['start'];
     return t;
