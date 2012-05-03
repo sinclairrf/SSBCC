@@ -74,6 +74,14 @@ class asmDef_9x8:
     ix = self.macros['list'].index(name);
     return self.macros['nArgs'][ix];
 
+  def MacroOptArgIsSymbol(self,token):
+    if not token['argument']:
+      return False;
+    lastArg = token['argument'][-1];
+    if type(lastArg) == str:
+      return False;
+    return lastArg['type'] == 'symbol';
+
   ################################################################################
   #
   # Configure the class for processing instructions.
@@ -198,11 +206,17 @@ class asmDef_9x8:
       for token in rawTokens[2:]:
         if token['type'] == 'symbol':
           name = token['value'];
-          if name not in self.symbols['list']:
-            raise asmDef.AsmException('Undefined symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
-          ixName = self.symbols['list'].index(name);
-          if self.symbols['type'][ixName] not in ('constant','inport','macro','outport','variable',):
-            raise asmDef.AsmException('Illegal symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
+          allowableTypes = ('constant','inport','macro','outport','variable',);
+        elif token['type'] == 'macro' and self.MacroOptArgIsSymbol(token):
+          name = token['argument'][-1]['value'];
+          allowableTypes = ('constant','inport','outport','variable',);
+        else:
+          continue;
+        if name not in self.symbols['list']:
+          raise asmDef.AsmException('Undefined symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
+        ixName = self.symbols['list'].index(name);
+        if self.symbols['type'][ixName] not in allowableTypes:
+          raise asmDef.AsmException('Illegal symbol at %s(%d), column %d' % (filename,token['line'],token['col']));
 
   ################################################################################
   #
@@ -222,6 +236,23 @@ class asmDef_9x8:
       else:
         raise asmDef.AsmException('Illegal token "%s" at %s(%d), column %d', (token['type'],filename,token['line'],token['col']));
     return tokens;
+
+  def ExpandSymbol(self,filename,token,singleValue):
+    if token['value'] not in self.symbols['list']:
+      raise asmDef.AsmException('Symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
+    ix = self.symbols['list'].index(token['value']);
+    if self.symbols['type'][ix] == 'constant':
+      if singleValue and len(self.symbols['body'][ix])!=1:
+        raise asmDef.AsmException('Constant "%s" must evaluate to a single byte at %s(%d), column %d' % (token['value'],filename,token['line'],token['col']))
+      return dict(type='constant', value=token['value']);
+    elif self.symbols['type'][ix] == 'inport':
+      return dict(type='inport', value=token['value']);
+    elif self.symbols['type'][ix] == 'outport':
+      return dict(type='outport', value=token['value']);
+    elif self.symbols['type'][ix] == 'variable':
+      return dict(type='variable', value=token['value']);
+    else:
+      raise Exception('Program Bug');
 
   def ExpandTokens(self,filename,rawTokens):
     tokens = list();
@@ -248,27 +279,20 @@ class asmDef_9x8:
             offset = offset + 1;
       # append macros
       elif token['type'] == 'macro':
+        if self.MacroOptArgIsSymbol(token):
+          token['argument'][-1] = self.ExpandSymbol(filename,token['argument'][-1],singleValue=True);
         tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument']));
         offset = offset + self.MacroLength(token);
       # interpret and append symbols
       elif token['type'] == 'symbol':
-        if token['value'] not in self.symbols['list']:
-          raise asmDef.AsmException('Symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
-        ix = self.symbols['list'].index(token['value']);
-        if self.symbols['type'][ix] == 'constant':
-          tokens.append(dict(type='constant', value=token['value'], offset=offset));
+        newToken = self.ExpandSymbol(filename,token,singleValue=False);
+        newToken['offset'] = offset;
+        tokens.append(newToken);
+        if token['type'] == 'constant':
+          ix = self.symbols['list'].index(newToken['value']);
           offset = offset + len(self.symbols['body'][ix]);
-        elif self.symbols['type'][ix] == 'inport':
-          tokens.append(dict(type='inport', value=token['value'], offset=offset));
-          offset = offset + 1;
-        elif self.symbols['type'][ix] == 'outport':
-          tokens.append(dict(type='outport', value=token['value'], offset=offset));
-          offset = offset + 1;
-        elif self.symbols['type'][ix] == 'variable':
-          tokens.append(dict(type='variable', value=token['value'], offset=offset));
-          offset = offset + 1;
         else:
-          raise asmDef.AsmException('Unrecognized symbol type "%s" for %s" at %s(%d), column %d' % (token['type'],token['value'],filename,token['line'],token['col']));
+          offset = offset + 1;
       # everything else is an error
       else:
         raise Exception('Program bug:  unexpected token type "%s"' % token['type']);
@@ -512,6 +536,20 @@ class asmDef_9x8:
   def EmitOpcode(self,fp,opcode,name):
     fp.write('%03X %s\n' % (opcode,name));
 
+  def EmitOptArg(self,fp,token):
+    if type(token) == str:
+      self.EmitOpcode(fp,self.InstructionOpcode(token),token);
+    elif token['type'] in ('constant','inport','outport','variable',):
+      name = token['value'];
+      if name not in self.symbols['list']:
+        raise Exception('Program Bug');
+      ix = self.symbols['list'].index(name);
+      self.EmitPush(fp,self.symbols['body'][ix][0],name);
+    elif token['type'] == 'value':
+      self.EmitPush(fp,token['value']);
+    else:
+      raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
+
   def EmitPush(self,fp,value,name=None):
     if type(name) == str:
       fp.write('1%02X %s\n' % ((value % 0x100),name));
@@ -522,7 +560,7 @@ class asmDef_9x8:
 
   def EmitVariable(self,fp,name):
     if name not in self.symbols['list']:
-      raise asmDef.AsmException('Variable "%s" not recognized' + name);
+      raise asmDef.AsmException('Variable "%s" not recognized' % name);
     ixName = self.symbols['list'].index(name);
     body = self.symbols['body'][ixName];
     fp.write('1%02X %s\n' % (body['start'],name));
@@ -568,13 +606,11 @@ class asmDef_9x8:
           if token['value'] == '.call':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['call'] | (token['address'] >> 8),'call '+token['argument'][0]);
-            op = token['argument'][1];
-            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
+            self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.callc':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
-            op = token['argument'][1];
-            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
+            self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.fetch':
             ixBank = self.Emit_GetBank(token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
@@ -602,13 +638,11 @@ class asmDef_9x8:
           elif token['value'] == '.jump':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump');
-            op = token['argument'][1];
-            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
+            self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.jumpc':
             self.EmitPush(fp,token['address'] & 0xFF,'');
             self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc');
-            op = token['argument'][1];
-            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
+            self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.outport':
             name = token['argument'][0];
             self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
@@ -616,8 +650,7 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           elif token['value'] == '.return':
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
-            op = token['argument'][0];
-            self.EmitOpcode(fp,self.InstructionOpcode(op),op);
+            self.EmitOptArg(fp,token['argument'][0]);
           elif token['value'] == '.store':
             ixBank = self.Emit_GetBank(token['argument'][0]);
             self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');

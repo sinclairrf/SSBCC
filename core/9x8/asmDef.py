@@ -329,7 +329,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + 3;
         continue;
       # look for directives and macros
-      a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+)*\))?',line[col:]);
+      a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+|,\$\(\S+\))*\))?',line[col:]);
       if a:
         if (col+len(a.group(0)) < len(line)) and (not re.match(r'\s',line[col+len(a.group(0))])):
           raise AsmException('Malformed directive or macro in %s(%d), column %d' % (filename, lineNumber, col+1));
@@ -353,8 +353,14 @@ def RawTokens(filename,startLineNumber,lines,ad):
           if len(nArgs) > 1:
             if len(macroArgs) == nArgs[0]:
               macroArgs.append(ad.MacroDefault(b.group(0)));
-            elif not ad.IsInstruction(macroArgs[-1]):
-              raise AsmException('Optional macro argument must be a instruction at %s(%d), column %d' % (filename, lineNumber, col+1));
+            elif ad.IsInstruction(macroArgs[-1]):
+              pass;
+            elif re.match(r'\w+$',macroArgs[-1]):
+              macroArgs[-1]=(dict(type='symbol', value=macroArgs[-1], line=lineNumber, col=col+1));
+            elif re.match(r'\$\(\S+\)$',macroArgs[-1]):
+              macroArgs[-1]=(dict(type='value', value=ParseNumber(macroArgs[-1]), line=lineNumber, col=col+1));
+            else:
+              raise AsmException('Malformed optional macro argument at %s(%d), column %d' % (filename, lineNumber, col+1));
           tokens.append(dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=macroArgs));
           col = col + len(a.group(0));
           continue;
