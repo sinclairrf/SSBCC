@@ -8,10 +8,11 @@
     core.v
 **    use a register for s_R
 *     add an instruction to put of copy of T in R (r!)?
-*     add r>N operator?
-2     fully debug the core
+*     add r>N and r! operators?
+2     fully debug the core and add test benches
       resolve ISE synthesizing 50 slices instead of 36
     asm
+**    rework parser so that arguments to the macros are more consistently parsed
 *     add loop labels to the output instruction list
       implement .abbr directive
       make the ram sizes available to the assembler through a constant (such as #ram)?
