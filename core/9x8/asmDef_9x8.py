@@ -29,31 +29,23 @@ class asmDef_9x8:
   #
   ################################################################################
 
-  def AddMacro(self,name,macroLength,nArgs=1):
+  def AddMacro(self,name,macroLength,args):
     self.macros['list'].append(name);
     self.macros['length'].append(macroLength);
-    self.macros['nArgs'].append((nArgs,));
-
-  def AddMacroDefault(self,name,default):
-    if not self.IsInstruction(default):
-      raise Exception('Program bug');
-    if name not in self.macros['list']:
-      raise Exception('Program Bug');
-    ix = self.macros['list'].index(name);
-    nArgs = self.macros['nArgs'][ix];
-    nArgs+=(nArgs[-1]+1,);
-    self.macros['nArgs'][ix] = nArgs;
-    self.macroDefault['list'].append(name);
-    self.macroDefault['default'].append(default);
+    self.macros['args'].append(args);
+    ix = len(args);
+    while (ix > 0) and (len(args[ix-1][0]) != 0):
+      ix = ix - 1;
+    self.macros['nArgs'].append(range(ix,len(args)+1));
 
   def IsMacro(self,name):
     return name in self.macros['list'];
 
   def MacroDefault(self,name):
-    if name not in self.macroDefault['list']:
+    if name not in self.macros['list']:
       raise Exception('Program Bug');
-    ix = self.macroDefault['list'].index(name);
-    return self.macroDefault['default'][ix];
+    ix = self.macros['list'].index(name);
+    return self.macros['args'][ix][-1][0];
 
   def MacroLength(self,token):
     if token['value'] not in self.macros['list']:
@@ -787,32 +779,53 @@ class asmDef_9x8:
     # Configure the pre-defined macros
     #
 
-    self.macros = dict(list=list(), length=list(), nArgs=list());
-    self.AddMacro('.call',              3);
-    self.AddMacro('.callc',             3);
-    self.AddMacro('.fetch',             1);
-    self.AddMacro('.fetch-',            1);
-    self.AddMacro('.fetchindexed',      3);
-    self.AddMacro('.fetchvalue',        2);
-    self.AddMacro('.fetchvector',      -1, nArgs=2);
-    self.AddMacro('.inport',            2);
-    self.AddMacro('.jump',              3);
-    self.AddMacro('.jumpc',             3);
-    self.AddMacro('.outport',           3);
-    self.AddMacro('.return',            2, nArgs=0);
-    self.AddMacro('.store',             1);
-    self.AddMacro('.store+',            1);
-    self.AddMacro('.store-',            1);
-    self.AddMacro('.storeindexed',      4);
-    self.AddMacro('.storevalue',        3);
-    self.AddMacro('.storevector',      -1, nArgs=2);
-
-    self.macroDefault = dict(list=list(), default=list());
-    self.AddMacroDefault('.call',       'nop');
-    self.AddMacroDefault('.callc',      'drop');
-    self.AddMacroDefault('.jump',       'nop');
-    self.AddMacroDefault('.jumpc',      'drop');
-    self.AddMacroDefault('.return',     'nop');
+    self.macros = dict(list=list(), length=list(), args=list(), nArgs=list());
+    self.AddMacro('.call',              3, [
+                                             ['','symbol'],
+                                             ['nop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.callc',             3, [
+                                             ['','symbol'],
+                                             ['drop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.fetch',             1, [ ['','symbol'] ]);
+    self.AddMacro('.fetch-',            1, [ ['','symbol'] ]);
+    self.AddMacro('.fetchindexed',      2, [
+                                             ['','symbol'],
+                                             ['','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.fetchvalue',        2, [ ['','symbol'] ]);
+    self.AddMacro('.fetchvector',      -1, [
+                                             ['','symbol'],
+                                             ['','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.inport',            2, [ ['','symbol'] ]);
+    self.AddMacro('.jump',              3, [
+                                             ['','symbol'],
+                                             ['nop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.jumpc',             3, [
+                                             ['','symbol'],
+                                             ['drop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.outport',           3, [
+                                             ['','symbol'],
+                                             ['drop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.return',            2, [ ['nop','instruction','singlevalue','symbol'] ]);
+    self.AddMacro('.store',             1, [ ['','symbol'] ]);
+    self.AddMacro('.store+',            1, [ ['','symbol'] ]);
+    self.AddMacro('.store-',            1, [ ['','symbol'] ]);
+    self.AddMacro('.storeindexed',      3, [
+                                             ['','symbol'],
+                                             ['','singlevalue','symbol'],
+                                             ['drop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.storevalue',        3, [ ['','symbol'] ]);
+    self.AddMacro('.storevector',      -1, [
+                                             ['','symbol'],
+                                             ['','singlevalue','symbol']
+                                           ]);
 
     #
     # Configure the containers for the expanded main, interrupt, function,
