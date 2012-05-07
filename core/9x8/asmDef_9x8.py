@@ -637,11 +637,11 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.InstructionOpcode('inport'),'inport');
           elif token['value'] == '.jump':
             self.EmitPush(fp,token['address'] & 0xFF,'');
-            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump');
+            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump '+token['argument'][0]);
             self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.jumpc':
             self.EmitPush(fp,token['address'] & 0xFF,'');
-            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc');
+            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc '+token['argument'][0]);
             self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.outport':
             name = token['argument'][0];
