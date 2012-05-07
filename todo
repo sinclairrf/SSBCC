@@ -13,7 +13,6 @@
       resolve ISE synthesizing 50 slices instead of 36
     asm
 **    rework parser so that arguments to the macros are more consistently parsed
-*     add loop labels to the output instruction list
       implement .abbr directive
       make the ram sizes available to the assembler through a constant (such as #ram)?
     core.vhd

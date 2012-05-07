@@ -517,6 +517,9 @@ class asmDef_9x8:
   #
   ################################################################################
 
+  def Emit_AddLabel(self,name):
+    self.emitLabelList += ':' + name + ' ';
+
   def Emit_GetAddrAndBank(self,name):
     if name not in self.symbols['list']:
       raise asmDef.AsmException('"%s" is not a recognized symbol' % name);
@@ -533,8 +536,13 @@ class asmDef_9x8:
     ixMem = self.memories['list'].index(name);
     return self.memories['bank'][ixMem];
 
+  def EmitName(self,name):
+    name = self.emitLabelList + name;
+    self.emitLabelList = '';
+    return name;
+
   def EmitOpcode(self,fp,opcode,name):
-    fp.write('%03X %s\n' % (opcode,name));
+    fp.write('%03X %s\n' % (opcode,self.EmitName(name)));
 
   def EmitOptArg(self,fp,token):
     if type(token) == str:
@@ -544,7 +552,7 @@ class asmDef_9x8:
       if name not in self.symbols['list']:
         raise Exception('Program Bug');
       ix = self.symbols['list'].index(name);
-      self.EmitPush(fp,self.symbols['body'][ix][0],name);
+      self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name));
     elif token['type'] == 'value':
       self.EmitPush(fp,token['value']);
     else:
@@ -552,18 +560,18 @@ class asmDef_9x8:
 
   def EmitPush(self,fp,value,name=None):
     if type(name) == str:
-      fp.write('1%02X %s\n' % ((value % 0x100),name));
+      fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName(name)));
     elif (chr(value) in string.printable) and (chr(value) not in string.whitespace):
-      fp.write('1%02X %02X \'%c\'\n' % ((value % 0x100),value,value));
+      fp.write('1%02X %02X %s\n' % ((value % 0x100),value,self.EmitName('\'%c\'' % value)));
     else:
-      fp.write('1%02X %02X\n' % ((value % 0x100),value));
+      fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName('0x%02X' % value)));
 
   def EmitVariable(self,fp,name):
     if name not in self.symbols['list']:
       raise asmDef.AsmException('Variable "%s" not recognized' % name);
     ixName = self.symbols['list'].index(name);
     body = self.symbols['body'][ixName];
-    fp.write('1%02X %s\n' % (body['start'],name));
+    fp.write('1%02X %s\n' % (body['start'],self.EmitName(name)));
     ixMem = self.memories['list'].index(body['memory']);
     return self.memories['bank'][ixMem];
 
@@ -582,11 +590,12 @@ class asmDef_9x8:
     # Emit the bodies
     for ix in range(len(self.functionEvaluation['list'])):
       fp.write('- %s\n' % self.functionEvaluation['list'][ix]);
+      self.emitLabelList = '';
       for token in self.functionEvaluation['body'][ix]:
         if token['type'] == 'value':
           self.EmitPush(fp,token['value']);
         elif token['type'] == 'label':
-          pass;
+          self.Emit_AddLabel(token['value']);
         elif token['type'] == 'constant':
           if token['value'] not in self.symbols['list']:
             raise Exception('Program Bug');
