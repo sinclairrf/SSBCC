@@ -91,38 +91,38 @@ wire [9:0] s_adder_b = { {(2){s_opcode[1] & s_T[7]}}, s_T };
 reg [9:0] s_adder = 10'd0;
 always @ (*)
   if (s_opcode[0] == 1'b0)
-    s_adder <= s_adder_a + s_adder_b;
+    s_adder = s_adder_a + s_adder_b;
   else
-    s_adder <= s_adder_a - s_adder_b;
+    s_adder = s_adder_a - s_adder_b;
 
 // opcode = 001011_xxx
 // 8-bit incrementer
 reg [7:0] s_T_increment = 8'h00;
 always @ (*)
   case (s_opcode[0+:3])
-     3'b000: s_T_increment <= s_T + 8'h01;
-     3'b001: s_T_increment <= s_T + 8'h02;
-     3'b010: s_T_increment <= s_T + 8'h03;
-     3'b011: s_T_increment <= s_T + 8'h04;
-     3'b100: s_T_increment <= s_T - 8'h01;
-     3'b101: s_T_increment <= s_T - 8'h02;
-     3'b110: s_T_increment <= s_T - 8'h03;
-     3'b111: s_T_increment <= s_T - 8'h04;
-    default: s_T_increment <= s_T + 8'h01;
+     3'b000: s_T_increment = s_T + 8'h01;
+     3'b001: s_T_increment = s_T + 8'h02;
+     3'b010: s_T_increment = s_T + 8'h03;
+     3'b011: s_T_increment = s_T + 8'h04;
+     3'b100: s_T_increment = s_T - 8'h01;
+     3'b101: s_T_increment = s_T - 8'h02;
+     3'b110: s_T_increment = s_T - 8'h03;
+     3'b111: s_T_increment = s_T - 8'h04;
+    default: s_T_increment = s_T + 8'h01;
   endcase
 
 // opcode = 01111x_xxx
 reg [7:0] s_T_memincrement = 8'h00;
 always @ (*)
   if (s_opcode[2] == 1'b0)
-    s_T_memincrement <= s_T + 8'h01;
+    s_T_memincrement = s_T + 8'h01;
   else
-    s_T_memincrement <= s_T - 8'h01;
+    s_T_memincrement = s_T - 8'h01;
 
 // increment PC
 reg [C_PC_WIDTH-1:0] s_PC_plus1 = {(C_PC_WIDTH){1'b0}};
 always @ (*)
-  s_PC_plus1 <= s_PC + { {(C_PC_WIDTH-1){1'b0}}, 1'b1 };
+  s_PC_plus1 = s_PC + { {(C_PC_WIDTH-1){1'b0}}, 1'b1 };
 
 // Reduced-warning-message method to extract the jump address from the top of
 // the stack and the current opcode.
@@ -420,24 +420,24 @@ if (C_SMALL_RETURN_STACK_IMPLEMENTATION) begin : gen_small_return_stack
   always @ (*)
     case (s_return)
       C_RETURN_NOP: begin
-                    s_R_memWr    <= 1'b0;
-                    s_R_ptr_next <= s_R_ptr;
-                    s_R_ptr_top  <= s_R_ptr;
+                    s_R_memWr    = 1'b0;
+                    s_R_ptr_next = s_R_ptr;
+                    s_R_ptr_top  = s_R_ptr;
                     end
       C_RETURN_INC: begin
-                    s_R_memWr    <= 1'b1;
-                    s_R_ptr_next <= s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                    s_R_ptr_top  <= s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                    s_R_memWr    = 1'b1;
+                    s_R_ptr_next = s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                    s_R_ptr_top  = s_R_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
                     end
       C_RETURN_DEC: begin
-                    s_R_memWr    <= 1'b0;
-                    s_R_ptr_next <= s_R_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                    s_R_ptr_top  <= s_R_ptr;
+                    s_R_memWr    = 1'b0;
+                    s_R_ptr_next = s_R_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                    s_R_ptr_top  = s_R_ptr;
                     end
            default: begin
-                    s_R_memWr    <= 1'b0;
-                    s_R_ptr_next <= s_R_ptr;
-                    s_R_ptr_top  <= s_R_ptr;
+                    s_R_memWr    = 1'b0;
+                    s_R_ptr_next = s_R_ptr;
+                    s_R_ptr_top  = s_R_ptr;
                     end
     endcase
 
@@ -447,7 +447,7 @@ if (C_SMALL_RETURN_STACK_IMPLEMENTATION) begin : gen_small_return_stack
 
   initial s_R = {(C_RETURN_WIDTH){1'b0}};
   always @ (*)
-    s_R <= s_R_stack[s_R_ptr_top];
+    s_R = s_R_stack[s_R_ptr_top];
 
 end else begin : gen_fast_return_stack
   // TODO -- debug this section
@@ -583,20 +583,20 @@ if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
   always @ (*)
     case (s_stack)
       C_STACK_NOP: begin
-                   s_Np_stack_ptr_next <= s_Np_stack_ptr;
-                   s_Np_stack_ptr_top  <= s_Np_stack_ptr;
+                   s_Np_stack_ptr_next = s_Np_stack_ptr;
+                   s_Np_stack_ptr_top  = s_Np_stack_ptr;
                    end
       C_STACK_INC: begin
-                   s_Np_stack_ptr_next <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                   s_Np_stack_ptr_top  <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_Np_stack_ptr_next = s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_Np_stack_ptr_top  = s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
                    end
       C_STACK_DEC: begin
-                   s_Np_stack_ptr_next <= s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                   s_Np_stack_ptr_top  <= s_Np_stack_ptr;
+                   s_Np_stack_ptr_next = s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+                   s_Np_stack_ptr_top  = s_Np_stack_ptr;
                    end
           default: begin
-                   s_Np_stack_ptr_next <= s_Np_stack_ptr;
-                   s_Np_stack_ptr_top  <= s_Np_stack_ptr;
+                   s_Np_stack_ptr_next = s_Np_stack_ptr;
+                   s_Np_stack_ptr_top  = s_Np_stack_ptr;
                    end
     endcase
 
@@ -608,7 +608,7 @@ if (C_SMALL_DATA_STACK_IMPLEMENTATION) begin : gen_small_data_stack
   // s_N_stack_ptr_top is pointing to the next memory location during pushes.
   reg [7:0] s_Np = 8'h00;
   always @ (*)
-    s_Np <= s_data_stack[s_Np_stack_ptr_top];
+    s_Np = s_data_stack[s_Np_stack_ptr_top];
 
   initial s_N = 8'h00;
   always @ (posedge i_clk)
