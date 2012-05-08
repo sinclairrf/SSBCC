@@ -107,7 +107,7 @@ class FileBodyIterator:
         if re.match(r'\s*\.include\s', line):
           a = re.findall(r'\s*\.include\s+(\S+)(\s*|\s*;.*)$', line);
           if not a:
-            raise AsmException('Malformed .include directive at %s(%d)' % (fp['fp'].name, fp['line']));
+            raise AsmException('Malformed .include directive at %s:%d' % (fp['fp'].name, fp['line']));
           if not self.pending:
             self.pending.append(fp['fp'].name);
             self.pending.append(fp['line']);
@@ -297,7 +297,7 @@ def ParseToken(ad,filename,lineNumber,col,raw,allowed):
       raise AsmException('Character not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
     a = re.match(r'\'.\'$',raw);
     if not a:
-      raise AsmException('Malformed \'.\' in %s(%d), column %d' % (filename,lineNumber,col+1));
+      raise AsmException('Malformed \'.\' in %s:%d:%d' % (filename,lineNumber,col+1));
     return dict(type='value', value=ord(a.group(0)[1]), line=lineNumber, col=col+1);
   # look for directives
   if ad.IsDirective(raw):
@@ -373,7 +373,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + 1;
         continue;
       if not spaceFound:
-        raise AsmException('Missing space in %s(%d), column %d' % (filename, lineNumber, col+1));
+        raise AsmException('Missing space in %s:%d:%d' % (filename,lineNumber,col+1));
       spaceFound = False;
       # ignore comments
       if line[col] == ';':
