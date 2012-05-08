@@ -6,15 +6,16 @@
 
   core/9x8
     core.v
-**    use a register for s_R
+**    use a register for s_R (this is the critical path)
 *     add an instruction to put of copy of T in R (r!)?
 *     add r>N and r! operators?
 2     fully debug the core and add test benches
       resolve ISE synthesizing 50 slices instead of 36
     asm
-**    rework parser so that arguments to the macros are more consistently parsed
+      add "filename" to tokens and improve error messages
+      add non-return restriction to some optional macro arguments
       implement .abbr directive
-      make the ram sizes available to the assembler through a constant (such as #ram)?
+      make the ram sizes available to the assembler through a constant (such as #ram), a directive (such as .size(ram)), or an array ($(size['ram']))?
     core.vhd
       do this once core.v is completed
 
