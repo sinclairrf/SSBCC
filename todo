@@ -20,7 +20,6 @@
       add "filename" to tokens and improve error messages
       add non-return restriction to some optional macro arguments
       implement .abbr directive
-      check the integrity of the "raise" statements -- correct number of arguments for the error messages
     core.vhd
       do this once core.v is completed
 

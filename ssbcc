@@ -253,7 +253,7 @@ try:
       if programBodyLength > nInstructions:
         raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,nInstructions));
     else:
-      raise SSBCCException('Unrecognized line %s(%d):  %s' % (fpAssemberOutput.filename,ixLine,line));
+      raise SSBCCException('Unrecognized line at %s:%d :  %s' % (fpAssemberOutput.filename,ixLine,line));
 
   ################################################################################
   #

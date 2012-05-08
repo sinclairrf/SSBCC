@@ -68,7 +68,7 @@ class asmDef_9x8:
 
   def MacroNumberArgs(self,name):
     if name not in self.macros['list']:
-      raise Exception('Program bug' % name);
+      raise Exception('Program bug');
     ix = self.macros['list'].index(name);
     return self.macros['nArgs'][ix];
 
@@ -152,7 +152,7 @@ class asmDef_9x8:
     # Ensure the first token is a directive.
     firstToken = rawTokens[0];
     if firstToken['type'] != 'directive':
-      raise Exception('Program Bug triggered by %s(%d), column %d' % (filename,firstToken['line'],firstToken['col']));
+      raise Exception('Program Bug triggered at %s:%d:%d' % (filename,firstToken['line'],firstToken['col']));
     # Ensure the main body ends in a ".jump".
     lastToken = rawTokens[-1];
     if firstToken['value'] == '.main':
@@ -192,10 +192,10 @@ class asmDef_9x8:
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] == '.inport'):
         if not self.IsInport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Input port "%s" not defined at %s:%d:%d' % (token['argument'][0],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Input port "%s" not defined at %s:%d:%d' % (token['argument'][0]['value'],filename,token['line'],token['col']));
       if (token['type'] == 'macro') and (token['value'] == '.outport'):
         if not self.IsOutport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Output port "%s" not defined at %s:%d:%d' % (token['argument'][0],filename,token['line'],token['col']));
+          raise asmDef.AsmException('Output port "%s" not defined at %s:%d:%d' % (token['argument'][0]['value'],filename,token['line'],token['col']));
     # Ensure referenced symbols are already defined.
     checkBody = False;
     if (rawTokens[0]['type'] == 'directive') and (rawTokens[0]['value'] in ('.function','.interrupt','.main',)):
@@ -342,7 +342,7 @@ class asmDef_9x8:
       if thirdToken['value'] in self.symbols['list']:
         ix = self.symbols['list'].index(thirdToken['value']);
         if self.symbols['type'] != secondToken['value']:
-          raise asmDef.AsmException('Redefinition of ".memory %s %s" not allowed at %s:%d' % (filename,firstToken['line']));
+          raise asmDef.AsmException('Redefinition of ".memory %s %s" not allowed at %s:%d' % (secondToken['value'],thirdToken['value'],filename,firstToken['line']));
       else:
         self.AddSymbol(thirdToken['value'],secondToken['value'],dict(length=0));
       self.currentMemory = thirdToken['value'];
@@ -359,7 +359,7 @@ class asmDef_9x8:
       self.AddSymbol(secondToken['value'], 'variable', body=body);
       currentMemoryBody['length'] = currentMemoryBody['length'] + len(byteList);
       if currentMemoryBody['length'] > 256:
-        raise asmDef.AsmException('Memory "%s" becomes too long at %s:%d' % (filename,firstToken['line']));
+        raise asmDef.AsmException('Memory "%s" becomes too long at %s:%d' % (self.currentMemory,filename,firstToken['line']));
     # Everything else is an error.
     else:
       raise Exception('Program Bug:  Unrecognized directive %s at %s(%d)' % (firstToken['value'],filename,firstToken['line']));
