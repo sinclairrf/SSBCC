@@ -240,6 +240,107 @@ def ParseString(inString):
     outString.append(0);
   return outString;
 
+def ParseToken(ad,filename,lineNumber,col,raw,allowed):
+  # look for instructions
+  # Note:  Do this before anything else because instructions can be a
+  #        strange mix of symbols.
+  if ad.IsInstruction(raw):
+    if 'instruction' not in allowed:
+      raise AsmException('instruction "%s" not allowed at %s:%d:%d' % (raw,filename,lineNumber,col+1));
+    return dict(type='instruction', value=raw, line=lineNumber, col=col+1);
+  # look for computation
+  a = re.match(r'\$\([^()]+\)$',raw);
+  if a:
+    if 'singlevalue' not in allowed:
+      raise AsmException('Computated value not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    tParseNumber = eval(raw[1:],ad.SymbolDict());
+    if type(tParseNumber) != int:
+      raise AsmException('Malformed single-byte value at %s:%d:%d' % (filename,lineNumber,col+1));
+    return dict(type='value', value=tParseNumber, line=lineNumber, col=col+1);
+  # look for a repeated single-byte numeric value
+  a = re.match(r'[1-9][0-9]*\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})$',raw);
+  if a:
+    if 'multivalue' not in allowed:
+      raise AsmException('Multi-byte value not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    b = re.findall(r'([1-9][0-9]*)\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',a.group(0));
+    b = b[0];
+    tParseNumber = ParseNumber(b[1]);
+    if type(tParseNumber) != int:
+      raise AsmException('Malformed multi-byte value at %s:%d:%d' % (filename,lineNumber,col+len(b[0])+2));
+    tValue = list();
+    for ix in range(int(b[0])):
+      tValue.append(tParseNumber);
+    return dict(type='value', value=tValue, line=lineNumber, col=col+1);
+  # look for a single-byte numeric value
+  a = re.match(r'(0|[+\-]?[1-9]\d*|0[07]+|0x[0-9A-Fa-f]{1,2})$',raw);
+  if a:
+    if 'singlevalue' not in allowed:
+      raise AsmException('Value not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    tParseNumber = ParseNumber(raw);
+    if type(tParseNumber) != int:
+      raise AsmException('Malformed single-byte value at %s:%d:%d' % (filename,lineNumber,col+1));
+    return dict(type='value', value=tParseNumber, line=lineNumber, col=col+1);
+  # capture double-quoted strings
+  if re.match(r'[CN]?"',raw):
+    if 'string' not in allowed:
+      raise AsmException('String not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    a = re.match(r'[CN]?"([^"]|\\")+[^\\\\]"$',raw);
+    if not a:
+      raise AsmException('Malformed string at %s:%d:%d' % (filename,lineNumber,col+1));
+    parsedString = ParseString(raw);
+    if type(parsedString) == int:
+      raise AsmException('Malformed string at %s:%d:%d' % (filename,lineNumber,col+parsedString));
+    return dict(type='value', value=parsedString, line=lineNumber, col=col);
+  # capture single-quoted character
+  if raw[0] == "'":
+    if 'singlevalue' not in allowed:
+      raise AsmException('Character not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    a = re.match(r'\'.\'$',raw);
+    if not a:
+      raise AsmException('Malformed \'.\' in %s(%d), column %d' % (filename,lineNumber,col+1));
+    return dict(type='value', value=ord(a.group(0)[1]), line=lineNumber, col=col+1);
+  # look for directives
+  if ad.IsDirective(raw):
+    if 'directive' not in allowed:
+      raise AsmException('Directive not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    return dict(type='directive', value=raw, line=lineNumber, col=col+1);
+  # look for macros
+  a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+|,\$\(\S+\))*\))?$',raw);
+  if a:
+    b = re.match(r'\.[^(]+',raw);
+    if not ad.IsMacro(b.group(0)):
+      raise AsmException('Unrecognized directive or macro at %s:%d:%d' % (filename,lineNumber,col+1));
+    if 'macro' not in allowed:
+      raise AsmException('Macro not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    macroArgs = re.findall(r'([^,]+)',raw[len(b.group(0))+1:-1]);
+    nArgs = ad.MacroNumberArgs(b.group(0))
+    if len(macroArgs) not in nArgs:
+      raise AsmException('Wrong number of arguments to macro at %s:%d:%d' % (filename,lineNumber,col+1));
+    while len(macroArgs) < nArgs[-1]:
+      macroArgs.append(ad.MacroDefault(b.group(0),len(macroArgs)));
+    outArgs = list();
+    col = col + len(b.group(0))+1;
+    for ixArg in range(len(macroArgs)):
+      outArgs.append(ParseToken(ad,filename,lineNumber,col,macroArgs[ixArg],ad.MacroArgTypes(b.group(0),ixArg)));
+      col = col + len(macroArgs[ixArg]) + 1;
+    return dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=outArgs);
+  # look for a label definition
+  a = re.match(r':[A-Za-z]\w*$',raw);
+  if a:
+    if 'label' not in allowed:
+      raise AsmException('Label not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    return dict(type='label', value=raw[1:], line=lineNumber, col=col+1);
+  # look for symbols
+  # Note:  This should be the last check performed as every other kind of
+  #        token should be recognizable
+  a = re.match(r'[A-Za-z]\w+$',raw);
+  if a:
+    if 'symbol' not in allowed:
+      raise AsmException('Symbol not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+    return dict(type='symbol', value=a.group(0), line=lineNumber, col=col+1);
+  # anything else is an error
+  raise AsmException('Malformed entry at %s:%d:%d' % (filename,lineNumber,col+1));
+
 ################################################################################
 #
 # Extract the tokens from a block of code.
@@ -250,7 +351,15 @@ def ParseString(inString):
 
 def RawTokens(filename,startLineNumber,lines,ad):
   """Extract the list of tokens from the provided list of lines"""
-
+  allowed = [
+              'instruction',
+              'label',
+              'macro',
+              'multivalue',
+              'singlevalue',
+              'string',
+              'symbol'
+            ];
   tokens = list();
   lineNumber = startLineNumber - 1;
   for line in lines:
@@ -269,120 +378,12 @@ def RawTokens(filename,startLineNumber,lines,ad):
       # ignore comments
       if line[col] == ';':
         break;
-      # look for instructions
-      # Note:  Do this before anything else because instructions can be a
-      #        strange mix of symbols.
+      # everything else is a white-space delimited token that needs to be parsed
       a = re.match(r'\S+',line[col:]);
-      if ad.IsInstruction(a.group(0)):
-        tokens.append(dict(type='instruction', value=a.group(0), line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
-      # look for computation
-      a = re.match(r'\$\(\S+\)',line[col:]);
-      if a:
-        tParseNumber = eval(a.group(0)[1:],ad.SymbolDict());
-        if type(tParseNumber) != int:
-          raise AsmException('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+1));
-        tokens.append(dict(type='value', value=tParseNumber, line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
-      # look for a repeated single-byte numeric value
-      a = re.match(r'[1-9][0-9]*\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',line[col:]);
-      if a:
-        b = re.findall(r'([1-9][0-9]*)\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',a.group(0));
-        b = b[0];
-        tParseNumber = ParseNumber(b[1]);
-        if type(tParseNumber) != int:
-          raise AsmException('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+len(b[0])+2));
-        tValue = list();
-        for ix in range(int(b[0])):
-          tValue.append(tParseNumber);
-        tokens.append(dict(type='value', value=tValue, line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
-      # look for a single-byte numeric value
-      a = re.match(r'(0|[+\-]?[1-9]\d*|0[07]+|0x[0-9A-Fa-f]{1,2})\b',line[col:]);
-      if a:
-        tParseNumber = ParseNumber(a.group(0));
-        if type(tParseNumber) != int:
-          raise AsmException('Malformed single-byte value at %s(%d), column %d' % (filename,lineNumber,col+1));
-        tokens.append(dict(type='value', value=tParseNumber, line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
-      # capture double-quoted strings
-      if re.match(r'[CN]?"',line[col:]):
-        a = re.match(r'[CN]?"([^"]|\\")+[^\\\\]"',line[col:]);
-        if not a:
-          raise AsmException('Unmatched \'"\' in %s(%d), column %d' % (filename, lineNumber, col+1));
-        parsedString = ParseString(a.group(0));
-        if type(parsedString) == int:
-          raise AsmException('Malformed string at %s(%d), column %d' % (filename, lineNumber, col+parsedString));
-        tokens.append(dict(type='value', value=parsedString, line=lineNumber, col=col));
-        col = col + len(a.group(0));
-        continue;
-      # capture single-quoted character
-      if line[col] == "'":
-        a = re.match(r'\'.\'',line[col:]);
-        if (not a) or ((col+3 < len(line)) and (not re.match(r'\s',line[col+3]))):
-          raise AsmException('Malformed \'.\' in %s(%d), column %d' % (filename, lineNumber, col+1));
-        tokens.append(dict(type='value', value=ord(a.group(0)[1]), line=lineNumber, col=col+1));
-        col = col + 3;
-        continue;
-      # look for directives and macros
-      a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+|,\$\(\S+\))*\))?',line[col:]);
-      if a:
-        if (col+len(a.group(0)) < len(line)) and (not re.match(r'\s',line[col+len(a.group(0))])):
-          raise AsmException('Malformed directive or macro in %s(%d), column %d' % (filename, lineNumber, col+1));
-        b = re.match(r'\.[^(]+',a.group(0));
-        if ad.IsDirective(b.group(0)):
-          if b.group(0) != a.group(0):
-            raise AsmException('Malformed directive in %s(%d), column %d' % (filename, lineNumber, col+1));
-          if len(tokens) > 0:
-            raise AsmException('Directive must be first entry on line in %s(%d), column %d' % (filename, lineNumber, col+1));
-          tokens.append(dict(type='directive', value=a.group(0), line=lineNumber, col=col+1));
-          col = col + len(a.group(0));
-          continue;
-        if ad.IsMacro(b.group(0)):
-          if b.group(0) == a.group(0):
-            macroArgs = list();
-          else:
-            macroArgs = re.findall(r'([^,)]+)',a.group(0)[len(b.group(0))+1:]);
-          nArgs = ad.MacroNumberArgs(b.group(0))
-          if len(macroArgs) not in nArgs:
-            raise AsmException('Wrong number of arguments to macro in %s(%d), column %d' % (filename, lineNumber, col+1));
-          if len(nArgs) > 1:
-            if len(macroArgs) == nArgs[0]:
-              macroArgs.append(ad.MacroDefault(b.group(0)));
-            elif ad.IsInstruction(macroArgs[-1]):
-              pass;
-            elif re.match(r'\w+$',macroArgs[-1]):
-              macroArgs[-1]=(dict(type='symbol', value=macroArgs[-1], line=lineNumber, col=col+1));
-            elif re.match(r'\$\(\S+\)$',macroArgs[-1]):
-              macroArgs[-1]=(dict(type='value', value=ParseNumber(macroArgs[-1]), line=lineNumber, col=col+1));
-            else:
-              raise AsmException('Malformed optional macro argument at %s(%d), column %d' % (filename, lineNumber, col+1));
-          tokens.append(dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=macroArgs));
-          col = col + len(a.group(0));
-          continue;
-        raise AsmException('Unrecognized directive or macro "%s" in %s(%d), column(%d)' % (a.group(0), filename, lineNumber, col+1));
-      # look for a label definition
-      a = re.match(r':[A-Za-z]\w*',line[col:]);
-      if a:
-        if (col+len(a.group(0))) and (not re.match(r'\s',line[col+len(a.group(0))])):
-          raise AsmException('Malformed label in %s(%d), column %d' % (filename, lineNumber, col+1));
-        tokens.append(dict(type='label', value=a.group(0)[1:], line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
-      # look for symbols
-      # Note:  This should be the last check performed as every other kind of
-      #        token should be recognizable
-      a = re.match(r'[A-Za-z]\w+',line[col:]);
-      if a:
-        if (col+len(a.group(0))) and (not re.match(r'\s',line[col+len(a.group(0))])):
-          raise AsmException('Malformed symbol in %s(%d), column %d' % (filename, lineNumber, col+1));
-        tokens.append(dict(type='symbol', value=a.group(0), line=lineNumber, col=col+1));
-        col = col + len(a.group(0));
-        continue;
-      # anything else is an error
-      raise AsmException('Malformed statement in %s(%d), column %d' % (filename, lineNumber, col+1));
+      if not tokens:
+        selAllowed = 'directive';
+      else:
+        selAllowed = allowed;
+      tokens.append(ParseToken(ad,filename,lineNumber,col,a.group(0),selAllowed));
+      col = col + len(a.group(0));
   return tokens;

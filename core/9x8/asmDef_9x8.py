@@ -41,11 +41,17 @@ class asmDef_9x8:
   def IsMacro(self,name):
     return name in self.macros['list'];
 
-  def MacroDefault(self,name):
+  def MacroArgTypes(self,name,ixArg):
     if name not in self.macros['list']:
       raise Exception('Program Bug');
     ix = self.macros['list'].index(name);
-    return self.macros['args'][ix][-1][0];
+    return self.macros['args'][ix][ixArg][1:];
+
+  def MacroDefault(self,name,ixArg):
+    if name not in self.macros['list']:
+      raise Exception('Program Bug');
+    ix = self.macros['list'].index(name);
+    return self.macros['args'][ix][ixArg][0];
 
   def MacroLength(self,token):
     if token['value'] not in self.macros['list']:
@@ -175,7 +181,7 @@ class asmDef_9x8:
     labelsUsed = list();
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] in ('.jump','.jumpc',)):
-        target = token['argument'][0];
+        target = token['argument'][0]['value'];
         if target not in labelDefs:
           raise asmDef.AsmException('label definition for target missing at %s(%d), column %d' % (filename,token['line'],token['col']));
         labelsUsed.append(target);
@@ -185,10 +191,10 @@ class asmDef_9x8:
     # Ensure symbols referenced by ".input" and ".outport" are defined.
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] == '.inport'):
-        if not self.IsInport(token['argument'][0]):
+        if not self.IsInport(token['argument'][0]['value']):
           raise asmDef.AsmException('Input port "%s" not defined at %s(%d), column %d' % (token['argument'][0],filename,token['line'],token['col']));
       if (token['type'] == 'macro') and (token['value'] == '.outport'):
-        if not self.IsOutport(token['argument'][0]):
+        if not self.IsOutport(token['argument'][0]['value']):
           raise asmDef.AsmException('Output port "%s" not defined at %s(%d), column %d' % (token['argument'][0],filename,token['line'],token['col']));
     # Ensure referenced symbols are already defined.
     checkBody = False;
@@ -201,7 +207,7 @@ class asmDef_9x8:
           allowableTypes = ('constant','inport','macro','outport','variable',);
         elif token['type'] == 'macro' and self.MacroOptArgIsSymbol(token):
           name = token['argument'][-1]['value'];
-          allowableTypes = ('constant','inport','outport','variable',);
+          allowableTypes = ('RAM','ROM','constant','inport','outport','variable',);
         else:
           continue;
         if name not in self.symbols['list']:
@@ -233,7 +239,11 @@ class asmDef_9x8:
     if token['value'] not in self.symbols['list']:
       raise asmDef.AsmException('Symbol "%s" not in symbol list at %s(%d), column %d' %(token['value'],filename,token['line'],token['col']));
     ix = self.symbols['list'].index(token['value']);
-    if self.symbols['type'][ix] == 'constant':
+    if self.symbols['type'][ix] == 'RAM':
+      return dict(type='RAM', value=token['value']);
+    elif self.symbols['type'][ix] == 'ROM':
+      return dict(type='ROM', value=token['value']);
+    elif self.symbols['type'][ix] == 'constant':
       if singleValue and len(self.symbols['body'][ix])!=1:
         raise asmDef.AsmException('Constant "%s" must evaluate to a single byte at %s(%d), column %d' % (token['value'],filename,token['line'],token['col']))
       return dict(type='constant', value=token['value']);
@@ -244,6 +254,7 @@ class asmDef_9x8:
     elif self.symbols['type'][ix] == 'variable':
       return dict(type='variable', value=token['value']);
     else:
+      print token
       raise Exception('Program Bug');
 
   def ExpandTokens(self,filename,rawTokens):
@@ -443,7 +454,7 @@ class asmDef_9x8:
     while ix < len(self.functionEvaluation['body']):
       for token in self.functionEvaluation['body'][ix]:
         if (token['type'] == 'macro') and (token['value'] in ('.call','.callc',)):
-          callName = token['argument'][0];
+          callName = token['argument'][0]['value'];
           if callName not in self.functionEvaluation['list']:
             if callName not in self.symbols['list']:
               raise asmDef.AsmException('Function "%s" not defined for function "%s"' % (callName,self.functionEvaluation['list'][ix],));
@@ -467,10 +478,10 @@ class asmDef_9x8:
           labelAddress['address'].append(startAddress + token['offset']);
       for token in self.functionEvaluation['body'][ix]:
         if (token['type'] == 'macro') and (token['value'] in ('.jump','.jumpc',)):
-          ix = labelAddress['list'].index(token['argument'][0]);
+          ix = labelAddress['list'].index(token['argument'][0]['value']);
           token['address'] = labelAddress['address'][ix];
         if (token['type'] == 'macro') and (token['value'] in ('.call','.callc',)):
-          ix = self.functionEvaluation['list'].index(token['argument'][0]);
+          ix = self.functionEvaluation['list'].index(token['argument'][0]['value']);
           token['address'] = self.functionEvaluation['address'][ix];
     # Sanity checks for address range
     if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**13-1:
@@ -537,14 +548,14 @@ class asmDef_9x8:
     fp.write('%03X %s\n' % (opcode,self.EmitName(name)));
 
   def EmitOptArg(self,fp,token):
-    if type(token) == str:
-      self.EmitOpcode(fp,self.InstructionOpcode(token),token);
-    elif token['type'] in ('constant','inport','outport','variable',):
+    if token['type'] in ('constant','inport','outport','variable',):
       name = token['value'];
       if name not in self.symbols['list']:
         raise Exception('Program Bug');
       ix = self.symbols['list'].index(name);
       self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name));
+    elif token['type'] == 'instruction':
+      self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
     elif token['type'] == 'value':
       self.EmitPush(fp,token['value']);
     else:
@@ -606,46 +617,49 @@ class asmDef_9x8:
         elif token['type'] == 'macro':
           if token['value'] == '.call':
             self.EmitPush(fp,token['address'] & 0xFF,'');
-            self.EmitOpcode(fp,self.specialInstructions['call'] | (token['address'] >> 8),'call '+token['argument'][0]);
+            self.EmitOpcode(fp,self.specialInstructions['call'] | (token['address'] >> 8),'call '+token['argument'][0]['value']);
             self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.callc':
             self.EmitPush(fp,token['address'] & 0xFF,'');
-            self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]);
+            self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]['value']);
             self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.fetch':
-            ixBank = self.Emit_GetBank(token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
+            name = token['argument'][0]['value'];
+            ixBank = self.Emit_GetBank(name);
+            self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+name);
           elif token['value'] == '.fetch-':
-            ixBank = self.Emit_GetBank(token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-');
+            name = token['argument'][0]['value'];
+            ixBank = self.Emit_GetBank(name);
+            self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch- '+name);
           elif token['value'] == '.fetchindexed':
-            ixBank = self.EmitVariable(fp,token['argument'][0]);
+            ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.fetchvalue':
-            ixBank = self.EmitVariable(fp,token['argument'][0]);
+            ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.fetchvector':
-            (addr,ixBank) = self.Emit_GetAddrAndBank(token['argument'][0]);
-            N = int(token['argument'][1]);
-            self.EmitPush(fp,addr+N-1,'%s+%d' % (token['argument'][0],N-1));
+            name = token['argument'][0]['value']
+            (addr,ixBank) = self.Emit_GetAddrAndBank(name);
+            N = int(token['argument'][1]['value']);
+            self.EmitPush(fp,addr+N-1,'%s+%d' % (name,N-1));
             for dummy in range(N-1):
               self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-');
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
           elif token['value'] == '.inport':
-            name = token['argument'][0];
+            name = token['argument'][0]['value'];
             self.EmitPush(fp,self.InportAddress(name) & 0xFF,name);
             self.EmitOpcode(fp,self.InstructionOpcode('inport'),'inport');
           elif token['value'] == '.jump':
             self.EmitPush(fp,token['address'] & 0xFF,'');
-            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump '+token['argument'][0]);
+            self.EmitOpcode(fp,self.specialInstructions['jump'] | (token['address'] >> 8),'jump '+token['argument'][0]['value']);
             self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.jumpc':
             self.EmitPush(fp,token['address'] & 0xFF,'');
-            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc '+token['argument'][0]);
+            self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc '+token['argument'][0]['value']);
             self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.outport':
-            name = token['argument'][0];
+            name = token['argument'][0]['value'];
             self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
             self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport');
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
@@ -653,30 +667,33 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.specialInstructions['return'],'return');
             self.EmitOptArg(fp,token['argument'][0]);
           elif token['value'] == '.store':
-            ixBank = self.Emit_GetBank(token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
+            name = token['argument'][0]['value'];
+            ixBank = self.Emit_GetBank(name);
+            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+name);
           elif token['value'] == '.store+':
-            ixBank = self.Emit_GetBank(token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
+            name = token['argument'][0]['value'];
+            ixBank = self.Emit_GetBank(name);
+            self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+ '+name);
           elif token['value'] == '.store-':
-            ixBank = self.Emit_GetBank(token['argument'][0]);
-            self.EmitOpcode(fp,self.specialInstructions['store-'] | ixBank,'store-');
+            name = token['argument'][0]['value'];
+            ixBank = self.Emit_GetBank(name);
+            self.EmitOpcode(fp,self.specialInstructions['store-'] | ixBank,'store- '+name);
           elif token['value'] == '.storeindexed':
-            ixBank = self.EmitVariable(fp,token['argument'][0]);
+            ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
             self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
-            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+            self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.storevalue':
-            ixBank = self.EmitVariable(fp,token['argument'][0]);
+            ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
             self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
-            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+            self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.storevector':
-            (addr,ixBank) = self.Emit_GetAddrAndBank(token['argument'][0]);
-            N = int(token['argument'][1]);
-            self.EmitPush(fp,addr+N-1,token['argument'][0]);
+            (addr,ixBank) = self.Emit_GetAddrAndBank(token['argument'][0]['value']);
+            N = int(token['argument'][1]['value']);
+            self.EmitPush(fp,addr+N-1,token['argument'][0]['value']);
             for dummy in range(N):
               self.EmitOpcode(fp,self.specialInstructions['store-'] | ixBank,'store+');
-            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+            self.EmitOptArg(fp,token['argument'][2]);
           else:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
         elif token['type'] == 'symbol':
@@ -816,15 +833,18 @@ class asmDef_9x8:
     self.AddMacro('.store',             1, [ ['','symbol'] ]);
     self.AddMacro('.store+',            1, [ ['','symbol'] ]);
     self.AddMacro('.store-',            1, [ ['','symbol'] ]);
-    self.AddMacro('.storeindexed',      3, [
+    self.AddMacro('.storeindexed',      4, [
+                                             ['','symbol'],
+                                             ['drop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.storevalue',        3, [
+                                             ['','symbol'],
+                                             ['drop','instruction','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.storevector',      -1, [
                                              ['','symbol'],
                                              ['','singlevalue','symbol'],
                                              ['drop','instruction','singlevalue','symbol']
-                                           ]);
-    self.AddMacro('.storevalue',        3, [ ['','symbol'] ]);
-    self.AddMacro('.storevector',      -1, [
-                                             ['','symbol'],
-                                             ['','singlevalue','symbol']
                                            ]);
 
     #
