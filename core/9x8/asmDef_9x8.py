@@ -139,6 +139,9 @@ class asmDef_9x8:
       raise Exception('Program Bug');
     self.AddSymbol(name,'outport',dict(address=address));
 
+  def RegisterMemoryLength(self,name,length):
+    self.memoryLength[name] = length;
+
   ################################################################################
   #
   # Check a list of raw tokens to ensure their proper format.
@@ -385,6 +388,10 @@ class asmDef_9x8:
         t[name] = self.symbols['body'][ixSymbol][0];
       elif stype == 'variable':
         t[name] = self.symbols['body'][ixSymbol]['start'];
+    sizes=dict();
+    for name in self.memoryLength:
+      sizes[name] = self.memoryLength[name];
+    t['size'] = sizes;
     return t;
 
   ################################################################################
@@ -843,6 +850,12 @@ class asmDef_9x8:
                                              ['','singlevalue','symbol'],
                                              ['drop','instruction','singlevalue','symbol']
                                            ]);
+
+    #
+    # Externally defined parameters.
+    #
+
+    self.memoryLength = dict();
 
     #
     # Configure the containers for the expanded main, interrupt, function,

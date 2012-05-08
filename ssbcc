@@ -190,6 +190,8 @@ try:
     cmd += (' -I %s=%d' % (inport['id'][ix],ix));
   for ix in range(len(outport['config'])):
     cmd += (' -O %s=%d' % (outport['id'][ix],ix));
+  for ix in range(len(memories['list'])):
+    cmd += (' -S %s=%d' % (memories['list'][ix],eval(memories['arch'][ix])));
   cmd += ' -o ' + assemblerOutput;
   cmd += ' -L %s/%s' % (sys.path[0], 'lib/9x8');
   cmd += ' ' + compiler[1];
