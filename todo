@@ -11,7 +11,7 @@
     00readme.html
       update
     core.v
-**    use a register for s_R (this is the critical path)
+**    return mux generation from the opcode -- exclude s_opcode[8:7]
 *     add an instruction to put of copy of T in R (r!)?
 *     add r>N and r! operators?
 2     fully debug the core and add test benches
