@@ -14,30 +14,36 @@ def genInports(fp,inport):
   if not inport['config']:
     fp.write('// no input ports\n');
     return
+  for ix in range(len(inport['config'])):
+    if inport['config'][ix][0] == 'set-reset':
+      fp.write('reg s_SETRESET_%s;\n' % inport['name'][ix][0]);
   if inport['haveBitSignals']:
     fp.write('always @ (*)\n');
     fp.write('  case (s_T)\n');
     for ix in range(len(inport['config'])):
       configs = inport['config'][ix];
       names = inport['name'][ix];
-      bitsString = '';
-      nBits = 0;
-      for jx in range(len(configs)):
-        if re.match(r'\d+-bit',configs[jx]):
-          a = re.findall(r'(\d+)',configs[jx]);
-          portLength = int(a[0]);
-          if len(bitsString) != 0:
-            bitsString = bitsString + ', ';
-          bitsString = bitsString + inport['name'][ix][jx];
-          nBits = nBits + portLength;
-      if nBits == 0:
-        pass;
-      elif nBits < 8:
-        fp.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitsString));
-      elif nBits == 8:
-        fp.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
+      if configs[0] == 'set-reset':
+        fp.write('      8\'h%02X : s_T_inport = (%s || s_SETRESET_%s) ? 8\'hFF : 8\'h00;\n' % (ix, names[0], names[0]));
       else:
-        raise SSBCCException('Too many bits in %s' % (inport['id'][ix]));
+        bitsString = '';
+        nBits = 0;
+        for jx in range(len(configs)):
+          if re.match(r'\d+-bit',configs[jx]):
+            a = re.findall(r'(\d+)',configs[jx]);
+            portLength = int(a[0]);
+            if len(bitsString) != 0:
+              bitsString = bitsString + ', ';
+            bitsString = bitsString + inport['name'][ix][jx];
+            nBits = nBits + portLength;
+        if nBits == 0:
+          pass;
+        elif nBits < 8:
+          fp.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitsString));
+        elif nBits == 8:
+          fp.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
+        else:
+          raise SSBCCException('Too many bits in %s' % (inport['id'][ix]));
     fp.write('    default : s_T_inport = 8\'h00;\n');
     fp.write('  endcase\n');
     fp.write('\n');
@@ -46,6 +52,8 @@ def genInports(fp,inport):
     names = inport['name'][ix];
     for jx in range(len(configs)):
       if re.match(r'\d+-bit',configs[jx]):
+        pass;
+      elif configs[jx] == 'set-reset':
         pass;
       elif configs[jx] == 'strobe':
         fp.write('initial %s = 1\'b0;\n' % names[jx]);
@@ -59,6 +67,19 @@ def genInports(fp,inport):
         fp.write('\n');
       else:
         raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
+  for ix in range(len(inport['config'])):
+    if inport['config'][ix][0] == 'set-reset':
+      name = inport['name'][ix][0];
+      fp.write('initial s_SETRESET_%s = 1\'b0;\n' % name);
+      fp.write('always @(posedge i_clk)\n');
+      fp.write('  if (i_rst)\n');
+      fp.write('    s_SETRESET_%s <= 1\'b0;\n' % name);
+      fp.write('  else if (s_inport && (s_T == 8\'h%02X))\n' % ix);
+      fp.write('    s_SETRESET_%s <= 1\'b0;\n' % name);
+      fp.write('  else if (%s)\n' % name);
+      fp.write('    s_SETRESET_%s <= 1\'b1;\n' % name);
+      fp.write('  else\n');
+      fp.write('    s_SETRESET_%s <= s_SETRESET_%s;\n' % (name,name));
 
 def genInstructions(fp,programBody,nInstructions):
   fp.write('initial begin\n');
@@ -151,6 +172,10 @@ def genModule(fp,outCoreName,inport,outport):
             fp.write('  input  wire     [%d:0] %s' % (portLength-1,names[jx]));
           else:
             fp.write('  input  wire    [%d:0] %s' % (portLength-1,names[jx]));
+        elif configs[jx] == 'set-reset':
+          if len(configs) != 1:
+            raise SSBCCException('set-reset cannot be used with other signal types');
+          fp.write('  input  wire           %s' % names[jx]);
         elif configs[jx] == 'strobe':
           fp.write('  output reg            %s' % names[jx]);
         else:
