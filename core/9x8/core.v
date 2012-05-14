@@ -28,6 +28,8 @@ reg                       [7:0] s_T;            // top of the data stack
 reg            [C_PC_WIDTH-1:0] s_PC;           // program counter
 reg                       [8:0] s_opcode;       // current opcode
 
+/* verilator tracing_off */
+
 /*******************************************************************************
  *
  * Instantiate the ALU operations.  These are listed in the order in which they
