@@ -269,7 +269,10 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <tt>&nbsp;&nbsp;$(size['ram'])&nbsp;0&nbsp;:loop&nbsp;swap&nbsp;.store-(ram)&nbsp;.jumpc(loop,0)&nbsp;drop&nbsp;drop</tt><br/><br/>
         The optional argument to the <tt>.jumpc</tt> macro is required so that
         the memory address is not dropped from the data stack after the
-        conditional is tested.<br/><br/>
+        conditional is tested.  The equivalent operation without replacing the
+        <tt>drop</tt> instruction with a <tt>nop</tt> instruction would be:<br/><br/>
+        <tt>&nbsp;&nbsp;$(size['ram'])&nbsp;:loop&nbsp;0&nbsp;swap&nbsp;.store-(ram)&nbsp;dup&nbsp;.jumpc(loop,drop)&nbsp;drop</tt><br/><br/>
+        where the <tt>drop</tt> has been explicitely included.<br/><br/>
       Memories can be either "<tt>RAM</tt>" or "<tt>ROM</tt>" and must be
         declared as the same type in the architecture file and in the assembler
         files.  Within the assembler source the "<tt>.memory</tt>" directive can
@@ -279,8 +282,11 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         definitions.<br/><br/>
       The Forth language requires that the MSB of multi-word values be stored on
         the top of the data stack.  Using the <tt>.store+</tt> and
-        <tt>.fetch-</tt> instructions will write to and read from memory will
-        keep the corresponding MSB as the earliest byte in memory.<br/><br/>
+        <tt>.fetch-</tt> instructions to write to and read from memory will
+        keep the corresponding MSB at the top of the stack and as the first byte
+        in memory.  If&nbsp;the LSB is at the top of the data stack then the
+        <tt>.store-</tt> instruction can be used to store it in the desired
+        order.<br/><br/>
     </ul>
 <h1>OPCODES</h1>
   This section documents the opcodes.<br/><br/>
