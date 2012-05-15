@@ -52,14 +52,53 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     and (4)&nbsp;one more bit is required to indicate whether the jump is a jump
     or a call.  This consumes 4&nbsp;bits and leaves 5&nbsp;bits of additional
     address space for the jump instruction.<br/><br/>
-  This architecture also supports 0 to 8&nbsp;pages of RAM and ROM with a
-    combined limit of 8&nbsp;pages.  Each page of RAM or ROM can hold up to
-    256&nbsp;bytes of data.<br/><br/>
+  This architecture also supports 0&nbsp;to 4&nbsp;pages of RAM and ROM with a
+    combined limit of 4&nbsp;pages.  Each page of RAM or ROM can hold up to
+    256&nbsp;bytes of data.  This architecture provides up to 1&nbsp;kB of
+    RAM and ROM for the micro controller.<br/><br/>
 <h1>Design</h1>
-  This section describes things the processor does not do and what is required
-    in code to work around these restrictions:<br/><br/>
+  The processor is a mix of instructions that operate on the top element of the
+    data stack (such as left or right shifts); operations that combine the top
+    two elements of the data stack such as addition and subtraction and bit wise
+    logical operations; operations that manipulate the data stack such as
+    <tt>drop</tt>, <tt>nip</tt>, and 8-bit pushes; operations that move data
+    between the data stack and the return stack; jumps and calls and their
+    conditional variants; memory operations; and I/O operations.<br/><br/>
+  This section describes these.  The next section defines these instructions in
+    detail.<br/><br/>
   <ul>
     <li>Data Stack Operations:<br/><br/>
+      The data stack is an 8&nbsp;bit wide stack.  The top two elements of this
+        data stack, called <tt>T</tt> for the top of the data stack and
+        <tt>N</tt> for the next-to-top of the data stack, are stored in
+        registers so that they are immediately available for data
+        operations.  The remaining values are stored in the 8-bit wide
+        comprising the stack.  This will usually be some form of distributed RAM
+        on an FPGA.  The index to the top of the stack is retained in a
+        register.<br/><br/>
+      A&nbsp;couple of examples illustrate how the data stack is
+        manipulated:<br/><br/>
+        <ul>
+        <li>A&nbsp;push instruction moves <tt>N</tt> onto the data stack RAM and
+          increments the pointer into the data stack, moves <tt>T</tt> into
+          <tt>N</tt>, and replaces <tt>T</tt> with the value being pushed onto
+          the data stack.<br/><br/>
+        <li>The <tt>&lt;&lt;0</tt> instruction rotates the value in <tt>T</tt>
+          left one bit and brings a zero in as the new lsb.<br/><br/>
+        <li>The <tt>swap</tt> instruction swaps the values in <tt>T</tt> and
+          <tt>N</tt>.<br/><br/>
+        <li>The <tt>drop</tt>instruction moves <tt>N</tt> into <tt>T</tt>, the
+          top of the data stack RAM into <tt>N</tt>, and decrements the pointer
+          into the data stack.<br/><br/>
+        <li>The <tt>store</tt> instruction requires the value to be stored and
+          the address to which it is to be stored.  Since the address to which
+          it is to be stored is probably provided after the value is computed,
+          this architecture requires it to be in <tt>T</tt> and the value to be
+          stored in <tt>N</tt>.  I.e., if the value to be stored is in
+          <tt>T</tt>, then the address where it is to be stored is then pushed
+          onto the data stack and the <tt>store</tt> instrucion is issued.  The
+          <tt>store<tt> instruction will also drop the top of the data stack.
+        </ul>
       While the large SRAMs and distributed memory can be dual port, minimizing
         the FPGA resources required for the processor means that the stack
         memory and the program ROM frequently share a single SRAM.  That
@@ -287,6 +326,76 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         in memory.  If&nbsp;the LSB is at the top of the data stack then the
         <tt>.store-</tt> instruction can be used to store it in the desired
         order.<br/><br/>
+      The following macros are provided to facilitate memory
+        operations:<br/><br/>
+        <ul>
+        <li><tt>.fetch(name)</tt> where <tt>name</tt> is the name of a
+            RAM<br/><br/>
+          This generates the single-instruction <tt>fetch</tt> opcode with the
+            memory bank number encoded in the instruction.<br/><br/>
+        <li><tt>.fetch+(name)</tt> where <tt>name</tt> is the name of a
+            RAM<br/><br/>
+          This generates the single-instruction <tt>fetch+</tt> opcode with the
+            memory bank number encoded in the instruction.<br/><br/>
+        <li><tt>.fetch-(name)</tt> where <tt>name</tt> is the name of a
+            RAM<br/><br/>
+          This generates the single-instruction <tt>fetch-</tt> opcode with the
+            memory bank number encoded in the instruction.<br/><br/>
+        <li><tt>.fetchindexed(name)</tt> where <tt>name</tt> is a variable
+            name<br/><br/>
+          If <tt>variable</tt> is in memory <tt>ram</tt> then
+            <tt>.fetchindexed(variable)</tt> becomes the 3&nbsp;instruction
+            sequence
+            "<tt>variable&nbsp;+&nbsp;.fetch(ram)</tt>"<br/><br/>
+        <li><tt>.fetchvalue(name)</tt> where <tt>name</tt> is a variable
+            name.<br/><br/>
+          If <tt>variable</tt> is in memory <tt>ram</tt> then
+            <tt>.fetchvalue(variable)</tt> becomes the 2&nbsp;instruction
+            sequence "<tt>variable&nbsp;.fetch(ram)"<br/><br/>
+        <li><tt>.fetchvector(name,length)</tt><br/><br/>
+          <tt>name</tt> is a variable name<br/>
+          <tt>length</tt> is the length of the vector to transfer from the data
+            stack to the RAM.<br/><br/>
+          If <tt>variable</tt> is in memory <tt>ram</tt> then
+            <tt>.fetchvector(variable,4)</tt> becomes the 5&nbsp;instruction
+            sequence
+          "<tt>$(variable+3)&nbsp;.fetch-(ram)&nbsp;.fetch-(ram)&nbsp;.fetch-(ram)&nbsp;.fetch(ram)</tt>"<br/><br/>
+        <li><tt>.store(name)</tt> where <tt>name</tt> is the name of a
+            RAM<br/><br/>
+          This generates the single-instruction <tt>store</tt> opcode with the
+            memory bank number encoded in the instruction.<br/><br/>
+        <li><tt>.store+(name)</tt> where <tt>name</tt> is the name of a
+            RAM<br/><br/>
+          This generates the single-instruction <tt>store+</tt> opcode with the
+            memory bank number encoded in the instruction.<br/><br/>
+        <li><tt>.store-(name)</tt> where <tt>name</tt> is the name of a
+            RAM<br/><br/>
+          This generates the single-instruction <tt>store-</tt> opcode with the
+            memory bank number encoded in the instruction.<br/><br/>
+        <li><tt>.storeindexed(name)</tt><br/><br/>
+          <tt>name</tt> is a variable name<br/>
+          An optional second argument can replace the <tt>drop</tt> that normally
+            ends this sequence.<br/><br/>
+          If <tt>variable</tt> is in memory <tt>ram</tt> then
+            <tt>.storeindexed(variable)</tt> becomes the 4&nbsp;instruction
+            sequence
+            "<tt>variable&nbsp;+&nbsp;.store(ram)&nbsp;drop</tt>"<br/><br/>
+        <li><tt>.storevalue(name)</tt> where <tt>name</tt> is a variable
+            name.<br/><br/>
+          An optional second argument can replace the <tt>drop</tt> that normally
+            ends this sequence.<br/><br/>
+          If <tt>variable</tt> is in memory <tt>ram</tt> then
+            <tt>.storevalue(variable)</tt> becomes the 3&nbsp;instruction
+            sequence "<tt>variable&nbsp;.store(ram)&nbsp;drop"<br/><br/>
+        <li><tt>.storevector(name,length)</tt><br/><br/>
+          <tt>name</tt> is a variable name<br/>
+          <tt>length</tt> is the length of the vector to transfer from the data
+            stack to the RAM.<br/><br/>
+          If <tt>variable</tt> is in memory <tt>ram</tt> then
+            <tt>.storevector(variable,4)</tt> becomes the 6&nbsp;instruction
+            sequence
+            "<tt>variable&nbsp;.store+(ram)&nbsp;.store+(ram)&nbsp;.store+(ram)&nbsp;.store(ram)&nbsp;drop</tt>"<br/><br/>
+        </ul>
     </ul>
 <h1>OPCODES</h1>
   This section documents the opcodes.<br/><br/>
