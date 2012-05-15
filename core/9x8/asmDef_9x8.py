@@ -685,7 +685,7 @@ class asmDef_9x8:
           elif token['value'] == '.storeindexed':
             ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
-            self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
+            self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
             self.EmitOptArg(fp,token['argument'][1]);
           elif token['value'] == '.storevalue':
             ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
@@ -697,7 +697,7 @@ class asmDef_9x8:
             self.EmitPush(fp,addr+N-1,token['argument'][0]['value']);
             for dummy in range(N):
               self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
-            self.EmitOptArg(fp,token['argument'][2]);
+            self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           else:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
         elif token['type'] == 'symbol':
@@ -813,7 +813,7 @@ class asmDef_9x8:
     self.AddMacro('.fetch',             1, [ ['','symbol'] ]);
     self.AddMacro('.fetch+',            1, [ ['','symbol'] ]);
     self.AddMacro('.fetch-',            1, [ ['','symbol'] ]);
-    self.AddMacro('.fetchindexed',      2, [
+    self.AddMacro('.fetchindexed',      3, [
                                              ['','symbol'],
                                              ['','singlevalue','symbol']
                                            ]);
@@ -850,7 +850,6 @@ class asmDef_9x8:
     self.AddMacro('.storevector',      -1, [
                                              ['','symbol'],
                                              ['','singlevalue','symbol'],
-                                             ['drop','instruction','singlevalue','symbol']
                                            ]);
 
     #
