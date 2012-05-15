@@ -3,19 +3,19 @@
 
   ssbcc
     add interrupt handling
-    add optional fast version of the data and return stacks
     do VHDL
-    clean up temporary files
 
   core/9x8
     00readme.html
       update
     core.v
-**    return mux generation from the opcode -- exclude s_opcode[8:7]
-*     add an instruction to put of copy of T in R (r!)?
-*     add r>N and r! operators?
-2     fully debug the core and add test benches
-      resolve ISE synthesizing 50 slices instead of 36
+*     remove optional fast versions of stacks
+*     method to validate the core
+*     speed up core
+        reworked fetch instructions
+*     add INPORT/OUTPORT variants for internal cores (i.e., 16-bit adder, multiplier, etc.)
+      fully debug the core and add test benches
+      determine settings to maximize speed or minimize resources
     asm
       add "filename" to tokens and improve error messages
       add non-return restriction to some optional macro arguments
