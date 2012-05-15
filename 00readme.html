@@ -6,15 +6,15 @@ SSBCC -- Small Stack-Based Computer Compiler
 <body>
 This document describes the purpose and design methodology of the Small
   Stack-Based Computer Compiler (SSBCC).<br/><br/>
-The system is designed to run Forth.<br/><br/>
+The system is designed to run a Forth-like assembly.<br/><br/>
 <h1>Introduction</h1>
   The purpose of the SSBCC is to generate small microcontrollers for use in
-    FPGAs.  These computer compiler is designed to generate FPGA-vendor
-    independent systems in either Verilog or VHDL.  The resulting processor is
-    described by a single Verilog or VHDL file containing the processor core,
-    the program, stack, return stack, and variable memory.<br/><br/>
-  The archive consists of the computer compiler (written in GAWK), several
-    computer cores, and Forth scripts for the various cores.<br/><br/>
+    FPGAs.  This computer compiler is designed to generate FPGA-vendor
+    independent systems in either Verilog or VHDL.  The resulting micro
+    controller is described by a single HDL file containing the processor core,
+    the program, data stack, return stack, and variable memory.<br/><br/>
+  The archive consists of the computer compiler, micro computer cores and
+    assemblers, and libraries.<br/><br/>
 <h1>Processor Architecture</h1>
   TODO -- RFS:  describe the general architecture<br/><br/>
 <h1>8-bit Processor Example</h1>
