@@ -1253,13 +1253,13 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
   Memory does not have to be declared for the processor.  For example, the LED
     flashing examples required no variable or constant storage, and therefore do
     not declare or consume resources required for memory.  Variable declarations
-    are done within pages declared using the "<tt>.page</tt>" and
+    are done within pages declared using the "<tt>.memory</tt>" and
     "<tt>.variable</tt>" macros as follows:<br/><br/>
-    <tt>&nbsp;&nbsp;.page&nbsp;RAM&nbsp;myRAM</tt><br/>
+    <tt>&nbsp;&nbsp;.memory&nbsp;RAM&nbsp;myRAM</tt><br/>
     <tt>&nbsp;&nbsp;.variable&nbsp;save_count</tt><br/>
-    <tt>&nbsp;&nbsp;.variable&nbsp;old_count&nbsp;.x0a</tt><br/>
+    <tt>&nbsp;&nbsp;.variable&nbsp;old_count&nbsp;0x0a</tt><br/>
     <tt>&nbsp;&nbsp;.variable&nbsp;out_string&nbsp;.length&nbsp;16</tt><br/><br/>
-    Here, the "<tt>.page&nbsp;RAM</tt>" macro declares the start of a page
+    Here, the "<tt>.memory&nbsp;RAM</tt>" macro declares the start of a page
     of&nbsp;RAM.  The RAM will be allocated as prescribed in the processor
     description file.  Here, the variable "<tt>save_count</tt>" will be at
     memory address "<tt>0x00</tt>" and will occupy a single, uninitialized slot
@@ -1270,9 +1270,9 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     will start at address "<tt>0x02</tt>" and will occupy 16 bytes of
     memory.<br/><br/>
   A&nbsp;ROM is declared similarly.  For example,<br/><br/>
-    <tt>&nbsp;&nbsp;.page&nbsp;ROM&nbsp;myROM</tt><br/>
-    <tt>&nbsp;&nbsp;.variable&nbsp;hex_to_ascii&nbsp;'0'&nbsp;'1'&nbsp;'2'&nbsp;'3'&nbsp;'4'&nbsp;'5'&nbsp;'6'&nbsp;'7'&nbsp;\&nbsp;;&nbsp;first&nbsp;8&nbsp;characters</tt><br/>
-    <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'8'&nbsp;'9'&nbsp;'A'&nbsp;'B'&nbsp;'C'&nbsp;'D'&nbsp;'E'&nbsp;'F'</tt><br/><br/>
+    <tt>&nbsp;&nbsp;.memory&nbsp;ROM&nbsp;myROM</tt><br/>
+    <tt>&nbsp;&nbsp;.variable&nbsp;hex_to_ascii&nbsp;'0'&nbsp;'1'&nbsp;'2'&nbsp;'3'&nbsp;'4'&nbsp;'5'&nbsp;'6'&nbsp;'7'&nbsp;;&nbsp;first&nbsp;8&nbsp;characters</tt><br/>
+    <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'8'&nbsp;'9'&nbsp;'A'&nbsp;'B'&nbsp;'C'&nbsp;'D'&nbsp;'E'&nbsp;'F'&nbsp;;&nbsp;second&nbsp;8&nbsp;characters</tt><br/><br/>
     declares a page of ROM with the 16&nbsp;element array hex_to_ascii
     initialized with the values required to convert a 4-bit value to the
     corresponding hex ascii character.  This also illustrates how the
@@ -1281,7 +1281,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     single byte to a port, then the hex value of a one-byte value can be output
     using the following sequence:<br/><br/>
     <tt>&nbsp;&nbsp;dup&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;hex_to_ascii&nbsp;+&nbsp;.fetch(myROM)&nbsp;.call(outbyte)</tt><br/>
-    <tt>&nbsp;&nbsp;.x0F&nbsp;and&nbsp;hex_to_ascii&nbsp;+&nbsp;.fetch(myROM)&nbsp;.call(outbyte)</tt><br/><br/>
+    <tt>&nbsp;&nbsp;0x0F&nbsp;and&nbsp;hex_to_ascii&nbsp;+&nbsp;.fetch(myROM)&nbsp;.call(outbyte)</tt><br/><br/>
     The first line extracts the most significant nibble of the byte by right
     shifting it 4 times while filling the left with zeros, adding that value to
     the address "<tt>hex_to_ascii</tt>" to get the corresponding ascii
@@ -1307,7 +1307,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     indexed fetches and stores.  For example, the preceding example to convert
     the single-byte value to hex could be written as<br/><br/>
     <tt>&nbsp;&nbsp;dup&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;0&gt;&gt;&nbsp;.fetchindexed(hex_to_ascii)&nbsp;.call(outbyte)</tt><br/>
-    <tt>&nbsp;&nbsp;.x0F&nbsp;and&nbsp;.fetchindexed(hex_to_ascii)&nbsp;.call(outbyte)</tt><br/><br/>
+    <tt>&nbsp;&nbsp;0x0F&nbsp;and&nbsp;.fetchindexed(hex_to_ascii)&nbsp;.call(outbyte)</tt><br/><br/>
     Here, the macro "<tt>.fetchindexed</tt>" consumes the top of the data stack
     as an index into the array variable "<tt>hex_to_ascii</tt>" and pushes the
     indexed value onto the top of the data stack.<br/><br/>
@@ -1321,5 +1321,109 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     sequence "<tt>out_string&nbsp;+&nbsp;store&nbsp;drop</tt>", all with the
     proviso that the "<tt>store</tt>" instructions include the 3&nbsp;bit
     address&nbsp;"<tt>myRAM</tt>".<br/><br/>
+  <h2>Program Structure</h2>
+  <h2>Directives</h2>
+    Alphebetic listing:
+      <a href="#.abbr">.abbr</a>,
+      <a href="#.constant">.constant</a>,
+      <a href="#.function">.function</a>,
+      <a href="#.include">.include</a>,
+      <a href="#.interrupt">.interrupt</a>,
+      <a href="#.main">.main</a>,
+      <a href="#.memory">.memory</a>,
+      and <a href="#.variable">.variable</a>.<br/><br/>
+    <h3><a name=".abbr">.abbr</a></h3>
+      TODO
+    <h3><a name=".constant">.constant</a></h3>
+      TODO
+    <h3><a name=".function">.function</a></h3>
+      TODO
+    <h3><a name=".include">.include</a></h3>
+      TODO
+    <h3><a name=".interrupt">.interrupt</a></h3>
+      TODO
+    <h3><a name=".main">.main</a></h3>
+      TODO
+    <h3><a name=".memory">.memory</a></h3>
+      TODO
+    <h3><a name=".variable">.variable</a></h3>
+      TODO
+  <h2>Macros</h2>
+    Alphebetic listing:
+      <a href="#.call">.call</a>,
+      <a href="#.callc">.callc</a>,
+      <a href="#.fetch">.fetch</a>,
+      <a href="#.fetch+">.fetch+</a>,
+      <a href="#.fetch-">.fetch-</a>,
+      <a href="#.fetchindexed">.fetchindexed</a>,
+      <a href="#.fetchvalue">.fetchvalue</a>,
+      <a href="#.fetchvector">.fetchvector</a>,
+      <a href="#.inport">.inport</a>,
+      <a href="#.jump">.jump</a>,
+      <a href="#.jumpc">.jumpc</a>,
+      <a href="#.outport">.outport</a>,
+      <a href="#.return">.return</a>,
+      <a href="#.store">.store</a>,
+      <a href="#.store+">.store+</a>,
+      <a href="#.store-">.store-</a>,
+      <a href="#.storeindexed">.storeindexed</a>,
+      <a href="#.storevalue">.storevalue</a>,
+      and <a href="#.storevector">.storevector</a>.<br/><br/>
+    <h3><a name=".call">.call</a></h3>
+      TODO
+    <h3><a name=".callc">.callc</a></h3>
+      TODO
+    <h3><a name=".fetch">.fetch</a></h3>
+      TODO
+    <h3><a name=".fetch-">.fetch-</a></h3>
+      TODO
+    <h3><a name=".fetch+">.fetch+</a></h3>
+      TODO
+    <h3><a name=".fetchindexed">.fetchindexed</a></h3>
+      TODO
+    <h3><a name=".fetchvalue">.fetchvalue</a></h3>
+      TODO
+    <h3><a name=".fetchvector">.fetchvector</a></h3>
+      TODO
+    <h3><a name=".inport">.inport</a></h3>
+      TODO
+    <h3>.jump</h3>
+      <b>Description:</b>  Generate the 3 instruction sequence associated with a <tt>jump</tt> instruction.<br/><br/>
+      <b>Operation(1):</b>  <tt>.jump(label)</tt> generates the following 3 instructions:<br/>
+        &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+        &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jump with the 5 msb of the label address encoded in the jump instruction<br/>
+        &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;no operation<br/><br/>
+      <b>Operation(2):</b>  <tt>.jump(label,op)</tt> where "op" is an instruction generates the following 3 instructions:<br/>
+        &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+        &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jump with the 5 msb of the label address encoded in the jump instruction<br/>
+        &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;op<br/><br/>
+      Note that Operation(1) is a special case of Operation(2) with "op" being the <tt>nop</tt> instruction.<br/>
+    <h3>.jumpc</h3>
+      <b>Description:</b>  Generate the 3 instruction sequence associated with a <tt>jumpc</tt> instruction.<br/><br/>
+      <b>Operation(1):</b>  <tt>.jumpc(label)</tt> generates the following 3 instructions:<br/>
+        &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+        &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jump with the 5 msb of the label address encoded in the jump instruction<br/>
+        &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;drop<br/><br/>
+      <b>Operation(2):</b>  <tt>.jumpc(label,op)</tt> where "op" is an instruction generates the following 3 instructions:<br/>
+        &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+        &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jump with the 5 msb of the label address encoded in the jumpc instruction<br/>
+        &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;op<br/><br/>
+      Note that Operation(1) is a special case of Operation(2) with "op" being the <tt>drop</tt> instruction.<br/>
+    <h3><a name=".outport">.outport</a></h3>
+      TODO
+    <h3><a name=".return">.return</a></h3>
+      TODO
+    <h3><a name=".store">.store</a></h3>
+      TODO
+    <h3><a name=".store-">.store-</a></h3>
+      TODO
+    <h3><a name=".store+">.store+</a></h3>
+      TODO
+    <h3><a name=".storeindexed">.storeindexed</a></h3>
+      TODO
+    <h3><a name=".storevalue">.storevalue</a></h3>
+      TODO
+    <h3><a name=".storevector">.storevector</a></h3>
+      TODO
 </body>
 </html>
