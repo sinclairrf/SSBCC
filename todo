@@ -2,8 +2,9 @@
     update
 
   ssbcc
+    add PERIPHERAL feature
+    add PERIPHERALs: set-reset, multi-byte adders, multipliers, timers, serdes, ...
     add interrupt handling
-    add PERIPHERAL feature for timers, serdes, and other common digital features
     do VHDL
 
   core/9x8
@@ -11,10 +12,8 @@
       update
     core.v
 *     method to validate the core
-*     speed up core
-        reworked fetch instructions
-*     add INPORT/OUTPORT variants for internal cores (i.e., 16-bit adder, multiplier, etc.)
       fully debug the core and add test benches
+      speed up core
       determine settings to maximize speed or minimize resources
     asm
 *     required .memory directive to be repeated after other directives
@@ -25,6 +24,7 @@
       do this once core.v is completed
 
   lib/9x8/math.s
+    -- incorporate adder peripheral
     -- add_u8_u32__u32, ...
     -- sub_uX_uY__uZ, X,Y,Z \in {8,16,24,32}, Z \in min(X,Y)+{0,8}, Z<=32
     -- add signed versions
@@ -40,6 +40,6 @@
     - opencores
     - github
     - ssbcc.net
-    - ssbcc@sinclairrf.com or rodney@ssbcc.net
+    - ssbcc@sinclairrf.com or rodney@ssbcc.org
     - EETimes and other e-rags
     - add to resume
