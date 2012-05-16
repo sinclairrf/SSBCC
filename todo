@@ -3,6 +3,7 @@
 
   ssbcc
     add interrupt handling
+    add PERIPHERAL feature for timers, serdes, and other common digital features
     do VHDL
 
   core/9x8
