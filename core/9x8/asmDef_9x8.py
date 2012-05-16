@@ -696,7 +696,7 @@ class asmDef_9x8:
             N = int(token['argument'][1]['value']);
             self.EmitPush(fp,addr+N-1,token['argument'][0]['value']);
             for dummy in range(N):
-              self.EmitOpcode(fp,self.specialInstructions['store-'] | ixBank,'store+');
+              self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
             self.EmitOptArg(fp,token['argument'][2]);
           else:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
@@ -771,12 +771,13 @@ class asmDef_9x8:
     self.specialInstructions = dict();
     self.specialInstructions['call']    = 0x0C0;
     self.specialInstructions['callc']   = 0x0E0;
-    self.specialInstructions['fetch']   = 0x078;
+    self.specialInstructions['fetch']   = 0x068;
+    self.specialInstructions['fetch+']  = 0x078;
     self.specialInstructions['fetch-']  = 0x07C;
     self.specialInstructions['jump']    = 0x080;
     self.specialInstructions['jumpc']   = 0x0A0;
     self.specialInstructions['return']  = 0x028;
-    self.specialInstructions['store']   = 0x068;
+    self.specialInstructions['store']   = 0x060;
     self.specialInstructions['store+']  = 0x070;
     self.specialInstructions['store-']  = 0x074;
 
@@ -810,6 +811,7 @@ class asmDef_9x8:
                                              ['drop','instruction','singlevalue','symbol']
                                            ]);
     self.AddMacro('.fetch',             1, [ ['','symbol'] ]);
+    self.AddMacro('.fetch+',            1, [ ['','symbol'] ]);
     self.AddMacro('.fetch-',            1, [ ['','symbol'] ]);
     self.AddMacro('.fetchindexed',      2, [
                                              ['','symbol'],

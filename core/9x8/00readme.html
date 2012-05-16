@@ -202,37 +202,85 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         banks of memory can be accessed, each of which can hold up to
         256&nbsp;bytes.  This allows up to a total of 1&nbsp;kB of
         memory to be accessed by the processor.<br/><br/>
-      There are two variants of the fetch instruction and two variants of the
-        store instruction.<br/><br/>
+      There are three variants of the fetch instruction and three variants of
+        the store instruction.<br/><br/>
       The simplest fetch instruction exchanges the top of the data stack with
         the value it had indexed from the memory bank encoded in the store
-        instruction.  For example, the instruction sequence<br/><br/>
+        instruction.  For example, the two instruction sequence<br/><br/>
         <tt>&nbsp;&nbsp;0x10 .fetch(0)</tt><br/><br/>
         has the effect of pushing the value from <tt>00_0001_0000</tt> onto the
         data stack where the leading two zeros are the bank number.<br/><br/>
-      The remaining fetch instruction and both store instructions are designed
-        to facilitate storing and fetching multi-byte values.  The vectorized
-        fetch instruction decrements the top of the stack while pushing the
-        value it had indexed from the memory bank as&nbsp;N.  For example, the
+      The simplest store instruction similarly uses the top of the data stack as
+        the address within the memory bank and stores the value in the
+        next-to-top of the data stack at that location.  For example, the four
         instruction sequence<br/><br/>
-        <tt>&nbsp;&nbsp;0x10&nbsp;.fetch-(0)&nbsp;.fetch-(0)&nbsp;.fetch-(0)&nbsp;.fetch(0)</tt><br/><br/>
+        <tt>&nbsp;&nbsp;0x5A 0x10 .store(0) drop</tt><br/><br/>
+        has the effect of storing the value <tt>0x5A</tt> in the memory address
+        <tt>00_0001_0000</tt>.<br/><br/>
+      The remaining two fetch and two store instructions are designed to
+        facilitate storing and fetching multi-byte values.  These vectorized
+        fetch and store instructions increment or decrement the top of the stack
+        while reading from or storing to memory.  For example, the instruction
+        sequence<br/><br/>
+        <tt>&nbsp;&nbsp;0x13&nbsp;.fetch-(0)&nbsp;.fetch-(0)&nbsp;.fetch-(0)&nbsp;.fetch(0)</tt><br/><br/>
         will push the memory values from <tt>00_0001_0011</tt>,
         <tt>00_0001_0010</tt>, <tt>00_0001_0001</tt>, and <tt>00_0001_0000</tt>
         onto the data stack with the value from <tt>00_0001_0000</tt> on the
-        top of the stack.<br/><br/>
-      The corresponding instruction sequence to store these values back into
-        memory in the same sequence is:<br/><br/>
-        <tt>&nbsp;&nbsp;0x10&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;drop</tt><br/><br/>
+        top of the stack.  The instruction sequence<br/><br/>
+        <tt>&nbsp;&nbsp;0x10&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store+(0)&nbsp;.store(0)&nbsp;drop</tt><br/><br/>
+        has the reverse effect in that it stores the top four values on the
+        stack in memory with the value that had been at the top of the stack
+        being stored at address <tt>00_0001_000</tt>.  That is, it has the
+        effect of storing the values from the four-fetch instruction sequence
+        into memory and preserving their order.<br/><br/>
       If the values were in the reverse order on the stack the instruction
         sequence would have been<br/><br/>
         <tt>&nbsp;&nbsp;0x13&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;.store-(0)&nbsp;drop</tt><br/><br/>
-      The two variants of the store instruction allow multi-byte values or
-        records to be stored in the required order in memory.  For example, the
-        math library relies on the MSB of the values to be closer to the top of
-        the data stack.  If&nbsp;a multi-byte number on the stack has the LSB on
-        the top of the stack then the <tt>.store-</tt> instruction will store
-        the values in memory so that the <tt>.fetch-</tt> instructions read it
-        with the MSB on the top of the data stack.<br/><br/>
+      In practice, the <tt>.fetch</tt> and <tt>.store</tt> macros do not use a
+        hard-wired number for the bank address.  Instead the memory bank is
+        specified by a symbolic name.  For example, a memory is defined in the
+        micro controller architecture file using a statement such as:<br/><br/>
+        <tt>&nbsp;&nbsp;MEMORY RAM ram 32</tt><br/><br/>
+        which defines a RAM named "<tt>ram</tt>" and allocates 32&nbsp;bytes of
+        storage.  The corresponding RAM in the assembler code is then selected by
+        the directive:<br/><br/>
+        <tt>&nbsp;&nbsp;.memory&nbsp;RAM&nbsp;ram</tt><br/><br/>
+        and variables within this bank of memory are defined using the
+        "<tt>.variable</tt>" directive as follows:<br/><br/>
+        <tt>&nbsp;&nbsp;.variable&nbsp;single_value&nbsp;0<br/>
+        &nbsp;&nbsp;.variable&nbsp;multi_count&nbsp&nbsp;2*0</tt><br/><br/>
+        The first of these defines "<tt>single_value</tt>" to be a single-byte
+        value initialized to zero and the second defines "<tt>multi_count</tt>"
+        to be a two&nbsp;byte value initialized to&nbsp;0.  Variable order is
+        preserved by the assembler.<br/><br/>
+      As an example, the following assembly code will initialize this block of
+        memory to zero:<br/><br/>
+        <tt>&nbsp;&nbsp;$(size['ram'])&nbsp;:loop&nbsp;0&nbsp;swap&nbsp;.store-(ram)&nbsp;.jumpc(loop,nop)&nbsp;drop</tt><br/><br/>
+        Note that the memory size is not hard-wired into  the
+        assembly code but is accessed through the calculation
+        "<tt>$(size['ram'])</tt>".  Also, since the <tt>.store-</tt> macro
+        decrements the top of the stack before the conditional jump, the last
+        value stored in memory before the loop exits will have been stored at
+        address&nbsp;<tt>0x01</tt>.  However, since the size must be a power of
+        two, the first value stored will be at the effective
+        address&nbsp;<tt>0x00</tt>.  The loop itself is 6&nbsp;instructions.
+        This can be reduced to 5&nbsp;instructions at the cost of an additional
+        drop instruction as follows:<br/><br/>
+        <tt>&nbsp;&nbsp;$(size['ram'])&nbsp;0&nbsp;:loop&nbsp;swap&nbsp;.store-(ram)&nbsp;.jumpc(loop,0)&nbsp;drop&nbsp;drop</tt><br/><br/>
+        The optional argument to the <tt>.jumpc</tt> macro is required so that
+        the memory address is not dropped from the data stack after the
+        conditional is tested.<br/><br/>
+      Memories can be either "<tt>RAM</tt>" or "<tt>ROM</tt>" and must be
+        declared as the same type in the architecture file and in the assembler
+        files.  Within the assembler source the "<tt>.memory</tt>" directive can
+        be repeated so that variables in one memory bank can be defined in
+        multiple assembler files.  The "<tt>.memory</tt>" directive must be
+        repeated if the source file changes and after function
+        definitions.<br/><br/>
+      The Forth language requires that the MSB of multi-word values be stored on
+        the top of the data stack.  Using the <tt>.store+</tt> and
+        <tt>.fetch-</tt> instructions will write to and read from memory will
+        keep the corresponding MSB as the earliest byte in memory.<br/><br/>
     </ul>
 <h1>OPCODES</h1>
   This section documents the opcodes.<br/><br/>
@@ -276,6 +324,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
     <a href="#dup">dup</a>,
     <a href="#ena">ena</a>,
     <a href="#fetch">fetch</a>,
+    <a href="#fetch+">fetch+</a>,
     <a href="#fetch-">fetch-</a>,
     <a href="#inport">inport</a>,
     <a href="#jump">jump</a>,
@@ -488,8 +537,12 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td align="left">Subtract 4 from T</td>
         </tr>
       <th align="left"><a href="#store">store</a></th>
-        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>b</td><td>b</td>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>b</td><td>b</td>
         <td align="left">Store N in the T'th entry in bank "<tt>bb</tt>", drop the top of the data stack</td>
+        </tr>
+      <th align="left"><a href="#fetch">fetch</a></th>
+        <td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>b</td><td>b</td>
+        <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bb</tt>"</td>
         </tr>
       <th align="left"><a href="#store+">store+</a></th>
         <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>b</td><td>b</td>
@@ -497,11 +550,11 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         </tr>
       <th align="left"><a href="#store-">store-</a></th>
         <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>b</td><td>b</td>
-        <td align="left">Store N in the T'th entry in bank "<tt>bb</tt>" and nip the data stack, and decrement T</td>
+        <td align="left">Store N in the T'th entry in bank "<tt>bb</tt>", nip the data stack, and decrement T</td>
         </tr>
-      <th align="left"><a href="#fetch">fetch</a></th>
+      <th align="left"><a href="#fetch+">fetch+</a></th>
         <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>b</td><td>b</td>
-        <td align="left">Exchange the top of the stack with the T'th value from bank "<tt>bb</tt>"</td>
+        <td align="left">Push the T'th entry from bank "<tt>bb</tt>" into the data stack as N and increment T</td>
         </tr>
       <th align="left"><a href="#fetch-">fetch-</a></th>
         <td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>b</td><td>b</td>
@@ -869,7 +922,6 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       least-significant bits of the opcode.  The index within the memory bank is
       specified by the previous value of the top of the stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
       T &leftarrow; bb[T] where "bb" is the bank<br/>
@@ -878,11 +930,23 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       See <a href="#memory">memory</a> for instructions on using the fetch and
       vectorized fetch macros.<br/>
       <br/>
-  <h2><a name="fetch-">Instruction:  fetch-</a></h2>
+  <h2><a name="fetch+">Instruction:  fetch+</a></h2>
     <b>Desription:</b>  Push the T'th entry from bank "<tt>bb</tt>" onto the
       data stack as N and increment the top of the data stack.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; T+1<br/>
+      N &leftarrow; bb[T] where "bb" is the bank<br/>
+      <tt>++stack</tt><br/>
+    <b>Special:</b>
+      See <a href="#memory">memory</a> for instructions on using the fetch and
+      vectorized fetch macros.<br/>
+      <br/>
+  <h2><a name="fetch-">Instruction:  fetch-</a></h2>
+    <b>Desription:</b>  Push the T'th entry from bank "<tt>bb</tt>" onto the
+      data stack as N and decrement the top of the data stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
       PC &leftarrow; PC+1<br/>
       R and <tt>return</tt> unchanged<br/>
       T &leftarrow; T-1<br/>
@@ -1038,7 +1102,6 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
   <h2><a name="return">Instruction:  return</a></h2>
     <b>Description:</b>  Popd the top of the return stack into the PC.<br/><br/>
     <b>Operation:</b><br/><br/>
-      TODO<br/><br/>
       PC &leftarrow; R<br/>
       R &leftarrow; <tt>return--</tt><br/>
       T, N, and <tt>stack</tt> unchanged<br/>
