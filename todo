@@ -17,6 +17,7 @@
       fully debug the core and add test benches
       determine settings to maximize speed or minimize resources
     asm
+*     required .memory directive to be repeated after other directives
       add "filename" to tokens and improve error messages
       add non-return restriction to some optional macro arguments
       implement .abbr directive
