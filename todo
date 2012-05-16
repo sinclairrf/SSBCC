@@ -10,7 +10,6 @@
     00readme.html
       update
     core.v
-*     remove optional fast versions of stacks
 *     method to validate the core
 *     speed up core
         reworked fetch instructions
