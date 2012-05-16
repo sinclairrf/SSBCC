@@ -121,7 +121,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         3&nbsp;levels of logic required to implement the core are slower than
         the storing <tt>N</tt> or <tt>R</tt> into their stack bodies.<br/><br/>
       </li>
-    <li>JUMP and JUMPC:<br/><br/>
+    <li>Jump and Call Instructions:<br/><br/>
       The large SRAM on the FPGAs can have registers for their input addresses
         and registers for their output data.  These registers are used to extract
         the fastest speed possible from the memory.  While it is possible to
@@ -132,12 +132,52 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         cycle <em>n</em>, then the new input address is registered at the end of that
         clock cycle and the corresponding data is registered at the end of the
         next clock cycle, i.e., the new opcode is available at the end of cycle
-        <em>n</em>+1.  That is, the new opcode isn't performed by the core until
+        <em>n</em>+1.  That is, the new opcode can't performed by the core until
         cycle&nbsp;<em>n</em>+2.<br/><br/>
-      This means that JUMP and JUMPC instructions must be followed by a TBD
-        instruction.<br/><br/>
-      TODO -- should "TBD" be a "nop", a "drop", or push the PC onto the return
-        stack?<br/><br/>
+      This means that the instruction immediately following a jump or call
+        instruction will be performed before the first instruction at the target
+        of the jump or call.  For an unconditional jump or call, i.e.,
+        <tt>jump</tt> or <tt>call</tt>, this subsequent instruction will
+        normally be a <tt>nop</tt>.  However, for a conditional jump or call,
+        i.e., a <tt>jumpc</tt> or <tt>callc</tt> instruction, this will normally
+        be a <tt>drop</tt> that eliminates the conditional used to determine
+        whether or not the branch was taken.<br/><br/>
+      Some examples are:<br/><br/>
+        <ul>
+        <li>The following block shows a conditional jump and an unconditional
+          jump being used for an
+          "<tt>if&nbsp;...&nbsp;else&nbsp;..&nbsp;endif</tt>"  block.
+          The&nbsp;<tt>.jump</tt> and <tt>.jumpc</tt> macros are used to encode
+          pushing the 8&nbsp;lsb of the target address onto the stack and to
+          encode the 5&nbsp;msb into the <tt>jump</tt> or <tt>jumpc</tt>
+          instruction.  The macros also add the subsequent <tt>nop</tt> and
+          <tt>drop</tt> respectively.<br/><br/>
+          <tt>
+            ;&nbsp;determine&nbsp;which&nbsp;value&nbsp;to&nbsp;put&nbsp;on&nbsp;the&nbsp;stack&nbsp;based&nbsp;on&nbsp;the&nbsp;value&nbsp;in&nbsp;T<br/>
+            ;&nbsp;(&nbsp;f&nbsp;-&nbsp;u&nbsp;)<br/>
+            .jumpc(true_case)<br/>
+            &nbsp;&nbsp;0x80&nbsp;.jump(end_case)<br/>
+            :true_case<br/>
+            &nbsp;&nbsp;0x37<br/>
+            :end_case
+            </tt><br/><br/>
+          The condition on the top of the data stack is consumed by the initial
+          <tt>jumpc</tt>.  If&nbsp;<tt>T</tt> is true then <tt>0x37</tt> will be
+          pushed onto the data stack.  Otherwise <tt>0x80</tt> will be pushed
+          onto the data stack.  This can be written slightly more efficienty by
+          replacing the <tt>nop</tt> in the <tt>.jump</tt> macro as
+          follows:<br/><br/>
+          <tt>&nbsp;&nbsp;.jumpc(true_case)&nbsp;.jump(end_case,0x37)&nbsp;:true_case&nbsp;0x37&nbsp;:end_case</tt><br/><br/>
+          This reduces the total number of instructions from 8
+          to&nbsp;7.<br/><br/>
+          </li>
+        <li>The following statement shows how a function can return a flag used
+          by a second conditional call:<br/><br/>
+          <tt>&nbsp;&nbsp;.call(data_pending)&nbsp;.callc(process_data)</tt><br/><br/>
+          Here, the <tt>data_pending</tt> function returns a true or false
+          flag on the top of the data stack.  The subsequent <tt>callc</tt> then
+          processes the data only if there was data to process.<br/><br/>
+        </ul>
       </li>
     <li><a name="memory">Memory Operations</a>:<br/><br/>
       The fetch and store memory access instructions are designed such that four
@@ -254,7 +294,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
             name.<br/><br/>
           If <tt>variable</tt> is in memory <tt>ram</tt> then
             <tt>.fetchvalue(variable)</tt> becomes the 2&nbsp;instruction
-            sequence "<tt>variable&nbsp;.fetch(ram)"<br/><br/>
+            sequence "<tt>variable&nbsp;.fetch(ram)</tt>"<br/><br/>
         <li><tt>.fetchvector(name,length)</tt><br/><br/>
           <tt>name</tt> is a variable name<br/>
           <tt>length</tt> is the length of the vector to transfer from the data
@@ -289,7 +329,7 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
             ends this sequence.<br/><br/>
           If <tt>variable</tt> is in memory <tt>ram</tt> then
             <tt>.storevalue(variable)</tt> becomes the 3&nbsp;instruction
-            sequence "<tt>variable&nbsp;.store(ram)&nbsp;drop"<br/><br/>
+            sequence "<tt>variable&nbsp;.store(ram)&nbsp;drop</tt>"<br/><br/>
         <li><tt>.storevector(name,length)</tt><br/><br/>
           <tt>name</tt> is a variable name<br/>
           <tt>length</tt> is the length of the vector to transfer from the data
