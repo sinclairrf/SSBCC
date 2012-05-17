@@ -86,17 +86,6 @@ always @ (*)
 //                  ^  0 ==> all zero, 1 ==> all ones
 wire s_T_compare = s_opcode[0] ^ &(s_T == {(8){s_opcode[1]}});
 
-// opcode = 001010_xxx
-// 10-bit adder required for 16-bit addition and subtraction results
-wire [9:0] s_adder_a = { {(2){s_opcode[2] & s_N[7]}}, s_N };
-wire [9:0] s_adder_b = { {(2){s_opcode[1] & s_T[7]}}, s_T };
-reg [9:0] s_adder = 10'd0;
-always @ (*)
-  if (s_opcode[0] == 1'b0)
-    s_adder = s_adder_a + s_adder_b;
-  else
-    s_adder = s_adder_a - s_adder_b;
-
 // opcode = 001011_xxx
 // 8-bit incrementer
 reg [7:0] s_T_increment = 8'h00;
@@ -186,18 +175,16 @@ localparam C_BUS_T_PRE          = 4'b0011;
 localparam C_BUS_T_MATH_DUAL    = 4'b0100;
 localparam C_BUS_T_COMPARE      = 4'b0101;
 localparam C_BUS_T_INPORT       = 4'b0110;
-localparam C_BUS_T_16BITMATH    = 4'b0111;
 localparam C_BUS_T_INCREMENT    = 4'b1000;
 localparam C_BUS_T_MEMINCREMENT = 4'b1001;
 localparam C_BUS_T_MEM          = 4'b1010;
 reg [3:0] s_bus_t;
 
-localparam C_BUS_N_N            = 3'b000;       // don't change N
-localparam C_BUS_N_STACK        = 3'b001;       // replace N with third-on-stack
-localparam C_BUS_N_T            = 3'b010;       // replace N with T
-localparam C_BUS_N_16BITMATH    = 3'b011;       // extended LSB of 10-bit adder
-localparam C_BUS_N_MEM          = 3'b100;       // from memory
-reg [2:0] s_bus_n;
+localparam C_BUS_N_N            = 2'b00;       // don't change N
+localparam C_BUS_N_STACK        = 2'b01;       // replace N with third-on-stack
+localparam C_BUS_N_T            = 2'b10;       // replace N with T
+localparam C_BUS_N_MEM          = 2'b11;       // from memory
+reg [1:0] s_bus_n;
 
 localparam C_STACK_NOP          = 2'b00;        // don't change internal data stack pointer
 localparam C_STACK_INC          = 2'b01;        // add element to internal data stack
@@ -286,10 +273,7 @@ always @ (*) begin
                 s_bus_n         = C_BUS_N_T;
                 s_stack         = C_STACK_INC;
                 end
-      4'b1010:  begin // 16-bit adder
-                s_bus_t         = C_BUS_T_16BITMATH;
-                s_bus_n         = C_BUS_N_16BITMATH;
-                end
+//      4'b1010:  reserved
       4'b1011:  begin // 8-bit increment/decrement
                 s_bus_t         = C_BUS_T_INCREMENT;
                 end
@@ -478,7 +462,6 @@ always @ (posedge i_clk)
     C_BUS_T_MATH_DUAL:          s_T <= s_math_dual;
     C_BUS_T_COMPARE:            s_T <= {(8){s_T_compare}};
     C_BUS_T_INPORT:             s_T <= s_T_inport;
-    C_BUS_T_16BITMATH:          s_T <= { {(7){s_adder[9]}}, s_adder[8] };
     C_BUS_T_INCREMENT:          s_T <= s_T_increment;
     C_BUS_T_MEMINCREMENT:       s_T <= s_T_memincrement;
     C_BUS_T_MEM:                s_T <= s_memory;
@@ -537,7 +520,6 @@ always @ (posedge i_clk)
     C_BUS_N_N:          s_N <= s_N;
     C_BUS_N_STACK:      s_N <= s_data_stack[s_Np_stack_ptr_top];
     C_BUS_N_T:          s_N <= s_T;
-    C_BUS_N_16BITMATH:  s_N <= s_adder[0+:8];
     C_BUS_N_MEM:        s_N <= s_memory;
     default:            s_N <= s_N;
   endcase
