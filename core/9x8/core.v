@@ -90,25 +90,11 @@ wire s_T_compare = s_opcode[0] ^ &(s_T == {(8){s_opcode[1]}});
 // 8-bit incrementer
 reg [7:0] s_T_increment = 8'h00;
 always @ (*)
-  case (s_opcode[0+:3])
-     3'b000: s_T_increment = s_T + 8'h01;
-     3'b001: s_T_increment = s_T + 8'h02;
-     3'b010: s_T_increment = s_T + 8'h03;
-     3'b011: s_T_increment = s_T + 8'h04;
-     3'b100: s_T_increment = s_T - 8'h01;
-     3'b101: s_T_increment = s_T - 8'h02;
-     3'b110: s_T_increment = s_T - 8'h03;
-     3'b111: s_T_increment = s_T - 8'h04;
+  case (s_opcode[2])
+       1'b0: s_T_increment = s_T + 8'h01;
+       1'b1: s_T_increment = s_T - 8'h01;
     default: s_T_increment = s_T + 8'h01;
   endcase
-
-// opcode = 01111x_xxx
-reg [7:0] s_T_memincrement = 8'h00;
-always @ (*)
-  if (s_opcode[2] == 1'b0)
-    s_T_memincrement = s_T + 8'h01;
-  else
-    s_T_memincrement = s_T - 8'h01;
 
 // increment PC
 reg [C_PC_WIDTH-1:0] s_PC_plus1 = {(C_PC_WIDTH){1'b0}};
@@ -176,7 +162,6 @@ localparam C_BUS_T_MATH_DUAL    = 4'b0100;
 localparam C_BUS_T_COMPARE      = 4'b0101;
 localparam C_BUS_T_INPORT       = 4'b0110;
 localparam C_BUS_T_INCREMENT    = 4'b1000;
-localparam C_BUS_T_MEMINCREMENT = 4'b1001;
 localparam C_BUS_T_MEM          = 4'b1010;
 reg [3:0] s_bus_t;
 
@@ -287,13 +272,13 @@ always @ (*) begin
                 s_bus_t       = C_BUS_T_MEM;
                 end
       4'b1110:  begin // store+/store-
-                s_bus_t         = C_BUS_T_MEMINCREMENT;
+                s_bus_t         = C_BUS_T_INCREMENT;
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 s_mem_wr        = 1'b1;
                 end
       4'b1111:  begin // fetch+/fetch-
-                  s_bus_t       = C_BUS_T_MEMINCREMENT;
+                  s_bus_t       = C_BUS_T_INCREMENT;
                   s_bus_n       = C_BUS_N_MEM;
                   s_stack       = C_STACK_INC;
                 end
@@ -463,7 +448,6 @@ always @ (posedge i_clk)
     C_BUS_T_COMPARE:            s_T <= {(8){s_T_compare}};
     C_BUS_T_INPORT:             s_T <= s_T_inport;
     C_BUS_T_INCREMENT:          s_T <= s_T_increment;
-    C_BUS_T_MEMINCREMENT:       s_T <= s_T_memincrement;
     C_BUS_T_MEM:                s_T <= s_memory;
     default:                    s_T <= s_T;
   endcase
