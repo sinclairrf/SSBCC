@@ -529,19 +529,13 @@ always @ (posedge i_clk)
   if (s_stack == C_STACK_INC)
     s_data_stack[s_Np_stack_ptr_top] <= s_N;
 
-// WARNING:  The value of s_Np displayed in simulation may be wrong because
-// s_N_stack_ptr_top is pointing to the next memory location during pushes.
-reg [7:0] s_Np = 8'h00;
-always @ (*)
-  s_Np = s_data_stack[s_Np_stack_ptr_top];
-
 initial s_N = 8'h00;
 always @ (posedge i_clk)
   if (i_rst)
     s_N <= 8'h00;
   else case (s_bus_n)
     C_BUS_N_N:          s_N <= s_N;
-    C_BUS_N_STACK:      s_N <= s_Np;
+    C_BUS_N_STACK:      s_N <= s_data_stack[s_Np_stack_ptr_top];
     C_BUS_N_T:          s_N <= s_T;
     C_BUS_N_16BITMATH:  s_N <= s_adder[0+:8];
     C_BUS_N_MEM:        s_N <= s_memory;
