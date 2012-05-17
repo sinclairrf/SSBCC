@@ -46,7 +46,7 @@ always @ (s_T,s_opcode)
      3'b000 : s_math_rotate = s_T;                      // nop
      3'b001 : s_math_rotate = { s_T[0+:7], 1'b0 };      // <<0
      3'b010 : s_math_rotate = { s_T[0+:7], 1'b1 };      // <<1
-     3'b011 : s_math_rotate = { s_T[0+:7], s_T[0] };    // <<lsb
+     3'b011 : s_math_rotate = { s_T[0+:7], s_T[7] };    // <<msb
      3'b100 : s_math_rotate = { 1'b0,      s_T[1+:7] }; // 0>>
      3'b101 : s_math_rotate = { 1'b1,      s_T[1+:7] }; // 1>>
      3'b110 : s_math_rotate = { s_T[7],    s_T[1+:7] }; // msb>>
