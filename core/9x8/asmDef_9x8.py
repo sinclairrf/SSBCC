@@ -720,9 +720,9 @@ class asmDef_9x8:
     #
 
     self.instructions = dict(list=list(), opcode=list());
-    self.AddInstruction('&',            0x01A);
+    self.AddInstruction('&',            0x050);
     self.AddInstruction('+',            0x018);
-    self.AddInstruction('-',            0x019);
+    self.AddInstruction('-',            0x01C);
     self.AddInstruction('-1<>',         0x023);
     self.AddInstruction('-1=',          0x022);
     self.AddInstruction('0<>',          0x021);
@@ -737,17 +737,17 @@ class asmDef_9x8:
     self.AddInstruction('>r',           0x040);
     self.AddInstruction('FE=',          0x026);
     self.AddInstruction('FF=',          0x027);
-    self.AddInstruction('^',            0x01C);
+    self.AddInstruction('^',            0x052);
     self.AddInstruction('dis',          0x01C);
-    self.AddInstruction('drop',         0x01E);
+    self.AddInstruction('drop',         0x054);
     self.AddInstruction('dup',          0x008);
     self.AddInstruction('ena',          0x019);
     self.AddInstruction('inport',       0x030);
     self.AddInstruction('lsb>>',        0x007);
     self.AddInstruction('msb>>',        0x006);
-    self.AddInstruction('nip',          0x01F);
+    self.AddInstruction('nip',          0x053);
     self.AddInstruction('nop',          0x000);
-    self.AddInstruction('or',           0x01B);
+    self.AddInstruction('or',           0x051);
     self.AddInstruction('outport',      0x038);
     self.AddInstruction('over',         0x00A);
     self.AddInstruction('r>',           0x049);

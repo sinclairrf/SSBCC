@@ -65,35 +65,40 @@ always @ (*)
     default : s_T_pre = s_T;
   endcase
 
-// opcode = 000011_xxx
-// add,sub,and,or,xor,TBD,drop,nip
-reg [7:0] s_math_dual;
+//  opcode = 000011_x00 (adder) and 001xxx_x.. (incrementers)
+reg [7:0] s_T_adder;
 always @ (*)
-  case (s_opcode[0+:3])
-     3'b000 : s_math_dual = s_N + s_T;  // add
-     3'b001 : s_math_dual = s_N - s_T;  // sub
-     3'b010 : s_math_dual = s_N & s_T;  // and
-     3'b011 : s_math_dual = s_N | s_T;  // or
-     3'b100 : s_math_dual = s_N ^ s_T;  // xor
-     3'b101 : s_math_dual = s_T;        // TBD
-     3'b110 : s_math_dual = s_N;        // drop
-     3'b111 : s_math_dual = s_T;        // nip
-    default : s_math_dual = s_T;
-  endcase
+  if (s_opcode[6] == 1'b0)
+    case (s_opcode[2])
+       1'b0: s_T_adder = s_N + s_T;
+       1'b1: s_T_adder = s_N - s_T;
+    endcase
+  else
+    case (s_opcode[2])
+       1'b0: s_T_adder = s_T + 8'h01;
+       1'b1: s_T_adder = s_T - 8'h01;
+    default: s_T_adder = s_T + 8'h01;
+    endcase
 
 // opcode = 000100_0xx
 //                   ^ 0 ==> "=", 1 ==> "<>"
 //                  ^  0 ==> all zero, 1 ==> all ones
 wire s_T_compare = s_opcode[0] ^ &(s_T == {(8){s_opcode[1]}});
 
-// opcode = 001011_xxx
-// 8-bit incrementer
-reg [7:0] s_T_increment = 8'h00;
+// opcode = 001010_xxx
+// add,sub,and,or,xor,TBD,drop,nip
+reg [7:0] s_T_logic;
 always @ (*)
-  case (s_opcode[2])
-       1'b0: s_T_increment = s_T + 8'h01;
-       1'b1: s_T_increment = s_T - 8'h01;
-    default: s_T_increment = s_T + 8'h01;
+  case (s_opcode[0+:3])
+     3'b000 : s_T_logic = s_N & s_T;    // and
+     3'b001 : s_T_logic = s_N | s_T;    // or
+     3'b010 : s_T_logic = s_N ^ s_T;    // xor
+     3'b011 : s_T_logic = s_T;          // nip
+     3'b100 : s_T_logic = s_N;          // drop
+     3'b101 : s_T_logic = s_N;          // drop
+     3'b110 : s_T_logic = s_N;          // drop
+     3'b111 : s_T_logic = s_N;          // drop
+    default : s_T_logic = s_N;          // drop
   endcase
 
 // increment PC
@@ -158,10 +163,10 @@ localparam C_BUS_T_MATH_ROTATE  = 4'b0000;      // nop and rotate operations
 localparam C_BUS_T_OPCODE       = 4'b0001;
 localparam C_BUS_T_N            = 4'b0010;
 localparam C_BUS_T_PRE          = 4'b0011;
-localparam C_BUS_T_MATH_DUAL    = 4'b0100;
+localparam C_BUS_T_ADDER        = 4'b0100;
 localparam C_BUS_T_COMPARE      = 4'b0101;
 localparam C_BUS_T_INPORT       = 4'b0110;
-localparam C_BUS_T_INCREMENT    = 4'b1000;
+localparam C_BUS_T_LOGIC        = 4'b0111;
 localparam C_BUS_T_MEM          = 4'b1010;
 reg [3:0] s_bus_t;
 
@@ -224,8 +229,8 @@ always @ (*) begin
                 s_bus_t         = C_BUS_T_N;
                 s_bus_n         = C_BUS_N_T;
                 end
-      4'b0011:  begin // dual-operand math:  add,sub,TBD,TBD,and,or,xor,nip
-                s_bus_t         = C_BUS_T_MATH_DUAL;
+      4'b0011:  begin // dual-operand adder:  add,sub
+                s_bus_t         = C_BUS_T_ADDER;
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 end
@@ -258,9 +263,13 @@ always @ (*) begin
                 s_bus_n         = C_BUS_N_T;
                 s_stack         = C_STACK_INC;
                 end
-//      4'b1010:  reserved
+      4'b1010:  begin // &, or, ^, nip, and drop
+                s_bus_t         = C_BUS_T_LOGIC;
+                s_bus_n         = C_BUS_N_STACK;
+                s_stack         = C_STACK_DEC;
+                end
       4'b1011:  begin // 8-bit increment/decrement
-                s_bus_t         = C_BUS_T_INCREMENT;
+                s_bus_t         = C_BUS_T_ADDER;
                 end
       4'b1100:  begin // store
                 s_bus_t         = C_BUS_T_N;
@@ -272,13 +281,13 @@ always @ (*) begin
                 s_bus_t       = C_BUS_T_MEM;
                 end
       4'b1110:  begin // store+/store-
-                s_bus_t         = C_BUS_T_INCREMENT;
+                s_bus_t         = C_BUS_T_ADDER;
                 s_bus_n         = C_BUS_N_STACK;
                 s_stack         = C_STACK_DEC;
                 s_mem_wr        = 1'b1;
                 end
       4'b1111:  begin // fetch+/fetch-
-                  s_bus_t       = C_BUS_T_INCREMENT;
+                  s_bus_t       = C_BUS_T_ADDER;
                   s_bus_n       = C_BUS_N_MEM;
                   s_stack       = C_STACK_INC;
                 end
@@ -444,10 +453,10 @@ always @ (posedge i_clk)
     C_BUS_T_OPCODE:             s_T <= s_opcode[0+:8];  // push 8-bit value
     C_BUS_T_N:                  s_T <= s_N;
     C_BUS_T_PRE:                s_T <= s_T_pre;
-    C_BUS_T_MATH_DUAL:          s_T <= s_math_dual;
+    C_BUS_T_ADDER:              s_T <= s_T_adder;
     C_BUS_T_COMPARE:            s_T <= {(8){s_T_compare}};
     C_BUS_T_INPORT:             s_T <= s_T_inport;
-    C_BUS_T_INCREMENT:          s_T <= s_T_increment;
+    C_BUS_T_LOGIC:              s_T <= s_T_logic;
     C_BUS_T_MEM:                s_T <= s_memory;
     default:                    s_T <= s_T;
   endcase

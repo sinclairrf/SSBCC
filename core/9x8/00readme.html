@@ -449,28 +449,8 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
         <td align="left">pop the stack and replace the top with N+T</td>
         </tr>
       <th align="left"><a href="#-">-</a></th>
-        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td>
-        <td align="left">pop the stack and replace the top with N-T</td>
-        </tr>
-      <th align="left"><a href="#&">&amp;</a></th>
-        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td>
-        <td align="left">pop the stack and replace the top with N &amp; T</td>
-        </tr>
-      <th align="left"><a href="#or">or</a></th>
-        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td>
-        <td align="left">pop the stack and replace the top with N | T</td>
-        </tr>
-      <th align="left"><a href="#^">^</a></th>
         <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td>
-        <td align="left">pop the stack and replace the top with N ^ T</td>
-        </tr>
-      <th align="left"><a href="#drop">drop</a></th>
-        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td>
-        <td align="left">drop the top value from the stack<tt>jumpc</tt>" to a function call</td>
-        </tr>
-      <th align="left"><a href="#nip">nip</a></th>
-        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
-        <td align="left">pop the next-to-top from the data stack</td>
+        <td align="left">pop the stack and replace the top with N-T</td>
         </tr>
       <th align="left"><a href="#dis">dis</a></th>
         <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
@@ -515,6 +495,26 @@ This document describes the 9-bit opcode, 8-bit data, stack-based
       <th align="left"><a href="#r>">r&gt;</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td>
         <td align="left">Pop the top of the return stack and push it onto the data stack</td>
+        </tr>
+      <th align="left"><a href="#&">&amp;</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td align="left">pop the stack and replace the top with N &amp; T</td>
+        </tr>
+      <th align="left"><a href="#or">or</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td>
+        <td align="left">pop the stack and replace the top with N | T</td>
+        </tr>
+      <th align="left"><a href="#^">^</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td>
+        <td align="left">pop the stack and replace the top with N ^ T</td>
+        </tr>
+      <th align="left"><a href="#nip">nip</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td>
+        <td align="left">pop the next-to-top from the data stack</td>
+        </tr>
+      <th align="left"><a href="#drop">drop</a></th>
+        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td>
+        <td align="left">drop the top value from the stack<tt></td>
         </tr>
       <th align="left"><a href="#1+">1+</a></th>
         <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
