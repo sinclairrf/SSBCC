@@ -87,10 +87,11 @@ def genInstructions(fp,programBody,nInstructions):
   for ix in range(len(programBody)):
     if programBody[ix][0] == '-':
       fp.write('  // %s\n' % programBody[ix][2:]);
-    elif programBody[ix][0] == 'p':
-      fp.write('  s_opcodeMemory[\'h%X] = { 1\'b1, %s[0+:8] };\n' % (programBodyIx,programBody[ix][2:]));
     else:
-      fp.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
+      if programBody[ix][0] == 'p':
+        fp.write('  s_opcodeMemory[\'h%X] = { 1\'b1, %s[0+:8] };\n' % (programBodyIx,programBody[ix][2:]));
+      else:
+        fp.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
       programBodyIx = programBodyIx + 1;
   for ix in range(programBodyIx,nInstructions):
     fp.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
