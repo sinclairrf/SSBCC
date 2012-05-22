@@ -94,25 +94,52 @@ Macros are used to access opcodes that cannot be used directly or to help
     <a href="#.storeindexed">.storeindexed</a>,
     <a href="#.storevalue">.storevalue</a>,
     and <a href="#.storevector">.storevector</a>.<br/><br/>
-  <h3><a name=".call">.call</a></h3>
+  <h2><a name=".call">.call</a></h2>
+    <b>Description:</b>  Generate the 3 instruction sequence associated with a <tt>call</tt> instruction.<br/><br/>
+    <b>Operation(1):</b>  <tt>.call(label)</tt> generates the following 3 instructions:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;call with the 5 msb of the label address encoded in the call instruction<br/>
+      &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;no operation<br/><br/>
+    <b>Operation(2):</b>  <tt>.call(label,op)</tt> where "op" is an instruction generates the following 3 instructions:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;call with the 5 msb of the label address encoded in the call instruction<br/>
+      &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;op<br/><br/>
+    Note that Operation(1) is a special case of Operation(2) with "op" being the <tt>nop</tt> instruction.<br/>
+  <h2><a name=".callc">.callc</a></h2>
+    <b>Description:</b>  Generate the 3 instruction sequence associated with a <tt>callc</tt> instruction.<br/><br/>
+    <b>Operation(1):</b>  <tt>.callc(label)</tt> generates the following 3 instructions:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;callc with the 5 msb of the label address encoded in the callc instruction<br/>
+      &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;drop<br/><br/>
+    <b>Operation(2):</b>  <tt>.callc(label,op)</tt> where "op" is an instruction generates the following 3 instructions:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;callc with the 5 msb of the label address encoded in the callc instruction<br/>
+      &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;op<br/><br/>
+    Note that Operation(1) is a special case of Operation(2) with "op" being the <tt>drop</tt> instruction.<br/>
+  <h2><a name=".fetch">.fetch</a></h2>
+    <b>Description:</b>  Generate the <tt>fetch</tt> instruction.<br/><br/>
+    <b>Operation:</b>  <tt>.fetch(ram)</tt> generates the following instruction:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;fetch with the 2 bit memory index encoded in the fetch instruction.<br/>
+  <h2><a name=".fetch+">.fetch+</a></h2>
+    <b>Description:</b>  Generate the <tt>fetch+</tt> instruction.<br/><br/>
+    <b>Operation:</b>  <tt>.fetch+(ram)</tt> generates the following instruction:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;fetch+ with the 2 bit memory index encoded in the fetch+ instruction.<br/>
+  <h2><a name=".fetch-">.fetch-</a></h2>
+    <b>Description:</b>  Generate the <tt>fetch-</tt> instruction.<br/><br/>
+    <b>Operation:</b>  <tt>.fetch-(ram)</tt> generates the following instruction:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;fetch- with the 2 bit memory index encoded in the fetch- instruction.<br/>
+  <h2><a name=".fetchindexed">.fetchindexed</a></h2>
     TODO
-  <h3><a name=".callc">.callc</a></h3>
+  <h2><a name=".fetchvalue">.fetchvalue</a></h2>
     TODO
-  <h3><a name=".fetch">.fetch</a></h3>
+  <h2><a name=".fetchvector">.fetchvector</a></h2>
     TODO
-  <h3><a name=".fetch-">.fetch-</a></h3>
-    TODO
-  <h3><a name=".fetch+">.fetch+</a></h3>
-    TODO
-  <h3><a name=".fetchindexed">.fetchindexed</a></h3>
-    TODO
-  <h3><a name=".fetchvalue">.fetchvalue</a></h3>
-    TODO
-  <h3><a name=".fetchvector">.fetchvector</a></h3>
-    TODO
-  <h3><a name=".inport">.inport</a></h3>
-    TODO
-  <h3>.jump</h3>
+  <h2><a name=".inport">.inport</a></h2>
+    <b>Description:</b>  Generate the 2 instruction sequence associated with a <tt>inport</tt> instruction.<br/><br/>
+    <b>Operation:</b>  <tt>.inport(label)</tt> generates the following 3 instructions:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;<tt>inport</tt><br/>
+  <h2>.jump</h2>
     <b>Description:</b>  Generate the 3 instruction sequence associated with a <tt>jump</tt> instruction.<br/><br/>
     <b>Operation(1):</b>  <tt>.jump(label)</tt> generates the following 3 instructions:<br/>
       &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
@@ -123,32 +150,47 @@ Macros are used to access opcodes that cannot be used directly or to help
       &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jump with the 5 msb of the label address encoded in the jump instruction<br/>
       &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;op<br/><br/>
     Note that Operation(1) is a special case of Operation(2) with "op" being the <tt>nop</tt> instruction.<br/>
-  <h3>.jumpc</h3>
+  <h2>.jumpc</h2>
     <b>Description:</b>  Generate the 3 instruction sequence associated with a <tt>jumpc</tt> instruction.<br/><br/>
     <b>Operation(1):</b>  <tt>.jumpc(label)</tt> generates the following 3 instructions:<br/>
       &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
-      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jump with the 5 msb of the label address encoded in the jump instruction<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jumpc with the 5 msb of the label address encoded in the jumpc instruction<br/>
       &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;drop<br/><br/>
     <b>Operation(2):</b>  <tt>.jumpc(label,op)</tt> where "op" is an instruction generates the following 3 instructions:<br/>
       &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
-      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jump with the 5 msb of the label address encoded in the jumpc instruction<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;jumpc with the 5 msb of the label address encoded in the jumpc instruction<br/>
       &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;op<br/><br/>
     Note that Operation(1) is a special case of Operation(2) with "op" being the <tt>drop</tt> instruction.<br/>
-  <h3><a name=".outport">.outport</a></h3>
+  <h2><a name=".outport">.outport</a></h2>
+    <b>Description:</b>  Generate the 3 instruction sequence associated with a <tt>outport</tt> instruction.<br/><br/>
+    <b>Operation(1):</b>  <tt>.outport(label)</tt> generates the following 3 instructions:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;<tt>outport</tt><br/>
+      &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;<tt>drop</tt><br/><br/>
+    <b>Operation(2):</b>  <tt>.outport(label,op)</tt> generates the following 3 instructions:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;push the 8 lsb of the label address onto the data stack<br/>
+      &nbsp;&nbsp;2&nbsp;&mdash;&nbsp;<tt>outport</tt><br/>
+      &nbsp;&nbsp;3&nbsp;&mdash;&nbsp;op<br/><br/>
+    Note that Operation(1) is a special case of Operation(2) with "op" being the <tt>drop</tt> instruction.<br/>
+  <h2><a name=".return">.return</a></h2>
     TODO
-  <h3><a name=".return">.return</a></h3>
+  <h2><a name=".store">.store</a></h2>
+    <b>Description:</b>  Generate the <tt>store</tt> instruction.<br/><br/>
+    <b>Operation:</b>  <tt>.store(ram)</tt> generates the following instruction:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;store with the 2 bit memory index encoded in the store instruction.<br/>
+  <h2><a name=".store+">.store+</a></h2>
+    <b>Description:</b>  Generate the <tt>store+</tt> instruction.<br/><br/>
+    <b>Operation:</b>  <tt>.store+(ram)</tt> generates the following instruction:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;store+ with the 2 bit memory index encoded in the store+ instruction.<br/>
+  <h2><a name=".store-">.store-</a></h2>
+    <b>Description:</b>  Generate the <tt>store-</tt> instruction.<br/><br/>
+    <b>Operation:</b>  <tt>.store-(ram)</tt> generates the following instruction:<br/>
+      &nbsp;&nbsp;1&nbsp;&mdash;&nbsp;store- with the 2 bit memory index encoded in the store- instruction.<br/>
+  <h2><a name=".storeindexed">.storeindexed</a></h2>
     TODO
-  <h3><a name=".store">.store</a></h3>
+  <h2><a name=".storevalue">.storevalue</a></h2>
     TODO
-  <h3><a name=".store-">.store-</a></h3>
-    TODO
-  <h3><a name=".store+">.store+</a></h3>
-    TODO
-  <h3><a name=".storeindexed">.storeindexed</a></h3>
-    TODO
-  <h3><a name=".storevalue">.storevalue</a></h3>
-    TODO
-  <h3><a name=".storevector">.storevector</a></h3>
+  <h2><a name=".storevector">.storevector</a></h2>
     TODO
 </body>
 </html>
