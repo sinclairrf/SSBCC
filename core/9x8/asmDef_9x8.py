@@ -117,6 +117,12 @@ class asmDef_9x8:
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'outport';
 
+  def IsParameter(self,name):
+    if name not in self.symbols['list']:
+      return False;
+    ix = self.symbols['list'].index(name);
+    return self.symbols['type'][ix] == 'parameter';
+
   def InportAddress(self,name):
     if not self.IsInport(name):
       raise Exception('Program Bug');
@@ -138,6 +144,11 @@ class asmDef_9x8:
     if self.IsOutport(name):
       raise Exception('Program Bug');
     self.AddSymbol(name,'outport',dict(address=address));
+
+  def RegisterParameterName(self,name):
+    if self.IsParameter(name):
+      raise Exception('Program Bug');
+    self.AddSymbol(name,'parameter');
 
   def RegisterMemoryLength(self,name,length):
     self.memoryLength[name] = length;
@@ -204,14 +215,14 @@ class asmDef_9x8:
       for token in rawTokens[2:]:
         if token['type'] == 'symbol':
           name = token['value'];
-          allowableTypes = ('constant','inport','macro','outport','variable',);
+          allowableTypes = ('constant','inport','macro','outport','parameter','variable',);
         elif token['type'] == 'macro' and self.MacroOptArgIsSymbol(token):
           name = token['argument'][-1]['value'];
-          allowableTypes = ('RAM','ROM','constant','inport','outport','variable',);
+          allowableTypes = ('RAM','ROM','constant','inport','outport','parameter','variable',);
         else:
           continue;
         if name not in self.symbols['list']:
-          raise asmDef.AsmException('Undefined symbol at %s:%d:%d' % (filename,token['line'],token['col']));
+          raise asmDef.AsmException('Undefined symbol "%s" at %s:%d:%d' % (name,filename,token['line'],token['col']));
         ixName = self.symbols['list'].index(name);
         if self.symbols['type'][ixName] not in allowableTypes:
           raise asmDef.AsmException('Illegal symbol at %s:%d:%d' % (filename,token['line'],token['col']));
@@ -251,10 +262,11 @@ class asmDef_9x8:
       return dict(type='inport', value=token['value']);
     elif self.symbols['type'][ix] == 'outport':
       return dict(type='outport', value=token['value']);
+    elif self.symbols['type'][ix] == 'parameter':
+      return dict(type='parameter', value=token['value']);
     elif self.symbols['type'][ix] == 'variable':
       return dict(type='variable', value=token['value']);
     else:
-      print token
       raise Exception('Program Bug');
 
   def ExpandTokens(self,filename,rawTokens):
@@ -370,7 +382,9 @@ class asmDef_9x8:
   def Interrupt(self):
     return self.interrupt;
 
-  def AddSymbol(self,name,stype,body):
+  def AddSymbol(self,name,stype,body=None):
+    if name in self.symbols['list']:
+      raise Exception('Program Bug');
     self.symbols['list'].append(name);
     self.symbols['type'].append(stype);
     self.symbols['body'].append(body);
@@ -560,12 +574,21 @@ class asmDef_9x8:
       self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name));
     elif token['type'] == 'instruction':
       self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
+    elif token['type'] == 'parameter':
+      self.EmitParameter(fp,token['value']);
     elif token['type'] == 'value':
       self.EmitPush(fp,token['value']);
     else:
       raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
 
+  def EmitParameter(self,fp,name):
+    if not self.IsParameter(name):
+      raise Exception('Program Bug');
+    fp.write('p %s\n' % name);
+
   def EmitPush(self,fp,value,name=None):
+    if (-128 <= value <= -1):
+      value = value + 256;
     if type(name) == str:
       fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName(name)));
     elif (chr(value) in string.printable) and (chr(value) not in string.whitespace):
@@ -700,6 +723,8 @@ class asmDef_9x8:
             self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
           else:
             raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
+        elif token['type'] == 'parameter':
+          self.EmitParameter(fp,token['value']);
         elif token['type'] == 'symbol':
           self.EmitPush(fp,token['value'],token['name']);
         elif token['type'] == 'variable':

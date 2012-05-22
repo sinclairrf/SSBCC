@@ -51,6 +51,7 @@ try:
   nInstructions = 0;
   memories = dict(list=list(), type=list(), arch=list());
   outport = dict(config=list(), name=list(), id=list());
+  parameters = dict(name=list(), default=list());
   return_stack = 0;
   user_header = list();
   for tmpLine in argList.filename:
@@ -134,6 +135,14 @@ try:
       outport['config'].append(configs);
       outport['name'].append(names);
       outport['id'].append(cmd[0][2]);
+    # PARAMETER
+    elif re.match(r'\s*PARAMETER\b',line):
+      cmd = re.findall(r'\s*PARAMETER\s+(\w+)\s+(\d+)',line);
+      if (not cmd) or (len(cmd[0]) != 2):
+        raise SSBCCException('Malformed PARAMETER statement on line %d: "%s"' % (ixLine,line));
+      cmd = cmd[0];
+      parameters['name'].append(cmd[0]);
+      parameters['default'].append(cmd[1]);
     # RETURN_STACK
     elif re.match(r'\s*RETURN_STACK\b',line):
       cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
@@ -190,6 +199,8 @@ try:
     cmd += (' -I %s=%d' % (inport['id'][ix],ix));
   for ix in range(len(outport['config'])):
     cmd += (' -O %s=%d' % (outport['id'][ix],ix));
+  for ix in range(len(parameters['name'])):
+    cmd += (' -P %s' % parameters['name'][ix]);
   for ix in range(len(memories['list'])):
     cmd += (' -S %s=%d' % (memories['list'][ix],eval(memories['arch'][ix])));
   cmd += ' -o ' + assemblerOutput;
@@ -315,7 +326,7 @@ try:
       genMemory(fpOutCore,memories);
     # module
     elif fillCommand == 'module':
-      genModule(fpOutCore,outCoreName,inport,outport);
+      genModule(fpOutCore,outCoreName,inport,outport,parameters);
     # outports
     elif fillCommand == 'outports':
       genOutports(fpOutCore,outport);
