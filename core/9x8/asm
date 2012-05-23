@@ -122,11 +122,11 @@ try:
     # Parse the body of all other directives and ensure that only one ".main"
     # and one ".interrupt" are defined.
     else:
-      rawTokens = asmDef.RawTokens(filename,startLine,body,ad);
+      rawTokens = asmDef.RawTokens(ad,filename,startLine,body);
       if not rawTokens:
         continue;
-      ad.CheckRawTokens(filename,rawTokens);
-      ad.FillRawTokens(filename,rawTokens);
+      ad.CheckRawTokens(rawTokens);
+      ad.FillRawTokens(rawTokens);
 
   #
   # Ensure a ".main" body was declared.
@@ -145,7 +145,7 @@ try:
       raise asmDef.AsmException('Required ".interrupt" body not provided');
   else:
     if ad.Interrupt():
-      raise asmDef.AsmException('".interrupt" body not allowed');
+      raise asmDef.AsmException('".interrupt" body not allowed near %s' % ad.Interrupt()[0]['loc']);
 
   # diagnostic -- print filled token lists
   if False:

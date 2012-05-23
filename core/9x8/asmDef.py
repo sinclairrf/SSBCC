@@ -240,106 +240,107 @@ def ParseString(inString):
     outString.append(0);
   return outString;
 
-def ParseToken(ad,filename,lineNumber,col,raw,allowed):
+def ParseToken(ad,fl_loc,col,raw,allowed):
+  flc_loc = fl_loc + ':' + str(col+1);
   # look for instructions
   # Note:  Do this before anything else because instructions can be a
   #        strange mix of symbols.
   if ad.IsInstruction(raw):
     if 'instruction' not in allowed:
-      raise AsmException('instruction "%s" not allowed at %s:%d:%d' % (raw,filename,lineNumber,col+1));
-    return dict(type='instruction', value=raw, line=lineNumber, col=col+1);
+      raise AsmException('instruction "%s" not allowed at %s' % (raw,flc_loc));
+    return dict(type='instruction', value=raw, loc=flc_loc);
   # look for computation
   a = re.match(r'\$\([^()]+\)$',raw);
   if a:
     if 'singlevalue' not in allowed:
-      raise AsmException('Computated value not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Computated value not allowed at %s' % flc_loc);
     tParseNumber = eval(raw[1:],ad.SymbolDict());
     if type(tParseNumber) != int:
-      raise AsmException('Malformed single-byte value at %s:%d:%d' % (filename,lineNumber,col+1));
-    return dict(type='value', value=tParseNumber, line=lineNumber, col=col+1);
+      raise AsmException('Malformed single-byte value at %s' % flc_loc);
+    return dict(type='value', value=tParseNumber, loc=flc_loc);
   # look for a repeated single-byte numeric value
   a = re.match(r'[1-9][0-9]*\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})$',raw);
   if a:
     if 'multivalue' not in allowed:
-      raise AsmException('Multi-byte value not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Multi-byte value not allowed at %s' % flc_loc);
     b = re.findall(r'([1-9][0-9]*)\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',a.group(0));
     b = b[0];
     tParseNumber = ParseNumber(b[1]);
     if type(tParseNumber) != int:
-      raise AsmException('Malformed multi-byte value at %s:%d:%d' % (filename,lineNumber,col+len(b[0])+2));
+      raise AsmException('Malformed multi-byte value at %s' % (fl_loc + ':' + str(col+len(b[0])+2)));
     tValue = list();
     for ix in range(int(b[0])):
       tValue.append(tParseNumber);
-    return dict(type='value', value=tValue, line=lineNumber, col=col+1);
+    return dict(type='value', value=tValue, loc=flc_loc);
   # look for a single-byte numeric value
   a = re.match(r'(0|[+\-]?[1-9]\d*|0[07]+|0x[0-9A-Fa-f]{1,2})$',raw);
   if a:
     if 'singlevalue' not in allowed:
-      raise AsmException('Value not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Value not allowed at %s' % flc_loc);
     tParseNumber = ParseNumber(raw);
     if type(tParseNumber) != int:
-      raise AsmException('Malformed single-byte value at %s:%d:%d' % (filename,lineNumber,col+1));
-    return dict(type='value', value=tParseNumber, line=lineNumber, col=col+1);
+      raise AsmException('Malformed single-byte value at %s' % flc_loc);
+    return dict(type='value', value=tParseNumber, loc=flc_loc);
   # capture double-quoted strings
   if re.match(r'[CN]?"',raw):
     if 'string' not in allowed:
-      raise AsmException('String not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('String not allowed at %s' % flc_loc);
     a = re.match(r'[CN]?"([^"]|\\")+[^\\\\]"$',raw);
     if not a:
-      raise AsmException('Malformed string at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Malformed string at %s' % flc_loc);
     parsedString = ParseString(raw);
     if type(parsedString) == int:
-      raise AsmException('Malformed string at %s:%d:%d' % (filename,lineNumber,col+parsedString));
-    return dict(type='value', value=parsedString, line=lineNumber, col=col);
+      raise AsmException('Malformed string at %s' % (fl_loc + ':' + str(col+parsedString)));
+    return dict(type='value', value=parsedString, loc=flc_loc);
   # capture single-quoted character
   if raw[0] == "'":
     if 'singlevalue' not in allowed:
-      raise AsmException('Character not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Character not allowed at %s' % flc_loc);
     a = re.match(r'\'.\'$',raw);
     if not a:
-      raise AsmException('Malformed \'.\' in %s:%d:%d' % (filename,lineNumber,col+1));
-    return dict(type='value', value=ord(a.group(0)[1]), line=lineNumber, col=col+1);
+      raise AsmException('Malformed \'.\' in %s' % flc_loc);
+    return dict(type='value', value=ord(a.group(0)[1]), loc=flc_loc);
   # look for directives
   if ad.IsDirective(raw):
     if 'directive' not in allowed:
-      raise AsmException('Directive not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
-    return dict(type='directive', value=raw, line=lineNumber, col=col+1);
+      raise AsmException('Directive not allowed at %s' % flc_loc);
+    return dict(type='directive', value=raw, loc=flc_loc);
   # look for macros
   a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+|,\$\(\S+\))*\))?$',raw);
   if a:
     b = re.match(r'\.[^(]+',raw);
     if not ad.IsMacro(b.group(0)):
-      raise AsmException('Unrecognized directive or macro at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Unrecognized directive or macro at %s:%d' % (fl_loc,col+1));
     if 'macro' not in allowed:
-      raise AsmException('Macro not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Macro not allowed at %s:%d' % (fl_loc,col+1));
     macroArgs = re.findall(r'([^,]+)',raw[len(b.group(0))+1:-1]);
     nArgs = ad.MacroNumberArgs(b.group(0))
     if len(macroArgs) not in nArgs:
-      raise AsmException('Wrong number of arguments to macro at %s:%d:%d' % (filename,lineNumber,col+1));
+      raise AsmException('Wrong number of arguments to macro at %s:%d' % (fl_loc,col+1));
     while len(macroArgs) < nArgs[-1]:
       macroArgs.append(ad.MacroDefault(b.group(0),len(macroArgs)));
     outArgs = list();
     col = col + len(b.group(0))+1;
     for ixArg in range(len(macroArgs)):
-      outArgs.append(ParseToken(ad,filename,lineNumber,col,macroArgs[ixArg],ad.MacroArgTypes(b.group(0),ixArg)));
+      outArgs.append(ParseToken(ad,fl_loc,col,macroArgs[ixArg],ad.MacroArgTypes(b.group(0),ixArg)));
       col = col + len(macroArgs[ixArg]) + 1;
-    return dict(type='macro', value=b.group(0), line=lineNumber, col=col+1, argument=outArgs);
+    return dict(type='macro', value=b.group(0), loc=fl_loc + ':' + str(col+1), argument=outArgs);
   # look for a label definition
   a = re.match(r':[A-Za-z]\w*$',raw);
   if a:
     if 'label' not in allowed:
-      raise AsmException('Label not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
-    return dict(type='label', value=raw[1:], line=lineNumber, col=col+1);
+      raise AsmException('Label not allowed at %s' % flc_loc);
+    return dict(type='label', value=raw[1:], loc=flc_loc);
   # look for symbols
   # Note:  This should be the last check performed as every other kind of
   #        token should be recognizable
   a = re.match(r'[A-Za-z]\w+$',raw);
   if a:
     if 'symbol' not in allowed:
-      raise AsmException('Symbol not allowed at %s:%d:%d' % (filename,lineNumber,col+1));
-    return dict(type='symbol', value=a.group(0), line=lineNumber, col=col+1);
+      raise AsmException('Symbol not allowed at %s' % flc_loc);
+    return dict(type='symbol', value=a.group(0), loc=flc_loc);
   # anything else is an error
-  raise AsmException('Malformed entry at %s:%d:%d' % (filename,lineNumber,col+1));
+  raise AsmException('Malformed entry at %s' % flc_loc);
 
 ################################################################################
 #
@@ -349,7 +350,7 @@ def ParseToken(ad,filename,lineNumber,col,raw,allowed):
 #
 ################################################################################
 
-def RawTokens(filename,startLineNumber,lines,ad):
+def RawTokens(ad,filename,startLineNumber,lines):
   """Extract the list of tokens from the provided list of lines"""
   allowed = [
               'instruction',
@@ -364,6 +365,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
   lineNumber = startLineNumber - 1;
   for line in lines:
     lineNumber = lineNumber + 1;
+    fl_loc = '%s:%d' % (filename,lineNumber);
     col = 0;
     spaceFound = True;
     while col < len(line):
@@ -373,7 +375,7 @@ def RawTokens(filename,startLineNumber,lines,ad):
         col = col + 1;
         continue;
       if not spaceFound:
-        raise AsmException('Missing space in %s:%d:%d' % (filename,lineNumber,col+1));
+        raise AsmException('Missing space in %s:%d' % (fl_loc,col+1));
       spaceFound = False;
       # ignore comments
       if line[col] == ';':
@@ -384,6 +386,6 @@ def RawTokens(filename,startLineNumber,lines,ad):
         selAllowed = 'directive';
       else:
         selAllowed = allowed;
-      tokens.append(ParseToken(ad,filename,lineNumber,col,a.group(0),selAllowed));
+      tokens.append(ParseToken(ad,fl_loc,col,a.group(0),selAllowed));
       col = col + len(a.group(0));
   return tokens;

@@ -18,7 +18,6 @@
       finish interrupt handling
     asm
 *     required .memory directive to be repeated after .include, EOF, etc.
-      add "filename", etc. to tokens and improve error messages
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     core.vhd
