@@ -344,8 +344,6 @@ try:
         fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config['nInstructions']));
         fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config['return_stack']));
         fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config['data_stack']));
-        fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
-        fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
         fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (config['nInstructions']-1));
       if config['hdl'] == 'VHDL':
         raise Exception('VHDL not implemented');
