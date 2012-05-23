@@ -43,16 +43,16 @@ try:
   # Read the SSBCC configuration file.
   #
 
+  config = dict();
+
   ixLine = 0;
   bufLine = "";
   compiler = [];
-  data_stack = 0;
   inport = dict(config=list(), name=list(), id=list());
   nInstructions = 0;
   memories = dict(list=list(), type=list(), arch=list());
   outport = dict(config=list(), name=list(), id=list());
   parameters = dict(name=list(), default=list());
-  return_stack = 0;
   user_header = list();
   for tmpLine in argList.filename:
     ixLine = ixLine + 1;
@@ -84,10 +84,12 @@ try:
       combine = (cmd[0][0],cmd[0][1],);
     # DATA_STACK
     elif re.match(r'\s*DATA_STACK\b',line):
+      if 'data_stack' in config:
+        raise SSBCCException('DATA_STACK already defined before line %d' % line);
       cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "DATA_STACK" command on line %d: "%s"' % (ixLine,line));
-      data_stack = int(cmd[0]);
+      config['data_stack'] = int(cmd[0]);
     # HDL
     elif re.match(r'\s*HDL\s',line):
       cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
@@ -145,12 +147,12 @@ try:
       parameters['default'].append(cmd[1]);
     # RETURN_STACK
     elif re.match(r'\s*RETURN_STACK\b',line):
+      if 'return_stack' in config:
+        raise SSBCCException('RETURN_STACK already specified before line %d' % line);
       cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "RETURN_STACK" command on line %d: "%s"' % (ixLine,line));
-      return_stack = int(cmd[0]);
-      if not IsPowerOf2(return_stack):
-        raise SSBCCException('"RETURN_STACK" value must be a power of 2 on line %d: "%s"' % (ixLine,line));
+      config['return_stack'] = int(cmd[0]);
     # USER_HEADER
     elif re.match(r'\s*USER_HEADER\b',line):
       user_header_done = False;
@@ -165,6 +167,9 @@ try:
     else:
       raise SSBCCException('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
   argList.filename.close();
+
+  if 'data_stack' not in config:
+    raise SSBCCException('Required DATA_STACK configuration missing');
 
   #
   # end-of-file processing
@@ -314,8 +319,8 @@ try:
     elif fillCommand == 'localparam':
       if hdl == 'Verilog':
         fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(nInstructions));
-        fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(return_stack));
-        fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(data_stack));
+        fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config['return_stack']));
+        fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config['data_stack']));
         fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
         fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
         fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
