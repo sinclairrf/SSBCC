@@ -540,4 +540,6 @@ always @ (posedge i_clk)
   else
     s_opcode <= s_opcodeMemory[s_PC];
 
+//@SSBCC@ peripherals
+
 endmodule

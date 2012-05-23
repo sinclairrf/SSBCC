@@ -43,7 +43,7 @@ try:
   # Read the SSBCC configuration file.
   #
 
-  config = dict();
+  config = dict(peripheral=list());
 
   ixLine = 0;
   bufLine = "";
@@ -68,10 +68,16 @@ try:
       pass;
     # ARCHITECTURE
     elif re.match(r'\s*ARCHITECTURE\b',line):
+      if 'architecture' in config:
+        raise SSBCCException('ARCHITECTURE already specified before line %d' % line);
       cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
       if not cmd:
         raise SSBCCException('Malformed ARCHITECTURE statement on line %d: "%s"' % (ixLine,line));
-      architecture=cmd[0];
+      config['architecture'] = cmd[0];
+      corepath = os.path.join(sys.path[0],config['architecture']);
+      if not os.path.isdir(corepath):
+        raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,line));
+      config['peripheralpath'] = os.path.join(corepath,'peripherals');
     # ASSEMBLY language for processor code
     elif re.match(r'\s*ASSEMBLY\b',line):
       cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
@@ -92,9 +98,11 @@ try:
       config['data_stack'] = int(cmd[0]);
     # HDL
     elif re.match(r'\s*HDL\s',line):
+      if 'hdl' in config:
+        raise SSBCCException('HDL already specified before line %d' % line);
       cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
       if cmd[0][0] in ('Verilog','VHDL',):
-        hdl = cmd[0][0];
+        config['hdl'] = cmd[0][0];
         outCoreName = cmd[0][1];
       else:
         raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
@@ -145,6 +153,15 @@ try:
       cmd = cmd[0];
       parameters['name'].append(cmd[0]);
       parameters['default'].append(cmd[1]);
+    # PERIPHERAL
+    elif re.match(r'\s*PERIPHERAL\b',line):
+      cmd = re.findall(r'\s*PERIPHERAL\s+(\w+)\s*(.*)$',line);
+      peripheral = cmd[0][0];
+      fullperipheral = os.path.join(config['peripheralpath'],'%s.py' % peripheral);
+      if not os.path.isfile(fullperipheral):
+        raise SSBCCException('Peripheral "%s" not found' % peripheral);
+      execfile(fullperipheral);
+      exec('config[\'peripheral\'].append(%s(config,\'%s\'));' % (peripheral,cmd[0][1]));
     # RETURN_STACK
     elif re.match(r'\s*RETURN_STACK\b',line):
       if 'return_stack' in config:
@@ -168,15 +185,18 @@ try:
       raise SSBCCException('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
   argList.filename.close();
 
-  if 'data_stack' not in config:
-    raise SSBCCException('Required DATA_STACK configuration missing');
-
   #
   # end-of-file processing
   #
 
-  # Path to the processor-specific assembler, core, etc.
-  corepath = os.path.join(sys.path[0],architecture);
+  if 'architecture' not in config:
+    raise SSBCCException('Required ARCHITECTURE statement missing');
+  if 'data_stack' not in config:
+    raise SSBCCException('Required DATA_STACK statement missing');
+  if 'hdl' not in config:
+    raise SSBCCException('Required HDL statement missing');
+  if 'return_stack' not in config:
+    raise SSBCCException('Required RETURN_STACK statement missing');
 
   # Compute the memory bank indices.
   ixRAM = 0;
@@ -288,21 +308,21 @@ try:
   #
   ################################################################################
 
-  if hdl == 'Verilog':
+  if config['hdl'] == 'Verilog':
     from ssbccGenVerilog import *;
   else:
-    raise SSBCCException('Unrecognized hdl = "%s"' % hdl);
+    raise SSBCCException('Unrecognized hdl = "%s"' % config['hdl']);
 
   inport['haveBitSignals'] = False;
 
-  if hdl == 'Verilog':
+  if config['hdl'] == 'Verilog':
     fpRawCore = open(os.path.join(corepath,'core.v'),'r');
     fpOutCore = open(outCoreName+'.v','w');
-  elif hdl == 'VHDL':
+  elif config['hdl'] == 'VHDL':
     fpRawCore = open(os.path.join(corepath,'core.vhd'),'r');
     fpOutCore = open(outCoreName+'.vhd','w');
   else:
-    raise Exception('Program Bug:  unrecognized hdl = "%s"', hdl);
+    raise Exception('Program Bug:  unrecognized hdl = "%s"', config['hdl']);
 
   for line in fpRawCore:
     if not re.match('..@SSBCC@',line):
@@ -317,14 +337,14 @@ try:
       genInstructions(fpOutCore,programBody,nInstructions);
     # localparam
     elif fillCommand == 'localparam':
-      if hdl == 'Verilog':
+      if config['hdl'] == 'Verilog':
         fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(nInstructions));
         fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config['return_stack']));
         fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config['data_stack']));
         fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
         fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
         fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
-      if hdl == 'VHDL':
+      if config['hdl'] == 'VHDL':
         raise Exception('VHDL not implemented');
     # memory
     elif fillCommand == 'memory':
@@ -335,6 +355,12 @@ try:
     # outports
     elif fillCommand == 'outports':
       genOutports(fpOutCore,outport);
+    # peripherals
+    elif fillCommand == 'peripherals':
+      for ix in range(len(config['peripheral'])):
+        if ix > 0:
+          fpOutCore.write('\n');
+        config['peripheral'][ix].GenHDL(fpOutCore,config);
     # user_header
     elif fillCommand == 'user_header':
       genUserHeader(fpOutCore,user_header);
