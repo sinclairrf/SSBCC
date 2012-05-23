@@ -3,9 +3,9 @@
 
   ssbcc
     add PERIPHERAL feature
-    add PERIPHERALs: set-reset, multi-byte adders, multipliers, timers, serdes, ...
-    add interrupt handling
-    do VHDL
+    add PERIPHERALs: set-reset, multi-byte adders, multipliers, timers, single-byter serdes, serdes w/ FIFO, ...
+    finish interrupt handling
+    add VHDL
 
   core/9x8
     00readme.html
@@ -15,9 +15,10 @@
       fully debug the core and add test benches
       speed up core
       determine settings to maximize speed or minimize resources
+      finish interrupt handling
     asm
-*     required .memory directive to be repeated after other directives
-      add "filename" to tokens and improve error messages
+*     required .memory directive to be repeated after .include, EOF, etc.
+      add "filename", etc. to tokens and improve error messages
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     core.vhd
