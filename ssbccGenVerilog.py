@@ -81,7 +81,9 @@ def genInports(fp,inport):
       fp.write('  else\n');
       fp.write('    s_SETRESET_%s <= s_SETRESET_%s;\n' % (name,name));
 
-def genInstructions(fp,programBody,nInstructions):
+def genInstructions(fp,programBody,config):
+  nInstructions = config['nInstructions'];
+  fp.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
   fp.write('initial begin\n');
   programBodyIx = 0;
   for ix in range(len(programBody)):
@@ -96,6 +98,11 @@ def genInstructions(fp,programBody,nInstructions):
   for ix in range(programBodyIx,nInstructions):
     fp.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
   fp.write('end\n');
+
+def genLocalParam(fp,config):
+  fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config['nInstructions']));
+  fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config['return_stack']));
+  fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config['data_stack']));
 
 # TODO -- accommodate m*n architecture statements
 def genMemory(fp,memories):
