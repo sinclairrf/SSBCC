@@ -110,9 +110,6 @@ try:
   #
   ################################################################################
 
-  # List of function bodies, variables, etc.
-  inputGroups = list();
-
   # Loop through the directive bodies in the input files (including ".include"d
   # files).
   for bl in fbi:
@@ -121,16 +118,15 @@ try:
     body = bl[2:];
     # ".include" directives don't have an associated body
     if re.match(r'\s*\.include\s',body[-1]):
-      inputGroups.append(dict(filename=filename, startLine=startLine, body=body));
-    # Parse the body of all other directives.
+      pass;
+    # Parse the body of all other directives and ensure that only one ".main"
+    # and one ".interrupt" are defined.
     else:
       rawTokens = asmDef.RawTokens(filename,startLine,body,ad);
       if not rawTokens:
         continue;
       ad.CheckRawTokens(filename,rawTokens);
-      # FillRawTokens also ensures only one ".main" and ".interrupt" are defined.
       ad.FillRawTokens(filename,rawTokens);
-      inputGroups.append(dict(filename=filename, startLine=startLine, body=body, rawTokens=rawTokens));
 
   #
   # Ensure a ".main" body was declared.
@@ -150,17 +146,6 @@ try:
   else:
     if ad.Interrupt():
       raise asmDef.AsmException('".interrupt" body not allowed');
-
-  # diagnostic -- print raw token lists
-  if False:
-    for ig in inputGroups:
-      print 'filename = "%s", startLine = %d' % (ig['filename'], ig['startLine']);
-      if 'rawTokens' not in ig:
-        print ig['body'][-1];
-      else:
-        for tk in ig['rawTokens']:
-          print tk;
-      print
 
   # diagnostic -- print filled token lists
   if False:
