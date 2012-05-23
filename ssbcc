@@ -49,7 +49,6 @@ try:
   bufLine = "";
   compiler = [];
   inport = dict(config=list(), name=list(), id=list());
-  nInstructions = 0;
   memories = dict(list=list(), type=list(), arch=list());
   outport = dict(config=list(), name=list(), id=list());
   parameters = dict(name=list(), default=list());
@@ -118,11 +117,13 @@ try:
       inport['id'].append(cmd[0][2]);
     # INSTRUCTION
     elif re.match(r'\s*INSTRUCTION\b',line):
+      if 'nInstructions' in config:
+        raise SSBCCException('INSTRUCTION already specified before line %d' % line);
       cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "INSTRUCTION" command on line %d: "%s"' % (ixLine,line));
-      nInstructions = int(cmd[0]);
-      if nInstructions > 2**13:
+      config['nInstructions'] = int(cmd[0]);
+      if config['nInstructions'] > 2**13:
         raise SSBCCException('Instruction space cannot exceed %d' % (2**13));
     # MEMORY
     elif re.match(r'\s*MEMORY\b',line):
@@ -195,6 +196,8 @@ try:
     raise SSBCCException('Required DATA_STACK statement missing');
   if 'hdl' not in config:
     raise SSBCCException('Required HDL statement missing');
+  if 'nInstructions' not in config:
+    raise SSBCCException('Required INSTRUCTION statement missing');
   if 'return_stack' not in config:
     raise SSBCCException('Required RETURN_STACK statement missing');
 
@@ -286,8 +289,8 @@ try:
           programBodyLength = programBodyLength + 1;
       if programBodyLength != mainLength:
         raise SSBCCException('Program Bug:  program length doesn\'t match declared length');
-      if programBodyLength > nInstructions:
-        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,nInstructions));
+      if programBodyLength > config['nInstructions']:
+        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,config['nInstructions']));
     else:
       raise SSBCCException('Unrecognized line at %s:%d :  %s' % (fpAssemberOutput.filename,ixLine,line));
 
@@ -334,16 +337,16 @@ try:
       genInports(fpOutCore,inport);
     # instructions
     elif fillCommand == 'instructions':
-      genInstructions(fpOutCore,programBody,nInstructions);
+      genInstructions(fpOutCore,programBody,config['nInstructions']);
     # localparam
     elif fillCommand == 'localparam':
       if config['hdl'] == 'Verilog':
-        fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(nInstructions));
+        fpOutCore.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config['nInstructions']));
         fpOutCore.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config['return_stack']));
         fpOutCore.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config['data_stack']));
         fpOutCore.write('localparam C_SMALL_RETURN_STACK_IMPLEMENTATION     =    1;\n');
         fpOutCore.write('localparam C_SMALL_DATA_STACK_IMPLEMENTATION       =    1;\n');
-        fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
+        fpOutCore.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (config['nInstructions']-1));
       if config['hdl'] == 'VHDL':
         raise Exception('VHDL not implemented');
     # memory
