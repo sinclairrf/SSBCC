@@ -1,26 +1,46 @@
-  00readme.html
-    update
-
   ssbcc
-    add PERIPHERAL feature
-    add PERIPHERALs: set-reset, multi-byte adders, multipliers, timers, single-byter serdes, serdes w/ FIFO, ...
-    finish interrupt handling
-    finish "COMBINE" feature
+    integrate PERIPHERAL and INPORT/OUTPORT I/O ports
+    search paths for peripherals (code directory, core/9x8/peripherals, core/peripherals)
+    put ssbccGenVerilog in a class in core/9x8
+    Finish interrupt handling
+    documentation
+      top-level overview, point to implemented cores
+      required:  ARCHITECTURE and sizes, ASSEMBLY, and HDL
+      I/O Ports
+      INPORT and OUTPORT
+      PERIPHERAL
+    incorporate "COMBINE" feature
     add VHDL
 
   core/9x8
-    00readme.html
+*   finish the test bench to validate the core, add to the documentation
+    documentation
       update
+      assembler
+        directives
+        instructions
+          change "opcodes.html" to "instructions.html", ...
+          remove "dis" and "ena"
+        interrupts
+      peripherals
     core.v
-*     finish the test bench to validate the core, add to the documentation
-      restore the interrupt enable and disable commands
       speed up core
       determine settings to maximize speed or minimize resources
       finish interrupt handling
     asm
 *     required .memory directive to be repeated after .include, EOF, etc.
+**    improve error message for missing input files
       add non-return restriction to some optional macro arguments
       implement .abbr directive
+    peripherals
+      stack over/underflow detection
+      set-reset
+      timer
+      single-byte serializer w/ and w/o FIFO
+      single-byte deserializer w/ and w/o FIFO
+      interrupt enable/disable (through INTERRUPT command)
+      multi-byte adder
+      multiplier
     core.vhd
       do this once core.v is completed
 
