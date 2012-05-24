@@ -1,0 +1,9 @@
+#!/bin/bash
+
+../../../../ssbcc core.9x8 \
+|| exit 1;
+
+iverilog -o tb tb.v core.v \
+|| exit 1;
+
+./tb
