@@ -760,13 +760,11 @@ class asmDef_9x8:
     self.AddInstruction('<<1',          0x002);
     self.AddInstruction('<<msb',        0x003);
     self.AddInstruction('>r',           0x040);
-    self.AddInstruction('FE=',          0x026);
-    self.AddInstruction('FF=',          0x027);
     self.AddInstruction('^',            0x052);
-    self.AddInstruction('dis',          0x01C);
+    #self.AddInstruction('dis',          0x01C);
     self.AddInstruction('drop',         0x054);
     self.AddInstruction('dup',          0x008);
-    self.AddInstruction('ena',          0x019);
+    #self.AddInstruction('ena',          0x019);
     self.AddInstruction('inport',       0x030);
     self.AddInstruction('lsb>>',        0x007);
     self.AddInstruction('msb>>',        0x006);
