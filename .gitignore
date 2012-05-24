@@ -1,3 +1,4 @@
+*-meta
 *.pyc
 *.vcd
 .*.swp
