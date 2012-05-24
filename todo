@@ -12,6 +12,7 @@
       update
     core.v
 *     method to validate the core
+      restore the interrupt enable and disable commands
       fully debug the core and add test benches
       speed up core
       determine settings to maximize speed or minimize resources
