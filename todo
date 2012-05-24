@@ -5,15 +5,15 @@
     add PERIPHERAL feature
     add PERIPHERALs: set-reset, multi-byte adders, multipliers, timers, single-byter serdes, serdes w/ FIFO, ...
     finish interrupt handling
+    finish "COMBINE" feature
     add VHDL
 
   core/9x8
     00readme.html
       update
     core.v
-*     method to validate the core
+*     finish the test bench to validate the core, add to the documentation
       restore the interrupt enable and disable commands
-      fully debug the core and add test benches
       speed up core
       determine settings to maximize speed or minimize resources
       finish interrupt handling
@@ -43,4 +43,4 @@
     - ssbcc.net
     - ssbcc@sinclairrf.com or rodney@ssbcc.org
     - EETimes and other e-rags
-    - add to resume
+    - add to resume and web page
