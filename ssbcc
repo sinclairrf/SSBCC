@@ -18,6 +18,73 @@ from ssbccUtil import *;
 
 ################################################################################
 #
+# Process the more complicated configuration commands.
+#
+################################################################################
+
+def processInport(config,line):
+  cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
+  modes = re.findall(r'([^,]+)',cmd[0][0]);
+  names = re.findall(r'([^,]+)',cmd[0][1]);
+  portName = cmd[0][2];
+  if len(modes) != len(names):
+    raise SSBCCException('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+  # Append the input signal names, mode, and bit-width to the list of I/Os.
+  has__set_reset = False;
+  nBits = 0;
+  thisPortSignals = list();
+  for ix in range(len(names)):
+    if re.match(r'^[1-8]-bit$',modes[ix]):
+      thisNBits = int(modes[ix][0]);
+      config['ios'].append((names[ix],thisNBits,'input',));
+      thisPortSignals.append((names[ix],thisNBits,'data',));
+      nBits = nBits + thisNBits;
+      config['haveBitInportSignals'] = 'True';
+    elif modes[ix] == 'set-reset':
+      has__set_reset = True;
+      config['ios'].append((names[ix],1,'input',));
+      thisPortSignals.append((names[ix],1,'set-reset',));
+      config['signals'].append(('s_SETRESET_%s' % names[ix],1,));
+      config['haveBitInportSignals'] = 'True';
+    elif modes[ix] == 'strobe':
+      config['ios'].append((names[ix],1,'output',));
+      thisPortSignals.append((names[ix],1,'strobe',));
+    else:
+      raise SSBCCException('Unrecognized INPORT signal type "%s"' % modes[ix]);
+    if has__set_reset and len(names) > 1:
+      raise SSBCCException('set-reset cannot be simultaneous with other signals in "%s"' % line);
+    if nBits > 8:
+      raise SSBCCException('Signal width too wide in "%s"' % line);
+  config['inports'].append((portName,thisPortSignals,));
+
+def processOutport(config,line):
+  cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
+  modes = re.findall(r'([^,]+)',cmd[0][0]);
+  names = re.findall(r'([^,]+)',cmd[0][1]);
+  portName = cmd[0][2];
+  if len(modes) != len(names):
+    raise SSBCCException('Malformed OUTPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+  # Append the input signal names, mode, and bit-width to the list of I/Os.
+  nBits = 0;
+  thisPortSignals = list();
+  for ix in range(len(names)):
+    if re.match(r'^[1-8]-bit$',modes[ix]):
+      thisNBits = int(modes[ix][0]);
+      config['ios'].append((names[ix],thisNBits,'output',));
+      thisPortSignals.append((names[ix],thisNBits,'data',));
+      nBits = nBits + thisNBits;
+      config['haveBitOutportSignals'] = 'True';
+    elif modes[ix] == 'strobe':
+      config['ios'].append((names[ix],1,'output',));
+      thisPortSignals.append((names[ix],1,'strobe',));
+    else:
+      raise SSBCCException('Unrecognized OUTPORT signal type "%s"' % modes[ix]);
+    if nBits > 8:
+      raise SSBCCException('Signal width too wide in "%s"' % line);
+  config['outports'].append((portName,thisPortSignals,));
+
+################################################################################
+#
 # Surround the program with a try ... except clause
 #
 ################################################################################
@@ -44,13 +111,15 @@ try:
   #
 
   config = dict(peripheral=list());
+  config['inports']     = list();
+  config['ios']         = list();
+  config['signals']     = list();
+  config['outports']    = list();
 
   ixLine = 0;
   bufLine = "";
   compiler = [];
-  inport = dict(config=list(), name=list(), id=list());
   memories = dict(list=list(), type=list(), arch=list());
-  outport = dict(config=list(), name=list(), id=list());
   parameters = dict(name=list(), default=list());
   user_header = list();
   for tmpLine in argList.filename:
@@ -107,14 +176,7 @@ try:
         raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
     # INPORT
     elif re.match(r'\s*INPORT\b',line):
-      cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
-      configs = re.findall(r'([^,]+)',cmd[0][0]);
-      names = re.findall(r'([^,]+)',cmd[0][1]);
-      if len(configs) != len(names):
-        raise SSBCCException('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
-      inport['config'].append(configs);
-      inport['name'].append(names);
-      inport['id'].append(cmd[0][2]);
+      processInport(config,line);
     # INSTRUCTION
     elif re.match(r'\s*INSTRUCTION\b',line):
       if 'nInstructions' in config:
@@ -138,14 +200,7 @@ try:
       memories['arch'].append(cmd[2]);
     # OUTPORT
     elif re.match(r'\s*OUTPORT\b',line):
-      cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
-      configs = re.findall(r'([^,]+)',cmd[0][0]);
-      names = re.findall(r'([^,]+)',cmd[0][1]);
-      if len(configs) != len(names):
-        raise SSBCCException('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
-      outport['config'].append(configs);
-      outport['name'].append(names);
-      outport['id'].append(cmd[0][2]);
+      processOutport(config,line);
     # PARAMETER
     elif re.match(r'\s*PARAMETER\b',line):
       cmd = re.findall(r'\s*PARAMETER\s+(\w+)\s+(\d+)',line);
@@ -163,6 +218,10 @@ try:
         raise SSBCCException('Peripheral "%s" not found' % peripheral);
       execfile(fullperipheral);
       exec('config[\'peripheral\'].append(%s(config,\'%s\'));' % (peripheral,cmd[0][1]));
+    # PORTCOMMENT
+    elif re.match(r'\s*PORTCOMMENT\b',line):
+      cmd = re.findall(r'\s*PORTCOMMENT\s+(.*)',line[:-1]);
+      config['ios'].append((cmd[0],0,'comment',));
     # RETURN_STACK
     elif re.match(r'\s*RETURN_STACK\b',line):
       if 'return_stack' in config:
@@ -223,10 +282,10 @@ try:
 
   # Compute the command to invoke the compiler.
   cmd = os.path.join(corepath, compiler[0]);
-  for ix in range(len(inport['config'])):
-    cmd += (' -I %s=%d' % (inport['id'][ix],ix));
-  for ix in range(len(outport['config'])):
-    cmd += (' -O %s=%d' % (outport['id'][ix],ix));
+  for ix in range(len(config['inports'])):
+    cmd += (' -I %s=%d' % (config['inports'][ix][0],ix));
+  for ix in range(len(config['outports'])):
+    cmd += (' -O %s=%d' % (config['outports'][ix][0],ix));
   for ix in range(len(parameters['name'])):
     cmd += (' -P %s' % parameters['name'][ix]);
   for ix in range(len(memories['list'])):
@@ -316,8 +375,6 @@ try:
   else:
     raise SSBCCException('Unrecognized hdl = "%s"' % config['hdl']);
 
-  inport['haveBitSignals'] = False;
-
   if config['hdl'] == 'Verilog':
     fpRawCore = open(os.path.join(corepath,'core.v'),'r');
     fpOutCore = open(outCoreName+'.v','w');
@@ -334,7 +391,7 @@ try:
     fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
     # inports
     if fillCommand == 'inports':
-      genInports(fpOutCore,inport);
+      genInports(fpOutCore,config);
     # instructions
     elif fillCommand == 'instructions':
       genInstructions(fpOutCore,programBody,config);
@@ -346,10 +403,10 @@ try:
       genMemory(fpOutCore,memories);
     # module
     elif fillCommand == 'module':
-      genModule(fpOutCore,outCoreName,inport,outport,parameters);
+      genModule(fpOutCore,outCoreName,config,parameters);
     # outports
     elif fillCommand == 'outports':
-      genOutports(fpOutCore,outport);
+      genOutports(fpOutCore,config);
     # peripherals
     elif fillCommand == 'peripherals':
       if config['peripheral']:

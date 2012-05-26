@@ -10,76 +10,80 @@ import re
 
 from ssbccUtil import *;
 
-def genInports(fp,inport):
-  if not inport['config']:
+################################################################################
+#
+# Generate the code to run the INPORT selection, the associated output
+# strobes,and the set-reset latches.
+#
+################################################################################
+
+def genInports(fp,config):
+  if not config['inports']:
     fp.write('// no input ports\n');
     return
-  for ix in range(len(inport['config'])):
-    if inport['config'][ix][0] == 'set-reset':
-      fp.write('reg s_SETRESET_%s;\n' % inport['name'][ix][0]);
-  if inport['haveBitSignals']:
+  if 'haveBitInportSignals' in config:
     fp.write('always @ (*)\n');
     fp.write('  case (s_T)\n');
-    for ix in range(len(inport['config'])):
-      configs = inport['config'][ix];
-      names = inport['name'][ix];
-      if configs[0] == 'set-reset':
-        fp.write('      8\'h%02X : s_T_inport = (%s || s_SETRESET_%s) ? 8\'hFF : 8\'h00;\n' % (ix, names[0], names[0]));
-      else:
-        bitsString = '';
-        nBits = 0;
-        for jx in range(len(configs)):
-          if re.match(r'\d+-bit',configs[jx]):
-            a = re.findall(r'(\d+)',configs[jx]);
-            portLength = int(a[0]);
-            if len(bitsString) != 0:
-              bitsString = bitsString + ', ';
-            bitsString = bitsString + inport['name'][ix][jx];
-            nBits = nBits + portLength;
-        if nBits == 0:
-          pass;
-        elif nBits < 8:
-          fp.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitsString));
-        elif nBits == 8:
-          fp.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitsString));
-        else:
-          raise SSBCCException('Too many bits in %s' % (inport['id'][ix]));
+  for ix in range(len(config['inports'])):
+    thisPort = config['inports'][ix][1];
+    nBits = 0;
+    bitString = '';
+    for jx in range(len(thisPort)):
+      signal = thisPort[jx];
+      signalName = signal[0];
+      signalSize = signal[1];
+      signalType = signal[2];
+      if signalType == 'data':
+        nBits = nBits + signalSize;
+        if len(bitString)>0:
+          bitString = bitString + ', ';
+        bitString = bitString + signalName;
+      if signalType == 'set-reset':
+        fp.write('      8\'h%02X : s_T_inport = (%s || s_SETRESET_%s) ? 8\'hFF : 8\'h00;\n' % (ix, signalName, signalName));
+    if nBits == 0:
+      pass;
+    elif nBits < 8:
+      fp.write('      8\'h%02X : s_T_inport = { %d\'h0, %s };\n' % (ix,8-nBits,bitString));
+    elif nBits == 8:
+      fp.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitString));
+    else:
+      raise Exception('Program Bug -- this condition should have been caught elsewhere');
+  if 'haveBitInportSignals' in config:
     fp.write('    default : s_T_inport = 8\'h00;\n');
     fp.write('  endcase\n');
     fp.write('\n');
-  for ix in range(len(inport['config'])):
-    configs = inport['config'][ix];
-    names = inport['name'][ix];
-    for jx in range(len(configs)):
-      if re.match(r'\d+-bit',configs[jx]):
-        pass;
-      elif configs[jx] == 'set-reset':
-        pass;
-      elif configs[jx] == 'strobe':
-        fp.write('initial %s = 1\'b0;\n' % names[jx]);
+  # Generate all the INPORT strobes.
+  for ix in range(len(config['inports'])):
+    thisPort = config['inports'][ix][1];
+    for jx in range(len(thisPort)):
+      signal = thisPort[jx];
+      signalName = signal[0];
+      signalType = signal[2];
+      if signalType == 'strobe':
+        fp.write('initial %s = 1\'b0;\n' % signalName);
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
-        fp.write('    %s <= 1\'b0;\n' % names[jx]);
+        fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('  else if (s_inport)\n');
-        fp.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
+        fp.write('    %s <= (s_T == 8\'h%02X);\n' % (signalName,ix));
         fp.write('  else\n');
-        fp.write('    %s <= 1\'b0;\n' % names[jx]);
+        fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('\n');
-      else:
-        raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
-  for ix in range(len(inport['config'])):
-    if inport['config'][ix][0] == 'set-reset':
-      name = inport['name'][ix][0];
-      fp.write('initial s_SETRESET_%s = 1\'b0;\n' % name);
+  # Generate all the INPORT "set-reset"s.
+  for ix in range(len(config['inports'])):
+    thisPort = config['inports'][ix][1];
+    if thisPort[0][2] == 'set-reset':
+      signalName = thisPort[0][0];
+      fp.write('initial s_SETRESET_%s = 1\'b0;\n' % signalName);
       fp.write('always @(posedge i_clk)\n');
       fp.write('  if (i_rst)\n');
-      fp.write('    s_SETRESET_%s <= 1\'b0;\n' % name);
+      fp.write('    s_SETRESET_%s <= 1\'b0;\n' % signalName);
       fp.write('  else if (s_inport && (s_T == 8\'h%02X))\n' % ix);
-      fp.write('    s_SETRESET_%s <= 1\'b0;\n' % name);
-      fp.write('  else if (%s)\n' % name);
-      fp.write('    s_SETRESET_%s <= 1\'b1;\n' % name);
+      fp.write('    s_SETRESET_%s <= 1\'b0;\n' % signalName);
+      fp.write('  else if (%s)\n' % signalName);
+      fp.write('    s_SETRESET_%s <= 1\'b1;\n' % signalName);
       fp.write('  else\n');
-      fp.write('    s_SETRESET_%s <= s_SETRESET_%s;\n' % (name,name));
+      fp.write('    s_SETRESET_%s <= s_SETRESET_%s;\n' % (signalName,signalName));
 
 def genInstructions(fp,programBody,config):
   nInstructions = config['nInstructions'];
@@ -158,60 +162,42 @@ def genMemory(fp,memories):
     fp.write('    default : s_memory <= 8\'h00;\n');
     fp.write('  endcase\n');
 
-def genModule(fp,outCoreName,inport,outport,parameters):
+def genModule(fp,outCoreName,config,parameters):
   fp.write('module %s(\n' % outCoreName);
   fp.write('  // synchronous reset and processor clock\n');
   fp.write('  input  wire           i_rst,\n');
   fp.write('  input  wire           i_clk');
-  if inport['config']:
-    fp.write(',\n');
-    fp.write('  // inports\n');
-    for ix in range(len(inport['config'])):
-      configs = inport['config'][ix];
-      names = inport['name'][ix];
-      for jx in range(len(configs)):
-        if (ix != 0) or (jx != 0):
-          fp.write(',\n');
-        if re.match(r'\d+-bit',configs[jx]):
-          inport['haveBitSignals'] = True;
-          a = re.findall(r'(\d+)',configs[jx]);
-          portLength = int(a[0]);
-          if portLength == 1:
-            fp.write('  input  wire           %s' % names[jx]);
-          elif portLength < 10:
-            fp.write('  input  wire     [%d:0] %s' % (portLength-1,names[jx]));
-          else:
-            fp.write('  input  wire    [%d:0] %s' % (portLength-1,names[jx]));
-        elif configs[jx] == 'set-reset':
-          if len(configs) != 1:
-            raise SSBCCException('set-reset cannot be used with other signal types');
-          fp.write('  input  wire           %s' % names[jx]);
-        elif configs[jx] == 'strobe':
-          fp.write('  output reg            %s' % names[jx]);
+  if config['ios']:
+    wasComment = False;
+    for ix in range(len(config['ios'])):
+      signal = config['ios'][ix];
+      signalName = signal[0];
+      signalWidth = signal[1];
+      signalType = signal[2];
+      if wasComment:
+        fp.write('\n');
+      else:
+        fp.write(',\n');
+      wasComment = False;
+      if signalType == 'comment':
+        fp.write('  // %s' % signalName);
+        wasComment = True;
+      elif signalType == 'input':
+        if signalWidth == 1:
+          fp.write('  input  wire           %s' % signalName);
+        elif signalWidth < 10:
+          fp.write('  input  wire     [%d:0] %s' % (signalWidth,signalName));
         else:
-          raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
-  if outport['config']:
-    fp.write(',\n');
-    fp.write('  // outports\n');
-    for ix in range(len(outport['config'])):
-      configs = outport['config'][ix];
-      names = outport['name'][ix];
-      for jx in range(len(configs)):
-        if (ix != 0) or (jx != 0):
-          fp.write(',\n');
-        if re.match(r'\d+-bit',configs[jx]):
-          a = re.findall(r'(\d+)',configs[jx]);
-          portLength = int(a[0]);
-          if portLength == 1:
-            fp.write('  output reg            %s' % names[jx]);
-          elif portLength < 10:
-            fp.write('  output reg      [%d:0] %s' % (portLength-1,names[jx]));
-          else:
-            fp.write('  output reg     [%d:0] %s' % (portLength-1,names[jx]));
-        elif configs[jx] == 'strobe':
-          fp.write('  output reg            %s' % names[jx]);
+          fp.write('  input  wire    [%2d:0] %s' % (signalWidth,signalName));
+      elif signalType == 'output':
+        if signalWidth == 1:
+          fp.write('  output reg            %s' % signalName);
+        elif signalWidth < 10:
+          fp.write('  output reg      [%d:0] %s' % (signalWidth,signalName));
         else:
-          raise SSBCCException('Unrecognized INPORT type: "%s"' % configs[jx]);
+          fp.write('  output reg     [%2d:0] %s' % (signalWidth,signalName));
+      else:
+        raise Exception('Program Bug -- unrecoginized ios "%s"' % signalType);
   fp.write('\n');
   fp.write(');\n');
   if parameters['name']:
@@ -219,38 +205,39 @@ def genModule(fp,outCoreName,inport,outport,parameters):
     for ix in range(len(parameters['name'])):
       fp.write('parameter [7:0] %s = 8\'h%02X;\n' % (parameters['name'][ix],int(parameters['default'][ix])));
 
-def genOutports(fp,outport):
-  if not outport['config']:
+def genOutports(fp,config):
+  if not config['outports']:
     fp.write('// no output ports\n');
     return;
-  for ix in range(len(outport['config'])):
-    configs = outport['config'][ix];
-    names = outport['name'][ix];
-    for jx in range(len(configs)):
-      if re.match(r'\d+-bit',configs[jx]):
-        a = re.findall(r'(\d+)',configs[jx]);
-        portLength = int(a[0]);
-        fp.write('initial %s = %d\'h0;\n' % (names[jx],portLength));
+  for ix in range(len(config['outports'])):
+    thisPort = config['outports'][ix][1];
+    for jx in range(len(thisPort)):
+      signal = thisPort[jx];
+      signalName = signal[0];
+      signalWidth = signal[1];
+      signalType = signal[2];
+      if signalType == 'data':
+        fp.write('initial %s = %d\'h0;\n' % (signalName,signalWidth));
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
-        fp.write('    %s <= %d\'h0;\n' % (names[jx],portLength));
+        fp.write('    %s <= %d\'h0;\n' % (signalName,signalWidth));
         fp.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
-        fp.write('    %s <= s_N[0+:%d];\n' % (names[jx],portLength));
+        fp.write('    %s <= s_N[0+:%d];\n' % (signalName,signalWidth));
         fp.write('  else\n');
-        fp.write('    %s <= %s;\n' % (names[jx],names[jx]));
+        fp.write('    %s <= %s;\n' % (signalName,signalName));
         fp.write('\n');
-      elif configs[jx] == 'strobe':
-        fp.write('initial %s = 1\'b0;\n' % names[jx]);
+      elif signalType == 'strobe':
+        fp.write('initial %s = 1\'b0;\n' % signalName);
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
-        fp.write('    %s <= 1\'b0;\n' % names[jx]);
+        fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('  else if (s_outport)\n');
-        fp.write('    %s <= (s_T == 8\'h%02X);\n' % (names[jx],ix));
+        fp.write('    %s <= (s_T == 8\'h%02X);\n' % (signalName,ix));
         fp.write('  else\n');
-        fp.write('    %s <= 1\'b0;\n' % names[jx]);
+        fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('\n');
       else:
-        raise SSBCCException('Unrecognized OUTPORT type: "%s"' % configs[jx]);
+        raise Exception('Program Bug -- this condition shouldn\'t have been reached');
 
 def genUserHeader(fp,user_header):
   for ix in range(len(user_header)):
