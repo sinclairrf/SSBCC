@@ -39,7 +39,8 @@ COMBINE                 INSTRUCTION,DATA
 #        inside the Forth code.
 #
 
-OUTPORT 1-bit o_led C_LED
+PORTCOMMENT LED on/off signal
+OUTPORT 1-bit o_led O_LED
 
 #
 # Run the assembler for the embedded code.

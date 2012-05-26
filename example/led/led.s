@@ -15,4 +15,4 @@
 ; main program (as an infinite loop)
 ; T is the setting for the LED
 .main
-0 :inner 1 ^ dup .outport(C_LED) .call(repause) .jump(inner)
+0 :inner 1 ^ dup .outport(O_LED) .call(repause) .jump(inner)
