@@ -247,6 +247,33 @@ def genOutports(fp,config):
       else:
         raise Exception('Program Bug -- signalType = "%s" shouldn\'t have been encountered' % signalType);
 
+def genSignals(fp,config):
+  if not config['signals']:
+    fp.write('// no additional signals\n');
+    return;
+  maxLength = 0;
+  for ix in range(len(config['signals'])):
+    thisSignal = config['signals'][ix];
+    signalName = thisSignal[0];
+    if len(signalName) > maxLength:
+      maxLength = len(signalName);
+  maxLength = maxLength + 12;
+  for ix in range(len(config['signals'])):
+    thisSignal = config['signals'][ix];
+    signalName = thisSignal[0];
+    signalWidth = thisSignal[1];
+    outString = 'reg ';
+    if signalWidth == 1:
+      outString += '       ';
+    elif signalWidth < 10:
+      outString += (' [%d:0] ' % (signalWidth-1));
+    else:
+      outString += ('[%2d:0] ' % (signalWidth-1));
+    outString += signalName;
+    outString += ' '*(maxLength-len(outString));
+    outString += ('= %d\'d0;\n' % signalWidth);
+    fp.write(outString);
+
 def genUserHeader(fp,user_header):
   for ix in range(len(user_header)):
     fp.write('// %s\n' % user_header[ix]);

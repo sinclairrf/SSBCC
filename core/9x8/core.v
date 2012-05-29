@@ -30,6 +30,8 @@ reg                       [8:0] s_opcode;       // current opcode
 
 /* verilator tracing_off */
 
+//@SSBCC@ signals
+
 /*******************************************************************************
  *
  * Instantiate the ALU operations.  These are listed in the order in which they

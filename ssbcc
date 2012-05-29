@@ -412,6 +412,9 @@ try:
       for ix in range(len(config['peripheral'])):
         fpOutCore.write('\n');
         config['peripheral'][ix].GenHDL(fpOutCore,config);
+    # additional signals
+    elif fillCommand == 'signals':
+      genSignals(fpOutCore,config);
     # user_header
     elif fillCommand == 'user_header':
       genUserHeader(fpOutCore,user_header);
