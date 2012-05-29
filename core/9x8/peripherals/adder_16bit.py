@@ -71,10 +71,10 @@ class adder_16bit:
   def GenVerilog(self,fp,config):
     fp.write('always @ (posedge i_clk)\n');
     fp.write('  if (s_adder_16bit_in_op == 1\'b0)\n');
-    fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_MSB }\n');
+    fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_LSB }\n');
     fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }\n');
     fp.write('       + { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 };\n');
     fp.write('  else\n');
-    fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_MSB }\n');
+    fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_LSB }\n');
     fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }\n');
     fp.write('       - { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 };\n');
