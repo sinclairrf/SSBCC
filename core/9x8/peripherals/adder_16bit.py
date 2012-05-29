@@ -29,16 +29,16 @@ class adder_16bit:
     config['signals'].append(('s_adder_16bit_in_LSB1',8,));
     config['signals'].append(('s_adder_16bit_in_MSB2',8,));
     config['signals'].append(('s_adder_16bit_in_LSB2',8,));
-    config['signals'].append(('s_adder_16bit_op',1,));
+    config['signals'].append(('s_adder_16bit_in_op',1,));
     # List the input ports to the core.
-    config['inports'].append(( (('s_adder_16bit_out_MSB',8,'input',), ), 'I_ADDER_16BIT_MSB',) );
-    config['inports'].append(( (('s_adder_16bit_out_LSB',8,'input',), ), 'I_ADDER_16BIT_LSB',) );
+    config['inports'].append( ('I_ADDER_16BIT_MSB',(('s_adder_16bit_out_MSB',8,'data',),),) );
+    config['inports'].append( ('I_ADDER_16BIT_LSB',(('s_adder_16bit_out_LSB',8,'data',),),) );
     # List the output ports to the core.
-    config['outports'].append(( (('s_adder_16bit_in_MSB1',8,'input',), ), 'O_ADDER_16BIT_MSB1',) );
-    config['outports'].append(( (('s_adder_16bit_in_LSB1',8,'input',), ), 'O_ADDER_16BIT_LSB1',) );
-    config['outports'].append(( (('s_adder_16bit_in_MSB2',8,'input',), ), 'O_ADDER_16BIT_MSB2',) );
-    config['outports'].append(( (('s_adder_16bit_in_LSB2',8,'input',), ), 'O_ADDER_16BIT_LSB2',) );
-    config['outports'].append(( (('s_adder_16bit_in_op',1,'input',), ), 'O_ADDER_16BIT_OP',) );
+    config['outports'].append( ('O_ADDER_16BIT_MSB1', (('s_adder_16bit_in_MSB1',8,'data',),),) );
+    config['outports'].append( ('O_ADDER_16BIT_LSB1', (('s_adder_16bit_in_LSB1',8,'data',),),) );
+    config['outports'].append( ('O_ADDER_16BIT_MSB2', (('s_adder_16bit_in_MSB2',8,'data',),),) );
+    config['outports'].append( ('O_ADDER_16BIT_LSB2', (('s_adder_16bit_in_LSB2',8,'data',),),) );
+    config['outports'].append( ('O_ADDER_16BIT_OP', (('s_adder_16bit_in_op',1,'data',),),) );
 
   def GenAssembly(self,config):
     fp = fopen('adder_16bit.s');
@@ -70,11 +70,11 @@ class adder_16bit:
 
   def GenVerilog(self,fp,config):
     fp.write('always @ (posedge i_clk)\n');
-    fp.write('  if (s_adder_16bit_op == 1\'b0)\n');
+    fp.write('  if (s_adder_16bit_in_op == 1\'b0)\n');
     fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_MSB }\n');
-    fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }'\n);
-    fp.write('       + { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 }'\n);
+    fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }\n');
+    fp.write('       + { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 };\n');
     fp.write('  else\n');
     fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_MSB }\n');
-    fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }'\n);
-    fp.write('       - { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 }'\n);
+    fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }\n');
+    fp.write('       - { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 };\n');
