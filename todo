@@ -1,5 +1,4 @@
   ssbcc
-    integrate PERIPHERAL and INPORT/OUTPORT I/O ports
     search paths for peripherals (code directory, core/9x8/peripherals, core/peripherals)
     put ssbccGenVerilog in a class in core/9x8
     Finish interrupt handling
