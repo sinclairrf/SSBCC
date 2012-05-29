@@ -34,18 +34,16 @@ def processInport(config,line):
   nBits = 0;
   thisPortSignals = list();
   for ix in range(len(names)):
-    if re.match(r'^[1-8]-bit$',modes[ix]):
+    if re.match(r'^\d+-bit$',modes[ix]):
       thisNBits = int(modes[ix][0]);
       config['ios'].append((names[ix],thisNBits,'input',));
       thisPortSignals.append((names[ix],thisNBits,'data',));
       nBits = nBits + thisNBits;
-      config['haveBitInportSignals'] = 'True';
     elif modes[ix] == 'set-reset':
       has__set_reset = True;
       config['ios'].append((names[ix],1,'input',));
       thisPortSignals.append((names[ix],1,'set-reset',));
       config['signals'].append(('s_SETRESET_%s' % names[ix],1,));
-      config['haveBitInportSignals'] = 'True';
     elif modes[ix] == 'strobe':
       config['ios'].append((names[ix],1,'output',));
       thisPortSignals.append((names[ix],1,'strobe',));
@@ -68,7 +66,7 @@ def processOutport(config,line):
   nBits = 0;
   thisPortSignals = list();
   for ix in range(len(names)):
-    if re.match(r'^[1-8]-bit$',modes[ix]):
+    if re.match(r'^\d+-bit$',modes[ix]):
       thisNBits = int(modes[ix][0]);
       config['ios'].append((names[ix],thisNBits,'output',));
       thisPortSignals.append((names[ix],thisNBits,'data',));

@@ -21,7 +21,15 @@ def genInports(fp,config):
   if not config['inports']:
     fp.write('// no input ports\n');
     return
-  if 'haveBitInportSignals' in config:
+  haveBitInportSignals = False;
+  for ix in range(len(config['inports'])):
+    thisPort = config['inports'][ix][1];
+    for jx in range(len(thisPort)):
+      signal = thisPort[jx];
+      signalType = signal[2];
+      if signalType in ('data','set-reset',):
+        haveBitInportSignals = True;
+  if haveBitInportSignals:
     fp.write('always @ (*)\n');
     fp.write('  case (s_T)\n');
   for ix in range(len(config['inports'])):
@@ -48,7 +56,7 @@ def genInports(fp,config):
       fp.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitString));
     else:
       raise Exception('Program Bug -- this condition should have been caught elsewhere');
-  if 'haveBitInportSignals' in config:
+  if haveBitInportSignals:
     fp.write('    default : s_T_inport = 8\'h00;\n');
     fp.write('  endcase\n');
     fp.write('\n');
@@ -237,7 +245,7 @@ def genOutports(fp,config):
         fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('\n');
       else:
-        raise Exception('Program Bug -- this condition shouldn\'t have been reached');
+        raise Exception('Program Bug -- signalType = "%s" shouldn\'t have been encountered' % signalType);
 
 def genUserHeader(fp,user_header):
   for ix in range(len(user_header)):
