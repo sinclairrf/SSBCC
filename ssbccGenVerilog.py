@@ -194,16 +194,16 @@ def genModule(fp,outCoreName,config,parameters):
         if signalWidth == 1:
           fp.write('  input  wire           %s' % signalName);
         elif signalWidth < 10:
-          fp.write('  input  wire     [%d:0] %s' % (signalWidth,signalName));
+          fp.write('  input  wire     [%d:0] %s' % (signalWidth-1,signalName));
         else:
-          fp.write('  input  wire    [%2d:0] %s' % (signalWidth,signalName));
+          fp.write('  input  wire    [%2d:0] %s' % (signalWidth-1,signalName));
       elif signalType == 'output':
         if signalWidth == 1:
           fp.write('  output reg            %s' % signalName);
         elif signalWidth < 10:
-          fp.write('  output reg      [%d:0] %s' % (signalWidth,signalName));
+          fp.write('  output reg      [%d:0] %s' % (signalWidth-1,signalName));
         else:
-          fp.write('  output reg     [%2d:0] %s' % (signalWidth,signalName));
+          fp.write('  output reg     [%2d:0] %s' % (signalWidth-1,signalName));
       else:
         raise Exception('Program Bug -- unrecoginized ios "%s"' % signalType);
   fp.write('\n');
