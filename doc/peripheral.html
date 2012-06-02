@@ -1,0 +1,81 @@
+<html>
+<title>
+SSBCC -- PERIPHERAL
+</title>
+<body>
+<tt>Copyright 2012, Sinclair, R.F., Inc.</tt><br/>
+<h1>Table of Contents</h1>
+  <a href="#introduction">Introduction</a><br/>
+  <a href="#command">Command</a><br/>
+  <a href="#cores">9x8&nbsp;Cores</a><br/>
+  <a href="#new">Creating&nbsp;new&nbsp;Peripherals</a>
+<h1><a name="introduction">Introduction</a></h1>
+  Within the processor configuration command, the PERIPHERAL configuration is used
+    to incorporate peripherals such as UARTs, TBD into the micro controller
+    core.<br/><br/>
+  This document describes the general format of the peripheral configuration
+    command, lists peripherals for the 9x8 core, and documents how to add
+    additional peripherals to the computer compiler.<br/><br/>
+<h1><a name="command">Command</a></h1>
+  TODO
+<h1><a name="cores">9x8&nbsp;Cores</a></h1>
+  TODO
+<h1><a name="new">Creating&nbsp;new&nbsp;Peripherals</a></h1>
+  New peripherals are created using a Python class with the following member
+    functions:
+  <ul>
+    <li><tt>__init__(self,config,param_string)</tt><br/>
+      Where:<br/>
+      <ul>
+        <li><tt>config</tt> is the computer compiler configuration state when
+          the peripheral configuration command is encountered.<br/><br/></li>
+        <li><tt>param_string</tt> is the everything on the peripheral
+          configuration command following the name of the peripheral.  This
+          string is used to provide mandatory and optional parameters to the
+          core.  For example, the <tt>UART_Tx</tt> peripheral requires
+          information to generate the desired baud rate and allows an optional
+          name to facilitate distinguishing between multiple instances of the
+          same peripheral.<br/><br/></li>
+        </ul>
+      This function should store instantiation specific information in
+        <tt>self</tt>.<br/><br/>
+      Inputs from the FPGA fabric to the micro controller module are added by
+        appending a tuple describing the input.  The tuple consists of the
+        following:<br/><br/>
+        <ol>
+          <li>signal name</li>
+          <li>signal width</li>
+          <li>signal type:  the string <tt>'input'</tt></li>
+          </ol>
+      For example, to add an 8-bit input named "<tt>i_new_input</tt>", use the
+        following statement:<br/><br/>
+        <tt>&nbsp;&nbsp;config['ios'].append((i_new_input,8,'input',));</tt><br/><br/>
+      Outputs from the micro controller to the FPGA fabric are added using the
+        signal type <tt>'output'</tt>.<br/><br/>
+      For example, to add an 8-bit output named "<tt>o_new_output</tt>", use the
+        following statement:<br/><br/>
+        <tt>&nbsp;&nbsp;config['ios'].append((i_new_output,8,'output',));</tt><br/><br/>
+      Similarly, to add a 16-bit tri-state input/output signal, use the
+        followiing statement:<br/><br/>
+        <tt>&nbsp;&nbsp;config['ios'].append((i_new_io,16,'inout',));</tt><br/><br/>
+      To add a signal or a composite signal output from the micro controller
+        core to the peripheral two actions are required.  These can be done in
+        either order, but it may make more sense to maintainers or subsequent
+        users to do them in the following order:<br/><br/>
+        <ol>
+          <li>Add the output port to the micro controller core:<br/><br/>
+            This consists of adding a tuple to <tt>config['outports']</tt>.  The
+            first element of this tuple is the name of the outport.  The
+            subsequent elements of this tuple are tuple(s) describing the
+            signal(s) associated with the outport.  These tuples have the
+            following ordered format:<br/><br/>
+            <ol>
+              <li>signal name</li>
+              <li>signal width</li>
+              <li>signal type:  <tt>'data'</tt> or <tt>'strobe'</tt></li>
+              </ol>
+          </ol>
+      </li>
+    </ul>
+</body>
+</html>
