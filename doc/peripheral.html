@@ -72,9 +72,66 @@ SSBCC -- PERIPHERAL
             <ol>
               <li>signal name</li>
               <li>signal width</li>
-              <li>signal type:  <tt>'data'</tt> or <tt>'strobe'</tt></li>
+              <li>signal type:  <tt>'data'</tt> or <tt>'strobe'</tt>
+                Note:  Signal type <tt>'data'</tt> is used to relay single or
+                multiple bit data from the micro controller core to the
+                peripheral.  Signal type <tt>'strobe'</tt> generates a single
+                bit strobe during the clock cycle immediately following the
+                <tt>outport</tt> instruction.</li>
               </ol>
+          <li>Add these same signals to <tt>config['signals']</tt>, one at a
+            time using tuples with the following ordered format:<br/><br/>
+            <ol>
+              <li>signal name</li>
+              <li>signal width</li>
+              </ol>
+            </li>
           </ol>
+      For example, to add an output from the micro controller core to the input
+        side of an 8-bit FIFO, use the following:<br/><br/>
+        <tt>&nbsp;&nbsp;config['outports'].append(O_FIFO,('s_fifo_data',8,'data'),('s_fifo_wr',1,'strobe'),);<br/>
+        &nbsp;&nbsp;config['signals'].append(('s_fifo_data',8,));<br/>
+        &nbsp;&nbsp;config['signals'].append(('s_fifo_wr',1,));</tt><br/><br/>
+      Adding a signal or a composite signal from the peripheral to the micro
+        controller core requires two similar actions:<br/><br/>
+        <ol>
+          <li>Add the input port to the micro controller core:<br/><br/>
+            This consists of adding a tuple to <tt>config['inports']</tt>.  The
+            first element of this tuple is the name of the inport.  The
+            subsequent elements of this tuple are tuple(s) describing the
+            signal(s) associated with the inport.  These tuples have the
+            following ordered format:<br/><br/>
+            <ol>
+              <li>signal name</li>
+              <li>signal width</li>
+              <li>signal type:  <tt>'data'</tt>, <tt>'set-reset'</tt>, or
+                <tt>'strobe'</tt>
+                Note:  Signal type <tt>'data'</tt> is used to relay single or
+                multiple bit data from the peripheral to the micro controller
+                core.  Signal type <tt>'set-reset'</tt> latches the associated
+                input bit until the signal is read, at which time it is cleared.
+                Signal type <tt>'strobe'</tt> generates a single bit strobe
+                during the clock cycle immediately following the
+                <tt>inport</tt> instruction.<br/><br/>
+                Note:  The <tt>'set-reset'</tt> signal type is provided as a
+                signal type for the <tt>INPORT</tt> command and may not be as
+                useful for peripherals since the peripheral can include the
+                associated logic required for the latch.<br/><br/>
+                </li>
+              </ol>
+          <li>Add these same signals to <tt>config['signals']</tt>, one at a
+            time using tuples with the following ordered format:<br/><br/>
+            <ol>
+              <li>signal name</li>
+              <li>signal width</li>
+              </ol>
+            </li>
+          </ol>
+      For example, to add an input port from a FIFO in the peripheral to the
+        micro controlller core, use the following:<br/><br/>
+        <tt>&nbsp;&nbsp;config['inports'].append(I_FIFO,('s_fifo_data',8,'data'),('s_fifo_ack',1,'strobe'),);<br/>
+        &nbsp;&nbsp;config['signals'].append(('s_fifo_data',8,));<br/>
+        &nbsp;&nbsp;config['signals'].append(('s_fifo_ack',1,));</tt><br/><br/>
       </li>
     </ul>
 </body>
