@@ -169,5 +169,45 @@ SSBCC -- PERIPHERAL
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;));<br/>
       &nbsp;&nbsp;config['signals'].append(('s_fifo_full',1,));<br/>
       &nbsp;&nbsp;config['signals'].append(('s_fifo_empty',1,));</tt><br/><br/>
+  <h2>GenAssembly(self,config):</h2>
+    This is an optional function to generate an assembly file associated with
+      the peripheral.<br/>
+    TODO
+  <h2>GenHDL(self,fp,config):</h2>
+    This function examines <tt>config['hdl']</tt> to determine the HDL language
+      for generating the FPGA logic for the peripheral.  The logic is written to
+      the file handle <tt>fp</tt>.<br/><br/>
+    Rather than capture all HDL languages in this function, the following type
+      of structure is recommended:<br/><br/>
+      <tt>&nbsp;&nbsp;GenHDL(self,fp,config):<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;config['hdl']&nbsp;==&nbsp;'Verilog':<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.GenVerilog(fp,config);<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;elif&nbsp;config['hdl']&nbsp;==&nbsp;'VHDL':<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.GenVHDL(fp,config);<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;else:<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;raise&nbsp;Exception('HDL&nbsp;"%s"&nbsp;not&nbsp;implemented'&nbsp;%&nbsp;config['hdl']);</tt><br/><br/>
+    For example, to generate the logic for an unsigned 8 by 8 multiplier using
+      the previous inport, outport, and signal assignments, the Verilog code
+      could be generated using:<br/><br/>
+      <tt>&nbsp;&nbsp;GenVerilog(self,fp,config):<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('initial s_mult_msb = 8\'d0;\n');<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('initial s_mult_lsb = 8\'d0;\n');<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('always&nbsp;@&nbsp;(posedge&nbsp;i_clk)\n');<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('&nbsp;&nbsp;if&nbsp;(i_rst) begin\n');<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('&nbsp;&nbsp;&nbsp;&nbsp;s_mult_msb&nbsp;&lt;=&nbsp;8\'d0;\n');<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('&nbsp;&nbsp;&nbsp;&nbsp;s_mult_lsb&nbsp;&lt;=&nbsp;8\'d0;\n');<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('&nbsp;&nbsp;end&nbsp;else\n');<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;fp.write('&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;s_mult_msb,&nbsp;s_mult_lsb&nbsp;}&nbsp;&lt;=&nbsp;$unsigned(s_mult_a)&nbsp;*&nbsp;$unsigned(s_mult_b);\n');</tt><br/><br/>
+    Note:  The results of this multiplication are available two clock cycles
+      after the <tt>outport</tt> instruction setting <tt>s_mult_a</tt> or
+      <tt>s_mult_b</tt> value.  This isn't a problem with the processor as the
+      <tt>outport</tt> likely has to be followed by a <tt>drop</tt>
+      instruction and the <tt>inport</tt> instruction to read either part of the
+      multiplication has to be preceded by an instruction pushing the port
+      number onto the data stack.<br/><br/>
+    Note:  While Python allows the entire logic block to be written using a
+      single <tt>fp.write("""initial&nbsp;s_...""");</tt> statement, breaking
+      out the individual statements allows computed signal names to be included
+      more cleanly and also accomodates conditional inclusion of code.<br/><br/>
 </body>
 </html>
