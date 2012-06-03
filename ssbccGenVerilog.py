@@ -23,7 +23,7 @@ def genInports(fp,config):
     return
   haveBitInportSignals = False;
   for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1];
+    thisPort = config['inports'][ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalType = signal[2];
@@ -33,7 +33,7 @@ def genInports(fp,config):
     fp.write('always @ (*)\n');
     fp.write('  case (s_T)\n');
   for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1];
+    thisPort = config['inports'][ix][1:];
     nBits = 0;
     bitString = '';
     for jx in range(len(thisPort)):
@@ -62,7 +62,7 @@ def genInports(fp,config):
     fp.write('\n');
   # Generate all the INPORT strobes.
   for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1];
+    thisPort = config['inports'][ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalName = signal[0];
@@ -79,7 +79,7 @@ def genInports(fp,config):
         fp.write('\n');
   # Generate all the INPORT "set-reset"s.
   for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1];
+    thisPort = config['inports'][ix][1:];
     if thisPort[0][2] == 'set-reset':
       signalName = thisPort[0][0];
       fp.write('initial s_SETRESET_%s = 1\'b0;\n' % signalName);
@@ -218,7 +218,7 @@ def genOutports(fp,config):
     fp.write('// no output ports\n');
     return;
   for ix in range(len(config['outports'])):
-    thisPort = config['outports'][ix][1];
+    thisPort = config['outports'][ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalName = signal[0];

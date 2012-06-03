@@ -32,28 +32,28 @@ def processInport(config,line):
   # Append the input signal names, mode, and bit-width to the list of I/Os.
   has__set_reset = False;
   nBits = 0;
-  thisPortSignals = list();
+  thisPort = (portName,);
   for ix in range(len(names)):
     if re.match(r'^\d+-bit$',modes[ix]):
       thisNBits = int(modes[ix][0]);
       config['ios'].append((names[ix],thisNBits,'input',));
-      thisPortSignals.append((names[ix],thisNBits,'data',));
+      thisPort += ((names[ix],thisNBits,'data',),);
       nBits = nBits + thisNBits;
     elif modes[ix] == 'set-reset':
       has__set_reset = True;
       config['ios'].append((names[ix],1,'input',));
-      thisPortSignals.append((names[ix],1,'set-reset',));
+      thisPort += ((names[ix],1,'set-reset',),);
       config['signals'].append(('s_SETRESET_%s' % names[ix],1,));
     elif modes[ix] == 'strobe':
       config['ios'].append((names[ix],1,'output',));
-      thisPortSignals.append((names[ix],1,'strobe',));
+      thisPort += ((names[ix],1,'strobe',),);
     else:
       raise SSBCCException('Unrecognized INPORT signal type "%s"' % modes[ix]);
     if has__set_reset and len(names) > 1:
       raise SSBCCException('set-reset cannot be simultaneous with other signals in "%s"' % line);
     if nBits > 8:
       raise SSBCCException('Signal width too wide in "%s"' % line);
-  config['inports'].append((portName,thisPortSignals,));
+  config['inports'].append(thisPort);
 
 def processOutport(config,line):
   cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
@@ -64,22 +64,22 @@ def processOutport(config,line):
     raise SSBCCException('Malformed OUTPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
   # Append the input signal names, mode, and bit-width to the list of I/Os.
   nBits = 0;
-  thisPortSignals = list();
+  thisPort = (portName,);
   for ix in range(len(names)):
     if re.match(r'^\d+-bit$',modes[ix]):
       thisNBits = int(modes[ix][0]);
       config['ios'].append((names[ix],thisNBits,'output',));
-      thisPortSignals.append((names[ix],thisNBits,'data',));
+      thisPort += ((names[ix],thisNBits,'data',),);
       nBits = nBits + thisNBits;
       config['haveBitOutportSignals'] = 'True';
     elif modes[ix] == 'strobe':
       config['ios'].append((names[ix],1,'output',));
-      thisPortSignals.append((names[ix],1,'strobe',));
+      thisPort += ((names[ix],1,'strobe',),);
     else:
       raise SSBCCException('Unrecognized OUTPORT signal type "%s"' % modes[ix]);
     if nBits > 8:
       raise SSBCCException('Signal width too wide in "%s"' % line);
-  config['outports'].append((portName,thisPortSignals,));
+  config['outports'].append(thisPort);
 
 ################################################################################
 #
