@@ -31,8 +31,8 @@ class adder_16bit:
     config['signals'].append(('s_adder_16bit_in_LSB2',8,));
     config['signals'].append(('s_adder_16bit_in_op',1,));
     # List the input ports to the core.
-    config['inports'].append( ('I_ADDER_16BIT_MSB',(('s_adder_16bit_out_MSB',8,'data',),),) );
-    config['inports'].append( ('I_ADDER_16BIT_LSB',(('s_adder_16bit_out_LSB',8,'data',),),) );
+    config['inports'].append( ('I_ADDER_16BIT_MSB', (('s_adder_16bit_out_MSB',8,'data',),),) );
+    config['inports'].append( ('I_ADDER_16BIT_LSB', (('s_adder_16bit_out_LSB',8,'data',),),) );
     # List the output ports to the core.
     config['outports'].append( ('O_ADDER_16BIT_MSB1', (('s_adder_16bit_in_MSB1',8,'data',),),) );
     config['outports'].append( ('O_ADDER_16BIT_LSB1', (('s_adder_16bit_in_LSB1',8,'data',),),) );
