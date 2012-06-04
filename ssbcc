@@ -125,6 +125,7 @@ try:
 
   import argparse
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
+  argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
   argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
   argList = argListParser.parse_args();
 
@@ -138,6 +139,9 @@ try:
   config['signals']     = list();
   config['outports']    = list();
   config['parameters']  = list();
+  config['functions']   = dict();
+
+  config['define_clog2'] = argList.define_clog2;
 
   ixLine = 0;
   bufLine = "";

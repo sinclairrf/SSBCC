@@ -163,7 +163,6 @@ class UART_Tx:
       if not re.match(r'^\d+$',baudarg):
         raise SSBCCException('baudmethod doesn\'t accept parameters yet');
       self.baudmethod = int(baudarg);
-    print baudarg;
 
   def GenAssembly(self,config):
     pass;
@@ -182,7 +181,7 @@ class UART_Tx:
 generate
 // Count the clock cycles to decimate to the desired baud rate.
 localparam L_@NAME@_COUNT       = @BAUDMETHOD@;
-localparam L_@NAME@_COUNT_NBITS = clog2(L_@NAME@_COUNT);
+localparam L_@NAME@_COUNT_NBITS = @clog2@(L_@NAME@_COUNT);
 reg [L_@NAME@_COUNT_NBITS-1:0] s_count = {(L_@NAME@_COUNT_NBITS){1\'b0}};
 reg s_count_is_zero = 1'b0;
 always @ (posedge i_clk)
@@ -220,7 +219,7 @@ always @ (posedge i_clk)
     o_@NAME@_Tx <= o_@NAME@_Tx;
 // Count down the number of bits.
 localparam L_@NAME@_NTX       = 1+8+@NSTOP@;
-localparam L_@NAME@_NTX_NBITS = clog2(L_@NAME@_NTX);
+localparam L_@NAME@_NTX_NBITS = @clog2@(L_@NAME@_NTX);
 reg [L_@NAME@_NTX_NBITS-1:0] s_ntx = {(L_@NAME@_NTX_NBITS){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
@@ -250,4 +249,8 @@ endgenerate
                  ('@NSTOP@',      str(self.nStop) )
                 ]:
       body = re.sub(subs[0],subs[1],body);
+    if config['define_clog2']:
+      body = re.sub('@clog2@','clog2',body);
+    else:
+      body = re.sub('@clog2@','$clog2',body);
     fp.write(body);

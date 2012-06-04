@@ -115,6 +115,19 @@ def genLocalParam(fp,config):
   fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config['nInstructions']));
   fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config['return_stack']));
   fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config['data_stack']));
+  if ('clog2' in config['functions']) and config['define_clog2']:
+    fp.write("""
+// Use constant function instead of builtin $clog2.
+function integer clog2;
+  input integer value;
+  integer temp;
+  begin
+    temp = value - 1;
+    for (clog2=0; temp>0; clog2=clog2+1)
+      temp = temp >> 1;
+  end
+endfunction
+""");
 
 # TODO -- accommodate m*n architecture statements
 def genMemory(fp,memories):
