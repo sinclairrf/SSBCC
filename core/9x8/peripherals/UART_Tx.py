@@ -136,13 +136,19 @@ class UART_Tx:
     if type(self.nStop) == type(None):
       self.nStop = 1;
     # List the I/Os and global signals required by this peripheral.
+    config['ios'].append(('o_%s_Tx' % self.name,1,'output',));
     config['signals'].append(('s_%s_Tx' % self.name,8,));
+    config['signals'].append(('s_%s_done' % self.name,1,));
+    config['signals'].append(('s_%s_wr' % self.name,1,));
     config['inports'].append(('I_%s_STATUS' % self.name,
-                             ('s_%s_status' % self.name,1,'data'),
+                             ('s_%s_done' % self.name,1,'data'),
                             ));
     config['outports'].append(('O_%s_TX' % self.name,
-                              ('o_%s_Tx' % self.name,1,'data',),
+                              ('s_%s_Tx' % self.name,8,'data',),
+                              ('s_%s_wr' % self.name,1,'strobe',),
                              ));
+    # Ensure the core add the 'clog2' function.
+    config['functions']['clog2'] = True;
 
   def ProcessBaudMethod(self,config,param_arg):
     if param_arg.find('/') > 0:
@@ -169,4 +175,79 @@ class UART_Tx:
       raise Exception('HDL "%s" not implemented' % config['hdl']);
 
   def GenVerilog(self,fp,config):
-    pass;
+    body = """
+//
+// UART_Tx "@NAME@" peripheral
+//
+generate
+// Count the clock cycles to decimate to the desired baud rate.
+localparam L_@NAME@_COUNT       = @BAUDMETHOD@;
+localparam L_@NAME@_COUNT_NBITS = clog2(L_@NAME@_COUNT);
+reg [L_@NAME@_COUNT_NBITS-1:0] s_count = {(L_@NAME@_COUNT_NBITS){1\'b0}};
+reg s_count_is_zero = 1'b0;
+always @ (posedge i_clk)
+  if (i_rst) begin
+    s_count <= {(L_@NAME@_COUNT_NBITS){1\'b0}};
+    s_count_is_zero <= 1'b0;
+  end else if (s_@NAME@_wr || s_count_is_zero) begin
+    s_count <= L_@NAME@_COUNT[0+:L_@NAME@_COUNT_NBITS];
+    s_count_is_zero <= 1'b0;
+  end else begin
+    s_count <= s_count - { {(L_@NAME@_COUNT_NBITS-1){1'b0}}, 1'b1 };
+    s_count_is_zero <= (s_count == { {(L_@NAME@_COUNT_NBITS-1){1'b0}}, 1'b1 });
+  end
+// Latch the bits to output.
+reg [7:0] s_out_stream = 8'hFF;
+always @ (posedge i_clk)
+  if (i_rst)
+    s_out_stream <= 8'hFF;
+  else if (s_@NAME@_wr)
+    s_out_stream <= s_@NAME@_Tx;
+  else if (s_count_is_zero)
+    s_out_stream <= { s_out_stream[0+:7], 1'b1 };
+  else
+    s_out_stream <= s_out_stream;
+// Generate the output bit stream.
+initial o_@NAME@_Tx = 1'b1;
+always @ (posedge i_clk)
+  if (i_rst)
+    o_@NAME@_Tx <= 1'b1;
+  else if (s_@NAME@_wr)
+    o_@NAME@_Tx <= 1'b1;
+  else if (s_count_is_zero)
+    o_@NAME@_Tx <= s_out_stream[7];
+  else
+    o_@NAME@_Tx <= o_@NAME@_Tx;
+// Count down the number of bits.
+localparam L_@NAME@_NTX       = 1+8+@NSTOP@;
+localparam L_@NAME@_NTX_NBITS = clog2(L_@NAME@_NTX);
+reg [L_@NAME@_NTX_NBITS-1:0] s_ntx = {(L_@NAME@_NTX_NBITS){1'b0}};
+always @ (posedge i_clk)
+  if (i_rst)
+    s_ntx <= {(L_@NAME@_NTX_NBITS){1'b0}};
+  else if (s_@NAME@_wr)
+    s_ntx <= L_@NAME@_NTX[0+:L_@NAME@_NTX_NBITS];
+  else if (s_count_is_zero)
+    s_ntx <= s_ntx - { {(L_@NAME@_NTX_NBITS-1){1'b0}}, 1'b1 };
+  else
+    s_ntx <= s_ntx;
+// The status bit is 1 if the core is done and 0 otherwise.
+initial s_@NAME@_done = 1'b1;
+always @ (posedge i_clk)
+  if (i_rst)
+    s_@NAME@_done <= 1'b1;
+  else if (s_@NAME@_wr)
+    s_@NAME@_done <= 1'b0;
+  else if (s_count_is_zero && (s_ntx == {(L_@NAME@_NTX_NBITS){1'b0}}))
+    s_@NAME@_done <= 1'b1;
+  else
+    s_@NAME@_done <= s_@NAME@_done;
+endgenerate
+""";
+    for subs in [
+                 ('@BAUDMETHOD@', str(self.baudmethod), ),
+                 ('@NAME@',       self.name, ),
+                 ('@NSTOP@',      str(self.nStop) )
+                ]:
+      body = re.sub(subs[0],subs[1],body);
+    fp.write(body);
