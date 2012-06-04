@@ -94,7 +94,7 @@ def processParameter(config,ixLine,line):
   execfile(fullperipheral);
   # Convert the space delimited parameters to a list of tuples.
   param_list = list();
-  for param_string in re.findall(r'(\w+="[^"]*"|\w+=\w+|\w+)\s*',cmd[0][1]):
+  for param_string in re.findall(r'(\w+="[^"]*"|\w+=\S+|\w+)\s*',cmd[0][1]):
     ix = param_string.find('=');
     if param_string.find('="') > 0:
       param_list.append((param_string[:ix],param_string[ix+2:-1],));
