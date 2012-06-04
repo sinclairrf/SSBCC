@@ -50,7 +50,7 @@ SSBCC -- PERIPHERAL
           &nbsp;&nbsp;('param2','option',)<br/>
           &nbsp;&nbsp;('param3','"a&nbsp;string"',)<br/>
           &nbsp;&nbsp;('param4','value',)</tt><br/><br/>
-        These tuples can then be parsed within the <tt>__init__<tt> function to
+        These tuples can then be parsed within the <tt>__init__</tt> function to
         intialize the object.<br/>
         </li>
       </ul>
@@ -217,9 +217,9 @@ SSBCC -- PERIPHERAL
       &nbsp;&nbsp;&nbsp;&nbsp;fp.write('&nbsp;&nbsp;end&nbsp;else\n');<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;fp.write('&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;s_mult_msb,&nbsp;s_mult_lsb&nbsp;}&nbsp;&lt;=&nbsp;$unsigned(s_mult_a)&nbsp;*&nbsp;$unsigned(s_mult_b);\n');</tt><br/><br/>
     Note:  The results of this multiplication are available two clock cycles
-      after the <tt>outport</tt> instruction setting <tt>s_mult_a</tt> or
+      after the <tt>outport</tt> instruction setting the <tt>s_mult_a</tt> or
       <tt>s_mult_b</tt> value.  This isn't a problem with the processor as the
-      <tt>outport</tt> likely has to be followed by a <tt>drop</tt>
+      <tt>outport</tt> is probably followed by a <tt>drop</tt>
       instruction and the <tt>inport</tt> instruction to read either part of the
       multiplication has to be preceded by an instruction pushing the port
       number onto the data stack.<br/><br/>
