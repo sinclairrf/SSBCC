@@ -137,12 +137,12 @@ try:
   config['ios']         = list();
   config['signals']     = list();
   config['outports']    = list();
+  config['parameters']  = list();
 
   ixLine = 0;
   bufLine = "";
   compiler = [];
   memories = dict(list=list(), type=list(), arch=list());
-  parameters = dict(name=list(), default=list());
   user_header = list();
   for tmpLine in argList.filename:
     ixLine = ixLine + 1;
@@ -229,8 +229,7 @@ try:
       if (not cmd) or (len(cmd[0]) != 2):
         raise SSBCCException('Malformed PARAMETER statement on line %d: "%s"' % (ixLine,line));
       cmd = cmd[0];
-      parameters['name'].append(cmd[0]);
-      parameters['default'].append(cmd[1]);
+      config['parameters'].append((cmd[0],cmd[1],));
     # PERIPHERAL
     elif re.match(r'\s*PERIPHERAL\b',line):
       processParameter(config,ixLine,line);
@@ -302,8 +301,8 @@ try:
     cmd += (' -I %s=%d' % (config['inports'][ix][0],ix));
   for ix in range(len(config['outports'])):
     cmd += (' -O %s=%d' % (config['outports'][ix][0],ix));
-  for ix in range(len(parameters['name'])):
-    cmd += (' -P %s' % parameters['name'][ix]);
+  for ix in range(len(config['parameters'])):
+    cmd += (' -P %s' % config['parameters'][ix][0]);
   for ix in range(len(memories['list'])):
     cmd += (' -S %s=%d' % (memories['list'][ix],eval(memories['arch'][ix])));
   cmd += ' -o ' + assemblerOutput;
@@ -419,7 +418,7 @@ try:
       genMemory(fpOutCore,memories);
     # module
     elif fillCommand == 'module':
-      genModule(fpOutCore,outCoreName,config,parameters);
+      genModule(fpOutCore,outCoreName,config);
     # outports
     elif fillCommand == 'outports':
       genOutports(fpOutCore,config);

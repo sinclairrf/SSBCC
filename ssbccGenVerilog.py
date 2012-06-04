@@ -170,7 +170,7 @@ def genMemory(fp,memories):
     fp.write('    default : s_memory <= 8\'h00;\n');
     fp.write('  endcase\n');
 
-def genModule(fp,outCoreName,config,parameters):
+def genModule(fp,outCoreName,config):
   fp.write('module %s(\n' % outCoreName);
   fp.write('  // synchronous reset and processor clock\n');
   fp.write('  input  wire           i_rst,\n');
@@ -208,10 +208,10 @@ def genModule(fp,outCoreName,config,parameters):
         raise Exception('Program Bug -- unrecoginized ios "%s"' % signalType);
   fp.write('\n');
   fp.write(');\n');
-  if parameters['name']:
+  if config['parameters']:
     fp.write('\n');
-    for ix in range(len(parameters['name'])):
-      fp.write('parameter [7:0] %s = 8\'h%02X;\n' % (parameters['name'][ix],int(parameters['default'][ix])));
+    for parameter in config['parameters']:
+      fp.write('parameter %s = %s;\n' % (parameter[0],parameter[1]));
 
 def genOutports(fp,config):
   if not config['outports']:
