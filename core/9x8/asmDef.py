@@ -285,9 +285,6 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
   if re.match(r'[CN]?"',raw):
     if 'string' not in allowed:
       raise AsmException('String not allowed at %s' % flc_loc);
-    a = re.match(r'[CN]?"([^"]|\\")+[^\\\\]"$',raw);
-    if not a:
-      raise AsmException('Malformed string at %s' % flc_loc);
     parsedString = ParseString(raw);
     if type(parsedString) == int:
       raise AsmException('Malformed string at %s' % (fl_loc + ':' + str(col+parsedString)));
@@ -380,8 +377,14 @@ def RawTokens(ad,filename,startLineNumber,lines):
       # ignore comments
       if line[col] == ';':
         break;
-      # everything else is a white-space delimited token that needs to be parsed
-      a = re.match(r'\S+',line[col:]);
+      # Catch strings
+      if re.match(r'[CN]?"',line[col:]):
+        a = re.match(r'[CN]?"([^"]|\\")+[^\\\\]"',line[col:]);
+        if not a:
+          raise AsmException('Malformed string at %s' % flc_loc);
+      else:
+        # everything else is a white-space delimited token that needs to be parsed
+        a = re.match(r'\S+',line[col:]);
       if not tokens:
         selAllowed = 'directive';
       else:
