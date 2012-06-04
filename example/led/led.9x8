@@ -29,8 +29,6 @@ INSTRUCTION             2048
 RETURN_STACK            32
 DATA_STACK              32
 
-COMBINE                 INSTRUCTION,DATA
-
 #
 # Define the I/O ports.
 # Note:  "o_led" will be a single-bit output from the processor.  This will be
