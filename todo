@@ -1,4 +1,7 @@
   ssbcc
+    ensure ARCHITECTURE is the first non-comment line
+    ensure that inport, outport, signal, and io names are not repeated
+    add config['parameters'] and usage for peripherals
     search paths for peripherals (code directory, core/9x8/peripherals, core/peripherals)
     put ssbccGenVerilog in a class in core/9x8
     Finish interrupt handling
@@ -8,6 +11,7 @@
       I/O Ports
       INPORT and OUTPORT
       PERIPHERAL
+        finish doc/peripheral.html
     incorporate "COMBINE" feature
     add VHDL
 
@@ -32,6 +36,8 @@
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     peripherals
+      UART_Tx
+        accomodate parameter names in baudmethod
       stack over/underflow detection
       set-reset
       timer
