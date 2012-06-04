@@ -81,6 +81,30 @@ def processOutport(config,line):
       raise SSBCCException('Signal width too wide in "%s"' % line);
   config['outports'].append(thisPort);
 
+def processParameter(config,ixLine,line):
+  # Validate the format of the peripheral configuration command and the the name of the peripheral.
+  cmd = re.findall(r'\s*PERIPHERAL\s+(\w+)\s*(.*)',line);
+  if not cmd:
+    raise SSBCCException('Missing peripheral name in line %d:  %s' % (ixLine,line));
+  peripheral = cmd[0][0];
+  # Find and execute the peripheral Python script.
+  fullperipheral = os.path.join(config['peripheralpath'],'%s.py' % peripheral);
+  if not os.path.isfile(fullperipheral):
+    raise SSBCCException('Peripheral "%s" not found' % peripheral);
+  execfile(fullperipheral);
+  # Convert the space delimited parameters to a list of tuples.
+  param_list = list();
+  for param_string in re.findall(r'(\w+="[^"]*"|\w+=\w+|\w+)\s*',cmd[0][1]):
+    ix = param_string.find('=');
+    if param_string.find('="') > 0:
+      param_list.append((param_string[:ix],param_string[ix+2:-1],));
+    elif param_string.find('=') > 0:
+      param_list.append((param_string[:ix],param_string[ix+1:],));
+    else:
+      param_list.append((param_string,));
+  # Add the peripheral to the micro controller configuration.
+  exec('config[\'peripheral\'].append(%s(config,param_list));' % peripheral);
+
 ################################################################################
 #
 # Surround the program with a try ... except clause
@@ -209,13 +233,7 @@ try:
       parameters['default'].append(cmd[1]);
     # PERIPHERAL
     elif re.match(r'\s*PERIPHERAL\b',line):
-      cmd = re.findall(r'\s*PERIPHERAL\s+(\w+)\s*(.*)$',line);
-      peripheral = cmd[0][0];
-      fullperipheral = os.path.join(config['peripheralpath'],'%s.py' % peripheral);
-      if not os.path.isfile(fullperipheral):
-        raise SSBCCException('Peripheral "%s" not found' % peripheral);
-      execfile(fullperipheral);
-      exec('config[\'peripheral\'].append(%s(config,\'%s\'));' % (peripheral,cmd[0][1]));
+      processParameter(config,ixLine,line);
     # PORTCOMMENT
     elif re.match(r'\s*PORTCOMMENT\b',line):
       cmd = re.findall(r'\s*PORTCOMMENT\s+(.*)',line[:-1]);

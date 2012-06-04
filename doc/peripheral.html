@@ -23,18 +23,36 @@ SSBCC -- PERIPHERAL
 <h1><a name="new">Creating&nbsp;new&nbsp;Peripherals</a></h1>
   New peripherals are created using a Python class with the following member
     functions:
-  <h2>__init__(self,config,param_string):</h2>
+  <h2>__init__(self,config,param_list):</h2>
     Where:<br/>
     <ul>
       <li><tt>config</tt> is the computer compiler configuration state when
         the peripheral configuration command is encountered.<br/><br/></li>
-      <li><tt>param_string</tt> is the everything on the peripheral
-        configuration command following the name of the peripheral.  This
-        string is used to provide mandatory and optional parameters to the
+      <li><tt>param_list</tt> is a list of the space separated parameters on
+        the peripheral
+        configuration command following the name of the peripheral.  This list
+        is used to provide mandatory and optional parameters to the
         core.  For example, the <tt>UART_Tx</tt> peripheral requires
         information to generate the desired baud rate and allows an optional
         name to facilitate distinguishing between multiple instances of the
-        same peripheral.<br/><br/></li>
+        same peripheral.<br/><br/>
+        For example, the parameters in the peripheral configuration
+        command<br/><br/>
+        <tt>&nbsp;&nbsp;PERIPHERAL&nbsp;name&nbsp;param1&nbsp;\<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;param2=options&nbsp;\<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;param3="a&nbsp;string"&nbsp;\<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;param4=value</tt><br/><br/>
+        is converted to the space delimited string<br/><br/>
+        <tt>&nbsp;&nbsp;param1&nbsp;param2=option&nbsp;param3="a&nbsp;string"&nbsp;param4=value</tt><br/><br/>
+        which is then provided to the <tt>__init__</tt> function as a
+        <tt>list()</tt> with the following four tuples:<br/><br/>
+        <tt>&nbsp;&nbsp;('param1',)<br/>
+          &nbsp;&nbsp;('param2','option',)<br/>
+          &nbsp;&nbsp;('param3','"a&nbsp;string"',)<br/>
+          &nbsp;&nbsp;('param4','value',)</tt><br/><br/>
+        These tuples can then be parsed within the <tt>__init__<tt> function to
+        intialize the object.<br/>
+        </li>
       </ul>
     This function should store instantiation specific information in
       <tt>self</tt>.<br/><br/>
