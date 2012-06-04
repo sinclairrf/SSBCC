@@ -140,10 +140,10 @@ class UART_Tx:
     config['signals'].append(('s_%s_Tx' % self.name,8,));
     config['signals'].append(('s_%s_done' % self.name,1,));
     config['signals'].append(('s_%s_wr' % self.name,1,));
-    config['inports'].append(('I_%s_STATUS' % self.name,
+    config['inports'].append((self.inport,
                              ('s_%s_done' % self.name,1,'data'),
                             ));
-    config['outports'].append(('O_%s_TX' % self.name,
+    config['outports'].append((self.outport,
                               ('s_%s_Tx' % self.name,8,'data',),
                               ('s_%s_wr' % self.name,1,'strobe',),
                              ));
