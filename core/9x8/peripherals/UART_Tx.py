@@ -91,14 +91,14 @@ class UART_Tx:
     # Parse the optional parameters.
     for param_tuple in param_list[2:]:
       param = param_tuple[0];
-      param_arg = param_tuple[1:];
+      param_arg = param_tuple[1];
       # baudmethod=rate/baudrate or baudmethod=decimate_count
       if param == 'baudmethod':
         if type(self.baudmethod) != type(None):
           raise SSBCCException('baudmethod can only be specified once');
         if not param_arg:
           raise SSBCCException('baudmethod argument missing');
-        self.ProcessBaudMethod(config,param_arg[0]);
+        self.ProcessBaudMethod(config,param_arg);
       # FIFO=
       elif param == 'FIFO':
         if type(self.FIFO) != type(None):
@@ -203,7 +203,7 @@ always @ (posedge i_clk)
   else if (s_@NAME@_wr)
     s_out_stream <= s_@NAME@_Tx;
   else if (s_count_is_zero)
-    s_out_stream <= { s_out_stream[0+:7], 1'b1 };
+    s_out_stream <= { 1'b1, s_out_stream[1+:7] };
   else
     s_out_stream <= s_out_stream;
 // Generate the output bit stream.
@@ -212,13 +212,13 @@ always @ (posedge i_clk)
   if (i_rst)
     o_@NAME@_Tx <= 1'b1;
   else if (s_@NAME@_wr)
-    o_@NAME@_Tx <= 1'b1;
+    o_@NAME@_Tx <= 1'b0;
   else if (s_count_is_zero)
-    o_@NAME@_Tx <= s_out_stream[7];
+    o_@NAME@_Tx <= s_out_stream[0];
   else
     o_@NAME@_Tx <= o_@NAME@_Tx;
 // Count down the number of bits.
-localparam L_@NAME@_NTX       = 1+8+@NSTOP@;
+localparam L_@NAME@_NTX       = 1+8+@NSTOP@-1;
 localparam L_@NAME@_NTX_NBITS = @clog2@(L_@NAME@_NTX);
 reg [L_@NAME@_NTX_NBITS-1:0] s_ntx = {(L_@NAME@_NTX_NBITS){1'b0}};
 always @ (posedge i_clk)
