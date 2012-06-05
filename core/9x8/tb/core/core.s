@@ -13,7 +13,10 @@
   ; Test the "dup" instruction.
   3 4 dup 0<> dup nip nip nip drop
 
-  ; Test the "over" instruction
+  ; Test the "over" instruction.
   3 4 over 0<> nip nip drop
+
+  ; Test the >r, r@, and r> instructions.
+  3 >r -1 >r r@ r> r@ r> nip nip nip drop
 
   :loop .jump(loop)
