@@ -6,4 +6,7 @@
 iverilog -o tb tb.v core.v \
 || exit 1;
 
-./tb
+if [ -n "`./tb | cmp - tb.good`" ]; then
+  echo "core trace differs from nominal output" > /dev/stderr;
+  exit 1;
+fi
