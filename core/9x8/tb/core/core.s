@@ -4,7 +4,10 @@
 
 .main
 
-  ; Test the rotation instructions
+  ; Test the left rotation instructions.
   -1 <<0 <<1 <<msb <<msb <<msb <<msb <<msb <<msb <<msb <<msb drop
+
+  ; Test the right rotation instructions.
+  -1 0>> 1>> msb>> msb>> msb>> msb>> msb>> msb>> lsb>> lsb>> drop
 
   :loop .jump(loop)
