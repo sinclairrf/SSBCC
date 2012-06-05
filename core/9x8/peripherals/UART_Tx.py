@@ -138,10 +138,10 @@ class UART_Tx:
     # List the I/Os and global signals required by this peripheral.
     config['ios'].append(('o_%s_Tx' % self.name,1,'output',));
     config['signals'].append(('s_%s_Tx' % self.name,8,));
-    config['signals'].append(('s_%s_done' % self.name,1,));
+    config['signals'].append(('s_%s_busy' % self.name,1,));
     config['signals'].append(('s_%s_wr' % self.name,1,));
     config['inports'].append((self.inport,
-                             ('s_%s_done' % self.name,1,'data'),
+                             ('s_%s_busy' % self.name,1,'data'),
                             ));
     config['outports'].append((self.outport,
                               ('s_%s_Tx' % self.name,8,'data',),
@@ -231,16 +231,16 @@ always @ (posedge i_clk)
   else
     s_ntx <= s_ntx;
 // The status bit is 1 if the core is done and 0 otherwise.
-initial s_@NAME@_done = 1'b1;
+initial s_@NAME@_busy = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
-    s_@NAME@_done <= 1'b1;
+    s_@NAME@_busy <= 1'b0;
   else if (s_@NAME@_wr)
-    s_@NAME@_done <= 1'b0;
+    s_@NAME@_busy <= 1'b1;
   else if (s_count_is_zero && (s_ntx == {(L_@NAME@_NTX_NBITS){1'b0}}))
-    s_@NAME@_done <= 1'b1;
+    s_@NAME@_busy <= 1'b0;
   else
-    s_@NAME@_done <= s_@NAME@_done;
+    s_@NAME@_busy <= s_@NAME@_busy;
 endgenerate
 """;
     for subs in [
