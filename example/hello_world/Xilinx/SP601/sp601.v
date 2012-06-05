@@ -32,7 +32,8 @@ BUFIO2 bufio2_inst(
   .DIVCLK       (s_divclk),
   .SERDESSTROBE ()
 );
-defparam bufio2_inst.DIVIDE = 2;
+defparam bufio2_inst.DIVIDE             = 2;
+defparam bufio2_inst.DIVIDE_BYPASS      = "FALSE";
 
 wire s_clk;
 BUFG sclk_inst(

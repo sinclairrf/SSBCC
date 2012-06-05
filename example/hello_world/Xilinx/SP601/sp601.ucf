@@ -1,9 +1,6 @@
 # 200 MHz external oscillator
-#NET "ip_sysclk_p" TNM_NET=ip_sysclk;
-#TIMESPEC TS_ip_sysclk = PERIOD "ip_sysclk" 5 ns HIGH 50%;
-
-NET "s_clk" TNM_NET=s_clk;
-TIMESPEC TS_s_clk = PERIOD  "s_clk" 10 ns high 50%;
+NET "ip_sysclk_p" TNM_NET=ip_sysclk;
+TIMESPEC TS_ip_sysclk = PERIOD "ip_sysclk" 5 ns HIGH 50%;
 
 NET "ip_sysclk_p"       LOC = "K15";
 NET "ip_sysclk_n"       LOC = "K16";
