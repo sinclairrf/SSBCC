@@ -22,4 +22,7 @@
   ; Test the "swap" instruction.
   3 4 swap nip drop
 
+  ; Test the addition and subtraction instructions.
+  8 5 - 7 + drop
+
   :loop .jump(loop)

@@ -64,7 +64,13 @@ VCD info: dumpfile tb.vcd opened for output.
 036 012 swap    : 00 04 03 : 000 1f
 037 053 nip     : 1f 00 03 : 000 1f
 038 054 drop    : 1e 00 00 : 000 1f
-039 139 push    : 1f 00 39 : 000 1f
-03a 080 jump    : 1e 00 00 : 000 1f
-03b 000 nop     : 1e 00 00 : 000 1f
-039 139 push    : 1f 00 39 : 000 1f
+039 108 push    : 1f 00 08 : 000 1f
+03a 105 push    : 00 08 05 : 000 1f
+03b 01c -       : 1f 00 03 : 000 1f
+03c 107 push    : 00 03 07 : 000 1f
+03d 018 +       : 1f 00 0a : 000 1f
+03e 054 drop    : 1e 00 00 : 000 1f
+03f 13f push    : 1f 00 3f : 000 1f
+040 080 jump    : 1e 00 00 : 000 1f
+041 000 nop     : 1e 00 00 : 000 1f
+03f 13f push    : 1f 00 3f : 000 1f

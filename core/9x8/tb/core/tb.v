@@ -17,7 +17,7 @@ reg s_rst = 1'b1;
 initial begin
   repeat (5) @ (posedge s_clk);
   s_rst <= 1'b0;
-  repeat (63) @ (posedge s_clk);
+  repeat (69) @ (posedge s_clk);
   $finish;
 end
 
