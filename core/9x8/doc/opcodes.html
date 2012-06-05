@@ -35,10 +35,8 @@ Some of the opcodes are not directly accessible by the assembler and must be
     <a href="#^">^</a>,
     <a href="#call">call</a>,
     <a href="#callc">callc</a>,
-    <a href="#dis">dis</a>,
     <a href="#drop">drop</a>,
     <a href="#dup">dup</a>,
-    <a href="#ena">ena</a>,
     <a href="#fetch">fetch</a>,
     <a href="#fetch+">fetch+</a>,
     <a href="#fetch-">fetch-</a>,
@@ -123,14 +121,6 @@ Some of the opcodes are not directly accessible by the assembler and must be
     <th align="left"><a href="#-">-</a></th>
       <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td>
       <td align="left">pop the stack and replace the top with N-T</td>
-      </tr>
-    <th align="left"><a href="#dis">dis</a></th>
-      <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td>
-      <td align="left">disable interrupts</td>
-      </tr>
-    <th align="left"><a href="#ena">ena</a></th>
-      <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td>
-      <td align="left">enable interrupts</td>
       </tr>
     <th align="left"><a href="#0=">0=</a></th>
       <td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
@@ -422,12 +412,6 @@ Some of the opcodes are not directly accessible by the assembler and must be
       callc instruction.<br/><br/>
       The assembler normally places a "<tt>drop</tt>" instruction immediately
       after the "<tt>callc</tt>" instruction.<br/><br/>
-  <h2><a name="dis">Instruction:  dis</a></h2>
-    <b>Desription:</b>  Disable interrupts.<br/><br/>
-    <b>Operation:</b><br/><br/>
-      PC &leftarrow; PC+1<br/>
-      R, <tt>return</tt>, T, N, and <tt>stack</tt> unchanged</br>
-      <br/>
   <h2><a name="drop">Instruction:  drop</a></h2>
     <b>Desription:</b>  Pop the data stack, discarding the value that had been
       on the top.<br/><br/>
@@ -446,12 +430,6 @@ Some of the opcodes are not directly accessible by the assembler and must be
       T &leftarrow; T<br/>
       N &leftarrow; T<br/>
       <tt>++stack</tt> &leftarrow; N<br/>
-      <br/>
-  <h2><a name="ena">Instruction:  ena</a></h2>
-    <b>Desription:</b>  Enable interrupts.<br/><br/>
-    <b>Operation:</b><br/><br/>
-      PC &leftarrow; PC+1<br/>
-      R, <tt>return</tt>, T, N, and <tt>stack</tt> unchanged</br>
       <br/>
   <h2><a name="fetch">Instruction:  fetch</a></h2>
     <b>Desription:</b>  Replace the top of the data stack with an 8&nbsp;bit
