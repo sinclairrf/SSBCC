@@ -19,4 +19,7 @@
   ; Test the >r, r@, and r> instructions.
   3 >r -1 >r r@ r> r@ r> nip nip nip drop
 
+  ; Test the "swap" instruction.
+  3 4 swap nip drop
+
   :loop .jump(loop)
