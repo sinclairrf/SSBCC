@@ -3,6 +3,7 @@
 *.bld
 *.csv
 *.drc
+_impact.*
 *.lso
 *.map
 *.mrp
@@ -28,6 +29,7 @@ xlnx_auto_0_xdb
 _xmsgs
 *.xpi
 *.xrpt
+*.xsl
 xst
 *.xst
 *.xwbt
