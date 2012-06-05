@@ -14,7 +14,7 @@ fi
 #
 
 NAME=sp601
-DEVICE=xc6slx45-2-csg324
+DEVICE=xc6slx16-2-csg324
 
 FILES="";
 FILES+=" ../../hello_world.v";
