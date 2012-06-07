@@ -1,6 +1,8 @@
   ssbcc
     ensure ARCHITECTURE is the first non-comment line
-    ensure that inport, outport, signal, and io names are not repeated
+    validate signal names
+      ensure that inport, outport, signal, and io names are not repeated
+      ensure no colisions with signals within the core
     add config['parameters'] and usage for peripherals
     search paths for peripherals (code directory, core/9x8/peripherals, core/peripherals)
     put ssbccGenVerilog in a class in core/9x8
@@ -17,6 +19,7 @@
 
   core/9x8
 *   finish the test bench to validate the core, add to the documentation
+**  peripheral for simulations to flag bad stack operations
     documentation
       update
       assembler
@@ -31,23 +34,30 @@
       determine settings to maximize speed or minimize resources
       finish interrupt handling
     asm
-*     required .memory directive to be repeated after .include, EOF, etc.
-**    improve error message for missing input files
+      required .memory directive to be repeated after .include, EOF, etc.
+      improve error message for missing input files
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     peripherals
-      UART_Tx
+*     UART_Tx
         accomodate parameter names in baudmethod
+        add the FIFO
       stack over/underflow detection
-      set-reset
+      INTERRUPT
       timer
-      single-byte serializer w/ and w/o FIFO
-      single-byte deserializer w/ and w/o FIFO
+      UART_Rx -- single-byte deserializer w/ and w/o FIFO
+      UART -- single-byte serdes w/ and w/o FIFO
       interrupt enable/disable (through INTERRUPT command)
       multi-byte adder
       multiplier
+      PICK -- emulate the Forth operator?
     core.vhd
       do this once core.v is completed
+
+  examples
+    add more examples
+      "echo" program
+      Jim Haberly -- accumulate 10 samples from an ADC
 
   lib/9x8/math.s
     -- incorporate adder peripheral
