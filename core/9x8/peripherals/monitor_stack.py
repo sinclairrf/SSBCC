@@ -276,6 +276,10 @@ always @ (posedge i_clk)
       s_R_address_error <= 1'b1;
     end
   end
+//
+always @ (posedge i_clk)
+  if (s_data_stack_error || s_return_stack_error || s_R_address_error)
+    $finish;
 endgenerate
 """;
     data_stack_width = math.ceil(math.log(config['data_stack'],2));

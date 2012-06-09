@@ -19,7 +19,9 @@
     add VHDL
 
   core/9x8
-*   finish the test bench to validate the core, add to the documentation
+*   finish the test bench to validate the core
+      finish the validation
+      add to the documentation
     documentation
       update
       assembler
@@ -40,6 +42,10 @@
       implement .abbr directive
     peripherals
 **    peripheral for simulations to flag bad stack operations
+**      finish and validate error detection
+        add "finish=n"
+        add "history=n"
+        add "log"
 *     UART_Tx
         accomodate parameter names in baudmethod
         add the FIFO
