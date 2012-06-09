@@ -101,7 +101,7 @@ def processParameter(config,ixLine,line):
         raise SSBCCException('No help for peripheral %s is provided' % fullperipheral);
       print;
       print 'Help message for peripheral:  %s' % peripheral;
-      print 'Locted at %s' % fullperipheral;
+      print 'Located at:  %s' % fullperipheral;
       print;
       print helpmsg;
       raise SSBCCException('Terminated by "help" for peripheral %s' % peripheral);
