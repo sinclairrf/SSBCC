@@ -20,7 +20,6 @@
 
   core/9x8
 *   finish the test bench to validate the core, add to the documentation
-**  peripheral for simulations to flag bad stack operations
     documentation
       update
       assembler
@@ -40,10 +39,10 @@
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     peripherals
+**    peripheral for simulations to flag bad stack operations
 *     UART_Tx
         accomodate parameter names in baudmethod
         add the FIFO
-      stack over/underflow detection
       INTERRUPT
       timer
       UART_Rx -- single-byte deserializer w/ and w/o FIFO
