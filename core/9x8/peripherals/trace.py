@@ -2,18 +2,33 @@
 #
 # Copyright 2012, Sinclair R.F., Inc.
 #
-# Add a code trace peripheral to the 9x8 core.
-#
-# Note:  This is used to generate human readable printout and to monitor the
-#        stack pointers to ensure they're valid.
-# Note:  The PC and opcode are delayed so that they are aligned with the
-#        resulting modifications to the data and result stacks.
-#
 ################################################################################
 
 import math
 
 class trace:
+  """Generate a human readable printout of the core execution.  The program
+counter and opcode are delayed so that they are aligned with the results of the
+opcode.
+
+Usage:
+  PERIPHERAL trace
+
+The following values are displayed in this order during the execution:
+  program counter
+  numeric opcode
+  human-readable opcode
+  ':'
+  data stack pointer
+  next-to-top of the data stack
+  top of the data stack
+  ':'
+  top of the return stack
+  return stack pointer
+
+Example:  See core/9x8/tb/core which is used to validate correct operation of
+          the core.
+"""
 
   def __init__(self,config,params):
     pass;
