@@ -243,11 +243,11 @@ always @ (posedge i_clk)
     s_@NAME@_busy <= s_@NAME@_busy;
 endgenerate
 """;
-    for subs in [
-                 ('@BAUDMETHOD@', str(self.baudmethod), ),
-                 ('@NAME@',       self.name, ),
-                 ('@NSTOP@',      str(self.nStop) )
-                ]:
+    for subs in (
+                  ('@BAUDMETHOD@', str(self.baudmethod), ),
+                  ('@NAME@',       self.name, ),
+                  ('@NSTOP@',      str(self.nStop) ),
+                ):
       body = re.sub(subs[0],subs[1],body);
     if config['define_clog2']:
       body = re.sub('@clog2@','clog2',body);
