@@ -8,7 +8,8 @@ SSBCC -- PERIPHERAL
   <a href="#introduction">Introduction</a><br/>
   <a href="#command">Command</a><br/>
   <a href="#cores">9x8&nbsp;Cores</a><br/>
-  <a href="#new">Creating&nbsp;new&nbsp;Peripherals</a>
+  <a href="#new">Creating&nbsp;new&nbsp;Peripherals</a><br/>
+  <a href="#recommendations">Reccomendations</a><br/>
 <h1><a name="introduction">Introduction</a></h1>
   Within the processor configuration command, the PERIPHERAL configuration is used
     to incorporate peripherals such as UARTs, TBD into the micro controller
@@ -227,5 +228,19 @@ SSBCC -- PERIPHERAL
       single <tt>fp.write("""initial&nbsp;s_...""");</tt> statement, breaking
       out the individual statements allows computed signal names to be included
       more cleanly and also accomodates conditional inclusion of code.<br/><br/>
+<h1><a name="recommendations">Recommendations</a></h1>
+  <h2>help</h2>
+    The PERIPHERAL configuration command will print the documentation string for
+    peripherals if the parameter "<tt>help</tt>" is listed.  For example, to get
+    help for the <tt>monitor_stack</tt> peripheral, insert the peripheral
+    using:<br/><br/>
+    <tt>&nbsp;&nbsp;PERIPHERAL&nbsp;monitor_stack&nbsp;help</tt><br/><br/>
+    This will display the documentation string for the <tt>monitor_stack</tt>
+    peripheral and then terminate the build.<br/><br/>
+    If&nbsp;there is no documentation string for the peripheral, the
+    following message is printed and the build is terminated:<br/><br/>
+    <tt>&nbsp;&nbsp;No&nbsp;help&nbsp;for&nbsp;periperal&nbsp;XXX&nbsp;is&nbsp;provided</tt><br/><br/>
+    Note:  The help message displays the name of the peripheral and the source
+    file.<br/><br/>
 </body>
 </html>
