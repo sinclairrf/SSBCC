@@ -1,4 +1,5 @@
   ssbcc
+    add CONSTANT configuration command so that bit definitions can accompany their definition
     ensure ARCHITECTURE is the first non-comment line
     validate signal names
       ensure that inport, outport, signal, and io names are not repeated
