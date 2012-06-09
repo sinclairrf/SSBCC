@@ -94,10 +94,11 @@ Where:
 // monitor_stack peripheral
 //
 generate
-reg s_data_stack_valid;
 reg s_N_valid;
 reg s_R_valid;
 reg s_T_valid;
+reg s_data_stack_valid;
+reg s_return_stack_valid;
 //
 initial s_T_valid = 1'b0;
 always @ (posedge i_clk)
@@ -207,7 +208,73 @@ always @ (posedge i_clk)
           $display("Fetch using invalid top-of-data-stack");
           s_data_stack_error <= 1'b1;
         end
+      default:
+        ;
     endcase
+  end
+//
+initial s_R_valid = 1'b0;
+always @ (posedge i_clk)
+  if (i_rst)
+    s_R_valid <= 1'b0;
+  else if (s_R_memWr)
+    s_R_valid <= 1'b1;
+  else if (s_R_memRd)
+    s_R_valid <= s_return_stack_valid;
+  else
+    s_R_valid <= s_R_valid;
+//
+initial s_return_stack_valid = 1'b0;
+always @ (posedge i_clk)
+  if (i_rst)
+    s_return_stack_valid <= 1'b0;
+  else if (s_R_memWr)
+    s_return_stack_valid <= s_R_valid;
+  else if (s_R_memRd)
+    if (s_Rp_ptr == {(C_RETURN_WIDTH){1'b0}})
+      s_return_stack_valid <= 1'b0;
+    else
+      s_return_stack_valid <= s_return_stack_valid;
+  else
+    s_return_stack_valid <= s_return_stack_valid;
+//
+reg s_return_stack_error = 1'b0;
+always @ (posedge i_clk)
+  if (!s_return_stack_error) begin
+    if ((s_return == C_RETURN_DEC) && !s_R_valid)
+      $display("Return stack underflow");
+      s_return_stack_error <= 1'b1;
+    end
+    if ((s_return == C_RETURN_INC) && (s_Rw_ptr == {(C_RETURN_WIDTH){1'b1}}) && s_return_stack_valid)
+      $display("Return stack overflow");
+      s_return_stack_error <= 1'b1;
+    end
+  end
+//
+reg s_R_is_address = 1'b0;
+reg [2**C_RETURN_WIDTH-1:0] s_return_is_address = {(2**C_RETURN_WIDTH){1'b0}};
+always @ (posedge i_clk)
+  if (i_rst) begin
+    s_R_is_address <= 1'b0;
+    s_return_is_address <= {(2**C_RETURN_WIDTH){1'b0}};
+  end else if (s_R_memWr) begin
+    s_R_is_address <= (s_bus_r == C_BUS_R_PC);
+    s_return_is_address[s_Rw_ptr] <= s_R_is_address;
+  end else if (s_R_memRd) begin
+    s_R_is_address <= s_return_is_address[s_Rp_ptr];
+  end
+//
+reg s_R_address_error = 1'b0;
+always @ (posedge i_clk)
+  if (!s_R_address_error) begin
+    if ((s_bus_pc == C_BUS_PC_RETURN) && !s_R_is_address)
+      $display("Non-address by return instruction");
+      s_R_address_error <= 1'b1;
+    end
+    if (((s_opcode == 9'b00_0001_001) || (s_opcode == 9'b00_1001_001)) !! s_R_is_address) begin
+      $display("Copied address to data stack");
+      s_R_address_error <= 1'b1;
+    end
   end
 endgenerate
 """;
