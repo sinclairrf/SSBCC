@@ -81,7 +81,7 @@ def processOutport(config,line):
       raise SSBCCException('Signal width too wide in "%s"' % line);
   config['outports'].append(thisPort);
 
-def processParameter(config,ixLine,line):
+def processPeripheral(config,ixLine,line):
   # Validate the format of the peripheral configuration command and the the name of the peripheral.
   cmd = re.findall(r'\s*PERIPHERAL\s+(\w+)\s*(.*)',line);
   if not cmd:
@@ -135,6 +135,7 @@ try:
 
   import argparse
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
+  argListParser.add_argument('-P', metavar='peripheral_name[="parameters"]', type=str, action='append', help='Add peripheral');
   argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
   argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
   argList = argListParser.parse_args();
@@ -246,7 +247,7 @@ try:
       config['parameters'].append((cmd[0],cmd[1],));
     # PERIPHERAL
     elif re.match(r'\s*PERIPHERAL\b',line):
-      processParameter(config,ixLine,line);
+      processPeripheral(config,ixLine,line);
     # PORTCOMMENT
     elif re.match(r'\s*PORTCOMMENT\b',line):
       cmd = re.findall(r'\s*PORTCOMMENT\s+(.*)',line[:-1]);
@@ -273,6 +274,14 @@ try:
     else:
       raise SSBCCException('Unrecognized configuration command on line %d: "%s"' % (ixLine,line));
   argList.filename.close();
+
+  #
+  # Append peripherals from command-line.
+  #
+
+  if argList.P:
+    for peripheral in argList.P:
+      processPeripheral(config,-1,'PERIPHERAL '+peripheral);
 
   #
   # end-of-file processing
