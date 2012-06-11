@@ -47,7 +47,7 @@ Where:
     store a trace of the simulation in filename
 """
 
-  def __init__(self,config.param_list):
+  def __init__(self,config,param_list):
     self.finish = None;
     self.log = None;
     for param in param_list:
@@ -62,7 +62,7 @@ Where:
       elif param_name == 'finish':
         if type(self.finish) != type(None):
           raise SSBCCException('"finish" not valid in this context');
-        if len(param_arg) != 1;
+        if len(param_arg) != 1:
           raise SSBCCException('"finish" requires exactly one value');
         self.finish = int(param_arg[0]);
         if self.finish < 1:
@@ -84,7 +84,7 @@ Where:
     else:
       raise Exception('HDL "%s" not implemented' % config['hdl']);
 
-  def GenVerilog(self,fp.config):
+  def GenVerilog(self,fp,config):
     # The validity of N and T are not monitored for invalid operations.  For
     # example, if N is not valid and a "swap" is performed, then the data stack
     # is no longer valid and an error is detected.  Thus, the validity of N and
@@ -111,17 +111,19 @@ always @ (posedge i_clk)
                           2'b00: s_T_valid <= s_T_valid;
                           2'b01: s_T_valid <= s_R_valid;
                           2'b10: s_T_valid <= s_N_valid;
+                          default : s_T_valid <= s_T_valid;
                         endcase
     C_BUS_T_LOGIC:      case (s_opcode[2])
                           1'b0: s_T_valid <= s_T_valid;
                           1'b1: s_T_valid <= s_N_valid;
+                          default : s_T_valid <= s_T_valid;
                         endcase
     default:            s_T_valid <= s_T_valid;
   endcase
 //
 initial s_N_valid = 1'b0;
 always @ (posedge i_clk)
-  if (r_rst)
+  if (i_rst)
     s_N_valid <= 1'b0;
   else case (s_bus_n)
     C_BUS_N_N:          s_N_valid <= s_N_valid;
@@ -146,56 +148,59 @@ reg s_data_stack_error = 1'b0;
 always @ (posedge i_clk)
   if (!s_data_stack_error) begin
     if ((s_stack == C_STACK_DEC) && !s_T_valid) begin
-      $display("Data stack underflow");
+      $display("%12d : Data stack underflow", $time);
       s_data_stack_error <= 1'b1;
     end
     if ((s_stack == C_STACK_INC) && (s_Np_stack_ptr == {(C_DATA_PTR_WIDTH){1'b1}}) && s_data_stack_valid) begin
-      $display("Data stack overflow");
+      $display("%12d : Data stack overflow", $time);
       s_data_stack_error <= 1'b1;
     end
     if (s_N_valid && !s_T_valid) begin
-      $display("Data stack validity inversion");
+      $display("%12d : Data stack validity inversion", $time);
       s_data_stack_error <= 1'b1;
     end
     if (!s_T_valid && (s_Np_stack_ptr != { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 })) begin
-      $display("Malformed top-of-data-stack validity");
+      $display("%12d : Malformed top-of-data-stack validity", $time);
       s_data_stack_error <= 1'b1;
     end
-    if (!s_N_valid && (s_Np_stack_ptr != {(C_DATA_PTR_WIDTH){1'b1}})) begin
-      $display("Malformed next-to-top-of-data-stack validity");
+    if (!s_N_valid && (s_Np_stack_ptr[1+:C_DATA_PTR_WIDTH-1] != {(C_DATA_PTR_WIDTH-1){1'b1}})) begin
+      $display("%12d : Malformed next-to-top-of-data-stack validity", $time);
       s_data_stack_error <= 1'b1;
     end
     case (s_bus_t)
       C_BUS_T_MATH_ROTATE:
         if (!s_T_valid && (s_opcode != 9'h000)) begin
-          $display("Illegal rotate on invalid top of data stack");
+          $display("%12d : Illegal rotate on invalid top of data stack", $time);
           s_data_stack_error <= 1'b1;
         end
       C_BUS_T_ADDER:
-        if (!s_N_valid || !s_T_valid) begin
-          $display("Invalid addition");
+        if ((s_opcode[3+:4] == 4'b0011) && (!s_N_valid || !s_T_valid)) begin
+          $display("%12d : Invalid addition", $time);
+          s_data_stack_error <= 1'b1;
+        end else if (!s_T_valid) begin
+          $display("%12d : Invalid increment or decrement", $time);
           s_data_stack_error <= 1'b1;
         end
       C_BUS_T_COMPARE:
         if (!s_T_valid) begin
-          $display("Comparison on invalid top of data stack");
+          $display("%12d : Comparison on invalid top of data stack", $time);
           s_data_stack_error <= 1'b1;
         end
       C_BUS_T_INPORT:
         if (!s_T_valid) begin
-          $display("Inport using invalid top of data stack for address");
+          $display("%12d : Inport using invalid top of data stack for address", $time);
           s_data_stack_error <= 1'b1;
         end
       C_BUS_T_LOGIC:
         case (s_opcode[0+:3])
           3'b000, 3'b001, 3'b010:
             if (!s_N_valid || !s_T_valid) begin
-              $display("Illegal logical operation");
+              $display("%12d : Illegal logical operation", $time);
               s_data_stack_error <= 1'b1;
             end
           3'b011:
             if (!s_N_valid || !s_T_valid) begin
-              $display("Illegal nip");
+              $display("%12d : Illegal nip", $time);
               s_data_stack_error <= 1'b1;
             end
           3'b100, 3'b101, 3'b110, 3'b111:
@@ -204,13 +209,17 @@ always @ (posedge i_clk)
             ;
         endcase
       C_BUS_T_MEM:
-        if (!s_T_valid)
-          $display("Fetch using invalid top-of-data-stack");
+        if (!s_T_valid) begin
+          $display("%12d : Fetch using invalid top-of-data-stack", $time);
           s_data_stack_error <= 1'b1;
         end
       default:
         ;
     endcase
+    if ((s_opcode == 9'b00_0111_000) && (!s_N_valid || !s_T_valid)) begin
+      $display("%12d : Outport with invalid top-of-data-stack or next-to-top-of-data-stack", $time);
+      s_data_stack_error <= 1'b1;
+    end
   end
 //
 initial s_R_valid = 1'b0;
@@ -231,7 +240,7 @@ always @ (posedge i_clk)
   else if (s_R_memWr)
     s_return_stack_valid <= s_R_valid;
   else if (s_R_memRd)
-    if (s_Rp_ptr == {(C_RETURN_WIDTH){1'b0}})
+    if (s_Rp_ptr == {(C_RETURN_PTR_WIDTH){1'b0}})
       s_return_stack_valid <= 1'b0;
     else
       s_return_stack_valid <= s_return_stack_valid;
@@ -241,22 +250,22 @@ always @ (posedge i_clk)
 reg s_return_stack_error = 1'b0;
 always @ (posedge i_clk)
   if (!s_return_stack_error) begin
-    if ((s_return == C_RETURN_DEC) && !s_R_valid)
-      $display("Return stack underflow");
+    if ((s_return == C_RETURN_DEC) && !s_R_valid) begin
+      $display("%12d : Return stack underflow", $time);
       s_return_stack_error <= 1'b1;
     end
-    if ((s_return == C_RETURN_INC) && (s_Rw_ptr == {(C_RETURN_WIDTH){1'b1}}) && s_return_stack_valid)
-      $display("Return stack overflow");
+    if ((s_return == C_RETURN_INC) && (s_Rw_ptr == {(C_RETURN_PTR_WIDTH){1'b1}}) && s_return_stack_valid) begin
+      $display("%12d : Return stack overflow", $time);
       s_return_stack_error <= 1'b1;
     end
   end
 //
 reg s_R_is_address = 1'b0;
-reg [2**C_RETURN_WIDTH-1:0] s_return_is_address = {(2**C_RETURN_WIDTH){1'b0}};
+reg [2**C_RETURN_PTR_WIDTH-1:0] s_return_is_address = {(2**C_RETURN_PTR_WIDTH){1'b0}};
 always @ (posedge i_clk)
   if (i_rst) begin
     s_R_is_address <= 1'b0;
-    s_return_is_address <= {(2**C_RETURN_WIDTH){1'b0}};
+    s_return_is_address <= {(2**C_RETURN_PTR_WIDTH){1'b0}};
   end else if (s_R_memWr) begin
     s_R_is_address <= (s_bus_r == C_BUS_R_PC);
     s_return_is_address[s_Rw_ptr] <= s_R_is_address;
@@ -267,12 +276,12 @@ always @ (posedge i_clk)
 reg s_R_address_error = 1'b0;
 always @ (posedge i_clk)
   if (!s_R_address_error) begin
-    if ((s_bus_pc == C_BUS_PC_RETURN) && !s_R_is_address)
-      $display("Non-address by return instruction");
+    if ((s_bus_pc == C_BUS_PC_RETURN) && !s_R_is_address) begin
+      $display("%12d : Non-address by return instruction", $time);
       s_R_address_error <= 1'b1;
     end
-    if (((s_opcode == 9'b00_0001_001) || (s_opcode == 9'b00_1001_001)) !! s_R_is_address) begin
-      $display("Copied address to data stack");
+    if (((s_opcode == 9'b00_0001_001) || (s_opcode == 9'b00_1001_001)) && s_R_is_address) begin
+      $display("%12d : Copied address to data stack", $time);
       s_R_address_error <= 1'b1;
     end
   end
@@ -282,9 +291,4 @@ always @ (posedge i_clk)
     $finish;
 endgenerate
 """;
-    data_stack_width = math.ceil(math.log(config['data_stack'],2));
-    np_stack_ptr_max = (-1 % 2**data_stack);
-    for subs in (
-                  ('@S_NP_STACK_PTR_MAX@', "%d'%X" % (data_stack_width,np_stack_ptr_max),
-                  ('@S_NP_STACK_PTR_MAX_M1@', "%d'%X" % (data_stack_width,np_stack_ptr_max-1),
-                );
+    fp.write(body);
