@@ -32,6 +32,7 @@
         interrupts
       peripherals
     core.v
+      change major opcodes to constants and incorporate in the peripherals
       speed up core
       determine settings to maximize speed or minimize resources
       finish interrupt handling
@@ -41,8 +42,10 @@
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     peripherals
-**    peripheral for simulations to flag bad stack operations
-**      finish and validate error detection
+**    add a 'function' key to config for:
+        clog
+        instruction dump
+      peripheral for simulations to flag bad stack operations
         add "finish=n"
         add "history=n"
         add "log"
