@@ -65,6 +65,7 @@
 
   examples
     add more examples
+**    I2C Master -- TI TMP100 I2C Temperature Sensor
       "echo" program
       Jim Haberly -- accumulate 10 samples from an ADC
 
