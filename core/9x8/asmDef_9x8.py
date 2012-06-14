@@ -824,7 +824,6 @@ class asmDef_9x8:
     self.AddMacro('.fetch-',            1, [ ['','symbol'] ]);
     self.AddMacro('.fetchindexed',      3, [
                                              ['','symbol'],
-                                             ['','singlevalue','symbol']
                                            ]);
     self.AddMacro('.fetchvalue',        2, [ ['','symbol'] ]);
     self.AddMacro('.fetchvector',      -1, [
