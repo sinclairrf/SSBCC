@@ -1,3 +1,8 @@
+  BUG:
+    "OUTPORT 1-bit,1-bit" produced malformed output mapping
+    way for user to disable "verilator tracing_off"
+    gracefully handle "eval(...,ad.SymbolDict())" errors
+ 
   ssbcc
     add CONSTANT configuration command so that bit definitions can accompany their definition
     ensure ARCHITECTURE is the first non-comment line
@@ -42,6 +47,7 @@
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     peripherals
+      add the architecture line number to __init__
 **    add a 'function' key to config for:
         clog
         instruction dump
