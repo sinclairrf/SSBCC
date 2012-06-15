@@ -2,7 +2,6 @@
 #
 # Copyright 2012, Sinclair R.F., Inc.
 #
-#
 ################################################################################
 
 import re;
@@ -56,24 +55,29 @@ Where:
     2nd method:
       specify the number of "i_clk" clock cycles between bit edges
 
-The following INPORTs are provided by the peripheral:
-  I_name_STATUS
+The following OUTPORTs are provided by this peripheral:
+  O_name_TX
+    this is the next 8-bit value to transmit or to queue for transmission
+
+The following INPORTs are provided by this peripheral:
+  I_name_TX
     bit 0:  busy status
       this bit will be high when the core cannot accept more data
       Note:  If there is no FIFO this means that the core is still
         transmitting the last byte.  If there is a FIFO it means that the FIFO
         cannot accept any more data.
 
-The following OUTPORTs are provided by the peripheral:
-  O_name_TX
-    this is the next 8-bit value to transmit or to queue for transmission
+Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
+          message "Hello World!"
 
-Example:  Configure for 115200 baud using a 100 MHz clock.
-  PERIPHERAL UART_Tx O_UART_TX I_UART_TX baudmethod=100000000/115200
+  Within the processor architecture file include the configuration command:
 
-Example:  Transmit the message "Hello World!".
-  C"Hello World!\\r\\n"
-  :loop 1- swap .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop
+    PERIPHERAL UART_Tx O_UART_TX I_UART_TX baudmethod=100000000/115200
+
+  Within the processor assembly, include the code:
+
+    C"Hello World!\\r\\n"
+    :loop 1- swap .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop
 
 """
 
@@ -155,7 +159,7 @@ Example:  Transmit the message "Hello World!".
     config['signals'].append(('s_%s_busy' % self.name,1,));
     config['signals'].append(('s_%s_wr' % self.name,1,));
     config['inports'].append((self.inport,
-                             ('s_%s_busy' % self.name,1,'data'),
+                             ('s_%s_busy' % self.name,1,'data',),
                             ));
     config['outports'].append((self.outport,
                               ('s_%s_Tx' % self.name,8,'data',),
