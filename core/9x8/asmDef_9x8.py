@@ -566,12 +566,18 @@ class asmDef_9x8:
     fp.write('%03X %s\n' % (opcode,self.EmitName(name)));
 
   def EmitOptArg(self,fp,token):
-    if token['type'] in ('constant','inport','outport','variable',):
+    if token['type'] in ('constant','variable',):
       name = token['value'];
       if name not in self.symbols['list']:
         raise Exception('Program Bug');
       ix = self.symbols['list'].index(name);
       self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name));
+    elif token['type'] in ('inport','outport'):
+      name = token['value'];
+      if name not in self.symbols['list']:
+        raise Exception('Program Bug');
+      ix = self.symbols['list'].index(name);
+      self.EmitPush(fp,self.symbols['body'][ix]['address'],self.EmitName(name));
     elif token['type'] == 'instruction':
       self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
     elif token['type'] == 'parameter':
