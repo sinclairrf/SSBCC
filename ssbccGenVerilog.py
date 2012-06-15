@@ -217,8 +217,15 @@ def genModule(fp,outCoreName,config):
           fp.write('  output reg      [%d:0] %s' % (signalWidth-1,signalName));
         else:
           fp.write('  output reg     [%2d:0] %s' % (signalWidth-1,signalName));
+      elif signalType == 'inout':
+        if signalWidth == 1:
+          fp.write('  inout  wire           %s' % signalName);
+        elif signalWidth < 10:
+          fp.write('  inout  wire     [%d:0] %s' % (signalWidth-1,signalName));
+        else:
+          fp.write('  inout  wire    [%2d:0] %s' % (signalWidth-1,signalName));
       else:
-        raise Exception('Program Bug -- unrecoginized ios "%s"' % signalType);
+        raise Exception('Program Bug -- unrecognized ios "%s"' % signalType);
   fp.write('\n');
   fp.write(');\n');
   if config['parameters']:
@@ -237,11 +244,15 @@ def genOutports(fp,config):
       signalName = signal[0];
       signalWidth = signal[1];
       signalType = signal[2];
+      if len(signal) > 3:
+        signalInit = signal[3];
+      else:
+        signalInit = '0'*signalWidth;
       if signalType == 'data':
-        fp.write('initial %s = %d\'h0;\n' % (signalName,signalWidth));
+        fp.write('initial %s = %d\'b%s;\n' % (signalName,signalWidth,signalInit,));
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
-        fp.write('    %s <= %d\'h0;\n' % (signalName,signalWidth));
+        fp.write('    %s <= %d\'b%s;\n' % (signalName,signalWidth,signalInit,));
         fp.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
         fp.write('    %s <= s_N[0+:%d];\n' % (signalName,signalWidth));
         fp.write('  else\n');
