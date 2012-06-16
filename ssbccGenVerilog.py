@@ -6,6 +6,7 @@
 #
 ################################################################################
 
+import math
 import re
 
 from ssbccUtil import *;
@@ -95,6 +96,9 @@ def genInports(fp,config):
 
 def genInstructions(fp,programBody,config):
   nInstructions = config['nInstructions'];
+  addrWidth = int(math.ceil(math.log(nInstructions,2)/4));
+  formatp = '  s_opcodeMemory[\'h%%0%dX] = { 1\'b1, %%s[0+:8] };\n' % addrWidth;
+  formatn = '  s_opcodeMemory[\'h%%0%dX] = 9\'h%%s; // %%s\n' % addrWidth;
   fp.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
   fp.write('initial begin\n');
   programBodyIx = 0;
@@ -103,9 +107,9 @@ def genInstructions(fp,programBody,config):
       fp.write('  // %s\n' % programBody[ix][2:]);
     else:
       if programBody[ix][0] == 'p':
-        fp.write('  s_opcodeMemory[\'h%X] = { 1\'b1, %s[0+:8] };\n' % (programBodyIx,programBody[ix][2:]));
+        fp.write(formatp % (programBodyIx,programBody[ix][2:]));
       else:
-        fp.write('  s_opcodeMemory[\'h%X] = 9\'h%s; // %s\n' % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
+        fp.write(formatn % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
       programBodyIx = programBodyIx + 1;
   for ix in range(programBodyIx,nInstructions):
     fp.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
