@@ -32,7 +32,7 @@ reg                       [7:0] s_N;            // next-to-top on the data stack
 reg      [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top;
                                                 // read data stack pointer
 
-/* verilator tracing_off */
+//@SSBCC@ verilator_tracing
 
 //@SSBCC@ signals
 

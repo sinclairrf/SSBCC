@@ -1,6 +1,5 @@
   BUG:
     "OUTPORT 1-bit,1-bit" produced malformed output mapping
-    way for user to disable "verilator tracing_off"
     gracefully handle "eval(...,ad.SymbolDict())" errors
     "asm" does not use the provided port number for registering inports, etc.
     bad "drop" was not caught by "monitor_stack"
