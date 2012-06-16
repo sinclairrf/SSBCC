@@ -88,7 +88,7 @@ Example:  Transmit a device address to an I2C peripheral and wait for the
                              ('io_'+self.name,1,'data',),
                             ));
     config['outports'].append(('O_'+self.name,
-                              ('s_'+self.name,1,'data',1),
+                              ('s_'+self.name,1,'data','1\'b1'),
                              ));
 
   def GenHDL(self,fp,config):
