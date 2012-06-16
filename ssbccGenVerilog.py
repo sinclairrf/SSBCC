@@ -45,7 +45,7 @@ def genInports(fp,config):
       if signalType == 'data':
         nBits = nBits + signalSize;
         if len(bitString)>0:
-          bitString = bitString + ', ';
+          bitString += ', ';
         bitString = bitString + signalName;
       if signalType == 'set-reset':
         fp.write('      8\'h%02X : s_T_inport = (%s || s_SETRESET_%s) ? 8\'hFF : 8\'h00;\n' % (ix, signalName, signalName));
@@ -243,25 +243,56 @@ def genOutports(fp,config):
     return;
   for ix in range(len(config['outports'])):
     thisPort = config['outports'][ix][1:];
+    bitWidth = 0;
+    bitName = '';
+    bitInit = '';
+    nComponents = 0;
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalName = signal[0];
       signalWidth = signal[1];
       signalType = signal[2];
-      if len(signal) > 3:
-        signalInit = signal[3];
-      else:
-        signalInit = '0'*signalWidth;
       if signalType == 'data':
-        fp.write('initial %s = %d\'b%s;\n' % (signalName,signalWidth,signalInit,));
+        bitWidth = bitWidth + signalWidth;
+        if len(bitName) > 0:
+          bitName += ', ';
+        bitName += signalName;
+        if len(signal) > 3:
+          signalInit = signal[3];
+        else:
+          signalInit = '%d\'d0' % signalWidth;
+        if len(bitInit) > 0:
+          bitInit += ', '
+        bitInit += signalInit;
+        nComponents = nComponents + 1;
+        fp.write('initial %s = %s;\n' % (signalName,signalInit,));
+    if bitWidth == 0:
+      pass;
+    else:
+      if nComponents == 1:
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
-        fp.write('    %s <= %d\'b%s;\n' % (signalName,signalWidth,signalInit,));
+        fp.write('    %s <= %s;\n' % (bitName,bitInit,));
         fp.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
-        fp.write('    %s <= s_N[0+:%d];\n' % (signalName,signalWidth));
+        fp.write('    %s <= s_N[0+:%d];\n' % (bitName,bitWidth));
         fp.write('  else\n');
-        fp.write('    %s <= %s;\n' % (signalName,signalName));
+        fp.write('    %s <= %s;\n' % (bitName,bitName));
         fp.write('\n');
+      else:
+        fp.write('always @ (posedge i_clk)\n');
+        fp.write('  if (i_rst)\n');
+        fp.write('    { %s } <= { %s };\n' % (bitName,bitInit,));
+        fp.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
+        fp.write('    { %s } <= s_N[0+:%d];\n' % (bitName,bitWidth));
+        fp.write('  else\n');
+        fp.write('    { %s } <= { %s };\n' % (bitName,bitName));
+        fp.write('\n');
+    for jx in range(len(thisPort)):
+      signal = thisPort[jx];
+      signalName = signal[0];
+      signalType = signal[2];
+      if signalType == 'data':
+        pass;
       elif signalType == 'strobe':
         fp.write('initial %s = 1\'b0;\n' % signalName);
         fp.write('always @ (posedge i_clk)\n');
