@@ -22,11 +22,15 @@ localparam C_RETURN_WIDTH = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;
  *
  ******************************************************************************/
 
-reg                       [7:0] s_N;            // next-to-top on the data stack
-reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
-reg                       [7:0] s_T;            // top of the data stack
+// listed in useful dispay order
 reg            [C_PC_WIDTH-1:0] s_PC;           // program counter
 reg                       [8:0] s_opcode;       // current opcode
+reg    [C_RETURN_PTR_WIDTH-1:0] s_Rp_ptr;       // read return stack pointer
+reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
+reg                       [7:0] s_T;            // top of the data stack
+reg                       [7:0] s_N;            // next-to-top on the data stack
+reg      [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top;
+                                                // read data stack pointer
 
 /* verilator tracing_off */
 
@@ -420,7 +424,7 @@ always @ (posedge i_clk)
   if (s_R_memWr)
     s_R_stack[s_Rw_ptr] <= s_R;
 
-reg [C_RETURN_PTR_WIDTH-1:0] s_Rp_ptr = { {(C_RETURN_PTR_WIDTH-1){1'b1}}, 1'b0 };
+initial s_Rp_ptr = { {(C_RETURN_PTR_WIDTH-1){1'b1}}, 1'b0 };
 always @ (posedge i_clk)
   if (i_rst)
     s_Rp_ptr <= { {(C_RETURN_PTR_WIDTH-1){1'b1}}, 1'b0 };
@@ -482,7 +486,7 @@ always @ (posedge i_clk)
 
 // pointer to top of data stack and next data stack
 initial                    s_Np_stack_ptr_next = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
-reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top  = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
+initial                    s_Np_stack_ptr_top  = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
 always @ (*)
   case (s_stack)
     C_STACK_NOP: begin
