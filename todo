@@ -1,11 +1,11 @@
-  BUG:
+  BUGS:
     "OUTPORT 1-bit,1-bit" produced malformed output mapping
     gracefully handle "eval(...,ad.SymbolDict())" errors
-    "asm" does not use the provided port number for registering inports, etc.
     bad "drop" was not caught by "monitor_stack"
  
   ssbcc
     add CONSTANT configuration command so that bit definitions can accompany their definition
+    add "function"s for use by peripherals and incorporate all functions at the top of the peripheral section
     ensure ARCHITECTURE is the first non-comment line
     validate signal names
       ensure that inport, outport, signal, and io names are not repeated
@@ -43,6 +43,7 @@
       determine settings to maximize speed or minimize resources
       finish interrupt handling
     asm
+      change $(...) to ${...} so that parentheses can be parsed
       required .memory directive to be repeated after .include, EOF, etc.
       improve error message for missing input files
       add non-return restriction to some optional macro arguments
@@ -52,13 +53,13 @@
 **    add a 'function' key to config for:
         clog
         instruction dump
-      peripheral for simulations to flag bad stack operations
+      finish "monitor_stack" periperhal:
         add "finish=n"
         add "history=n"
         add "log"
-*     UART_Tx
+*     finish "UART_Tx" peripheral
         accomodate parameter names in baudmethod
-        add the FIFO
+        add "FIFO=n"
       INTERRUPT
       timer
       UART_Rx -- single-byte deserializer w/ and w/o FIFO
