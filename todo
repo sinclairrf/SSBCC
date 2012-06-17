@@ -3,7 +3,6 @@
     bad "drop" was not caught by "monitor_stack"
  
   ssbcc
-    add optional signal initialization for OUTPORT with format "X-bit=init"
     add CONSTANT configuration command so that bit definitions can accompany their definition
     add "function"s for use by peripherals and incorporate all functions at the top of the peripheral section
     ensure ARCHITECTURE is the first non-comment line

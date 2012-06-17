@@ -55,30 +55,38 @@ def processInport(config,line):
       raise SSBCCException('Signal width too wide in "%s"' % line);
   config['inports'].append(thisPort);
 
-def processOutport(config,line):
-  cmd = re.findall(r'\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
+def processOutport(config,line,ixLine):
+  cmd = re.findall(r'^\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)\s*$',line);
+  if not cmd:
+    raise SSBCCException('Malformed OUTPUT configuration command on line %d: "%s"' % (ixLine,line,));
   modes = re.findall(r'([^,]+)',cmd[0][0]);
   names = re.findall(r'([^,]+)',cmd[0][1]);
   portName = cmd[0][2];
   if len(modes) != len(names):
-    raise SSBCCException('Malformed OUTPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+    raise SSBCCException('Malformed OUTPORT statement -- number of widths/types and number of signal names don\'t match on line %d: "%s"' % (ixLine,line,));
   # Append the input signal names, mode, and bit-width to the list of I/Os.
   nBits = 0;
   thisPort = (portName,);
   for ix in range(len(names)):
-    if re.match(r'^\d+-bit$',modes[ix]):
-      thisNBits = int(modes[ix][0]);
+    if re.match(r'\d+-bit',modes[ix]):
+      a = re.match(r'(\d+)-bit(=\S+)?$',modes[ix]);
+      if not a:
+        raise SSBCCException('Malformed bitwith/bitwidth=initialization on line %d:  "%s"' % (ixLine,modes[ix],));
+      thisNBits = int(a.group(1));
       config['ios'].append((names[ix],thisNBits,'output',));
-      thisPort += ((names[ix],thisNBits,'data',),);
+      if a.group(2):
+        thisPort += ((names[ix],thisNBits,'data',a.group(2)[1:],),);
+      else:
+        thisPort += ((names[ix],thisNBits,'data',),);
       nBits = nBits + thisNBits;
       config['haveBitOutportSignals'] = 'True';
     elif modes[ix] == 'strobe':
       config['ios'].append((names[ix],1,'output',));
       thisPort += ((names[ix],1,'strobe',),);
     else:
-      raise SSBCCException('Unrecognized OUTPORT signal type "%s"' % modes[ix]);
+      raise SSBCCException('Unrecognized OUTPORT signal type on line %d: "%s"' % (ixLine,modes[ix],));
     if nBits > 8:
-      raise SSBCCException('Signal width too wide in "%s"' % line);
+      raise SSBCCException('Signal width too wide on line %d:  in "%s"' % (ixLine,line,));
   config['outports'].append(thisPort);
 
 def processPeripheral(config,ixLine,line):
@@ -239,7 +247,7 @@ try:
       memories['arch'].append(cmd[2]);
     # OUTPORT
     elif re.match(r'\s*OUTPORT\b',line):
-      processOutport(config,line);
+      processOutport(config,line,ixLine);
     # PARAMETER
     elif re.match(r'\s*PARAMETER\b',line):
       cmd = re.findall(r'\s*PARAMETER\s+(\w+)\s+(\d+)',line);
