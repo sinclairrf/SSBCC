@@ -38,6 +38,7 @@
         interrupts
       peripherals
     core.v
+**    conditionally enable interrupt-related signals
       change major opcodes to constants and incorporate in the peripherals
       speed up core
       determine settings to maximize speed or minimize resources
