@@ -139,7 +139,7 @@ always @ (posedge i_clk)
     s_data_stack_valid <= 1'b0;
   else if (s_stack == C_STACK_INC)
     s_data_stack_valid <= s_N_valid;
-  else if ((s_stack == C_STACK_DEC) && (s_Np_stack_ptr == {(C_DATA_PTR_WIDTH){1'b0}}))
+  else if ((s_stack == C_STACK_DEC) && (s_Np_stack_ptr_next == {(C_DATA_PTR_WIDTH){1'b0}}))
     s_data_stack_valid <= 1'b0;
   else
     s_data_stack_valid <= s_data_stack_valid;

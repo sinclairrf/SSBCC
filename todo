@@ -1,6 +1,5 @@
   BUGS:
     gracefully handle "eval(...,ad.SymbolDict())" errors
-    bad "drop" was not caught by "monitor_stack"
  
   ssbcc
     add CONSTANT configuration command so that bit definitions can accompany their definition
