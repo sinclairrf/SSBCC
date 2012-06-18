@@ -169,7 +169,7 @@ always @ (posedge i_clk)
     end
     case (s_bus_t)
       C_BUS_T_MATH_ROTATE:
-        if (!s_T_valid && (s_opcode != 9'h000)) begin
+        if (!s_T_valid && (s_opcode[0+:3] != 3'h0)) begin
           $display("%12d : Illegal rotate on invalid top of data stack", $time);
           s_data_stack_error <= 1'b1;
         end
