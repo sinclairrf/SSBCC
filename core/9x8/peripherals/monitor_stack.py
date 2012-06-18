@@ -145,6 +145,7 @@ always @ (posedge i_clk)
     s_data_stack_valid <= s_data_stack_valid;
 //
 reg s_data_stack_error = 1'b0;
+@OUTPORT_PURE_STROBE@
 always @ (posedge i_clk)
   if (!s_data_stack_error) begin
     if ((s_stack == C_STACK_DEC) && !s_T_valid) begin
@@ -216,8 +217,12 @@ always @ (posedge i_clk)
       default:
         ;
     endcase
-    if ((s_opcode == 9'b00_0111_000) && (!s_N_valid || !s_T_valid)) begin
-      $display("%12d : Outport with invalid top-of-data-stack or next-to-top-of-data-stack", $time);
+    if ((s_opcode == 9'b00_0111_000) && !s_T_valid) begin
+      $display("%12d : Outport with invalid top-of-data-stack", $time);
+      s_data_stack_error <= 1'b1;
+    end
+    if ((s_opcode == 9'b00_0111_000) && !s_N_valid && !s_outport_pure_strobe) begin
+      $display("%12d : Outport with invalid next-to-top-of-data-stack", $time);
       s_data_stack_error <= 1'b1;
     end
   end
@@ -291,4 +296,29 @@ always @ (posedge i_clk)
     $finish;
 endgenerate
 """;
+    outport_pure_strobe = '';
+    for ix in range(len(config['outports'])):
+      thisPort = config['outports'][ix][1:];
+      thisOnlyStrobe = True;
+      thisIsStrobe = False;
+      for jx in range(len(thisPort)):
+        signal = thisPort[jx];
+        signalType = signal[2];
+        if signalType == 'data':
+          thisOnlyStrobe = False;
+        elif signalType == 'strobe':
+          thisIsStrobe = True;
+        else:
+          raise SSBCCException('Unrecognized outport signal type "%s" in monitorstrobe' % signalType);
+      if thisOnlyStrobe and thisIsStrobe:
+        if len(outport_pure_strobe) > 0:
+          outport_pure_strobe += ' || ';
+        outport_pure_strobe += ('(s_T == 8\'h%02X)' % ix);
+    if len(outport_pure_strobe) == 0:
+      outport_pure_strobe = '1\'b0';
+    outport_pure_strobe = 'wire s_outport_pure_strobe = ' + outport_pure_strobe + ';';
+    for subs in (
+                  ('@OUTPORT_PURE_STROBE@',     outport_pure_strobe, ),
+                ):
+      body = re.sub(subs[0],subs[1],body);
     fp.write(body);
