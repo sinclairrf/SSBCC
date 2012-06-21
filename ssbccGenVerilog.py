@@ -321,6 +321,10 @@ def genSignals(fp,config):
     thisSignal = config['signals'][ix];
     signalName = thisSignal[0];
     signalWidth = thisSignal[1];
+    if len(thisSignal) < 3:
+      signalInit = '%d\'d0' % signalWidth;
+    else:
+      signalInit = thisSignal[2];
     outString = 'reg ';
     if signalWidth == 1:
       outString += '       ';
@@ -329,8 +333,10 @@ def genSignals(fp,config):
     else:
       outString += ('[%2d:0] ' % (signalWidth-1));
     outString += signalName;
-    outString += ' '*(maxLength-len(outString));
-    outString += ('= %d\'d0;\n' % signalWidth);
+    if type(signalInit) != type(None):
+      outString += ' '*(maxLength-len(outString));
+      outString += ' = ' + signalInit;
+    outString += ';\n'
     fp.write(outString);
 
 def genUserHeader(fp,user_header):
