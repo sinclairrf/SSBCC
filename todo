@@ -53,6 +53,7 @@
         clog
         instruction dump
       finish "monitor_stack" periperhal:
+        detect out-of-range values for memory, inport, outport, etc.
         add "finish=n"
         add "history=n"
         add "log"
