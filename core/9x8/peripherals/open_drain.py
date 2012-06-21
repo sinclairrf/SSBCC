@@ -72,33 +72,33 @@ Example:  Transmit a device address to an I2C peripheral and wait for the
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'inport':
-        if type(self.inport) != type(None):
+        if self.inport != None:
           raise SSBCCException('inport can only be specified once at line %d' % ixLine);
-        if type(param_arg) == type(None):
+        if param_arg == None:
           raise SSBCCException('inport assignment missing at line %d' % ixLine);
         if not re.match('I_\w+$',param_arg):
           raise SSBCCException('Bad inport symbol at line %d:  "%s"' % (ixLine,param_arg,));
         self.inport = param_arg;
       elif param == 'iosignal':
-        if type(self.iosignal) != type(None):
+        if self.iosignal != None:
           raise SSBCCException('iosignal can only be specified once at line %d' % ixLine);
-        if type(param_arg) == type(None):
+        if param_arg == None:
           raise SSBCCException('iosignal assignment missing at line %d' % ixLine);
         if not re.match('io_\w+$',param_arg):
           raise SSBCCException('Bad io signal name at line %d:  "%s"' % (ixLine,param_arg,));
         self.iosignal = param_arg;
       elif param == 'outport':
-        if type(self.outport) != type(None):
+        if self.outport != None:
           raise SSBCCException('outport can only be specified once at line %d' % ixLine);
-        if type(param_arg) == type(None):
+        if param_arg == None:
           raise SSBCCException('outport assignment missing at line %d' % ixLine);
         if not re.match('O_\w+$',param_arg):
           raise SSBCCException('Bad outport symbol at line %d:  "%s"' % (ixLine,param_arg,));
         self.outport = param_arg;
       elif param == 'width':
-        if type(self.width) != type(None):
+        if self.width != None:
           raise SSBCCException('width can only be specified once at line %d' % ixLine);
-        if type(param_arg) == type(None):
+        if param_arg == None:
           raise SSBCCException('width assignment missing at line %d' % ixLine);
         if not re.match('[1-9][0-9]*$',param_arg):
           raise SSBCCException('Bad signal width at line %d:  "%s"' % (ixLine,param_arg,));
@@ -106,13 +106,13 @@ Example:  Transmit a device address to an I2C peripheral and wait for the
       else:
         raise SSBCCException('Unrecognized parameter at line %d:  "%s"' % (ixLine,param,));
     # Set defaults for non-specified values.
-    if type(self.inport) == type(None):
+    if self.inport == None:
       raise SSBCCException('Missing "inport=I_name" at line %d' % ixLine);
-    if type(self.iosignal) == type(None):
+    if self.iosignal == None:
       raise SSBCCException('Missing "iosignal=io_name" at line %d' % ixLine);
-    if type(self.outport) == type(None):
+    if self.outport == None:
       raise SSBCCException('Missing "outport=O_name" at line %d' % ixLine);
-    if type(self.width) == type(None):
+    if self.width == None:
       self.width = 1;
     # Ensure the speicified values are reasonable.
     if (self.width < 1) or (8 < self.width):
