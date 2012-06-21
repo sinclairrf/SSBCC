@@ -68,7 +68,7 @@
     0x06 $(4-1) :inner
       swap O_SCL outport 0>> swap .call(i2c_quarter_cycle)
     .jumpc(inner,1-) drop drop
-  .jumpc(outer,nop) drop drop
+  .jumpc(outer,1-) drop drop
   ; get the acknowledge bit at the middle of the high portion of SCL
   1 .outport(O_SDA) .call(i2c_quarter_cycle)
   1 .outport(O_SCL) .call(i2c_quarter_cycle)
