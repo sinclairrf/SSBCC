@@ -119,9 +119,9 @@ def processPeripheral(config,ixLine,line):
     elif param_string.find('=') > 0:
       param_list.append((param_string[:ix],param_string[ix+1:],));
     else:
-      param_list.append((param_string,));
+      param_list.append((param_string,None));
   # Add the peripheral to the micro controller configuration.
-  exec('config[\'peripheral\'].append(%s(config,param_list));' % peripheral);
+  exec('config[\'peripheral\'].append(%s(config,param_list,ixLine));' % peripheral);
 
 ################################################################################
 #
