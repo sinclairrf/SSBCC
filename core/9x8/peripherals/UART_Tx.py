@@ -81,7 +81,7 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
 
 """
 
-  def __init__(self,config,param_list):
+  def __init__(self,config,param_list,ixLine):
     # Set the defaults.
     self.baudmethod = None;
     self.FIFO = None;
@@ -89,22 +89,22 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
     self.nStop = None;
     # Ensure there are enough arguments to the peripheral
     if len(param_list) < 2:
-      raise SSBCCException('UART_Tx peripheral requires outport and inport names');
+      raise SSBCCException('UART_Tx peripheral requires outport and inport names at line %d' % ixLine);
     # Get the outport symbol
     param_outport = param_list[0];
     if len(param_outport) != 1:
-      raise SSBCCException('No "=" allowed in UART_Tx peripheral outport symbol');
+      raise SSBCCException('No "=" allowed in UART_Tx peripheral outport symbol at line %d' % ixLine);
     param_outport = param_outport[0];
     if not re.match('^O_\w+$',param_outport):
-      raise SSBCCException('First argument must be the outport name starting with "O_"');
+      raise SSBCCException('First argument must be the outport name starting with "O_" at line %d' % ixLine);
     self.outport = param_outport;
     # Get the inport symbol
     param_inport = param_list[1];
     if len(param_inport) != 1:
-      raise SSBCCException('No "=" allowed in UART_Tx peripheral inport symbol');
+      raise SSBCCException('No "=" allowed in UART_Tx peripheral inport symbol at line %d' % ixLine);
     param_inport = param_inport[0];
     if not re.match('^I_\w+$',param_inport):
-      raise SSBCCException('First argument must be the inport name starting with "I_"');
+      raise SSBCCException('First argument must be the inport name starting with "I_" at line %d' % ixLine);
     self.inport = param_inport;
     # Parse the optional parameters.
     for param_tuple in param_list[2:]:
@@ -113,40 +113,40 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
       # baudmethod=rate/baudrate or baudmethod=decimate_count
       if param == 'baudmethod':
         if type(self.baudmethod) != type(None):
-          raise SSBCCException('baudmethod can only be specified once');
+          raise SSBCCException('baudmethod can only be specified once at line %d' % ixLine);
         if not param_arg:
-          raise SSBCCException('baudmethod argument missing');
+          raise SSBCCException('baudmethod argument missing at line %d' % ixLine);
         self.ProcessBaudMethod(config,param_arg);
       # FIFO=
       elif param == 'FIFO':
         if type(self.FIFO) != type(None):
-          raise SSBCCException('FIFO length cannot be specified after "noFIFO"');
+          raise SSBCCException('FIFO length cannot be specified after "noFIFO" at line %d' % ixLine);
         self.FIFO = int(param_arg);
         if self.FIFO <= 0:
-          raise SSBCCException('FIFO length must be positive');
+          raise SSBCCException('FIFO length must be positive at line %d' % ixLine);
       # name=
       elif param=='name':
         if type(self.name) != type(None):
-          raise SSBCCException('name can only be specified once');
+          raise SSBCCException('name can only be specified once at line %d' % ixLine);
         self.name = param_arg;
       # noFIFO
       elif param == 'noFIFO':
         if type(self.FIFO) != type(None):
-          raise SSBCCException('noFIFO follows FIFO=xxx specification');
+          raise SSBCCException('noFIFO follows FIFO=xxx specification at line %d' % ixLine);
         self.FIFO = False;
       # nStop=
       elif param == 'nStop':
         if type(self.nStop) != type(None):
-          raise SSBCCException('nStop can only be specified once');
+          raise SSBCCException('nStop can only be specified once at line %d' % ixLine);
         self.nStop = int(param_arg);
         if self.nStop <= 0:
-          raise SSBCCException('nStop must be 1 or more');
+          raise SSBCCException('nStop must be 1 or more at line %d' % ixLine);
       # no match
       else:
-        raise SSBCCException('Unrecognized parameter: %s' % param);
+        raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Ensure the required parameters are provided and set non-specified optional parameters.
     if not self.baudmethod:
-      raise SSBCCException('Required parameter "baudmethod" is missing');
+      raise SSBCCException('Required parameter "baudmethod" is missing at line %d' % ixLine);
     if type(self.FIFO) == type(None):
       self.FIFO = False;
     if not self.name:
@@ -172,14 +172,14 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
     if param_arg.find('/') > 0:
       baudarg = re.findall('([^/]+)',param_arg);
       if len(baudarg) != 2:
-        raise SSBCCException('baudmethod cannot have more than one "/"');
+        raise SSBCCException('baudmethod cannot have more than one "/" at line %d' % ixLine);
       if not (re.match(r'^\d+$',baudarg[0]) and re.match(r'^\d+$',baudarg[1])):
-        raise SSBCCException('baudmethod doesn\'t accept parameters yet');
+        raise SSBCCException('baudmethod doesn\'t accept parameters yet at line %d' % ixLine);
       self.baudmethod = (int(baudarg[0])+int(baudarg[1])/2)/int(baudarg[1]);
     else:
       baudarg = param_arg;
       if not re.match(r'^\d+$',baudarg):
-        raise SSBCCException('baudmethod doesn\'t accept parameters yet');
+        raise SSBCCException('baudmethod doesn\'t accept parameters yet at line %d' % ixLine);
       self.baudmethod = int(baudarg);
 
   def GenAssembly(self,config):

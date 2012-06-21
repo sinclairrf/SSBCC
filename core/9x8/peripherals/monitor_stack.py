@@ -55,26 +55,26 @@ Where:
       param_arg = param_list[1:];
       if param_name == 'nofinish':
         if type(self.finish) != type(None):
-          raise SSBCCException('"nofinish" not valid in this contect');
+          raise SSBCCException('"nofinish" not valid in this contect at line %d' % ixLine);
         if len(param_arg) != 0:
-          raise SSBCCException('"nofinish" does not take an argument');
+          raise SSBCCException('"nofinish" does not take an argument at line %d' % ixLine);
         self.finish = False;
       elif param_name == 'finish':
         if type(self.finish) != type(None):
-          raise SSBCCException('"finish" not valid in this context');
+          raise SSBCCException('"finish" not valid in this context at line %d' % ixLine);
         if len(param_arg) != 1:
-          raise SSBCCException('"finish" requires exactly one value');
+          raise SSBCCException('"finish" requires exactly one value at line %d' % ixLine);
         self.finish = int(param_arg[0]);
         if self.finish < 1:
-          raise SSBCCException('"finish" value must be 1 or more');
+          raise SSBCCException('"finish" value must be 1 or more at line %d' % ixLine);
       elif param_name == 'log':
         if type(self.log) != type(None):
-          raise SSBCCException('"log" can only be specified once');
+          raise SSBCCException('"log" can only be specified once at line %d' % ixLine);
         if len(param_arg) != 1:
-          raise SSBCCException('"log" requires the output file name');
+          raise SSBCCException('"log" requires the output file name at line %d' % ixLine);
         self.log = param_arg[0];
       else:
-        raise SSBCCException('Unrecognized parameter: "%s"' % param_name);
+        raise SSBCCException('Unrecognized parameter at line %d: "%s"' % (ixLine,param_name,));
     if type(self.finish) == type(None):
       self.finish = 0;
 
@@ -309,7 +309,7 @@ endgenerate
         elif signalType == 'strobe':
           thisIsStrobe = True;
         else:
-          raise SSBCCException('Unrecognized outport signal type "%s" in monitorstrobe' % signalType);
+          raise Exception('Program Bug:  Unrecognized outport signal type "%s" in monitorstrobe' % signalType);
       if thisOnlyStrobe and thisIsStrobe:
         if len(outport_pure_strobe) > 0:
           outport_pure_strobe += ' || ';

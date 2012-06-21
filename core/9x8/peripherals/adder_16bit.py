@@ -41,7 +41,7 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:
   .return
 """
 
-  def __init__(self,config,params):
+  def __init__(self,config,params,ixLine):
     # List the signals to be declared for the peripheral.
     config['signals'].append(('s_adder_16bit_out_MSB',8,));
     config['signals'].append(('s_adder_16bit_out_LSB',8,));

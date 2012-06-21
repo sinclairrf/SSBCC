@@ -30,7 +30,7 @@ Example:  See core/9x8/tb/core which is used to validate correct operation of
           the core.
 """
 
-  def __init__(self,config,params):
+  def __init__(self,config,params,ixLine):
     pass;
 
   def GenHDL(self,fp,config):

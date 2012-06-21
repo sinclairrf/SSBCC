@@ -72,21 +72,21 @@ Example:  Capture an external 24-bit counter:
 
 """
 
-  def __init__(self,config,param_list):
+  def __init__(self,config,param_list,ixLine):
     # Ensure the right number of arguments was provided.
     if len(param_list) != 5:
       print __doc__;
-      raise SSBCCException('Wrong number of arguments to peripheral "latch"');
+      raise SSBCCException('Wrong number of arguments to peripheral "latch" at line %d' % ixLine);
     # parse the required positional parameters
     if param_list[0][0][0:2] != 'O_':
       print __doc__;
-      raise SSBCCException('First positional argument must start with "O_"');
+      raise SSBCCException('First positional argument must start with "O_" at line %d' % ixLine);
     if param_list[1][0][0:2] != 'O_':
       print __doc__;
-      raise SSBCCException('Second positional argument must start with "O_"');
+      raise SSBCCException('Second positional argument must start with "O_" at line %d' % ixLine);
     if param_list[2][0][0:2] != 'I_':
       print __doc__;
-      raise SSBCCException('Third positional argument must start with "I_"');
+      raise SSBCCException('Third positional argument must start with "I_" at line %d' % ixLine);
     self.o_latch = param_list[0][0];
     self.o_addr  = param_list[1][0];
     self.i_read  = param_list[2][0];
@@ -99,21 +99,21 @@ Example:  Capture an external 24-bit counter:
       # processor input signal name
       if param == 'signal':
         if type(self.i_signal) != type(None):
-          raise SSBCCException('"signal=i_name" can only be specified once');
+          raise SSBCCException('"signal=i_name" can only be specified once at line %d' % ixLine);
         if param_arg[0][0:2] != 'i_':
-          raise SSBCCException('signal name must start with "i_"');
+          raise SSBCCException('signal name must start with "i_" at line %d' % ixLine);
         self.i_signal = param_arg[0];
       elif param == 'width':
         if type(self.i_width) != type(None):
-          raise SSBCCException('"width=n" can only be specified once');
+          raise SSBCCException('"width=n" can only be specified once at line %d' % ixLine);
         self.i_width = int(param_arg[0]);
       else:
-        raise SSBCCException('Unrecognized option "%s"' % param);
+        raise SSBCCException('Unrecognized option at line %d: "%s"' % (ixLine,param,));
     # Ensure the required parameters are set.
     if type(self.i_signal) == type(None):
-      raise SSBCCException('signal name not set');
+      raise SSBCCException('signal name not set at line %d' % ixLine);
     if type(self.i_width) == type(None):
-      raise SSBCCException9('signal width not set');
+      raise SSBCCException('signal width not set at line %d' % ixLine);
     # Derived parameters
     self.addr_width = int(math.ceil(math.log(self.i_width/8,2)));
     self.latch_width = 8*((self.i_width+7)/8);
