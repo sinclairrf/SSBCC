@@ -48,6 +48,7 @@
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     peripherals
+**    make all peripheral configuration commands match "open_drain" format
 **    add a 'function' key to config for:
         clog
         instruction dump
