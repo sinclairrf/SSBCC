@@ -274,6 +274,7 @@ try:
     elif re.match(r'\s*USER_HEADER\b',line):
       user_header_done = False;
       for line in argList.filename:
+        ixLine = ixLine + 1;
         if re.match(r'\s*END_USER_HEADER\s',line):
           user_header_done = True;
           break;
