@@ -48,7 +48,6 @@
       add non-return restriction to some optional macro arguments
       implement .abbr directive
     peripherals
-      add the architecture line number to __init__
 **    add a 'function' key to config for:
         clog
         instruction dump
