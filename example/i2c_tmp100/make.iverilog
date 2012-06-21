@@ -1,0 +1,7 @@
+#!/bin/bash
+
+NAME=i2c_tmp100
+
+ssbcc -P monitor_stack ${NAME}.9x8 || { echo "aborting test" > /dev/stderr; exit 1; }
+
+iverilog -o tb tb.v ${NAME}.v
