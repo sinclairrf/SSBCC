@@ -71,7 +71,6 @@ Example:  Transmit a device address to an I2C peripheral and wait for the
     for param_tuple in param_list:
       param = param_tuple[0];
       param_arg = param_tuple[1];
-      print param, param_arg
       if param == 'inport':
         if type(self.inport) != type(None):
           raise SSBCCException('inport can only be specified once at line %d' % ixLine);
