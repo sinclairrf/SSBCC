@@ -42,7 +42,6 @@
       determine settings to maximize speed or minimize resources
       finish interrupt handling
     asm
-      change $(...) to ${...} so that parentheses can be parsed
       required .memory directive to be repeated after .include, EOF, etc.
       improve error message for missing input files
       add non-return restriction to some optional macro arguments

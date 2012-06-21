@@ -250,11 +250,11 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('instruction "%s" not allowed at %s' % (raw,flc_loc));
     return dict(type='instruction', value=raw, loc=flc_loc);
   # look for computation
-  a = re.match(r'\$\([^()]+\)$',raw);
+  a = re.match(r'\${\S+}$',raw);
   if a:
     if 'singlevalue' not in allowed:
       raise AsmException('Computated value not allowed at %s' % flc_loc);
-    tParseNumber = eval(raw[1:],ad.SymbolDict());
+    tParseNumber = eval(raw[2:-1],ad.SymbolDict());
     if type(tParseNumber) != int:
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
@@ -303,7 +303,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Directive not allowed at %s' % flc_loc);
     return dict(type='directive', value=raw, loc=flc_loc);
   # look for macros
-  a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+|,\$\(\S+\))*\))?$',raw);
+  a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+|,\${\S+})*\))?$',raw);
   if a:
     b = re.match(r'\.[^(]+',raw);
     if not ad.IsMacro(b.group(0)):
