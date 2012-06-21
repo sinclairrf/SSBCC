@@ -9,8 +9,10 @@ class open_drain:
 be used as an I/O port for an I2C device.
 
 Usage:
-  PERIPHERAL open_drain name \\
-             [width=n]
+  PERIPHERAL open_drain inport=I_name \\
+                        outport=O_name \\
+                        iosignal=io_name \\
+                        [width=n]
 
 Where:
   name
@@ -33,11 +35,11 @@ The following I/Os are provided for the processor:
   io_name
     this is the tri-state signal implementing the open-drain I/O buffer
 
-Example:  Configure two ports for running I2C peripherals:
+Example:  Configure two ports for running an I2C bus:
 
   PORTCOMMENT I2C bus
-  PERIPHERAL open_drain SCL
-  PERIPHERAL open_drain SDA
+  PERIPHERAL open_drain inport=I_SCL outport=O_SCL iosignal=io_scl
+  PERIPHERAL open_drain inport=I_SDA outport=O_SDA iosignal=io_sda
 
 Example:  Transmit a device address to an I2C peripheral and wait for the
           acknowlegement.  The function "i2c_quarter_cycle" should cause a
@@ -60,35 +62,72 @@ Example:  Transmit a device address to an I2C peripheral and wait for the
   0 .outport(O_SCL) .call(i2c_quarter_cycle)
 """
 
-  def __init__(self,config,param_list):
-    # Extract the required parameters.
-    if len(param_list) < 1:
-      print __doc__;
-      raise SSBCCException('Peripheral name missing');
-    self.name = param_list[0][0];
-    # Get the optional parameters.
+  def __init__(self,config,param_list,ixLine):
+    # Get the parameters.
+    self.inport = None;
+    self.iosignal = None;
+    self.outport = None;
     self.width = None;
-    for param_tuple in param_list[1:]:
+    for param_tuple in param_list:
       param = param_tuple[0];
       param_arg = param_tuple[1];
-      if param == 'width':
+      print param, param_arg
+      if param == 'inport':
+        if type(self.inport) != type(None):
+          raise SSBCCException('inport can only be specified once at line %d' % ixLine);
+        if type(param_arg) == type(None):
+          raise SSBCCException('inport assignment missing at line %d' % ixLine);
+        if not re.match('I_\w+$',param_arg):
+          raise SSBCCException('Bad inport symbol at line %d:  "%s"' % (ixLine,param_arg,));
+        self.inport = param_arg;
+      elif param == 'iosignal':
+        if type(self.iosignal) != type(None):
+          raise SSBCCException('iosignal can only be specified once at line %d' % ixLine);
+        if type(param_arg) == type(None):
+          raise SSBCCException('iosignal assignment missing at line %d' % ixLine);
+        if not re.match('io_\w+$',param_arg):
+          raise SSBCCException('Bad io signal name at line %d:  "%s"' % (ixLine,param_arg,));
+        self.iosignal = param_arg;
+      elif param == 'outport':
+        if type(self.outport) != type(None):
+          raise SSBCCException('outport can only be specified once at line %d' % ixLine);
+        if type(param_arg) == type(None):
+          raise SSBCCException('outport assignment missing at line %d' % ixLine);
+        if not re.match('O_\w+$',param_arg):
+          raise SSBCCException('Bad outport symbol at line %d:  "%s"' % (ixLine,param_arg,));
+        self.outport = param_arg;
+      elif param == 'width':
+        if type(self.width) != type(None):
+          raise SSBCCException('width can only be specified once at line %d' % ixLine);
+        if type(param_arg) == type(None):
+          raise SSBCCException('width assignment missing at line %d' % ixLine);
+        if not re.match('[1-9][0-9]*$',param_arg):
+          raise SSBCCException('Bad signal width at line %d:  "%s"' % (ixLine,param_arg,));
         self.width = int(param_arg);
       else:
-        raise SSBCCException('Unrecognized optional parameter:  "%s"' % param);
+        raise SSBCCException('Unrecognized parameter at line %d:  "%s"' % (ixLine,param,));
     # Set defaults for non-specified values.
+    if type(self.inport) == type(None):
+      raise SSBCCException('Missing "inport=I_name" at line %d' % ixLine);
+    if type(self.iosignal) == type(None):
+      raise SSBCCException('Missing "iosignal=io_name" at line %d' % ixLine);
+    if type(self.outport) == type(None):
+      raise SSBCCException('Missing "outport=O_name" at line %d' % ixLine);
     if type(self.width) == type(None):
       self.width = 1;
     # Ensure the speicified values are reasonable.
     if (self.width < 1) or (8 < self.width):
       raise SSBCCException('pull-down peripheral width must be between 1 and 8 inclusive');
     # Add the I/O port and OUTPORT and INPORT signals for this peripheral.
-    config['ios'].append(('io_'+self.name,self.width,'inout'));
-    config['signals'].append(('s_'+self.name,self.width,));
-    config['inports'].append(('I_'+self.name,
-                             ('io_'+self.name,1,'data',),
+    self.sname = 's__' + self.iosignal;
+    sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
+    config['ios'].append((self.iosignal,self.width,'inout'));
+    config['signals'].append((self.sname,self.width,None,));
+    config['inports'].append((self.inport,
+                             (self.iosignal,self.width,'data',),
                             ));
-    config['outports'].append(('O_'+self.name,
-                              ('s_'+self.name,1,'data','1\'b1'),
+    config['outports'].append((self.outport,
+                              (self.sname,self.width,'data',sname_init,),
                              ));
 
   def GenHDL(self,fp,config):
@@ -99,17 +138,17 @@ Example:  Transmit a device address to an I2C peripheral and wait for the
 
   def GenVerilog(self,fp,config):
     body_1 = """//
-// open_drain "@NAME@" peripheral
+// open_drain peripheral for "@NAME@"
 //
-assign io_@NAME@ = (s_@NAME@ == 1'b0) ? 1'b0 : 1'bz;
+assign @IO_NAME@ = (@S_NAME@ == 1'b0) ? 1'b0 : 1'bz;
 """
     body_big = """//
-// open_drain "@NAME@" peripheral
+// open_drain peripheral for "@NAME@"
 //
 generate
 genvar ix__open_drain__@NAME@;
 for (ix__open_drain__@NAME@=0; ix__open_drain__@NAME@<@WIDTH@; ix__open_drain__@NAME@ = ix__open_drain__@NAME@+1) begin : gen_@NAME@
-  assign io_@NAME@[ix__open_drain__@NAME@] = (s_@NAME@[ix__open_drain__@NAME@] == 1'b0) ? 1'b0 : 1'bz;
+  assign @IO_NAME@[ix__open_drain__@NAME@] = (@S_NAME@[ix__open_drain__@NAME@] == 1'b0) ? 1'b0 : 1'bz;
 end
 endgenerate
 """
@@ -118,8 +157,10 @@ endgenerate
     else:
       body = body_big;
     for subs in (
-                  ('@NAME@',    self.name),
-                  ('@WIDTH@',   str(self.width)),
+                  ('@IO_NAME@', self.iosignal,),
+                  ('@NAME@',    self.iosignal,),
+                  ('@S_NAME@',  self.sname,),
+                  ('@WIDTH@',   str(self.width),),
                 ):
       body = re.sub(subs[0],subs[1],body);
     fp.write(body);
