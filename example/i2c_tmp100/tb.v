@@ -22,6 +22,7 @@ end
 
 tri1 s_SCL;
 tri1 s_SDA;
+wire s_UART_Tx;
 i2c_tmp100 it_inst(
   // synchronous reset and processor clock
   .i_rst        (s_rst),
@@ -30,17 +31,36 @@ i2c_tmp100 it_inst(
   .io_scl       (s_SCL),
   .io_sda       (s_SDA),
   // UART_Tx ports
-  .o_UART_Tx    ()
+  .o_UART_Tx    (s_UART_Tx)
 );
 
-// run for 2+ msec
+localparam baud = 9600;
+localparam dt_baud = 1.0e9/baud;
+reg [8:0] deser = 9'h1FF;
+initial forever begin
+  @ (negedge s_UART_Tx);
+  #(dt_baud/2.0);
+  repeat (9) begin
+    #dt_baud;
+    deser = { s_UART_Tx, deser[1+:8] };
+  end
+  if (deser[8] != 1'b1)
+    $display("%13d : Malformed UART transmition, $time");
+  else
+    $display("%13d : Sent 0x%02H", $time, deser[0+:8]);
+end
+
+// Progress meter
+initial forever begin #100_000_000; $display("%13d : progress report", $time); end
+
+// run for 2+ sec
 initial begin
-  while ($realtime < 2.1e6) @ (posedge s_clk);
+  while ($realtime < 2.1e9) @ (posedge s_clk);
   $finish;
 end
 
 initial begin
-  $dumpfile("tb.vcd");
+  $dumpfile("tb.lxt");
   $dumpvars();
 end
 
