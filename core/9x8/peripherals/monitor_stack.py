@@ -47,7 +47,7 @@ Where:
     store a trace of the simulation in filename
 """
 
-  def __init__(self,config,param_list):
+  def __init__(self,config,param_list,ixLine):
     self.finish = None;
     self.log = None;
     for param in param_list:
