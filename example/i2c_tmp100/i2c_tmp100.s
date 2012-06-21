@@ -23,10 +23,10 @@
 .function wait_1_sec
 
   ; 97 iterations
-  $(97-1) :outer
+  ${97-1} :outer
     ; 1000 iterations
-    $(4-1) :mid_outer
-      $(250-1) :mid_inner
+    ${4-1} :mid_outer
+      ${250-1} :mid_inner
         ; 1000 clock cycles (250 iterations of 4 clock loop)
         250 :inner 1- .jumpc(inner,nop) drop
       .jumpc(mid_inner,1-) drop
@@ -45,7 +45,7 @@
 ; ( - T_lsb T_msb )
 .function get_i2c_temp
   .call(i2c_send_start)
-  $(C_TMP100|0x01) .call(i2c_send_byte)
+  ${C_TMP100|0x01} .call(i2c_send_byte)
   .call(i2c_read_byte) >r .call(i2c_read_byte) r>
   .call(i2c_send_stop)
 .return
@@ -61,11 +61,11 @@
 ; ( u - f )
 .function i2c_send_byte
   ; send the byte, msb first
-  $(8-1) :outer
+  ${8-1} :outer
     ; send the next bit
     swap <<msb O_SDA outport swap
     ; send the clock as a "0110" pattern
-    0x06 $(4-1) :inner
+    0x06 ${4-1} :inner
       swap O_SCL outport 0>> swap .call(i2c_quarter_cycle)
     .jumpc(inner,1-) drop drop
   .jumpc(outer,1-) drop drop
@@ -80,7 +80,7 @@
 ; ( - u )
 .function i2c_read_byte
   ; ( - u count )
-  0 $(8-1) :loop
+  0 ${8-1} :loop
     0 .outport(O_SCL) .call(i2c_quarter_cycle)
     1 .outport(O_SCL) .call(i2c_quarter_cycle)
     swap <<0 .inport(I_SDA) or swap .call(i2c_quarter_cycle)
@@ -100,7 +100,7 @@
 ;   return from it ==> consume 56 clock cycles
 ;   for a loop with 3 clock cycles per iteration, this is about 18 iterations
 .function i2c_quarter_cycle
-  $(18-1) :loop .jumpc(loop,1-)
+  ${18-1} :loop .jumpc(loop,1-)
 .return(drop)
 
 
