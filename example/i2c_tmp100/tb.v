@@ -34,6 +34,26 @@ i2c_tmp100 it_inst(
   .o_UART_Tx    (s_UART_Tx)
 );
 
+integer ix_i2c;
+reg [0:26] i2c_out = 27'b111111110_101010101_010100001;
+reg s_sensor_sda = 1'b1;
+initial begin
+  @ (negedge s_SDA);
+  if (s_SCL == 1'b0) begin
+    $display("%13d : Malformed I2C start signal");
+    $finish;
+  end
+  ix_i2c = 0;
+  repeat (27) begin
+    @ (negedge s_SCL);
+    #700;
+    s_sensor_sda = i2c_out[ix_i2c];
+    ix_i2c = ix_i2c + 1;
+  end
+  s_sensor_sda = 1'b1;
+end
+assign s_SDA = (s_sensor_sda) ? 1'bz : 1'b0;
+
 localparam baud = 9600;
 localparam dt_baud = 1.0e9/baud;
 reg [8:0] deser = 9'h1FF;
@@ -53,9 +73,9 @@ end
 // Progress meter
 initial forever begin #100_000_000; $display("%13d : progress report", $time); end
 
-// run for 2+ sec
+// terminate after 10 msec (use 2.1e9 for 2.1 sec)
 initial begin
-  while ($realtime < 2.1e9) @ (posedge s_clk);
+  while ($realtime < 1.0e7) @ (posedge s_clk);
   $finish;
 end
 
