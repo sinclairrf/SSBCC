@@ -8,8 +8,9 @@
 .main
 
   :infinite
-    .call(get_i2c_temp)
-    .call(print_2bytes)
+    .call(get_i2c_temp) .jumpc(error)
+      .call(print_2bytes)
+    :error
     .call(wait_1_sec)
   .jump(infinite)
 
@@ -42,57 +43,66 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; ( - T_lsb T_msb )
+; ( - T_lsb T_msb 0 ) or ( - f )
 .function get_i2c_temp
   .call(i2c_send_start)
-  ${C_TMP100|0x01} .call(i2c_send_byte)
-  .call(i2c_read_byte) >r .call(i2c_read_byte) r>
+  ; ( - f )
+  .call(i2c_send_byte,${C_TMP100|0x01}) .jumpc(error,nop)
+  ; ( 0<> - u_LSB u_MSB 0 )
+  drop .call(i2c_read_byte) >r .call(i2c_read_byte) r> 0
+  :error
   .call(i2c_send_stop)
 .return
 
 ; ( - )
 .function i2c_send_start
-  0 .outport(O_SDA) .call(i2c_quarter_cycle)
-  0 .outport(O_SCL) .call(i2c_quarter_cycle)
+  0 .outport(O_SDA)
+  .call(i2c_quarter_cycle,1)
+  .call(i2c_quarter_cycle,0)
 .return
 
-; Send the transmitted byte and indicate true if the acknowledge bit was
+; Send the transmitted byte and indicate false if the acknowledge bit was
 ; received.
 ; ( u - f )
 .function i2c_send_byte
   ; send the byte, msb first
+  ; ( u - )
   ${8-1} :outer
     ; send the next bit
-    swap <<msb O_SDA outport swap
-    ; send the clock as a "0110" pattern
-    0x06 ${4-1} :inner
-      swap O_SCL outport 0>> swap .call(i2c_quarter_cycle)
-    .jumpc(inner,1-) drop drop
+    swap <<msb swap
+    .call(i2c_clock_cycle,over) drop
   .jumpc(outer,1-) drop drop
   ; get the acknowledge bit at the middle of the high portion of SCL
-  1 .outport(O_SDA) .call(i2c_quarter_cycle)
-  1 .outport(O_SCL) .call(i2c_quarter_cycle)
-  .inport(I_SDA) 0= .call(i2c_quarter_cycle)
-  0 .outport(O_SCL) .call(i2c_quarter_cycle)
+  ; ( - f )
+  .call(i2c_clock_cycle,1)
 .return
 
 ; read the next byte from the device
 ; ( - u )
 .function i2c_read_byte
-  ; ( - u count )
   0 ${8-1} :loop
-    0 .outport(O_SCL) .call(i2c_quarter_cycle)
-    1 .outport(O_SCL) .call(i2c_quarter_cycle)
-    swap <<0 .inport(I_SDA) or swap .call(i2c_quarter_cycle)
-    0 .outport(O_SCL) .call(i2c_quarter_cycle)
-  .jumpc(loop,1-)
-; ( u count - u )
+    swap <<0 .call(i2c_clock_cycle,1) or swap
+  .jumpc(loop,1-) drop
+  ; send the acknowledgement bit
+  .call(i2c_clock_cycle,0)
 .return(drop)
-
+ 
+; Send a stop by brining SDA high while SCL is high
 ; ( - )
 .function i2c_send_stop
-  1 .outport(O_SCL) .call(i2c_quarter_cycle)
-  1 .outport(O_SDA) .call(i2c_quarter_cycle)
+  0 .outport(O_SDA) .call(i2c_quarter_cycle,1)
+  1 .outport(O_SDA) .call(i2c_quarter_cycle,1)
+.return
+
+; send the clock as a "0110" pattern and samle SDA in the  middle of the high portion
+; ( u_sda_out - u_sda_in )
+.function i2c_clock_cycle
+  .outport(O_SDA)
+  .call(i2c_quarter_cycle,0)
+  .call(i2c_quarter_cycle,1)
+  .inport(I_SDA)
+  .call(i2c_quarter_cycle,1)
+  .call(i2c_quarter_cycle,0)
 .return
 
 ; 97 MHz / 400 kHz / 4 ==> 61
@@ -100,6 +110,7 @@
 ;   return from it ==> consume 56 clock cycles
 ;   for a loop with 3 clock cycles per iteration, this is about 18 iterations
 .function i2c_quarter_cycle
+  .outport(O_SCL)
   ${18-1} :loop .jumpc(loop,1-)
 .return(drop)
 
