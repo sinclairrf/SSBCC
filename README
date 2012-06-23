@@ -1,0 +1,250 @@
+SSBCC is a Small Stack-Based Computer Compiler with a 9-bit opcode, 8-bit data
+core.
+
+The computer compiler is documented in the doc directory.  The 9x8 core is
+documented in the core/9x8/doc directory.  Several examples are provided.
+
+This is a beta release.  While the computer compiler and assembler are fully
+functional and there are no know bugs, features are still being added and the
+documentation is incomplete.  Also, the output HDL is currently restricted to
+Verilog, VHDL will be added after the documentation is more complete.  The
+processor is being used on a commercial project and the examples do work on
+hardware.
+
+The 9x8 instructions are all single-cycle.  Jumps and calls require 2
+instructions to encode the 15-bit address.  The RISC architure means that the
+instructions immediately following jumps and calls are always executed.
+
+The processor has placed and routed at 210 MHz in a Spartan 6.
+
+INTRODUCTION
+================================================================================
+
+SSBCC.9x8 is intended to provide a complete processor implementation structure
+while using relatively few FPGA resources.
+
+The computer compiler takes an architecture definition file and creates a single
+module which implements the desired architecture, I/Os, stack and memory sizes,
+and peripherals.  It also runs the 9x8 assembler and incorporates the
+instructions into the module.
+
+The computer compiler and assembler are written using Python 2.7.  The 9x8
+assembly is Forth-like.  The instruction space can be up to 8K.  Each
+instruction operates in a single clock cycle.
+
+EXAMPLE:
+================================================================================
+
+The LED flasher example demonstrates the simplicity of the architectural
+specification and the Forth-like assembly language.
+
+The architecure file (with the comments removed) is as follows:
+
+  ARCHITECTURE core/9x8
+
+  INSTRUCTION             2048
+  RETURN_STACK            32
+  DATA_STACK              32
+
+  PORTCOMMENT LED on/off signal
+  OUTPORT 1-bit o_led O_LED
+
+  ASSEMBLY led.s
+  HDL Verilog led
+
+The ARCHITECTURE statement specifies the default 9x8 core and allows alternate
+cores to be used.  The INSTRUCTION, RETURN_STACK, and DATA_STACK configuration
+commands specify the lengths of the instruction space, return stack length, and
+data stack length.  The PORTCOMMENT content is inserted in the module delaration
+-- this faciliates identifying signals in micro controllers with a lot of inputs
+and outputs.  The single OUTPORT statement specifies a 1-bit signal named
+"o_led."  This signal is accessed through the symbol "O_LED" in the assembly
+code.  The ASSEMBLY command specifies the single file "led.s," which is listed
+below.  Finally, the HDL statement specifies the Verilog language with the
+output going to "led.v"
+
+The "led.s" assembly file is as follows:
+
+  ; Consume 256*5+3 clock cycles.
+  .function pause ; ( - )
+    0 :inner 1- dup .jumpc(inner) drop
+    .return
+
+  ; repeat "pause" 256 times
+  .function repause ; ( - )
+    0 :inner .call(pause) 1- dup .jumpc(inner) drop
+    .return
+
+  ; main program (as an infinite loop)
+  ; T is the setting for the LED
+  .main
+  0 :inner 1 ^ dup .outport(O_LED) .call(repause) .jump(inner)
+
+This example is coded in a traditional Forth structure with the conditional
+jumps consuming the top of the data stack.  Examining the "pause" function, the
+".function" directive specifies the start of a function named "pause."  The "0"
+is an instruction to push the value "0" onto the top of the data stack.
+":inner" is a label for a jump instruction.  "1-" is an instruction to decrement
+the top of the data stack.  "dup" is the Forth instruction to push a duplicate
+of the top of the data stack on to the data stack (the Forth "over" instruction
+is also included).  The ".jumpc(inner)" macro expands to three instructions as
+follows:  (1) push the 8 lsb of the address of "inner" onto the data stack, (2)
+the actual "jumpc" instruction with the 5 msb of the address of "inner" -- the
+jumpc instruction also drops the top of the data stack, and (3) a "drop"
+instruction to drop the new top of the data stack, which was the conditional
+evaluated by the "jumpc" instruction.
+
+The function "repause" calls the function "pause" 256 times.  The main program
+body is identified by the directive ".main"
+
+A tigher version of the loop in the "pause" function can be written as
+
+  0xFF :inner .jumpc(inner,1-) drop
+
+which is 3 cycles long for each iteration and the "drop" that is normally part
+of the "jumpc" macro has been replaced by the decrement instruction.
+
+The instruction memory initialization for the processor module includes the
+instruction neumonics being performed at each address and replaces the "list"
+file output from traditional assemblers.  The following is the memory
+initialization file for this LED flasher example:
+
+  reg [8:0] s_opcodeMemory[2047:0];
+  initial begin
+    // .main
+    s_opcodeMemory['h000] = 9'h100; // 0x00
+    s_opcodeMemory['h001] = 9'h101; // :inner 0x01
+    s_opcodeMemory['h002] = 9'h052; // ^
+    s_opcodeMemory['h003] = 9'h008; // dup
+    s_opcodeMemory['h004] = 9'h100; // O_LED
+    s_opcodeMemory['h005] = 9'h038; // outport
+    s_opcodeMemory['h006] = 9'h054; // drop
+    s_opcodeMemory['h007] = 9'h10D; // 
+    s_opcodeMemory['h008] = 9'h0C0; // call repause
+    s_opcodeMemory['h009] = 9'h000; // nop
+    s_opcodeMemory['h00A] = 9'h101; // 
+    s_opcodeMemory['h00B] = 9'h080; // jump inner
+    s_opcodeMemory['h00C] = 9'h000; // nop
+    // repause
+    s_opcodeMemory['h00D] = 9'h100; // 0x00
+    s_opcodeMemory['h00E] = 9'h119; // :inner 
+    s_opcodeMemory['h00F] = 9'h0C0; // call pause
+    s_opcodeMemory['h010] = 9'h000; // nop
+    s_opcodeMemory['h011] = 9'h05C; // 1-
+    s_opcodeMemory['h012] = 9'h008; // dup
+    s_opcodeMemory['h013] = 9'h10E; // 
+    s_opcodeMemory['h014] = 9'h0A0; // jumpc inner
+    s_opcodeMemory['h015] = 9'h054; // drop
+    s_opcodeMemory['h016] = 9'h054; // drop
+    s_opcodeMemory['h017] = 9'h028; // return
+    s_opcodeMemory['h018] = 9'h000; // nop
+    // pause
+    s_opcodeMemory['h019] = 9'h100; // 0x00
+    s_opcodeMemory['h01A] = 9'h05C; // :inner 1-
+    s_opcodeMemory['h01B] = 9'h008; // dup
+    s_opcodeMemory['h01C] = 9'h11A; // 
+    s_opcodeMemory['h01D] = 9'h0A0; // jumpc inner
+    s_opcodeMemory['h01E] = 9'h054; // drop
+    s_opcodeMemory['h01F] = 9'h054; // drop
+    s_opcodeMemory['h020] = 9'h028; // return
+    s_opcodeMemory['h021] = 9'h000; // nop
+    s_opcodeMemory['h022] = 9'h000;
+    s_opcodeMemory['h023] = 9'h000;
+    s_opcodeMemory['h024] = 9'h000;
+    ...
+    s_opcodeMemory['h7FF] = 9'h000;
+
+INPORT and OUTPORT
+================================================================================
+
+The INPORT and OUTPORT configuration commands are used to specify normal 2-state
+inputs and outputs.  For example
+
+  INPORT 8-bit i_value I_VALUE
+
+specifies a single 8-bit input signal named "i_value" for the module accessed
+through the symbol "I_VALUE."  To input an 8-bit value from a FIFO and send a
+single-clock-cycle wide acknowledgement strobe, use
+
+  INPORT 8-bit,strobe i_fifo,o_fifo_ack I_FIFO
+
+A write port to an 8-bit FIFO is similarly specified by
+
+  OUTPORT 8-bit,strobe o_fifo,o_fifo_wr O_FIFO
+
+Multiple signals can be packed into a single input value by
+
+  INPUT 1-bit,1-bit i_fifo_full,i_fifo_empty I_FIFO_STATUS
+  CONSTANT C_FIFO_STATUS__FULL  0x02
+  CONSTANT C_FIFO_STATUS__EMPTY 0x01
+
+Preceding this by
+
+  PORTCOMMENT external FIFO
+
+produces the following in the Verilog module statement:
+
+  // external FIFO
+  input  wire     i_fifo,
+  output reg      o_fifo_ack,
+  output reg      o_fifo,
+  output reg      o_fifo_wr,
+  input  wire     i_fifo_full,
+  input  wire     i_fifo_empty
+
+The mundane HDL to implement the inputs and outputs is computer generated.
+Identifying the port name in the architecture file also eliminates the
+possibility of inconsistent port numbers between the HDL and the assembly.
+Specifying the bit mapping for the assembly code immediately after the port
+mapping also reduces the chances of inconsistencies between the port definition
+and the bit-mapping in the assembly code.
+
+PERIPHERAL
+================================================================================
+
+Peripherals are implemented via Python modules.  For example, an open drain I/O
+signal, such as is required for an I2C bus, does not conveniently fit the INPORT
+and OUTPORT functionality.  Instead, an "open_drain" peripheral is provided that
+allows a tri-state I/O to be included in the module statement, allows its to be
+read through an "inport" instruction, and allows it to be set low or released
+through an "outport" instruction.  This peripheral can be declared as follows:
+
+  PORTCOMMENT     I2C bus
+  PERIPHERAL      open_drain      inport=I_SCL \
+                                  outport=O_SCL \
+                                  iosignal=io_scl
+  PERIPHERAL      open_drain      inport=I_SDA \
+                                  outport=O_SDA \
+                                  iosignal=io_sda
+
+The default width for this peripheral is 1 bit.  Separate pairs of ports are
+used to access the SCL and SDA signals.  The module statement will include the
+lines
+
+  // I2C bus
+  inout  wire     io_scl,
+  inout  wire     io_sda
+
+DIAGNOSTICS AND DEBUGGING
+================================================================================
+
+The stack health can be monitored during simulation by including the
+"monitor_stack" peripheral through the command line.  For example, the LED
+flasher example can be built using
+
+  ssbcc -P monitor_stack led.9x8
+
+This allows the architecture file to be unchanged between simulation and an FPGA
+build.
+
+Stack errors include underflow and overflow, malformed data validity, and
+incorrect use of the values on the return stack (returns to data values and data
+operations on return addresses).
+
+SIMULATIONS
+================================================================================
+
+Simulations have been performed with Icarus Verilog, Verilator, and Xilinx'
+ISIM.  Icarus Verilog is good for short, simple simulations, Verilator for long
+simulations of larger, more complex systems, and ISIM when Xilinx-specific cores
+are used.
