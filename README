@@ -5,14 +5,14 @@ The computer compiler is documented in the doc directory.  The 9x8 core is
 documented in the core/9x8/doc directory.  Several examples are provided.
 
 This is a beta release.  While the computer compiler and assembler are fully
-functional and there are no know bugs, features are still being added and the
+functional and there are no known bugs, features are still being added and the
 documentation is incomplete.  Also, the output HDL is currently restricted to
 Verilog, VHDL will be added after the documentation is more complete.  The
 processor is being used on a commercial project and the examples do work on
 hardware.
 
 The 9x8 instructions are all single-cycle.  Jumps and calls require 2
-instructions to encode the 15-bit address.  The RISC architure means that the
+instructions to encode the 13-bit address.  The RISC architecture means that the
 instructions immediately following jumps and calls are always executed.
 
 The processor has placed and routed at 210 MHz in a Spartan 6.
@@ -29,8 +29,7 @@ and peripherals.  It also runs the 9x8 assembler and incorporates the
 instructions into the module.
 
 The computer compiler and assembler are written using Python 2.7.  The 9x8
-assembly is Forth-like.  The instruction space can be up to 8K.  Each
-instruction operates in a single clock cycle.
+assembly is Forth-like.  The instruction space can be up to 8K.
 
 EXAMPLE:
 ================================================================================
@@ -38,7 +37,7 @@ EXAMPLE:
 The LED flasher example demonstrates the simplicity of the architectural
 specification and the Forth-like assembly language.
 
-The architecure file (with the comments removed) is as follows:
+The architecture file (with the comments removed) is as follows:
 
   ARCHITECTURE core/9x8
 
@@ -55,8 +54,8 @@ The architecure file (with the comments removed) is as follows:
 The ARCHITECTURE statement specifies the default 9x8 core and allows alternate
 cores to be used.  The INSTRUCTION, RETURN_STACK, and DATA_STACK configuration
 commands specify the lengths of the instruction space, return stack length, and
-data stack length.  The PORTCOMMENT content is inserted in the module delaration
--- this faciliates identifying signals in micro controllers with a lot of inputs
+data stack length.  The PORTCOMMENT content is inserted in the module declaration
+-- this facilitates identifying signals in micro controllers with a lot of inputs
 and outputs.  The single OUTPORT statement specifies a 1-bit signal named
 "o_led."  This signal is accessed through the symbol "O_LED" in the assembly
 code.  The ASSEMBLY command specifies the single file "led.s," which is listed
@@ -97,7 +96,7 @@ evaluated by the "jumpc" instruction.
 The function "repause" calls the function "pause" 256 times.  The main program
 body is identified by the directive ".main"
 
-A tigher version of the loop in the "pause" function can be written as
+A tighter version of the loop in the "pause" function can be written as
 
   0xFF :inner .jumpc(inner,1-) drop
 
@@ -105,9 +104,9 @@ which is 3 cycles long for each iteration and the "drop" that is normally part
 of the "jumpc" macro has been replaced by the decrement instruction.
 
 The instruction memory initialization for the processor module includes the
-instruction neumonics being performed at each address and replaces the "list"
+instruction mnemonics being performed at each address and replaces the "list"
 file output from traditional assemblers.  The following is the memory
-initialization file for this LED flasher example:
+initialization for this LED flasher example:
 
   reg [8:0] s_opcodeMemory[2047:0];
   initial begin
@@ -164,7 +163,7 @@ inputs and outputs.  For example
 
 specifies a single 8-bit input signal named "i_value" for the module accessed
 through the symbol "I_VALUE."  To input an 8-bit value from a FIFO and send a
-single-clock-cycle wide acknowledgement strobe, use
+single-clock-cycle wide acknowledgment strobe, use
 
   INPORT 8-bit,strobe i_fifo,o_fifo_ack I_FIFO
 
@@ -205,7 +204,7 @@ PERIPHERAL
 Peripherals are implemented via Python modules.  For example, an open drain I/O
 signal, such as is required for an I2C bus, does not conveniently fit the INPORT
 and OUTPORT functionality.  Instead, an "open_drain" peripheral is provided that
-allows a tri-state I/O to be included in the module statement, allows its to be
+allows a tri-state I/O to be included in the module statement, allows it to be
 read through an "inport" instruction, and allows it to be set low or released
 through an "outport" instruction.  This peripheral can be declared as follows:
 
@@ -225,12 +224,17 @@ lines
   inout  wire     io_scl,
   inout  wire     io_sda
 
+The assembly code to set the io_scl signal low is "0 .outport(O_SCL)" and to
+release it is "1 .outport(O_SCL)".  These instruction sequences are actually
+"0 O_SCL outport drop" and "1 O_SCL outport drop" respectively as the "outport"
+instruction also drops the top of the data stack.
+
 DIAGNOSTICS AND DEBUGGING
 ================================================================================
 
 The stack health can be monitored during simulation by including the
 "monitor_stack" peripheral through the command line.  For example, the LED
-flasher example can be built using
+flasher example can be generated using
 
   ssbcc -P monitor_stack led.9x8
 
