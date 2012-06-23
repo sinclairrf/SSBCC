@@ -138,7 +138,7 @@ class FileBodyIterator:
           continue;
         # Otherwise, this line belongs to the body of the preceding directive.
         if not self.current:
-          self.current += self.pending[0:1];
+          self.current += self.pending[0:2];
         self.current += self.pending[2:];
         self.current.append(line);
         self.pending = list();
