@@ -112,7 +112,8 @@ def genInstructions(fp,programBody,config):
         fp.write(formatn % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
       programBodyIx = programBodyIx + 1;
   for ix in range(programBodyIx,nInstructions):
-    fp.write('  s_opcodeMemory[\'h%X] = 9\'h000;\n' % ix);
+    formate = '  s_opcodeMemory[\'h%%0%dX] = 9\'h000;\n' % addrWidth;
+    fp.write(formate % ix);
   fp.write('end\n');
 
 def genLocalParam(fp,config):
