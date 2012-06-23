@@ -11,7 +11,7 @@ RETURN_STACK    32
 
 MEMORY          RAM ram 32
 
-PORTCOMMENT     I2C ports
+PORTCOMMENT     I2C bus
 PERIPHERAL      open_drain      inport=I_SCL \
                                 outport=O_SCL \
                                 iosignal=io_scl
