@@ -2,7 +2,6 @@
     gracefully handle "eval(...,ad.SymbolDict())" errors
  
   ssbcc
-    add CONSTANT configuration command so that bit definitions can accompany their definition
     add "function"s for use by peripherals and incorporate all functions at the top of the peripheral section
     ensure ARCHITECTURE is the first non-comment line
     validate signal names
@@ -91,7 +90,6 @@
 
   publicize
     - opencores
-    - github
     - ssbcc.net
     - ssbcc@sinclairrf.com or rodney@ssbcc.org
     - EETimes and other e-rags
