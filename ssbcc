@@ -28,7 +28,7 @@ def processInport(config,line):
   names = re.findall(r'([^,]+)',cmd[0][1]);
   portName = cmd[0][2];
   if len(modes) != len(names):
-    raise SSBCCException('Malformed INPORT statement -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
+    raise SSBCCException('Malformed INPORT configuration command -- number of options don\'t match on line %d: "%s"' % (ixLine,line));
   # Append the input signal names, mode, and bit-width to the list of I/Os.
   has__set_reset = False;
   nBits = 0;
@@ -63,7 +63,7 @@ def processOutport(config,line,ixLine):
   names = re.findall(r'([^,]+)',cmd[0][1]);
   portName = cmd[0][2];
   if len(modes) != len(names):
-    raise SSBCCException('Malformed OUTPORT statement -- number of widths/types and number of signal names don\'t match on line %d: "%s"' % (ixLine,line,));
+    raise SSBCCException('Malformed OUTPORT configuration command -- number of widths/types and signal names don\'t match on line %d: "%s"' % (ixLine,line,));
   # Append the input signal names, mode, and bit-width to the list of I/Os.
   nBits = 0;
   thisPort = (portName,);
@@ -188,7 +188,7 @@ try:
         raise SSBCCException('ARCHITECTURE already specified before line %d' % line);
       cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
       if not cmd:
-        raise SSBCCException('Malformed ARCHITECTURE statement on line %d: "%s"' % (ixLine,line));
+        raise SSBCCException('Malformed ARCHITECTURE configuration command on line %d: "%s"' % (ixLine,line));
       config['architecture'] = cmd[0];
       corepath = os.path.join(sys.path[0],config['architecture']);
       if not os.path.isdir(corepath):
@@ -202,13 +202,13 @@ try:
     elif re.match(r'\s*COMBINE\b',line):
       cmd = re.findall(r'\s*COMBINE\s+(\S+),(\S+)',line);
       if (not cmd) or (len(cmd[0]) < 2):
-        raise SSBCCException('Malformed "COMBINE" command on line %d: "%s"' % (ixLine,line));
+        raise SSBCCException('Malformed "COMBINE" configuration command on line %d: "%s"' % (ixLine,line));
       combine = (cmd[0][0],cmd[0][1],);
     # CONSTANTS
     elif re.match(r'\s*CONSTANT\b',line):
       cmd = re.findall(r'\s*CONSTANT\s+(C_\w+)\s+(\w+)\s*$',line);
       if not cmd:
-        raise SSBCCException('Malformed "CONSTANT" command on line %d: "%s"' % (ixLine,line[:-1]));
+        raise SSBCCException('Malformed "CONSTANT" configuration command on line %d: "%s"' % (ixLine,line[:-1]));
       cmd = cmd[0];
       config['constants'].append((cmd[0],cmd[1],));
     # DATA_STACK
@@ -217,7 +217,7 @@ try:
         raise SSBCCException('DATA_STACK already defined before line %d' % line);
       cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
       if not cmd:
-        raise SSBCCException('Malformed "DATA_STACK" command on line %d: "%s"' % (ixLine,line));
+        raise SSBCCException('Malformed "DATA_STACK" configuration command on line %d: "%s"' % (ixLine,line));
       config['data_stack'] = int(cmd[0]);
     # HDL
     elif re.match(r'\s*HDL\s',line):
@@ -238,7 +238,7 @@ try:
         raise SSBCCException('INSTRUCTION already specified before line %d' % line);
       cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
       if not cmd:
-        raise SSBCCException('Malformed "INSTRUCTION" command on line %d: "%s"' % (ixLine,line));
+        raise SSBCCException('Malformed "INSTRUCTION" configuration command on line %d: "%s"' % (ixLine,line));
       config['nInstructions'] = int(cmd[0]);
       if config['nInstructions'] > 2**13:
         raise SSBCCException('Instruction space cannot exceed %d' % (2**13));
@@ -248,7 +248,7 @@ try:
         raise SSBCCException('Program is limited to 4 memories');
       cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)\s+(\S+)\s*$',line);
       if (not cmd) or (len(cmd[0]) != 3):
-        raise SSBCCException('Malformed MEMORY statement on line %d: "%s"' % (ixLine,line));
+        raise SSBCCException('Malformed MEMORY configuration command on line %d: "%s"' % (ixLine,line));
       cmd = cmd[0];
       memories['type'].append(cmd[0]);
       memories['list'].append(cmd[1]);
@@ -260,7 +260,7 @@ try:
     elif re.match(r'\s*PARAMETER\b',line):
       cmd = re.findall(r'\s*PARAMETER\s+(\w+)\s+(\d+)',line);
       if (not cmd) or (len(cmd[0]) != 2):
-        raise SSBCCException('Malformed PARAMETER statement on line %d: "%s"' % (ixLine,line));
+        raise SSBCCException('Malformed PARAMETER configuration command on line %d: "%s"' % (ixLine,line));
       cmd = cmd[0];
       config['parameters'].append((cmd[0],cmd[1],));
     # PERIPHERAL
@@ -276,7 +276,7 @@ try:
         raise SSBCCException('RETURN_STACK already specified before line %d' % line);
       cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
       if not cmd:
-        raise SSBCCException('Malformed "RETURN_STACK" command on line %d: "%s"' % (ixLine,line));
+        raise SSBCCException('Malformed "RETURN_STACK" configuration command on line %d: "%s"' % (ixLine,line));
       config['return_stack'] = int(cmd[0]);
     # USER_HEADER
     elif re.match(r'\s*USER_HEADER\b',line):
@@ -307,15 +307,15 @@ try:
   #
 
   if 'architecture' not in config:
-    raise SSBCCException('Required ARCHITECTURE statement missing');
+    raise SSBCCException('Required ARCHITECTURE configuration command missing');
   if 'data_stack' not in config:
-    raise SSBCCException('Required DATA_STACK statement missing');
+    raise SSBCCException('Required DATA_STACK configuration command missing');
   if 'hdl' not in config:
-    raise SSBCCException('Required HDL statement missing');
+    raise SSBCCException('Required HDL configuration command missing');
   if 'nInstructions' not in config:
-    raise SSBCCException('Required INSTRUCTION statement missing');
+    raise SSBCCException('Required INSTRUCTION configuration command missing');
   if 'return_stack' not in config:
-    raise SSBCCException('Required RETURN_STACK statement missing');
+    raise SSBCCException('Required RETURN_STACK configuration command missing');
 
   # Compute the memory bank indices.
   ixRAM = 0;
