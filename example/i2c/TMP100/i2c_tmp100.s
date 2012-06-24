@@ -5,7 +5,7 @@
 
 .constant C_TMP100 0x94 ; u14
 
-.include lib_i2c.s
+.include ../lib_i2c.s
 
 .main
 
