@@ -1,9 +1,11 @@
 ; Copyright 2012, Sinclair R.F., Inc.
 ;
 ; TMP100:
-;   run in 3.4 MHz high speed mode
+;   run in 400 kHz mode
 
 .constant C_TMP100 0x94 ; u14
+
+.include lib_i2c.s
 
 .main
 
@@ -53,66 +55,6 @@
   :error
   .call(i2c_send_stop)
 .return
-
-; ( - )
-.function i2c_send_start
-  0 .outport(O_SDA)
-  .call(i2c_quarter_cycle,1)
-  .call(i2c_quarter_cycle,0)
-.return
-
-; Send the transmitted byte and indicate false if the acknowledge bit was
-; received.
-; ( u - f )
-.function i2c_send_byte
-  ; send the byte, msb first
-  ; ( u - )
-  ${8-1} :outer
-    ; send the next bit
-    swap <<msb swap
-    .call(i2c_clock_cycle,over) drop
-  .jumpc(outer,1-) drop drop
-  ; get the acknowledge bit at the middle of the high portion of SCL
-  ; ( - f )
-  .call(i2c_clock_cycle,1)
-.return
-
-; read the next byte from the device
-; ( - u )
-.function i2c_read_byte
-  0 ${8-1} :loop
-    swap <<0 .call(i2c_clock_cycle,1) or swap
-  .jumpc(loop,1-) drop
-  ; send the acknowledgement bit
-  .call(i2c_clock_cycle,0)
-.return(drop)
- 
-; Send a stop by brining SDA high while SCL is high
-; ( - )
-.function i2c_send_stop
-  0 .outport(O_SDA) .call(i2c_quarter_cycle,1)
-  1 .outport(O_SDA) .call(i2c_quarter_cycle,1)
-.return
-
-; send the clock as a "0110" pattern and samle SDA in the  middle of the high portion
-; ( u_sda_out - u_sda_in )
-.function i2c_clock_cycle
-  .outport(O_SDA)
-  .call(i2c_quarter_cycle,0)
-  .call(i2c_quarter_cycle,1)
-  .inport(I_SDA)
-  .call(i2c_quarter_cycle,1)
-  .call(i2c_quarter_cycle,0)
-.return
-
-; 97 MHz / 400 kHz / 4 ==> 61
-; subtract the 3 clock cycles to call this function and the 2 clock cycles to
-;   return from it ==> consume 56 clock cycles
-;   for a loop with 3 clock cycles per iteration, this is about 18 iterations
-.function i2c_quarter_cycle
-  .outport(O_SCL)
-  ${18-1} :loop .jumpc(loop,1-)
-.return(drop)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
