@@ -154,6 +154,7 @@ try:
   #
 
   config = dict(peripheral=list());
+  config['constants']   = list();
   config['inports']     = list();
   config['ios']         = list();
   config['signals']     = list();
@@ -203,6 +204,13 @@ try:
       if (not cmd) or (len(cmd[0]) < 2):
         raise SSBCCException('Malformed "COMBINE" command on line %d: "%s"' % (ixLine,line));
       combine = (cmd[0][0],cmd[0][1],);
+    # CONSTANTS
+    elif re.match(r'\s*CONSTANT\b',line):
+      cmd = re.findall(r'\s*CONSTANT\s+(C_\w+)\s+(\w+)\s*$',line);
+      if not cmd:
+        raise SSBCCException('Malformed "CONSTANT" command on line %d: "%s"' % (ixLine,line[:-1]));
+      cmd = cmd[0];
+      config['constants'].append((cmd[0],cmd[1],));
     # DATA_STACK
     elif re.match(r'\s*DATA_STACK\b',line):
       if 'data_stack' in config:
@@ -331,6 +339,8 @@ try:
 
   # Compute the command to invoke the compiler.
   cmd = os.path.join(corepath, compiler[0]);
+  for ix in range(len(config['constants'])):
+    cmd += (' -C %s=%s' % (config['constants'][ix][0],config['constants'][ix][1],));
   for ix in range(len(config['inports'])):
     cmd += (' -I %s=%d' % (config['inports'][ix][0],ix));
   for ix in range(len(config['outports'])):

@@ -37,6 +37,7 @@ try:
   #
 
   argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
+  argListParser.add_argument('-C', metavar='CONSTANT=value', action='append', help='Constant definition');
   argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
   argListParser.add_argument('-L', metavar='librarypath', action='append', help='Library search path');
   argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
@@ -51,7 +52,17 @@ try:
   from asmDef_9x8 import asmDef_9x8
   ad = asmDef_9x8();
 
+  # Intialize lists.
+  constants = list();
+
   # Register the input and output port definitions.
+  if argList.C:
+    for constant in argList.C:
+      a=re.findall(r'^(C+\w+)=(\w+)$',constant);
+      if not a:
+        raise asmDef.AsmException('Malformed -C argument: "%s"' % constant);
+      a = a[0];
+      constants.append((a[0],a[1],));
   if argList.I:
     for inport in argList.I:
       a=re.findall(r'^(\w+)=(\d+)$',inport);
@@ -87,7 +98,7 @@ try:
       ad.RegisterMemoryLength(a[0][0],length);
 
   # Construct the iterator that loops through the code bodies.
-  fbi = asmDef.FileBodyIterator(argList.filename,ad);
+  fbi = asmDef.FileBodyIterator(constants,argList.filename,ad);
   if argList.L:
     for path in argList.L:
       fbi.AddSearchPath(path);
