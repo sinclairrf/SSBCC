@@ -3,16 +3,17 @@
 ; Example LED flasher using 8-bit data
 
 ; Consume 256*5+3 clock cycles.
-.function pause ; ( - )
+; ( - )
+.function pause
   0 :inner 1- dup .jumpc(inner) drop
-  .return
+.return
 
 ; Repeat "pause" 256 times.
-.function repause ; ( - )
+; ( - )
+.function repause
   0 :inner .call(pause) 1- dup .jumpc(inner) drop
-  .return
+.return
 
 ; main program (as an infinite loop)
-; T is the setting for the LED
 .main
-0 :inner 1 ^ dup .outport(O_LED) .call(repause) .jump(inner)
+  0 :inner 1 ^ dup .outport(O_LED) .call(repause) .jump(inner)
