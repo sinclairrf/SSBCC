@@ -194,6 +194,10 @@ while multiple bits can be masked using a computed value as follows:
 
   .inport(I_FIFO_STATUS) ${C_FIFO_STATUS__FULL|C_FIFO_STATUS__EMPTY} &
 
+The "${...}" is an instruction to push the 8-bit value in the braces onto the
+data stack.  The computation is performed using the Python "eval" function in
+the context of the program constants, memory addresses, and memory sizes.
+
 Preceding all of these by
 
   PORTCOMMENT external FIFO
@@ -214,6 +218,13 @@ inconsistent port numbers between the HDL and the assembly.  Specifying the bit
 mapping for the assembly code immediately after the port mapping reduces the
 chances of inconsistencies between the port definition and the bit-mapping in
 the assembly code.
+
+An isolated output strobe can also be created using:
+
+  OUTPORT strobe o_strobe O_STROBE
+
+The associated assembly does not require a value for the port so that the strobe
+can be generated with the two instruction sequence "O_STROBE outport".
 
 A single-bit "set-reset" input port type is also included.  This sets the
 associated register when an external strobe is received and clears the register
