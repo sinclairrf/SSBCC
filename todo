@@ -1,5 +1,4 @@
   BUGS:
-    gracefully handle "eval(...,ad.SymbolDict())" errors
  
   ssbcc
     add "function"s for use by peripherals and incorporate all functions at the top of the peripheral section

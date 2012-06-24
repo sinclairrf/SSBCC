@@ -266,8 +266,11 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
   a = re.match(r'\${\S+}$',raw);
   if a:
     if 'singlevalue' not in allowed:
-      raise AsmException('Computated value not allowed at %s' % flc_loc);
-    tParseNumber = eval(raw[2:-1],ad.SymbolDict());
+      raise AsmException('Computed value not allowed at %s' % flc_loc);
+    try:
+      tParseNumber = eval(raw[2:-1],ad.SymbolDict());
+    except:
+      raise AsmException('Malformed computed value at %s: "%s"' % (flc_loc,raw,));
     if type(tParseNumber) != int:
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
