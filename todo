@@ -5,9 +5,8 @@
     ensure ARCHITECTURE is the first non-comment line
     validate signal names
       ensure that inport, outport, signal, and io names are not repeated
-      ensure no colisions with signals within the core
+      ensure no collisions with signals within the core
     add config['parameters'] and usage for peripherals
-    search paths for peripherals (code directory, core/9x8/peripherals, core/peripherals)
     put ssbccGenVerilog in a class in core/9x8
     Finish interrupt handling
     documentation
@@ -17,7 +16,7 @@
       INPORT and OUTPORT
       PERIPHERAL
         finish doc/peripheral.html
-    incorporate "COMBINE" feature
+    incorporate "COMBINE" feature to merge stacks or memories into large RAMs
     add VHDL
 
   core/9x8
