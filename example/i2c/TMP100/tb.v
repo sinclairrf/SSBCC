@@ -66,6 +66,8 @@ initial forever begin
   end
   if (deser[8] != 1'b1)
     $display("%13d : Malformed UART transmition, $time");
+  else if ((8'h20 <= deser[0+:8]) && (deser[0+:8]<=8'h80))
+    $display("%13d : Sent 0x%02H : %c", $time, deser[0+:8], deser[0+:8]);
   else
     $display("%13d : Sent 0x%02H", $time, deser[0+:8]);
 end
