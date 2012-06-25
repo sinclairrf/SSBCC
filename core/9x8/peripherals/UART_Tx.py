@@ -15,33 +15,21 @@ class UART_Tx:
   n stop bits
 
 Usage:
-  PERIPHERAL UART_Tx O_name I_name \\
-                     [name=valid_name] \\
+  PERIPHERAL UART_Tx outport=O_name \\
+                     inport=I_name \\
+                     baudmethod={clk/rate,count} \\
                      [noFIFO|FIFO=n] \\
                      [nStop=n] \\
-                     baudmethod=[clk/rate,count]
+                     [outsignal=o_name]
 Where:
-  O_name
-    is the symbol used by the outport instruction to write a byte to the
+  outport=O_name
+    specifies the symbol used by the outport instruction to write a byte to the
     peripheral
     Note:  The name must start with "O_".
-  I_name
-    is the symbol used by the inport instruction to get the status of the
+  inport=I_name
+    specifies the symbol used by the inport instruction to get the status of the
     peripheral
     Note:  The name must start with "I_".
-  name
-    is the base name for the outport symbol within the assembly code
-    default:  UART
-  noFIFO
-    the peripheral will not have a FIFO
-    this is the default
-  FIFO=n
-    adds a FIFO of depth n
-  nStop=n
-    configures the peripheral for n stop bits
-    default:  1 stop bit
-    Note:  n must be at least 1
-    Note:  normal values are 1 and 2
   baudmethod
     specifies the method to generate the desired bit rate:
     1st method:  clk/rate
@@ -52,8 +40,21 @@ Where:
           command
       rate is the desired baud rate
         this is specified as per "clk"
+  noFIFO
+    the peripheral will not have a FIFO
+    this is the default
+  FIFO=n
+    adds a FIFO of depth n
+  nStop=n
+    configures the peripheral for n stop bits
+    default:  1 stop bit
+    Note:  n must be at least 1
+    Note:  normal values are 1 and 2
     2nd method:
       specify the number of "i_clk" clock cycles between bit edges
+  outsignal=o_name
+    optionally specifies the name of the module's output signal
+    Default:  o_UART_Tx
 
 The following OUTPORTs are provided by this peripheral:
   O_name_TX
@@ -82,90 +83,105 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
 """
 
   def __init__(self,config,param_list,ixLine):
-    # Set the defaults.
+    # Get the parameters.
     self.baudmethod = None;
     self.FIFO = None;
-    self.name = None;
+    self.inport = None;
     self.nStop = None;
-    # Ensure there are enough arguments to the peripheral
-    if len(param_list) < 2:
-      raise SSBCCException('UART_Tx peripheral requires outport and inport names at line %d' % ixLine);
-    # Get the outport symbol
-    param_outport = param_list[0];
-    if len(param_outport) != 1:
-      raise SSBCCException('No "=" allowed in UART_Tx peripheral outport symbol at line %d' % ixLine);
-    param_outport = param_outport[0];
-    if not re.match('^O_\w+$',param_outport):
-      raise SSBCCException('First argument must be the outport name starting with "O_" at line %d' % ixLine);
-    self.outport = param_outport;
-    # Get the inport symbol
-    param_inport = param_list[1];
-    if len(param_inport) != 1:
-      raise SSBCCException('No "=" allowed in UART_Tx peripheral inport symbol at line %d' % ixLine);
-    param_inport = param_inport[0];
-    if not re.match('^I_\w+$',param_inport):
-      raise SSBCCException('First argument must be the inport name starting with "I_" at line %d' % ixLine);
-    self.inport = param_inport;
-    # Parse the optional parameters.
-    for param_tuple in param_list[2:]:
+    self.outport = None;
+    self.outsignal = None;
+    for param_tuple in param_list:
       param = param_tuple[0];
       param_arg = param_tuple[1];
       # baudmethod=rate/baudrate or baudmethod=decimate_count
       if param == 'baudmethod':
-        if type(self.baudmethod) != type(None):
+        if self.baudmethod != None:
           raise SSBCCException('baudmethod can only be specified once at line %d' % ixLine);
-        if not param_arg:
+        if param_arg == None:
           raise SSBCCException('baudmethod argument missing at line %d' % ixLine);
         self.ProcessBaudMethod(config,param_arg);
       # FIFO=
       elif param == 'FIFO':
-        if type(self.FIFO) != type(None):
+        if self.FIFO != None:
           raise SSBCCException('FIFO length cannot be specified after "noFIFO" at line %d' % ixLine);
         self.FIFO = int(param_arg);
         if self.FIFO <= 0:
           raise SSBCCException('FIFO length must be positive at line %d' % ixLine);
-      # name=
-      elif param=='name':
-        if type(self.name) != type(None):
-          raise SSBCCException('name can only be specified once at line %d' % ixLine);
-        self.name = param_arg;
+      # inport
+      elif param == 'inport':
+        if self.inport != None:
+          raise SSBCCException('inport can only be specified once at line %d' % ixLine);
+        if param_arg == None:
+          raise SSBCCException('inport symbol name missing at line %d' % ixLine);
+        if not re.match(r'^I_\w+$',param_arg):
+          raise SSBCCException('Malformed inport symbol name at line %d' % ixLine);
+        self.inport = param_arg;
       # noFIFO
       elif param == 'noFIFO':
-        if type(self.FIFO) != type(None):
+        if self.FIFO != None:
           raise SSBCCException('noFIFO follows FIFO=xxx specification at line %d' % ixLine);
+        if param_arg != None:
+          raise SSBCCException('noFIFO cannot have an argument at line %d' % ixLine);
         self.FIFO = False;
       # nStop=
       elif param == 'nStop':
-        if type(self.nStop) != type(None):
+        if self.nStop != None:
           raise SSBCCException('nStop can only be specified once at line %d' % ixLine);
-        self.nStop = int(param_arg);
+        if param_arg == None:
+          raise SSBCCException('nStop must have an argument at line %d' % ixLine);
+        try:
+          self.nStop = int(param_arg);
+        except:
+          raise SSBCCException('Malformed value for nStop at line %d' % ixLine);
         if self.nStop <= 0:
           raise SSBCCException('nStop must be 1 or more at line %d' % ixLine);
+      # outport
+      elif param == 'outport':
+        if self.outport != None:
+          raise SSBCCException('outport can only be specified once at line %d' % ixLine);
+        if param_arg == None:
+          raise SSBCCException('outport symbol name missing at line %d' % ixLine);
+        if not re.match(r'^O_\w+$',param_arg):
+          raise SSBCCException('Malformed outport symbol name at line %d' % ixLine);
+        self.outport = param_arg;
+      # outsignal
+      elif param == 'outsignal':
+        if self.outsignal != None:
+          raise SSBCCException('outsignal can only be specified once at line %d' % ixLine);
+        if param_arg == None:
+          raise SSBCCException('outsignal output port name missing at line %d' % ixLine);
+        if not re.match(r'o_\w+$',param_arg):
+          raise SSBCCException('Malformed outsignal output port name at line %d' % ixLine);
+        self.outsignal = param_arg;
       # no match
       else:
         raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Ensure the required parameters are provided and set non-specified optional parameters.
-    if not self.baudmethod:
+    if self.outport == None:
+      raise SSBCCException('Required parameter "outport" is missing at line %d' % ixLine);
+    if self.inport == None:
+      raise SSBCCException('Required parameter "inport" is missing at line %d' % ixLine);
+    if self.baudmethod == None:
       raise SSBCCException('Required parameter "baudmethod" is missing at line %d' % ixLine);
-    if type(self.FIFO) == type(None):
+    if self.FIFO == None:
       self.FIFO = False;
-    if not self.name:
-      self.name = 'UART';
-    if type(self.nStop) == type(None):
+    if self.outsignal == None:
+      self.outsignal = 'o_UART_Tx';
+    if self.nStop == None:
       self.nStop = 1;
     # List the I/Os and global signals required by this peripheral.
-    config['ios'].append(('o_%s_Tx' % self.name,1,'output',));
-    config['signals'].append(('s_%s_Tx' % self.name,8,));
-    config['signals'].append(('s_%s_busy' % self.name,1,));
-    config['signals'].append(('s_%s_wr' % self.name,1,));
+    config['ios'].append((self.outsignal,1,'output',));
+    config['signals'].append(('s_%s_Tx' % self.outsignal,8,));
+    config['signals'].append(('s_%s_busy' % self.outsignal,1,));
+    config['signals'].append(('s_%s_wr' % self.outsignal,1,));
     config['inports'].append((self.inport,
-                             ('s_%s_busy' % self.name,1,'data',),
+                             ('s_%s_busy' % self.outsignal,1,'data',),
                             ));
     config['outports'].append((self.outport,
-                              ('s_%s_Tx' % self.name,8,'data',),
-                              ('s_%s_wr' % self.name,1,'strobe',),
+                              ('s_%s_Tx' % self.outsignal,8,'data',),
+                              ('s_%s_wr' % self.outsignal,1,'strobe',),
                              ));
-    # Ensure the core add the 'clog2' function.
+    # Add the 'clog2' function to the core.
     config['functions']['clog2'] = True;
 
   def ProcessBaudMethod(self,config,param_arg):
@@ -192,8 +208,7 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
       raise Exception('HDL "%s" not implemented' % config['hdl']);
 
   def GenVerilog(self,fp,config):
-    body = """
-//
+    body = """//
 // UART_Tx "@NAME@" peripheral
 //
 generate
@@ -225,16 +240,16 @@ always @ (posedge i_clk)
   else
     s_out_stream <= s_out_stream;
 // Generate the output bit stream.
-initial o_@NAME@_Tx = 1'b1;
+initial @NAME@ = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
-    o_@NAME@_Tx <= 1'b1;
+    @NAME@ <= 1'b1;
   else if (s_@NAME@_wr)
-    o_@NAME@_Tx <= 1'b0;
+    @NAME@ <= 1'b0;
   else if (s_count_is_zero)
-    o_@NAME@_Tx <= s_out_stream[0];
+    @NAME@ <= s_out_stream[0];
   else
-    o_@NAME@_Tx <= o_@NAME@_Tx;
+    @NAME@ <= @NAME@;
 // Count down the number of bits.
 localparam L_@NAME@_NTX       = 1+8+@NSTOP@-1;
 localparam L_@NAME@_NTX_NBITS = @clog2@(L_@NAME@_NTX);
@@ -263,7 +278,7 @@ endgenerate
 """;
     for subs in (
                   ('@BAUDMETHOD@', str(self.baudmethod), ),
-                  ('@NAME@',       self.name, ),
+                  ('@NAME@',       self.outsignal, ),
                   ('@NSTOP@',      str(self.nStop) ),
                 ):
       body = re.sub(subs[0],subs[1],body);
