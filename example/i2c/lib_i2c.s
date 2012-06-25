@@ -28,6 +28,15 @@
   .call(i2c_quarter_cycle,0)
 .return
 
+; Set a start without the preceding stop.
+; ( - )
+.function i2c_send_restart
+  .call(i2c_quarter_cycle,0)
+  .call(i2c_quarter_cycle,1)
+  0 .outport(O_SDA) .call(i2c_quarter_cycle,1)
+  .call(i2c_quarter_cycle,0)
+.return
+
 ; Send the byte and indicate false if the acknowledge bit was received.
 ; ( u - f )
 .function i2c_send_byte
@@ -56,7 +65,8 @@
 ; Send a stop by bringing SDA high while SCL is high.
 ; ( - )
 .function i2c_send_stop
-  0 .outport(O_SDA) .call(i2c_quarter_cycle,1)
+  0 .outport(O_SDA) .call(i2c_quarter_cycle,0)
+  .call(i2c_quarter_cycle,1)
   1 .outport(O_SDA) .call(i2c_quarter_cycle,1)
 .return
 
