@@ -20,8 +20,9 @@ PERIPHERAL      open_drain      inport=I_SDA \
                                 iosignal=io_sda
 
 PORTCOMMENT     UART_Tx ports
-PERIPHERAL      UART_Tx         O_UART_TX I_UART_TX \
-                                baudmethod="97000000/9600"
+PERIPHERAL      UART_Tx         outport=O_UART_TX \
+                                inport=I_UART_TX \
+                                baudmethod=97000000/9600
 
 ASSEMBLY i2c_tmp100.s
 HDL Verilog i2c_tmp100
