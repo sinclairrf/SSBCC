@@ -96,8 +96,11 @@ def processPeripheral(config,ixLine,line):
     raise SSBCCException('Missing peripheral name in line %d:  %s' % (ixLine,line[:-1],));
   peripheral = cmd[0][0];
   # Find and execute the peripheral Python script.
-  fullperipheral = os.path.join(config['peripheralpath'],'%s.py' % peripheral);
-  if not os.path.isfile(fullperipheral):
+  for testPath in config['peripheralpaths']:
+    fullperipheral = os.path.join(testPath,'%s.py' % peripheral);
+    if os.path.isfile(fullperipheral):
+      break;
+  else:
     raise SSBCCException('Peripheral "%s" not found' % peripheral);
   execfile(fullperipheral);
   # Convert the space delimited parameters to a list of tuples.
@@ -165,6 +168,11 @@ try:
   config['define_clog2'] = argList.define_clog2;
   config['verilator_tracing_on'] = argList.verilator_tracing_on;
 
+  config['peripheralpaths'] = list();
+  config['peripheralpaths'].append('.');
+  config['peripheralpaths'].append('peripherals');
+  config['peripheralpaths'].append(os.path.join(sys.path[0],'core/peripherals'));
+
   ixLine = 0;
   bufLine = "";
   compiler = [];
@@ -193,7 +201,7 @@ try:
       corepath = os.path.join(sys.path[0],config['architecture']);
       if not os.path.isdir(corepath):
         raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,line[:-1],));
-      config['peripheralpath'] = os.path.join(corepath,'peripherals');
+      config['peripheralpaths'].insert(-1,os.path.join(corepath,'peripherals'));
     # ASSEMBLY language for processor code
     elif re.match(r'\s*ASSEMBLY\b',line):
       cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
