@@ -209,6 +209,9 @@ def ParseString(inString):
       if inString[ix] in ('\\', '\'', '"',):
         outString.append(ord(inString[ix]));
         ix = ix + 1;
+      elif inString[ix] == '0': # null terminator
+        outString.append(0);
+        ix = ix + 1;
       elif inString[ix] == 'a': # bell
         outString.append(7); # control-G
         ix = ix + 1;
