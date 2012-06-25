@@ -4,6 +4,7 @@
 *.csv
 *.drc
 _impact.*
+*.ipf
 *.lso
 *.map
 *.mrp
