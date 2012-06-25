@@ -566,11 +566,13 @@ class asmDef_9x8:
     fp.write('%03X %s\n' % (opcode,self.EmitName(name)));
 
   def EmitOptArg(self,fp,token):
-    if token['type'] in ('constant','variable',):
+    if token['type'] == 'constant':
       name = token['value'];
       if name not in self.symbols['list']:
         raise Exception('Program Bug');
       ix = self.symbols['list'].index(name);
+      if len(self.symbols['body'][ix]) != 1:
+        raise asmDef.AsmException('Optional constant can only be one byte at %s' % token['loc']);
       self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name));
     elif token['type'] in ('inport','outport'):
       name = token['value'];
@@ -584,6 +586,8 @@ class asmDef_9x8:
       self.EmitParameter(fp,token['value']);
     elif token['type'] == 'value':
       self.EmitPush(fp,token['value']);
+    elif token['type'] == 'variable':
+      self.EmitVariable(fp,token['value']);
     else:
       raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
 
@@ -660,10 +664,14 @@ class asmDef_9x8:
             name = token['argument'][0]['value'];
             ixBank = self.Emit_GetBank(name);
             self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+name);
+          elif token['value'] == '.fetch+':
+            name = token['argument'][0]['value'];
+            ixBank = self.Emit_GetBank(name);
+            self.EmitOpcode(fp,self.specialInstructions['fetch+'] | ixBank,'fetch+('+name+')');
           elif token['value'] == '.fetch-':
             name = token['argument'][0]['value'];
             ixBank = self.Emit_GetBank(name);
-            self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch- '+name);
+            self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-('+name)+')';
           elif token['value'] == '.fetchindexed':
             ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
