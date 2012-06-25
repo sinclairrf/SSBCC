@@ -25,7 +25,7 @@ FILES+=" ${NAME}.v";
 #
 
 # Build the micro processor.
-(cd ../..; ssbcc --define-clog hello_world.9x8 ) || exit 1;
+( cd ../..; ssbcc --define-clog hello_world.9x8 ) || exit 1;
 
 #
 # Configure and run the synthesis
