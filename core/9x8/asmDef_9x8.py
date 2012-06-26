@@ -671,7 +671,7 @@ class asmDef_9x8:
           elif token['value'] == '.fetch-':
             name = token['argument'][0]['value'];
             ixBank = self.Emit_GetBank(name);
-            self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-('+name)+')';
+            self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-('+name+')');
           elif token['value'] == '.fetchindexed':
             ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
             self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
