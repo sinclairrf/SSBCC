@@ -10,7 +10,7 @@ module sp601(
   // 200 MHz differential clock
   input  wire   ip_sysclk_p,
   input  wire   ip_sysclk_n,
-  // I2C ubs
+  // I2C bus
   inout  wire   iop_i2c_scl,
   inout  wire   iop_i2c_sda,
   // UART Tx
