@@ -100,10 +100,13 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
         if param_arg == None:
           raise SSBCCException('baudmethod argument missing at line %d' % ixLine);
         self.ProcessBaudMethod(config,param_arg);
-      # FIFO=
+      # FIFO
       elif param == 'FIFO':
         if self.FIFO != None:
-          raise SSBCCException('FIFO length cannot be specified after "noFIFO" at line %d' % ixLine);
+          if type(self.FIFO) == int:
+            raise SSBCCException('FIFO can only be specified once at line %d' % ixLine);
+          else
+            raise SSBCCException('FIFO cannot be specified after noFIFO line %d' % ixLine);
         self.FIFO = int(param_arg);
         if self.FIFO <= 0:
           raise SSBCCException('FIFO length must be positive at line %d' % ixLine);
@@ -119,7 +122,10 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
       # noFIFO
       elif param == 'noFIFO':
         if self.FIFO != None:
-          raise SSBCCException('noFIFO follows FIFO=xxx specification at line %d' % ixLine);
+          if type(self.FIFO) == int:
+            raise SSBCCException('noFIFO cannot be specified after "FIFO" at line %d' % ixLine);
+          else
+            raise SSBCCException('noFIFO can only be specified once at line %d' % ixLine);
         if param_arg != None:
           raise SSBCCException('noFIFO cannot have an argument at line %d' % ixLine);
         self.FIFO = False;
