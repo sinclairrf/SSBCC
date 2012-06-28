@@ -184,8 +184,8 @@ def genMemory(fp,memories):
     fp.write('  case (s_opcode[0+:2])\n');
     for ixBank in range(4):
       if ixBank in memories['bank']:
-        fp.write('    2\'d%d : s_memory <= s_mem%d_out;\n' % (ixBank,ixBank));
-    fp.write('    default : s_memory <= 8\'h00;\n');
+        fp.write('    2\'d%d : s_memory = s_mem%d_out;\n' % (ixBank,ixBank));
+    fp.write('    default : s_memory = 8\'h00;\n');
     fp.write('  endcase\n');
 
 def genModule(fp,outCoreName,config):
