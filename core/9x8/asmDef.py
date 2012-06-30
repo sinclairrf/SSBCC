@@ -385,6 +385,7 @@ def RawTokens(ad,filename,startLineNumber,lines):
     col = 0;
     spaceFound = True;
     while col < len(line):
+      flc_loc = fl_loc + ':' + str(col+1);
       # ignore white-space characters
       if re.match(r'\s',line[col:]):
         spaceFound = True;
@@ -398,9 +399,14 @@ def RawTokens(ad,filename,startLineNumber,lines):
         break;
       # Catch strings
       if re.match(r'[CN]?"',line[col:]):
-        a = re.match(r'[CN]?"([^"]|\\")+[^\\\\]"',line[col:]);
+        a = re.match(r'[CN]?"([^\\"]|\\.)+"',line[col:]);
         if not a:
           raise AsmException('Malformed string at %s' % flc_loc);
+      # Catch single-quoted characters
+      elif re.match(r'\'',line[col:]):
+        a = re.match(r'\'.\'',line[col:]);
+        if not a:
+          raise AsmException('Malformed \'.\' at %s' % flc_loc);
       else:
         # everything else is a white-space delimited token that needs to be parsed
         a = re.match(r'\S+',line[col:]);
