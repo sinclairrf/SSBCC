@@ -187,10 +187,6 @@ localparam C_STACK_INC          = 2'b01;        // add element to internal data 
 localparam C_STACK_DEC          = 2'b10;        // remove element from internal data stack
 reg [1:0] s_stack;
 
-reg s_interrupt_enabled         = 1'b0;
-reg s_interrupt_enabled_change  = 1'b0;
-reg s_interrupt_enabled_next    = 1'b0;
-reg s_interrupt_holdoff         = 1'b0;
 reg s_inport                    = 1'b0;
 reg s_outport                   = 1'b0;
 
@@ -202,9 +198,6 @@ always @ (*) begin
   s_bus_t       = C_BUS_T_MATH_ROTATE;
   s_bus_n       = C_BUS_N_N;
   s_stack       = C_STACK_NOP;
-  s_interrupt_enabled_change    = 1'b1;
-  s_interrupt_enabled_next      = s_interrupt_enabled;
-  s_interrupt_holdoff           = 1'b0;
   s_inport      = 1'b0;
   s_outport     = 1'b0;
   s_mem_wr      = 1'b0;
@@ -222,7 +215,6 @@ always @ (*) begin
     s_bus_t     = C_BUS_T_N;
     s_bus_n     = C_BUS_N_STACK;
     s_stack     = C_STACK_DEC;
-    s_interrupt_holdoff = 1'b1;
   end else case (s_opcode[3+:4])
       4'b0000:  // nop, math_rotate
                 ;
