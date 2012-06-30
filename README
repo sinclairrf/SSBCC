@@ -1,36 +1,54 @@
 SSBCC is a Small Stack-Based Computer Compiler with a 9-bit opcode, 8-bit data
-core.
+core.  It is intended to provide an FPGA-vendor independent micro-controller
+suitable for external communications and FPGA fabric control using relatively
+few FPGA resources.  It can, for example, receive commands from an external SPI
+master, operate the associated FPGA cores as commanded, and perform error
+detection and reporting.
+
+The computer compiler uses an architectural description of the processor stating
+the instruction, data stack, and return stack sizes; the input and output ports;
+memory types and sizes; and peripherals.  It outputs a single module
+implementing the entire micro controller.
+
+The 9x8 instructions are all single-cycle.  The instructions include pushing an
+8-bit value onto the data stack;  arithmetic operations:  addition, subtraction,
+increment, and decrement;  bit-wise logical operations:  and, or, and exclusive
+or; rotations;  logical operations:  0=, 0<>, -1=, -1<>; data and return stack
+operations:  dup, over, swap, drop, nip, >r, r>, and r@; input and output port
+operations;  memory read and write with optional address increment and
+decrement;  jumps and conditional jumps;  calls and conditional calls;  and
+function return.
+
+The 9x8 address space is up to 8K.  This is achieved by pushing the 8 lsb of the
+target address onto the data stack immediately before a jump or call instruction
+and by encoding the 5 msb of the address within the jump or call instruction.
+The instruction immediately following a jump, call, or return is executed before
+the instruction sequence at the target address or return address is executed.
+
+Up to four banks of memory, either RAM or ROM, are available.  Each of these can
+be up to 256 bytes, providing a total of up to 1 kB of memory.
+
+The assembly language is Forth-like.  Macros are used to encode the jump and
+call instructions and to encode the 2-bit memory bank index in memory store and
+fetch instructions.
+
+The computer compiler and assembler are written in Python 2.7.  Peripherals are
+implemented by Python modules which generate the I/O ports and the peripheral
+HDL.  This provides an extensible peripheral set to the compiler.
 
 The computer compiler is documented in the doc directory.  The 9x8 core is
 documented in the core/9x8/doc directory.  Several examples are provided.
 
-This is a beta release.  While the computer compiler and assembler are fully
-functional and there are no known bugs, features are still being added and the
-documentation is incomplete.  Also, the output HDL is currently restricted to
-Verilog.  VHDL will be added when everything else is complete.  The processor is
-being used on a commercial project and the examples do work on hardware.
-
-The 9x8 instructions are all single-cycle.  Jumps and calls require 2
-instructions to encode the 13-bit address.  The RISC architecture means that the
-instructions immediately following jumps, calls, and returns are always
-executed.
-
 The processor has placed and routed at 210 MHz in a Spartan 6 while consuming 43
 slices.
 
-INTRODUCTION
-================================================================================
+This is a beta release.  While the computer compiler and assembler are fully
+functional and there are no known bugs, features and peripherals are still being
+added and the documentation is incomplete.  Also, the output HDL is currently
+restricted to Verilog.  VHDL will be added when everything else is complete.
+The processor is being used on a commercial project and the examples have been
+do run on hardware.
 
-SSBCC.9x8 is intended to provide a complete processor implementation structure
-while using relatively few FPGA resources.
-
-The computer compiler takes an architecture definition file and creates a single
-module which implements the desired architecture, I/Os, data and return stacks,
-memories, and peripherals.  It also runs the assembler and incorporates the
-instructions into the module.
-
-The computer compiler and assembler are written in Python 2.7.  The 9x8 assembly
-is Forth-like.  The instruction space can be up to 8K.
 
 EXAMPLE:
 ================================================================================
@@ -160,81 +178,93 @@ library functions are not included in the generated instruction list.
     s_opcodeMemory['h7FF] = 9'h000;
   end
 
+
 INPORT and OUTPORT
 ================================================================================
 
-The INPORT and OUTPORT configuration commands are used to specify normal 2-state
-inputs and outputs.  For example
+The INPORT and OUTPORT configuration commands are used to specify 2-state inputs
+and outputs.  For example
 
   INPORT 8-bit i_value I_VALUE
 
 specifies a single 8-bit input signal named "i_value" for the module.  The port
-is accessed in assembly through the symbol "I_VALUE."  To input an 8-bit value
-from a FIFO and send a single-clock-cycle wide acknowledgment strobe, use
+is accessed in assembly by ".inport(I_VALUE)" which is equivalent to "I_VALUE
+inport."  To input an 8-bit value from a FIFO and send a single-clock-cycle wide
+acknowledgment strobe, use
 
   INPORT 8-bit,strobe i_fifo,o_fifo_ack I_FIFO
+
+The assembly ".inport(I_FIFO)" will automatically send an acknowledgment strobe
+to the FIFO through "o_fifo_ack."
 
 A write port to an 8-bit FIFO is similarly specified by
 
   OUTPORT 8-bit,strobe o_fifo,o_fifo_wr O_FIFO
 
+The assembly ".outport(O_FIFO)" which is equivalent to "O_FIFO outport drop"
+will automatically send a write strobe to the FIFO through "o_fifo_wr."
+
 Multiple signals can be packed into a single input or output port by defining
-them in comma separated lists.  The masks can also be defined coincident with
-the port definition as follows:
+them in comma separated lists.  The associated bit masks can be defined
+coincident with the port definition as follows:
 
   INPUT 1-bit,1-bit i_fifo_full,i_fifo_empty I_FIFO_STATUS
   CONSTANT C_FIFO_STATUS__FULL  0x02
   CONSTANT C_FIFO_STATUS__EMPTY 0x01
 
-Individual bits can then be masked as follows:
+Checking the "full" status of the FIFO can be done by the following assembly
+sequence:
 
   .inport(I_FIFO_STATUS) C_FIFO_STATUS__FULL &
 
-while multiple bits can be masked using a computed value as follows:
+Multiple bits can be masked using a computed value as follows:
 
   .inport(I_FIFO_STATUS) ${C_FIFO_STATUS__FULL|C_FIFO_STATUS__EMPTY} &
 
-The "${...}" is an instruction to push the 8-bit value in the braces onto the
-data stack.  The computation is performed using the Python "eval" function in
-the context of the program constants, memory addresses, and memory sizes.
+The "${...}" creates an instruction to push the 8-bit value in the braces onto
+the data stack.  The computation is performed using the Python "eval" function
+in the context of the program constants, memory addresses, and memory sizes.
 
 Preceding all of these by
 
   PORTCOMMENT external FIFO
 
-produces the following in the Verilog module statement:
+produces the following in the Verilog module statement.  The I/O ports are
+listed in the order in which they are declared.
 
   // external FIFO
-  input  wire     i_fifo,
-  output reg      o_fifo_ack,
-  output reg      o_fifo,
-  output reg      o_fifo_wr,
-  input  wire     i_fifo_full,
-  input  wire     i_fifo_empty
+  input  wire       [7:0] i_fifo,
+  output reg              o_fifo_ack,
+  output reg        [7:0] o_fifo,
+  output reg              o_fifo_wr,
+  input  wire             i_fifo_full,
+  input  wire             i_fifo_empty
 
 The HDL to implement the inputs and outputs is computer generated.  Identifying
 the port name in the architecture file eliminates the possibility of
 inconsistent port numbers between the HDL and the assembly.  Specifying the bit
-mapping for the assembly code immediately after the port mapping reduces the
-chances of inconsistencies between the port definition and the bit-mapping in
-the assembly code.
+mapping for the assembly code immediately after the port definition helps
+prevent inconsistencies between the port definition and the bit mapping in the
+assembly code.
 
 An isolated output strobe can also be created using:
 
   OUTPORT strobe o_strobe O_STROBE
 
-The associated assembly does not require a value for the port so that the strobe
-can be generated with the two instruction sequence "O_STROBE outport".
+The associated assembly does not require an output value for the port so that
+the strobe can be generated with the two instruction sequence "O_STROBE
+outport".
 
-A single-bit "set-reset" input port type is also included.  This sets the
-associated register when an external strobe is received and clears the register
-when the port is read.  For example, to capture an external timer for a
-polled-loop, include the following in the architecture file:
+A single-bit "set-reset" input port type is also included.  This sets a register
+when an external strobe is received and clears the register when the port is
+read.  For example, to capture an external timer for a polled-loop, include the
+following in the architecture file:
 
   PORTCOMMENT external timer
   INPORT set-reset i_timer I_TIMER
 
-and then conditionally call two functions if the timer event was encountered:
+The following is the assembly code to conditionally call two functions when the
+timer event is encountered:
 
   .inport(I_TIMER)
     .callc(timer_event_1,nop)
@@ -244,17 +274,18 @@ The "nop" in the first conditional call prevents the conditional from being
 dropped from the data stack so that it can be used by the subsequent conditional
 function call.
 
+
 PERIPHERAL
 ================================================================================
 
 Peripherals are implemented via Python modules.  For example, an open drain I/O
-signal, such as is required for an I2C bus, does not conveniently fit the INPORT
-and OUTPORT functionality.  Instead, an "open_drain" peripheral is provided by
-the Python script in "cores/9x8/peripherals/open_drain.py."  This incorporates a
-tri-state I/O in the module statement, allows it to be read through an "inport"
-instruction, and allows it to be set low or released through an "outport"
-instruction.  An I2C bus with separate SCL and SDA ports can then be
-incorporated into the processor as follows:
+signal, such as is required for an I2C bus, does not fit the INPORT and OUTPORT
+functionality.  Instead, an "open_drain" peripheral is provided by the Python
+script in "core/9x8/peripherals/open_drain.py."  This puts a tri-state I/O in
+the module statement, allows it to be read through an "inport" instruction, and
+allows it to be set low or released through an "outport" instruction.  An I2C
+bus with separate SCL and SDA ports can then be incorporated into the processor
+as follows:
 
   PORTCOMMENT     I2C bus
   PERIPHERAL      open_drain      inport=I_SCL \
@@ -274,8 +305,9 @@ include the lines
 The assembly code to set the io_scl signal low is "0 .outport(O_SCL)" and to
 release it is "1 .outport(O_SCL)".  These instruction sequences are actually
 "0 O_SCL outport drop" and "1 O_SCL outport drop" respectively.  The "outport"
-instruction also drops the top of the data stack (which contained the port
-number).
+instruction drops the top of the data stack (which contained the port number)
+and sends the next-to-the-top of the data stack to the designated output port.
+
 
 DIAGNOSTICS AND DEBUGGING
 ================================================================================
@@ -293,10 +325,12 @@ Stack errors include underflow and overflow, malformed data validity, and
 incorrect use of the values on the return stack (returns to data values and data
 operations on return addresses).
 
+
 SIMULATIONS
 ================================================================================
 
 Simulations have been performed with Icarus Verilog, Verilator, and Xilinx'
 ISIM.  Icarus Verilog is good for short, simple simulations, Verilator for long
-simulations of larger, more complex systems, and ISIM when Xilinx-specific cores
-are used.
+simulations of large, complex systems, and ISIM when Xilinx-specific cores are
+used.  Verilator is over an order of magnitude faster than the other simulators
+I've used.
