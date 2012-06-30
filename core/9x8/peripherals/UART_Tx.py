@@ -105,7 +105,7 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
         if self.FIFO != None:
           if type(self.FIFO) == int:
             raise SSBCCException('FIFO can only be specified once at line %d' % ixLine);
-          else
+          else:
             raise SSBCCException('FIFO cannot be specified after noFIFO line %d' % ixLine);
         self.FIFO = int(param_arg);
         if self.FIFO <= 0:
@@ -124,7 +124,7 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
         if self.FIFO != None:
           if type(self.FIFO) == int:
             raise SSBCCException('noFIFO cannot be specified after "FIFO" at line %d' % ixLine);
-          else
+          else:
             raise SSBCCException('noFIFO can only be specified once at line %d' % ixLine);
         if param_arg != None:
           raise SSBCCException('noFIFO cannot have an argument at line %d' % ixLine);
