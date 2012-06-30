@@ -97,7 +97,7 @@ def genInports(fp,config):
 def genInstructions(fp,programBody,config):
   nInstructions = config['nInstructions'];
   addrWidth = int(math.ceil(math.log(nInstructions,2)/4));
-  formatp = '  s_opcodeMemory[\'h%%0%dX] = { 1\'b1, %%s[0+:8] };\n' % addrWidth;
+  formatp = '  s_opcodeMemory[\'h%%0%dX] = { 1\'b1, %%s };\n' % addrWidth;
   formatn = '  s_opcodeMemory[\'h%%0%dX] = 9\'h%%s; // %%s\n' % addrWidth;
   fp.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
   fp.write('initial begin\n');

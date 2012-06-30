@@ -269,7 +269,11 @@ class asmDef_9x8:
     elif self.symbols['type'][ix] == 'outport':
       return dict(type='outport', value=token['value']);
     elif self.symbols['type'][ix] == 'parameter':
-      return dict(type='parameter', value=token['value']);
+      if 'range' in token:
+        trange = token['range'];
+      else:
+        trange = '[0+:8]';
+      return dict(type='parameter', value=token['value'], range=trange);
     elif self.symbols['type'][ix] == 'variable':
       return dict(type='variable', value=token['value']);
     else:
@@ -696,7 +700,7 @@ class asmDef_9x8:
     elif token['type'] == 'instruction':
       self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
     elif token['type'] == 'parameter':
-      self.EmitParameter(fp,token['value']);
+      self.EmitParameter(fp,token);
     elif token['type'] == 'value':
       self.EmitPush(fp,token['value']);
     elif token['type'] == 'variable':
@@ -706,10 +710,11 @@ class asmDef_9x8:
     else:
       raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
 
-  def EmitParameter(self,fp,name):
+  def EmitParameter(self,fp,token):
+    name = token['value'];
     if not self.IsParameter(name):
       raise Exception('Program Bug');
-    fp.write('p %s\n' % name);
+    fp.write('p %s%s\n' % (name,token['range'],));
 
   def EmitPush(self,fp,value,name=None):
     if (-128 <= value <= -1):
@@ -769,7 +774,7 @@ class asmDef_9x8:
         elif token['type'] == 'macro':
           self.EmitMacro(fp,token);
         elif token['type'] == 'parameter':
-          self.EmitParameter(fp,token['value']);
+          self.EmitParameter(fp,token);
         elif token['type'] == 'symbol':
           self.EmitPush(fp,token['value'],token['name']);
         elif token['type'] == 'variable':
