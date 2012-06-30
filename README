@@ -309,6 +309,32 @@ instruction drops the top of the data stack (which contained the port number)
 and sends the next-to-the-top of the data stack to the designated output port.
 
 
+PARAMETER
+================================================================================
+
+Parameters are incorporated through the PARAMETER configuration command.  For
+example,
+
+  PARAMETER G_VERSION 24'b00_00_00
+
+specifies a 24-bit parameter named "G_VERSION."  The 8-bit major, minor, and
+build sections of the parameter can be accessed in an assembly program using
+"G_VERSION[16+:8]", "G_VERSION[8+:8]", and "G_VERSION[0+:8]".  The default range
+is "[0+:8]".  The instruction memory is initialized using the parameter value
+during synthesis, not the value used to initialize the parameter.  That is, the
+memory initialization will look like:
+
+  s_opcodeMemory[...] = { 1'b1, G_VERSION[16+:8] };
+
+The initial value of the parameter can be set when the computer compiler is run
+using the "-G" option.  For example,
+
+  ssbcc -G "G_VERSION=24'b01_04_03" myprogram.9x8
+
+can be used in a makefile to set the version number for a release without
+modifying the micro controller architecture file.
+
+
 DIAGNOSTICS AND DEBUGGING
 ================================================================================
 
