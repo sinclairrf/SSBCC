@@ -83,7 +83,7 @@ try:
       ad.RegisterOutport(a[0][0],ix);
   if argList.P:
     for parameter in argList.P:
-      a = re.findall(r'^(\w+)$',parameter);
+      a = re.findall(r'^(G_\w+)$',parameter);
       if not a:
         raise asmDef.AsmException('Malformed -P argument: "%s"' % parameter);
       ad.RegisterParameterName(a[0]);

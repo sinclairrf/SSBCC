@@ -146,6 +146,7 @@ try:
 
   import argparse
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
+  argListParser.add_argument('-G', metavar='parameter_name=value', type=str, action='append', help='Override parameter value');
   argListParser.add_argument('-P', metavar='peripheral_name[="parameters"]', type=str, action='append', help='Add peripheral');
   argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
   argListParser.add_argument('--verilator-tracing-on', action='store_true', help='show all signals in verilator waveform files');
@@ -266,7 +267,7 @@ try:
       processOutport(config,line,ixLine);
     # PARAMETER
     elif re.match(r'\s*PARAMETER\b',line):
-      cmd = re.findall(r'\s*PARAMETER\s+(\w+)\s+(\d+)',line);
+      cmd = re.findall(r'\s*PARAMETER\s+(G_\w+)\s+(\S+)$',line);
       if (not cmd) or (len(cmd[0]) != 2):
         raise SSBCCException('Malformed PARAMETER configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       cmd = cmd[0];
@@ -301,6 +302,23 @@ try:
     else:
       raise SSBCCException('Unrecognized configuration command on line %d: "%s"' % (ixLine,line[:-1],));
   argList.filename.close();
+
+  #
+  # Incorporate command-line specified parameters values
+  #
+
+  if argList.G:
+    for parameter in argList.G:
+      if not re.match(r'G_\w+=\S+$',parameter):
+        raise SSBCCException('Malformed parameter specification: "%s"' % parameter);
+      cmd = re.findall(r'(G_\w+)=(\S+)',parameter);
+      cmd = cmd[0];
+      for ix in range(len(config['parameters'])):
+        if config['parameters'][ix][0] == cmd[0]:
+          break;
+      else:
+        raise SSBCCException('Command-line parameter "%s" must be specified in the architecture file' % cmd[0]);
+      config['parameters'][ix] = (cmd[0],cmd[1],);
 
   #
   # Append peripherals from command-line.
