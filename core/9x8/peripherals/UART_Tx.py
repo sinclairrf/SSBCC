@@ -177,15 +177,15 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
       self.nStop = 1;
     # List the I/Os and global signals required by this peripheral.
     config['ios'].append((self.outsignal,1,'output',));
-    config['signals'].append(('s_%s_Tx' % self.outsignal,8,));
-    config['signals'].append(('s_%s_busy' % self.outsignal,1,));
-    config['signals'].append(('s_%s_wr' % self.outsignal,1,));
+    config['signals'].append(('s__%s__Tx' % self.outsignal,8,));
+    config['signals'].append(('s__%s__busy' % self.outsignal,1,));
+    config['signals'].append(('s__%s__wr' % self.outsignal,1,));
     config['inports'].append((self.inport,
-                             ('s_%s_busy' % self.outsignal,1,'data',),
+                             ('s__%s__busy' % self.outsignal,1,'data',),
                             ));
     config['outports'].append((self.outport,
-                              ('s_%s_Tx' % self.outsignal,8,'data',),
-                              ('s_%s_wr' % self.outsignal,1,'strobe',),
+                              ('s__%s__Tx' % self.outsignal,8,'data',),
+                              ('s__%s__wr' % self.outsignal,1,'strobe',),
                              ));
     # Add the 'clog2' function to the core.
     config['functions']['clog2'] = True;
@@ -215,71 +215,71 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
 
   def GenVerilog(self,fp,config):
     body = """//
-// UART_Tx "@NAME@" peripheral
+// PERIPHERAL UART_Tx:  @NAME@
 //
 generate
 // Count the clock cycles to decimate to the desired baud rate.
-localparam L_@NAME@_COUNT       = @BAUDMETHOD@;
-localparam L_@NAME@_COUNT_NBITS = @clog2@(L_@NAME@_COUNT);
-reg [L_@NAME@_COUNT_NBITS-1:0] s_count = {(L_@NAME@_COUNT_NBITS){1\'b0}};
-reg s_count_is_zero = 1'b0;
+localparam L__@NAME@__COUNT       = @BAUDMETHOD@;
+localparam L__@NAME@__COUNT_NBITS = @clog2@(L__@NAME@__COUNT);
+reg [L__@NAME@__COUNT_NBITS-1:0] s__@NAME@__count = {(L__@NAME@__COUNT_NBITS){1\'b0}};
+reg s__@NAME@__count_is_zero = 1'b0;
 always @ (posedge i_clk)
   if (i_rst) begin
-    s_count <= {(L_@NAME@_COUNT_NBITS){1\'b0}};
-    s_count_is_zero <= 1'b0;
-  end else if (s_@NAME@_wr || s_count_is_zero) begin
-    s_count <= L_@NAME@_COUNT[0+:L_@NAME@_COUNT_NBITS];
-    s_count_is_zero <= 1'b0;
+    s__@NAME@__count <= {(L__@NAME@__COUNT_NBITS){1\'b0}};
+    s__@NAME@__count_is_zero <= 1'b0;
+  end else if (s__@NAME@__wr || s__@NAME@__count_is_zero) begin
+    s__@NAME@__count <= L__@NAME@__COUNT[0+:L__@NAME@__COUNT_NBITS];
+    s__@NAME@__count_is_zero <= 1'b0;
   end else begin
-    s_count <= s_count - { {(L_@NAME@_COUNT_NBITS-1){1'b0}}, 1'b1 };
-    s_count_is_zero <= (s_count == { {(L_@NAME@_COUNT_NBITS-1){1'b0}}, 1'b1 });
+    s__@NAME@__count <= s__@NAME@__count - { {(L__@NAME@__COUNT_NBITS-1){1'b0}}, 1'b1 };
+    s__@NAME@__count_is_zero <= (s__@NAME@__count == { {(L__@NAME@__COUNT_NBITS-1){1'b0}}, 1'b1 });
   end
 // Latch the bits to output.
-reg [7:0] s_out_stream = 8'hFF;
+reg [7:0] s__@NAME@__out_stream = 8'hFF;
 always @ (posedge i_clk)
   if (i_rst)
-    s_out_stream <= 8'hFF;
-  else if (s_@NAME@_wr)
-    s_out_stream <= s_@NAME@_Tx;
-  else if (s_count_is_zero)
-    s_out_stream <= { 1'b1, s_out_stream[1+:7] };
+    s__@NAME@__out_stream <= 8'hFF;
+  else if (s__@NAME@__wr)
+    s__@NAME@__out_stream <= s__@NAME@__Tx;
+  else if (s__@NAME@__count_is_zero)
+    s__@NAME@__out_stream <= { 1'b1, s__@NAME@__out_stream[1+:7] };
   else
-    s_out_stream <= s_out_stream;
+    s__@NAME@__out_stream <= s__@NAME@__out_stream;
 // Generate the output bit stream.
 initial @NAME@ = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
     @NAME@ <= 1'b1;
-  else if (s_@NAME@_wr)
+  else if (s__@NAME@__wr)
     @NAME@ <= 1'b0;
-  else if (s_count_is_zero)
-    @NAME@ <= s_out_stream[0];
+  else if (s__@NAME@__count_is_zero)
+    @NAME@ <= s__@NAME@__out_stream[0];
   else
     @NAME@ <= @NAME@;
 // Count down the number of bits.
-localparam L_@NAME@_NTX       = 1+8+@NSTOP@-1;
-localparam L_@NAME@_NTX_NBITS = @clog2@(L_@NAME@_NTX);
-reg [L_@NAME@_NTX_NBITS-1:0] s_ntx = {(L_@NAME@_NTX_NBITS){1'b0}};
+localparam L__@NAME@__NTX       = 1+8+@NSTOP@-1;
+localparam L__@NAME@__NTX_NBITS = @clog2@(L__@NAME@__NTX);
+reg [L__@NAME@__NTX_NBITS-1:0] s__@NAME@__ntx = {(L__@NAME@__NTX_NBITS){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
-    s_ntx <= {(L_@NAME@_NTX_NBITS){1'b0}};
-  else if (s_@NAME@_wr)
-    s_ntx <= L_@NAME@_NTX[0+:L_@NAME@_NTX_NBITS];
-  else if (s_count_is_zero)
-    s_ntx <= s_ntx - { {(L_@NAME@_NTX_NBITS-1){1'b0}}, 1'b1 };
+    s__@NAME@__ntx <= {(L__@NAME@__NTX_NBITS){1'b0}};
+  else if (s__@NAME@__wr)
+    s__@NAME@__ntx <= L__@NAME@__NTX[0+:L__@NAME@__NTX_NBITS];
+  else if (s__@NAME@__count_is_zero)
+    s__@NAME@__ntx <= s__@NAME@__ntx - { {(L__@NAME@__NTX_NBITS-1){1'b0}}, 1'b1 };
   else
-    s_ntx <= s_ntx;
+    s__@NAME@__ntx <= s__@NAME@__ntx;
 // The status bit is 1 if the core is done and 0 otherwise.
-initial s_@NAME@_busy = 1'b1;
+initial s__@NAME@__busy = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
-    s_@NAME@_busy <= 1'b0;
-  else if (s_@NAME@_wr)
-    s_@NAME@_busy <= 1'b1;
-  else if (s_count_is_zero && (s_ntx == {(L_@NAME@_NTX_NBITS){1'b0}}))
-    s_@NAME@_busy <= 1'b0;
+    s__@NAME@__busy <= 1'b0;
+  else if (s__@NAME@__wr)
+    s__@NAME@__busy <= 1'b1;
+  else if (s__@NAME@__count_is_zero && (s__@NAME@__ntx == {(L__@NAME@__NTX_NBITS){1'b0}}))
+    s__@NAME@__busy <= 1'b0;
   else
-    s_@NAME@_busy <= s_@NAME@_busy;
+    s__@NAME@__busy <= s__@NAME@__busy;
 endgenerate
 """;
     for subs in (
