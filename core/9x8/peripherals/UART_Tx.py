@@ -218,6 +218,8 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
 // PERIPHERAL UART_Tx:  @NAME@
 //
 generate
+reg s__@NAME@__uart_busy;
+@FIFOBODY@
 // Count the clock cycles to decimate to the desired baud rate.
 localparam L__@NAME@__COUNT       = @BAUDMETHOD@;
 localparam L__@NAME@__COUNT_NBITS = @clog2@(L__@NAME@__COUNT);
@@ -227,7 +229,7 @@ always @ (posedge i_clk)
   if (i_rst) begin
     s__@NAME@__count <= {(L__@NAME@__COUNT_NBITS){1\'b0}};
     s__@NAME@__count_is_zero <= 1'b0;
-  end else if (s__@NAME@__wr || s__@NAME@__count_is_zero) begin
+  end else if (s__@NAME@__go || s__@NAME@__count_is_zero) begin
     s__@NAME@__count <= L__@NAME@__COUNT[0+:L__@NAME@__COUNT_NBITS];
     s__@NAME@__count_is_zero <= 1'b0;
   end else begin
@@ -239,8 +241,8 @@ reg [7:0] s__@NAME@__out_stream = 8'hFF;
 always @ (posedge i_clk)
   if (i_rst)
     s__@NAME@__out_stream <= 8'hFF;
-  else if (s__@NAME@__wr)
-    s__@NAME@__out_stream <= s__@NAME@__Tx;
+  else if (s__@NAME@__go)
+    s__@NAME@__out_stream <= s__@NAME@__Tx_data;
   else if (s__@NAME@__count_is_zero)
     s__@NAME@__out_stream <= { 1'b1, s__@NAME@__out_stream[1+:7] };
   else
@@ -250,7 +252,7 @@ initial @NAME@ = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
     @NAME@ <= 1'b1;
-  else if (s__@NAME@__wr)
+  else if (s__@NAME@__go)
     @NAME@ <= 1'b0;
   else if (s__@NAME@__count_is_zero)
     @NAME@ <= s__@NAME@__out_stream[0];
@@ -263,29 +265,83 @@ reg [L__@NAME@__NTX_NBITS-1:0] s__@NAME@__ntx = {(L__@NAME@__NTX_NBITS){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
     s__@NAME@__ntx <= {(L__@NAME@__NTX_NBITS){1'b0}};
-  else if (s__@NAME@__wr)
+  else if (s__@NAME@__go)
     s__@NAME@__ntx <= L__@NAME@__NTX[0+:L__@NAME@__NTX_NBITS];
   else if (s__@NAME@__count_is_zero)
     s__@NAME@__ntx <= s__@NAME@__ntx - { {(L__@NAME@__NTX_NBITS-1){1'b0}}, 1'b1 };
   else
     s__@NAME@__ntx <= s__@NAME@__ntx;
 // The status bit is 1 if the core is done and 0 otherwise.
-initial s__@NAME@__busy = 1'b1;
+initial s__@NAME@__uart_busy = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
-    s__@NAME@__busy <= 1'b0;
-  else if (s__@NAME@__wr)
-    s__@NAME@__busy <= 1'b1;
+    s__@NAME@__uart_busy <= 1'b0;
+  else if (s__@NAME@__go)
+    s__@NAME@__uart_busy <= 1'b1;
   else if (s__@NAME@__count_is_zero && (s__@NAME@__ntx == {(L__@NAME@__NTX_NBITS){1'b0}}))
-    s__@NAME@__busy <= 1'b0;
+    s__@NAME@__uart_busy <= 1'b0;
   else
-    s__@NAME@__busy <= s__@NAME@__busy;
+    s__@NAME@__uart_busy <= s__@NAME@__uart_busy;
+@UARTBUSY@
 endgenerate
 """;
+    fifobody = """// FIFO=@FIFO@
+localparam L__@NAME@__FIFO_LENGTH = @FIFO@;
+localparam L__@NAME@__FIFO_NBITS = @clog2@(L__@NAME@__FIFO_LENGTH);
+reg [7:0] s__@NAME@__fifo_mem[@FIFO@-1:0];
+reg [L__@NAME@__FIFO_NBITS:0] s__@NAME@__fifo_addr_in = {(L__@NAME@__FIFO_NBITS+1){1'b0}};
+always @ (posedge i_clk)
+  if (i_rst)
+    s__@NAME@__fifo_addr_in <= {(L__@NAME@__FIFO_NBITS+1){1'b0}};
+  else if (s__@NAME@__wr) begin
+    s__@NAME@__fifo_addr_in <= s__@NAME@__fifo_addr_in + { {(L__@NAME@__FIFO_NBITS){1'b0}}, 1'b1 };
+    s__@NAME@__fifo_mem[s__@NAME@__fifo_addr_in[0+:L__@NAME@__FIFO_NBITS]] <= s__@NAME@__Tx;
+  end
+reg [L__@NAME@__FIFO_NBITS:0] s__@NAME@__fifo_addr_out;
+reg s__@NAME@__fifo_has_data = 1'b0;
+reg s__@NAME@__fifo_full = 1'b0;
+always @ (posedge i_clk)
+  if (i_rst) begin
+    s__@NAME@__fifo_has_data = 1'b0;
+    s__@NAME@__fifo_full = 1'b0;
+  end else begin
+    s__@NAME@__fifo_has_data = (s__@NAME@__fifo_addr_out != s__@NAME@__fifo_addr_in);
+    s__@NAME@__fifo_full = (s__@NAME@__fifo_addr_out == (s__@NAME@__fifo_addr_in ^ { 1'b1, {(L__@NAME@__FIFO_NBITS){1'b0}} }));
+  end
+initial s__@NAME@__fifo_addr_out = {(L__@NAME@__FIFO_NBITS+1){1'b0}};
+always @ (posedge i_clk)
+  if (i_rst)
+    s__@NAME@__fifo_addr_out = {(L__@NAME@__FIFO_NBITS+1){1'b0}};
+  else if (s__@NAME@__go)
+    s__@NAME@__fifo_addr_out = s__@NAME@__fifo_addr_out + { {(L__@NAME@__FIFO_NBITS){1'b0}}, 1'b1 };
+reg s__@NAME@__go = 1'b0;
+always @ (posedge i_clk)
+  if (i_rst)
+    s__@NAME@__go = 1'b0;
+  else if (s__@NAME@__fifo_has_data && !s__@NAME@__uart_busy && !s__@NAME@__go)
+    s__@NAME@__go = 1'b1;
+  else
+    s__@NAME@__go = 1'b0;
+reg [7:0] s__@NAME@__Tx_data = 8'd0;
+always @ (posedge i_clk)
+  if (i_rst)
+    s__@NAME@__Tx_data = 8'd0;
+  else
+    s__@NAME@__Tx_data = s__@NAME@__fifo_mem[s__@NAME@__fifo_addr_out[0+:L__@NAME@__FIFO_NBITS]];""";
+    nofifobody = """// noFIFO
+wire s__@NAME@__go = s__@NAME@__wr;
+wire [7:0] s__@NAME@__Tx_data = s__@NAME@__Tx;""";
+    if self.FIFO:
+      body = re.sub('@FIFOBODY@',fifobody,body);
+      body = re.sub('@UARTBUSY@','always @ (*) s__@NAME@__busy = s__@NAME@__fifo_full;',body);
+    else:
+      body = re.sub('@FIFOBODY@',nofifobody,body);
+      body = re.sub('@UARTBUSY@','always @ (*) s__@NAME@__busy = s__@NAME@__uart_busy;',body);
     for subs in (
-                  ('@BAUDMETHOD@', str(self.baudmethod), ),
-                  ('@NAME@',       self.outsignal, ),
-                  ('@NSTOP@',      str(self.nStop) ),
+                  ('@BAUDMETHOD@', str(self.baudmethod),),
+                  ('@FIFO@',       str(self.FIFO),),
+                  ('@NAME@',       self.outsignal,),
+                  ('@NSTOP@',      str(self.nStop), ),
                 ):
       body = re.sub(subs[0],subs[1],body);
     if config['define_clog2']:
