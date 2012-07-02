@@ -193,7 +193,7 @@ class asmDef_9x8:
       if token['type'] == 'label':
         name = token['value'];
         if name in labelDefs:
-          raise asmDef.AsmException('Repeated label definition at %s', token['loc']);
+          raise asmDef.AsmException('Repeated label definition "%s" at %s' % (name,token['loc'],));
         labelDefs.append(name);
     labelsUsed = list();
     for token in rawTokens:
