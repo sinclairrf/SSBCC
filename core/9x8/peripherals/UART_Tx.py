@@ -302,32 +302,32 @@ reg s__@NAME@__fifo_has_data = 1'b0;
 reg s__@NAME@__fifo_full = 1'b0;
 always @ (posedge i_clk)
   if (i_rst) begin
-    s__@NAME@__fifo_has_data = 1'b0;
-    s__@NAME@__fifo_full = 1'b0;
+    s__@NAME@__fifo_has_data <= 1'b0;
+    s__@NAME@__fifo_full <= 1'b0;
   end else begin
-    s__@NAME@__fifo_has_data = (s__@NAME@__fifo_addr_out != s__@NAME@__fifo_addr_in);
-    s__@NAME@__fifo_full = (s__@NAME@__fifo_addr_out == (s__@NAME@__fifo_addr_in ^ { 1'b1, {(L__@NAME@__FIFO_NBITS){1'b0}} }));
+    s__@NAME@__fifo_has_data <= (s__@NAME@__fifo_addr_out != s__@NAME@__fifo_addr_in);
+    s__@NAME@__fifo_full <= (s__@NAME@__fifo_addr_out == (s__@NAME@__fifo_addr_in ^ { 1'b1, {(L__@NAME@__FIFO_NBITS){1'b0}} }));
   end
 initial s__@NAME@__fifo_addr_out = {(L__@NAME@__FIFO_NBITS+1){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
-    s__@NAME@__fifo_addr_out = {(L__@NAME@__FIFO_NBITS+1){1'b0}};
+    s__@NAME@__fifo_addr_out <= {(L__@NAME@__FIFO_NBITS+1){1'b0}};
   else if (s__@NAME@__go)
-    s__@NAME@__fifo_addr_out = s__@NAME@__fifo_addr_out + { {(L__@NAME@__FIFO_NBITS){1'b0}}, 1'b1 };
+    s__@NAME@__fifo_addr_out <= s__@NAME@__fifo_addr_out + { {(L__@NAME@__FIFO_NBITS){1'b0}}, 1'b1 };
 reg s__@NAME@__go = 1'b0;
 always @ (posedge i_clk)
   if (i_rst)
-    s__@NAME@__go = 1'b0;
+    s__@NAME@__go <= 1'b0;
   else if (s__@NAME@__fifo_has_data && !s__@NAME@__uart_busy && !s__@NAME@__go)
-    s__@NAME@__go = 1'b1;
+    s__@NAME@__go <= 1'b1;
   else
-    s__@NAME@__go = 1'b0;
+    s__@NAME@__go <= 1'b0;
 reg [7:0] s__@NAME@__Tx_data = 8'd0;
 always @ (posedge i_clk)
   if (i_rst)
-    s__@NAME@__Tx_data = 8'd0;
+    s__@NAME@__Tx_data <= 8'd0;
   else
-    s__@NAME@__Tx_data = s__@NAME@__fifo_mem[s__@NAME@__fifo_addr_out[0+:L__@NAME@__FIFO_NBITS]];""";
+    s__@NAME@__Tx_data <= s__@NAME@__fifo_mem[s__@NAME@__fifo_addr_out[0+:L__@NAME@__FIFO_NBITS]];""";
     nofifobody = """// noFIFO
 wire s__@NAME@__go = s__@NAME@__wr;
 wire [7:0] s__@NAME@__Tx_data = s__@NAME@__Tx;""";
