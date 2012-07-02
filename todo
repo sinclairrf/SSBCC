@@ -30,20 +30,22 @@
         instructions
           change "opcodes.html" to "instructions.html", ...
           remove "dis" and "ena"
+        parameters
+        constants
         interrupts
       peripherals
     core.v
-**    conditionally enable interrupt-related signals
-      change major opcodes to constants and incorporate in the peripherals
+      change major opcodes to constants and incorporate in the diagnostic peripherals
       speed up core
       determine settings to maximize speed or minimize resources
-      finish interrupt handling
+      implement interrupt handling
     asm
       required .memory directive to be repeated after .include, EOF, etc.
       improve error message for missing input files
-      add non-return restriction to some optional macro arguments
+      add non-return-stack-alteration restriction to some optional macro arguments
       implement .abbr directive
     peripherals
+      create a base class for peripherals
 **    make all peripheral configuration commands match "open_drain" format
 **    add a 'function' key to config for:
         clog
@@ -53,9 +55,9 @@
         add "finish=n"
         add "history=n"
         add "log"
+        add option to assert stack status at key program points
 *     finish "UART_Tx" peripheral
         accomodate parameter names in baudmethod
-        add "FIFO=n"
       INTERRUPT
       timer
       UART_Rx -- single-byte deserializer w/ and w/o FIFO
@@ -64,6 +66,15 @@
       multi-byte adder
       multiplier
       PICK -- emulate the Forth operator?
+      bus slave peripherals -- store external commands in a FIFO and statuses in dual-port RAM for external reads
+        SPI
+        I2C
+      master devices
+      SoC Interconnects
+        wishbone_slave
+        avalon_slave
+        wishbone_master
+        avalon_master
     core.vhd
       do this once core.v is completed
 
@@ -89,6 +100,5 @@
   publicize
     - opencores
     - ssbcc.net
-    - ssbcc@sinclairrf.com or rodney@ssbcc.org
     - EETimes and other e-rags
     - add to resume and web page
