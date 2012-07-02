@@ -315,7 +315,7 @@ PARAMETER
 Parameters are incorporated through the PARAMETER configuration command.  For
 example,
 
-  PARAMETER G_VERSION 24'b00_00_00
+  PARAMETER G_VERSION 24'h00_00_00
 
 specifies a 24-bit parameter named "G_VERSION."  The 8-bit major, minor, and
 build sections of the parameter can be accessed in an assembly program using
@@ -329,7 +329,7 @@ memory initialization will look like:
 The initial value of the parameter can be set when the computer compiler is run
 using the "-G" option.  For example,
 
-  ssbcc -G "G_VERSION=24'b01_04_03" myprogram.9x8
+  ssbcc -G "G_VERSION=24'h01_04_03" myprogram.9x8
 
 can be used in a makefile to set the version number for a release without
 modifying the micro controller architecture file.
