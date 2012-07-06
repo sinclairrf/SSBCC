@@ -231,7 +231,7 @@ try:
     # HDL
     elif re.match(r'\s*HDL\s',line):
       if 'hdl' in config:
-        raise SSBCCException('HDL already specified before line %d' % line[:-1]);
+        raise SSBCCException('HDL already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
       if cmd[0][0] in ('Verilog','VHDL',):
         config['hdl'] = cmd[0][0];
