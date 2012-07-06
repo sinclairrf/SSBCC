@@ -6,9 +6,9 @@ master, operate the associated FPGA cores as commanded, and perform error
 detection and reporting.
 
 The computer compiler uses an architectural description of the processor stating
-the instruction, data stack, and return stack sizes; the input and output ports;
-memory types and sizes; and peripherals.  It outputs a single module
-implementing the entire micro controller.
+the sizes of the instruction memory, data stack, and return stack; the input and
+output ports; memory types and sizes; and peripherals.  It outputs a single
+module implementing the entire micro controller.
 
 The 9x8 instructions are all single-cycle.  The instructions include pushing an
 8-bit value onto the data stack;  arithmetic operations:  addition, subtraction,
