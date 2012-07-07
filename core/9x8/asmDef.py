@@ -237,7 +237,7 @@ def ParseString(inString):
           return ix;
         outString.append(int(inString[ix:ix+3],8));
         ix = ix + 3;
-      elif inString[ix] == 'X': # hex character
+      elif inString[ix] in ('X','x',): # hex character
         if ix >= len(inString)-3:
           return ix;
         if not re.match(r'[0-9A-Fa-f]{2}',inString[ix+1:ix+3]):
