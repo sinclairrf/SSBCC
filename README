@@ -47,7 +47,7 @@ functional and there are no known bugs, features and peripherals are still being
 added and the documentation is incomplete.  Also, the output HDL is currently
 restricted to Verilog.  VHDL will be added when everything else is complete.
 The processor is being used on a commercial project and the examples have been
-do run on hardware.
+run on hardware.
 
 
 EXAMPLE:
