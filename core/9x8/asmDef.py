@@ -193,14 +193,11 @@ def ParseNumber(inString):
   return None;
 
 def ParseString(inString):
-  isCounted = (inString[0] == 'C');
-  isNullTerminated = (inString[0] == 'N');
-  ix = 1;
-  if isCounted or isNullTerminated:
-    ix = ix + 1;
+  if inString[0] in 'CNc':
+    ix = 2;
+  else:
+    ix = 1;
   outString = list();
-  if isCounted:
-    outString.append(0);
   while ix < len(inString)-1:
     if inString[ix] == '\\':
       if ix == len(inString)-1:
@@ -250,10 +247,12 @@ def ParseString(inString):
     else:
       outString.append(ord(inString[ix]));
       ix = ix + 1;
-  if isCounted:
-    outString[0] = len(outString)-1;
-  if isNullTerminated:
+  if inString[0] == 'C':
+    outString.insert(0,len(outString));
+  elif inString[0] == 'N':
     outString.append(0);
+  elif inString[0] == 'c':
+    outString.insert(0,len(outString)-1);
   return outString;
 
 def ParseToken(ad,fl_loc,col,raw,allowed):
@@ -301,7 +300,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
   # capture double-quoted strings
-  if re.match(r'[CN]?"',raw):
+  if re.match(r'[CNc]?"',raw):
     if 'string' not in allowed:
       raise AsmException('String not allowed at %s' % flc_loc);
     parsedString = ParseString(raw);
@@ -405,8 +404,8 @@ def RawTokens(ad,filename,startLineNumber,lines):
       if line[col] == ';':
         break;
       # Catch strings
-      if re.match(r'[CN]?"',line[col:]):
-        a = re.match(r'[CN]?"([^\\"]|\\.)+"',line[col:]);
+      if re.match(r'[CNc]?"',line[col:]):
+        a = re.match(r'[CNc]?"([^\\"]|\\.)+"',line[col:]);
         if not a:
           raise AsmException('Malformed string at %s' % flc_loc);
       # Catch single-quoted characters
