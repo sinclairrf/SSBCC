@@ -60,7 +60,7 @@
 .function byte_to_hex
 
   dup 0x0F & .fetchindexed(nibble_to_ascii)
-  swap 0xF0 & 0>> 0>> 0>> 0>> .fetchindexed(nibble_to_ascii)
+  swap 0>> 0>> 0>> 0>> .fetchindexed(nibble_to_ascii)
 
 .return
 
