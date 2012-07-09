@@ -207,12 +207,6 @@ try:
     elif re.match(r'\s*ASSEMBLY\b',line):
       cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
       compiler = ('asm',cmd[0],);
-    # COMBINE
-    elif re.match(r'\s*COMBINE\b',line):
-      cmd = re.findall(r'\s*COMBINE\s+(\S+),(\S+)',line);
-      if (not cmd) or (len(cmd[0]) < 2):
-        raise SSBCCException('Malformed "COMBINE" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      combine = (cmd[0][0],cmd[0][1],);
     # CONSTANTS
     elif re.match(r'\s*CONSTANT\b',line):
       cmd = re.findall(r'\s*CONSTANT\s+(C_\w+)\s+(\w+)\s*$',line);
