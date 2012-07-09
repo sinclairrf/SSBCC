@@ -194,14 +194,14 @@ try:
     # ARCHITECTURE
     elif re.match(r'\s*ARCHITECTURE\b',line):
       if 'architecture' in config:
-        raise SSBCCException('ARCHITECTURE already specified before line %d' % line[:-1]);
+        raise SSBCCException('ARCHITECTURE already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
       if not cmd:
         raise SSBCCException('Malformed ARCHITECTURE configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       config['architecture'] = cmd[0];
       corepath = os.path.join(sys.path[0],config['architecture']);
       if not os.path.isdir(corepath):
-        raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,line[:-1],));
+        raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,ixLine,));
       config['peripheralpaths'].insert(-1,os.path.join(corepath,'peripherals'));
     # ASSEMBLY language for processor code
     elif re.match(r'\s*ASSEMBLY\b',line):
@@ -217,7 +217,7 @@ try:
     # DATA_STACK
     elif re.match(r'\s*DATA_STACK\b',line):
       if 'data_stack' in config:
-        raise SSBCCException('DATA_STACK already defined before line %d' % line[:-1]);
+        raise SSBCCException('DATA_STACK already defined before line %d' % ixLine);
       cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "DATA_STACK" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
@@ -238,13 +238,13 @@ try:
     # INSTRUCTION
     elif re.match(r'\s*INSTRUCTION\b',line):
       if 'nInstructions' in config:
-        raise SSBCCException('INSTRUCTION already specified before line %d' % line[:-1]);
+        raise SSBCCException('INSTRUCTION already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "INSTRUCTION" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       config['nInstructions'] = int(cmd[0]);
       if config['nInstructions'] > 2**13:
-        raise SSBCCException('Instruction space cannot exceed %d' % (2**13));
+        raise SSBCCException('Instruction space cannot exceed %d at line %d' % (2**13,ixLine,));
     # MEMORY
     elif re.match(r'\s*MEMORY\b',line):
       if len(memories['list']) >= 4:
@@ -276,7 +276,7 @@ try:
     # RETURN_STACK
     elif re.match(r'\s*RETURN_STACK\b',line):
       if 'return_stack' in config:
-        raise SSBCCException('RETURN_STACK already specified before line %d' % line[:-1]);
+        raise SSBCCException('RETURN_STACK already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "RETURN_STACK" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
@@ -430,7 +430,7 @@ try:
       if programBodyLength > config['nInstructions']:
         raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,config['nInstructions'],));
     else:
-      raise SSBCCException('Unrecognized line at %s:%d :  %s' % (fpAssemberOutput.filename,ixLine,line[:-1],));
+      raise Exception('Program Bug:  Unrecognized line at %s:%d :  "%s"' % (fpAssemberOutput.filename,ixLine,line[:-1],));
 
   ################################################################################
   #
