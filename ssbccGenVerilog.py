@@ -19,12 +19,12 @@ from ssbccUtil import *;
 ################################################################################
 
 def genInports(fp,config):
-  if not config['inports']:
+  if not config.inports:
     fp.write('// no input ports\n');
     return
   haveBitInportSignals = False;
-  for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1:];
+  for ix in range(len(config.inports)):
+    thisPort = config.inports[ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalType = signal[2];
@@ -33,8 +33,8 @@ def genInports(fp,config):
   if haveBitInportSignals:
     fp.write('always @ (*)\n');
     fp.write('  case (s_T)\n');
-  for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1:];
+  for ix in range(len(config.inports)):
+    thisPort = config.inports[ix][1:];
     nBits = 0;
     bitString = '';
     for jx in range(len(thisPort)):
@@ -62,8 +62,8 @@ def genInports(fp,config):
     fp.write('  endcase\n');
     fp.write('\n');
   # Generate all the INPORT strobes.
-  for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1:];
+  for ix in range(len(config.inports)):
+    thisPort = config.inports[ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalName = signal[0];
@@ -79,8 +79,8 @@ def genInports(fp,config):
         fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('\n');
   # Generate all the INPORT "set-reset"s.
-  for ix in range(len(config['inports'])):
-    thisPort = config['inports'][ix][1:];
+  for ix in range(len(config.inports)):
+    thisPort = config.inports[ix][1:];
     if thisPort[0][2] == 'set-reset':
       signalName = thisPort[0][0];
       fp.write('initial s_SETRESET_%s = 1\'b0;\n' % signalName);
@@ -95,7 +95,7 @@ def genInports(fp,config):
       fp.write('    s_SETRESET_%s <= s_SETRESET_%s;\n' % (signalName,signalName));
 
 def genInstructions(fp,programBody,config):
-  nInstructions = config['nInstructions'];
+  nInstructions = config.Get('nInstructions');
   addrWidth = int(math.ceil(math.log(nInstructions,2)/4));
   formatp = '  s_opcodeMemory[\'h%%0%dX] = { 1\'b1, %%s };\n' % addrWidth;
   formatn = '  s_opcodeMemory[\'h%%0%dX] = 9\'h%%s; // %%s\n' % addrWidth;
@@ -117,10 +117,10 @@ def genInstructions(fp,programBody,config):
   fp.write('end\n');
 
 def genLocalParam(fp,config):
-  fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config['nInstructions']));
-  fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config['return_stack']));
-  fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config['data_stack']));
-  if ('clog2' in config['functions']) and config['define_clog2']:
+  fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config.Get('nInstructions')));
+  fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config.Get('return_stack')));
+  fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config.Get('data_stack')));
+  if ('clog2' in config.functions) and config.Get('define_clog2'):
     fp.write("""
 // Use constant function instead of builtin $clog2.
 function integer clog2;
@@ -193,10 +193,10 @@ def genModule(fp,outCoreName,config):
   fp.write('  // synchronous reset and processor clock\n');
   fp.write('  input  wire           i_rst,\n');
   fp.write('  input  wire           i_clk');
-  if config['ios']:
+  if config.ios:
     wasComment = False;
-    for ix in range(len(config['ios'])):
-      signal = config['ios'][ix];
+    for ix in range(len(config.ios)):
+      signal = config.ios[ix];
       signalName = signal[0];
       signalWidth = signal[1];
       signalType = signal[2];
@@ -233,17 +233,17 @@ def genModule(fp,outCoreName,config):
         raise Exception('Program Bug -- unrecognized ios "%s"' % signalType);
   fp.write('\n');
   fp.write(');\n');
-  if config['parameters']:
+  if config.parameters:
     fp.write('\n');
-    for parameter in config['parameters']:
+    for parameter in config.parameters:
       fp.write('parameter %s = %s;\n' % (parameter[0],parameter[1]));
 
 def genOutports(fp,config):
-  if not config['outports']:
+  if not config.outports:
     fp.write('// no output ports\n');
     return;
-  for ix in range(len(config['outports'])):
-    thisPort = config['outports'][ix][1:];
+  for ix in range(len(config.outports)):
+    thisPort = config.outports[ix][1:];
     bitWidth = 0;
     bitName = '';
     bitInit = '';
@@ -308,18 +308,18 @@ def genOutports(fp,config):
         raise Exception('Program Bug -- signalType = "%s" shouldn\'t have been encountered' % signalType);
 
 def genSignals(fp,config):
-  if not config['signals']:
+  if not config.signals:
     fp.write('// no additional signals\n');
     return;
   maxLength = 0;
-  for ix in range(len(config['signals'])):
-    thisSignal = config['signals'][ix];
+  for ix in range(len(config.signals)):
+    thisSignal = config.signals[ix];
     signalName = thisSignal[0];
     if len(signalName) > maxLength:
       maxLength = len(signalName);
   maxLength = maxLength + 12;
-  for ix in range(len(config['signals'])):
-    thisSignal = config['signals'][ix];
+  for ix in range(len(config.signals)):
+    thisSignal = config.signals[ix];
     signalName = thisSignal[0];
     signalWidth = thisSignal[1];
     if len(thisSignal) < 3:

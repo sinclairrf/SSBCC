@@ -15,116 +15,7 @@ import sys
 import tempfile
 
 from ssbccUtil import *;
-
-################################################################################
-#
-# Process the more complicated configuration commands.
-#
-################################################################################
-
-def processInport(config,line):
-  cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
-  modes = re.findall(r'([^,]+)',cmd[0][0]);
-  names = re.findall(r'([^,]+)',cmd[0][1]);
-  portName = cmd[0][2];
-  if len(modes) != len(names):
-    raise SSBCCException('Malformed INPORT configuration command -- number of options don\'t match on line %d: "%s"' % (ixLine,line[:-1],));
-  # Append the input signal names, mode, and bit-width to the list of I/Os.
-  has__set_reset = False;
-  nBits = 0;
-  thisPort = (portName,);
-  for ix in range(len(names)):
-    if re.match(r'^\d+-bit$',modes[ix]):
-      thisNBits = int(modes[ix][0]);
-      config['ios'].append((names[ix],thisNBits,'input',));
-      thisPort += ((names[ix],thisNBits,'data',),);
-      nBits = nBits + thisNBits;
-    elif modes[ix] == 'set-reset':
-      has__set_reset = True;
-      config['ios'].append((names[ix],1,'input',));
-      thisPort += ((names[ix],1,'set-reset',),);
-      config['signals'].append(('s_SETRESET_%s' % names[ix],1,));
-    elif modes[ix] == 'strobe':
-      config['ios'].append((names[ix],1,'output',));
-      thisPort += ((names[ix],1,'strobe',),);
-    else:
-      raise SSBCCException('Unrecognized INPORT signal type "%s"' % modes[ix]);
-    if has__set_reset and len(names) > 1:
-      raise SSBCCException('set-reset cannot be simultaneous with other signals in "%s"' % line[:-1]);
-    if nBits > 8:
-      raise SSBCCException('Signal width too wide in "%s"' % line[:-1]);
-  config['inports'].append(thisPort);
-
-def processOutport(config,line,ixLine):
-  cmd = re.findall(r'^\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)\s*$',line);
-  if not cmd:
-    raise SSBCCException('Malformed OUTPUT configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-  modes = re.findall(r'([^,]+)',cmd[0][0]);
-  names = re.findall(r'([^,]+)',cmd[0][1]);
-  portName = cmd[0][2];
-  if len(modes) != len(names):
-    raise SSBCCException('Malformed OUTPORT configuration command -- number of widths/types and signal names don\'t match on line %d: "%s"' % (ixLine,line[:-1],));
-  # Append the input signal names, mode, and bit-width to the list of I/Os.
-  nBits = 0;
-  thisPort = (portName,);
-  for ix in range(len(names)):
-    if re.match(r'\d+-bit',modes[ix]):
-      a = re.match(r'(\d+)-bit(=\S+)?$',modes[ix]);
-      if not a:
-        raise SSBCCException('Malformed bitwith/bitwidth=initialization on line %d:  "%s"' % (ixLine,modes[ix],));
-      thisNBits = int(a.group(1));
-      config['ios'].append((names[ix],thisNBits,'output',));
-      if a.group(2):
-        thisPort += ((names[ix],thisNBits,'data',a.group(2)[1:],),);
-      else:
-        thisPort += ((names[ix],thisNBits,'data',),);
-      nBits = nBits + thisNBits;
-      config['haveBitOutportSignals'] = 'True';
-    elif modes[ix] == 'strobe':
-      config['ios'].append((names[ix],1,'output',));
-      thisPort += ((names[ix],1,'strobe',),);
-    else:
-      raise SSBCCException('Unrecognized OUTPORT signal type on line %d: "%s"' % (ixLine,modes[ix],));
-    if nBits > 8:
-      raise SSBCCException('Signal width too wide on line %d:  in "%s"' % (ixLine,line[:-1],));
-  config['outports'].append(thisPort);
-
-def processPeripheral(config,ixLine,line):
-  # Validate the format of the peripheral configuration command and the the name of the peripheral.
-  cmd = re.findall(r'\s*PERIPHERAL\s+(\w+)\s*(.*)',line);
-  if not cmd:
-    raise SSBCCException('Missing peripheral name in line %d:  %s' % (ixLine,line[:-1],));
-  peripheral = cmd[0][0];
-  # Find and execute the peripheral Python script.
-  for testPath in config['peripheralpaths']:
-    fullperipheral = os.path.join(testPath,'%s.py' % peripheral);
-    if os.path.isfile(fullperipheral):
-      break;
-  else:
-    raise SSBCCException('Peripheral "%s" not found' % peripheral);
-  execfile(fullperipheral);
-  # Convert the space delimited parameters to a list of tuples.
-  param_list = list();
-  for param_string in re.findall(r'(\w+="[^"]*"|\w+=\S+|\w+)\s*',cmd[0][1]):
-    if param_string == "help":
-      exec('helpmsg = %s.__doc__' % peripheral);
-      if not helpmsg:
-        raise SSBCCException('No help for peripheral %s is provided' % fullperipheral);
-      print;
-      print 'Help message for peripheral:  %s' % peripheral;
-      print 'Located at:  %s' % fullperipheral;
-      print;
-      print helpmsg;
-      raise SSBCCException('Terminated by "help" for peripheral %s' % peripheral);
-    ix = param_string.find('=');
-    if param_string.find('="') > 0:
-      param_list.append((param_string[:ix],param_string[ix+2:-1],));
-    elif param_string.find('=') > 0:
-      param_list.append((param_string[:ix],param_string[ix+1:],));
-    else:
-      param_list.append((param_string,None));
-  # Add the peripheral to the micro controller configuration.
-  exec('config[\'peripheral\'].append(%s(config,param_list,ixLine));' % peripheral);
+from ssbccConfig import SSBCCconfig;
 
 ################################################################################
 #
@@ -157,22 +48,9 @@ try:
   # Read the SSBCC configuration file.
   #
 
-  config = dict(peripheral=list());
-  config['constants']   = list();
-  config['inports']     = list();
-  config['ios']         = list();
-  config['signals']     = list();
-  config['outports']    = list();
-  config['parameters']  = list();
-  config['functions']   = dict();
-
-  config['define_clog2'] = argList.define_clog2;
-  config['verilator_tracing_on'] = argList.verilator_tracing_on;
-
-  config['peripheralpaths'] = list();
-  config['peripheralpaths'].append('.');
-  config['peripheralpaths'].append('peripherals');
-  config['peripheralpaths'].append(os.path.join(sys.path[0],'core/peripherals'));
+  config = SSBCCconfig();
+  config.Set('define_clog2',argList.define_clog2);
+  config.Set('verilator_tracing_on',argList.verilator_tracing_on);
 
   ixLine = 0;
   bufLine = "";
@@ -193,16 +71,16 @@ try:
       pass;
     # ARCHITECTURE
     elif re.match(r'\s*ARCHITECTURE\b',line):
-      if 'architecture' in config:
+      if config.Exists('architecture'):
         raise SSBCCException('ARCHITECTURE already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
       if not cmd:
         raise SSBCCException('Malformed ARCHITECTURE configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      config['architecture'] = cmd[0];
-      corepath = os.path.join(sys.path[0],config['architecture']);
+      config.Set('architecture',cmd[0]);
+      corepath = os.path.join(sys.path[0],config.Get('architecture'));
       if not os.path.isdir(corepath):
         raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,ixLine,));
-      config['peripheralpaths'].insert(-1,os.path.join(corepath,'peripherals'));
+      config.InsertPeripheralPath(os.path.join(corepath,'peripherals'));
     # ASSEMBLY language for processor code
     elif re.match(r'\s*ASSEMBLY\b',line):
       cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
@@ -213,37 +91,37 @@ try:
       if not cmd:
         raise SSBCCException('Malformed "CONSTANT" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       cmd = cmd[0];
-      config['constants'].append((cmd[0],cmd[1],));
+      config.AddConstant(cmd[0],cmd[1]);
     # DATA_STACK
     elif re.match(r'\s*DATA_STACK\b',line):
-      if 'data_stack' in config:
+      if config.Exists('data_stack'):
         raise SSBCCException('DATA_STACK already defined before line %d' % ixLine);
       cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "DATA_STACK" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      config['data_stack'] = int(cmd[0]);
+      config.Set('data_stack',int(cmd[0]));
     # HDL
     elif re.match(r'\s*HDL\s',line):
-      if 'hdl' in config:
+      if config.Exists('hdl'):
         raise SSBCCException('HDL already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
       if cmd[0][0] in ('Verilog','VHDL',):
-        config['hdl'] = cmd[0][0];
+        config.Set('hdl',cmd[0][0]);
         outCoreName = cmd[0][1];
       else:
-        raise Exception('Unrecognized HDL: "%s"' % cmd[0]);
+        raise SSBCCException('Unrecognized HDL at line %d: "%s"' % (ixLine,cmd[0],));
     # INPORT
     elif re.match(r'\s*INPORT\b',line):
-      processInport(config,line);
+      config.ProcessInport(config,ixLine,line);
     # INSTRUCTION
     elif re.match(r'\s*INSTRUCTION\b',line):
-      if 'nInstructions' in config:
+      if config.Exists('nInstructions'):
         raise SSBCCException('INSTRUCTION already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "INSTRUCTION" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      config['nInstructions'] = int(cmd[0]);
-      if config['nInstructions'] > 2**13:
+      config.Set('nInstructions',int(cmd[0]));
+      if config.Get('nInstructions') > 2**13:
         raise SSBCCException('Instruction space cannot exceed %d at line %d' % (2**13,ixLine,));
     # MEMORY
     elif re.match(r'\s*MEMORY\b',line):
@@ -258,29 +136,29 @@ try:
       memories['arch'].append(cmd[2]);
     # OUTPORT
     elif re.match(r'\s*OUTPORT\b',line):
-      processOutport(config,line,ixLine);
+      config.ProcessOutport(line,ixLine);
     # PARAMETER
     elif re.match(r'\s*PARAMETER\b',line):
       cmd = re.findall(r'\s*PARAMETER\s+(G_\w+)\s+(\S+)$',line);
       if (not cmd) or (len(cmd[0]) != 2):
         raise SSBCCException('Malformed PARAMETER configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       cmd = cmd[0];
-      config['parameters'].append((cmd[0],cmd[1],));
+      config.AddParameter(cmd[0],cmd[1]);
     # PERIPHERAL
     elif re.match(r'\s*PERIPHERAL\b',line):
-      processPeripheral(config,ixLine,line);
+      config.ProcessPeripheral(ixLine,line);
     # PORTCOMMENT
     elif re.match(r'\s*PORTCOMMENT\b',line):
       cmd = re.findall(r'\s*PORTCOMMENT\s+(.*)',line[:-1]);
-      config['ios'].append((cmd[0],0,'comment',));
+      config.AddIO(cmd[0],0,'comment');
     # RETURN_STACK
     elif re.match(r'\s*RETURN_STACK\b',line):
-      if 'return_stack' in config:
+      if config.Exists('return_stack'):
         raise SSBCCException('RETURN_STACK already specified before line %d' % ixLine);
       cmd = re.findall(r'\s*RETURN_STACK\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "RETURN_STACK" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      config['return_stack'] = int(cmd[0]);
+      config.Set('return_stack',int(cmd[0]));
     # USER_HEADER
     elif re.match(r'\s*USER_HEADER\b',line):
       user_header_done = False;
@@ -307,12 +185,12 @@ try:
         raise SSBCCException('Malformed parameter specification: "%s"' % parameter);
       cmd = re.findall(r'(G_\w+)=(\S+)',parameter);
       cmd = cmd[0];
-      for ix in range(len(config['parameters'])):
-        if config['parameters'][ix][0] == cmd[0]:
+      for ix in range(len(config.parameters)):
+        if config.parameters[ix][0] == cmd[0]:
           break;
       else:
         raise SSBCCException('Command-line parameter "%s" must be specified in the architecture file' % cmd[0]);
-      config['parameters'][ix] = (cmd[0],cmd[1],);
+      config.parameters[ix] = (cmd[0],cmd[1],);
 
   #
   # Append peripherals from command-line.
@@ -320,21 +198,21 @@ try:
 
   if argList.P:
     for peripheral in argList.P:
-      processPeripheral(config,-1,'PERIPHERAL '+peripheral);
+      config.ProcessPeripheral(-1,'PERIPHERAL '+peripheral);
 
   #
   # end-of-file processing
   #
 
-  if 'architecture' not in config:
+  if not config.Exists('architecture'):
     raise SSBCCException('Required ARCHITECTURE configuration command missing');
-  if 'data_stack' not in config:
+  if not config.Exists('data_stack'):
     raise SSBCCException('Required DATA_STACK configuration command missing');
-  if 'hdl' not in config:
+  if not config.Exists('hdl'):
     raise SSBCCException('Required HDL configuration command missing');
-  if 'nInstructions' not in config:
+  if not config.Exists('nInstructions'):
     raise SSBCCException('Required INSTRUCTION configuration command missing');
-  if 'return_stack' not in config:
+  if not config.Exists('return_stack'):
     raise SSBCCException('Required RETURN_STACK configuration command missing');
 
   # Compute the memory bank indices.
@@ -359,14 +237,14 @@ try:
 
   # Compute the command to invoke the compiler.
   cmd = os.path.join(corepath, compiler[0]);
-  for ix in range(len(config['constants'])):
-    cmd += (' -C %s=%s' % (config['constants'][ix][0],config['constants'][ix][1],));
-  for ix in range(len(config['inports'])):
-    cmd += (' -I %s=%d' % (config['inports'][ix][0],ix));
-  for ix in range(len(config['outports'])):
-    cmd += (' -O %s=%d' % (config['outports'][ix][0],ix));
-  for ix in range(len(config['parameters'])):
-    cmd += (' -P %s' % config['parameters'][ix][0]);
+  for ix in range(len(config.constants)):
+    cmd += (' -C %s=%s' % (config.constants[ix][0],config.constants[ix][1],));
+  for ix in range(len(config.inports)):
+    cmd += (' -I %s=%d' % (config.inports[ix][0],ix));
+  for ix in range(len(config.outports)):
+    cmd += (' -O %s=%d' % (config.outports[ix][0],ix));
+  for ix in range(len(config.parameters)):
+    cmd += (' -P %s' % config.parameters[ix][0]);
   for ix in range(len(memories['list'])):
     cmd += (' -S %s=%d' % (memories['list'][ix],eval(memories['arch'][ix])));
   cmd += ' -o ' + assemblerOutput;
@@ -427,8 +305,8 @@ try:
           programBodyLength = programBodyLength + 1;
       if programBodyLength != mainLength:
         raise SSBCCException('Program Bug:  program length doesn\'t match declared length');
-      if programBodyLength > config['nInstructions']:
-        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,config['nInstructions'],));
+      if programBodyLength > config.Get('nInstructions'):
+        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,config.Get('nInstructions'),));
     else:
       raise Exception('Program Bug:  Unrecognized line at %s:%d :  "%s"' % (fpAssemberOutput.filename,ixLine,line[:-1],));
 
@@ -449,19 +327,19 @@ try:
   #
   ################################################################################
 
-  if config['hdl'] == 'Verilog':
+  if config.Get('hdl') == 'Verilog':
     from ssbccGenVerilog import *;
   else:
-    raise SSBCCException('Unrecognized hdl = "%s"' % config['hdl']);
+    raise SSBCCException('Unrecognized hdl = "%s"' % config.Get('hdl'));
 
-  if config['hdl'] == 'Verilog':
+  if config.Get('hdl') == 'Verilog':
     fpRawCore = open(os.path.join(corepath,'core.v'),'r');
     fpOutCore = open(outCoreName+'.v','w');
-  elif config['hdl'] == 'VHDL':
+  elif config.Get('hdl') == 'VHDL':
     fpRawCore = open(os.path.join(corepath,'core.vhd'),'r');
     fpOutCore = open(outCoreName+'.vhd','w');
   else:
-    raise Exception('Program Bug:  unrecognized hdl = "%s"', config['hdl']);
+    raise Exception('Program Bug:  unrecognized hdl = "%s"', config.Get('hdl'));
 
   for line in fpRawCore:
     if not re.match('..@SSBCC@',line):
@@ -488,11 +366,11 @@ try:
       genOutports(fpOutCore,config);
     # peripherals
     elif fillCommand == 'peripherals':
-      if config['peripheral']:
+      if config.peripheral:
         fpOutCore.write('//\n// Peripherals\n//\n');
-      for ix in range(len(config['peripheral'])):
+      for ix in range(len(config.peripheral)):
         fpOutCore.write('\n');
-        config['peripheral'][ix].GenHDL(fpOutCore,config);
+        config.peripheral[ix].GenHDL(fpOutCore,config);
     # additional signals
     elif fillCommand == 'signals':
       genSignals(fpOutCore,config);
@@ -501,7 +379,7 @@ try:
       genUserHeader(fpOutCore,user_header);
     # Verilator tracing on/off
     elif fillCommand == "verilator_tracing":
-      if config['verilator_tracing_on']:
+      if config.Get('verilator_tracing_on'):
         fpOutCore.write('/* verilator tracing_on */\n');
       else:
         fpOutCore.write('/* verilator tracing_off */\n');
