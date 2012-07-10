@@ -6,6 +6,7 @@
 #
 ################################################################################
 
+import math
 import os
 import re
 import sys
@@ -45,6 +46,9 @@ class SSBCCconfig():
   def AddSignal(self,name,nBits):
     # TODO -- verify uniqueness
     self.signals.append((name,nBits,));
+  def AddSignalWithInit(self,name,nBits,init):
+    # TODO -- verify uniqueness
+    self.signals.append((name,nBits,init,));
   def Exists(self,name):
     return name in self.config;
   def Get(self,name):
