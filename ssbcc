@@ -234,12 +234,12 @@ try:
   cmd = os.path.join(corepath, compiler[0]);
   for ix in range(len(config.constants)):
     cmd += (' -C %s=%s' % (config.constants[ix][0],config.constants[ix][1],));
+  for ix in range(len(config.parameters)):
+    cmd += (' -G %s' % config.parameters[ix][0]);
   for ix in range(len(config.inports)):
     cmd += (' -I %s=%d' % (config.inports[ix][0],ix));
   for ix in range(len(config.outports)):
     cmd += (' -O %s=%d' % (config.outports[ix][0],ix));
-  for ix in range(len(config.parameters)):
-    cmd += (' -P %s' % config.parameters[ix][0]);
   for ix in range(len(memories['list'])):
     cmd += (' -S %s=%d' % (memories['list'][ix],eval(memories['arch'][ix])));
   cmd += ' -o ' + assemblerOutput;
