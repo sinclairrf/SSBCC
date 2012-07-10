@@ -2,9 +2,7 @@
  
   ssbcc
     add "function"s for use by peripherals and incorporate all functions at the top of the peripheral section
-    ensure ARCHITECTURE is the first non-comment line
     validate signal names
-      ensure that inport, outport, signal, and io names are not repeated
       ensure no collisions with signals within the core
     put ssbccGenVerilog in a class in core/9x8
     Finish interrupt handling
@@ -40,7 +38,7 @@
       determine settings to maximize speed or minimize resources
       implement interrupt handling
     asm
-      required .memory directive to be repeated after .include, EOF, etc.
+      require .memory directive to be repeated after other directives, EOF, etc.
       improve error message for missing input files
       add non-return-stack-alteration restriction to some optional macro arguments
       implement .abbr directive
@@ -69,7 +67,6 @@
       bus slave peripherals -- store external commands in a FIFO and statuses in dual-port RAM for external reads
         SPI
         I2C
-      master devices
       SoC Interconnects
         wishbone_slave
         avalon_slave
@@ -100,4 +97,4 @@
     - opencores
     - ssbcc.net
     - EETimes and other e-rags
-    - add to resume and web page
+    - add to web page
