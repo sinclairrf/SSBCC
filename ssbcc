@@ -95,7 +95,7 @@ try:
       if not cmd:
         raise SSBCCException('Malformed "CONSTANT" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       cmd = cmd[0];
-      config.AddConstant(cmd[0],cmd[1]);
+      config.AddConstant(cmd[0],cmd[1],ixLine);
     # DATA_STACK
     elif re.match(r'\s*DATA_STACK\b',line):
       if config.Exists('data_stack'):
@@ -118,7 +118,7 @@ try:
     elif re.match(r'\s*INPORT\b',line):
       if not config.Exists('architecture'):
         raise SSBCCException('"INPORT"s cannot be defined before the "ARCHITECTURE" is defined at line %d' % ixLine);
-      config.ProcessInport(config,ixLine,line);
+      config.ProcessInport(ixLine,line);
     # INSTRUCTION
     elif re.match(r'\s*INSTRUCTION\b',line):
       if config.Exists('nInstructions'):
@@ -245,8 +245,8 @@ try:
 
   # Compute the command to invoke the compiler.
   cmd = os.path.join(corepath, compiler[0]);
-  for ix in range(len(config.constants)):
-    cmd += (' -C %s=%s' % (config.constants[ix][0],config.constants[ix][1],));
+  for name in config.constants:
+    cmd += (' -C %s=%s' % (name,config.constants[name],));
   for ix in range(len(config.parameters)):
     cmd += (' -G %s' % config.parameters[ix][0]);
   for ix in range(len(config.inports)):
