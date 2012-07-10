@@ -81,6 +81,8 @@ try:
       if not os.path.isdir(corepath):
         raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,ixLine,));
       config.InsertPeripheralPath(os.path.join(corepath,'peripherals'));
+      # TODO -- move these assignments into an object
+      config.Set('data_width',8);
     # ASSEMBLY language for processor code
     elif re.match(r'\s*ASSEMBLY\b',line):
       cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
