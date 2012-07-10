@@ -5,6 +5,7 @@
 ################################################################################
 
 from ssbccPeripheral import SSBCCperipheral
+from ssbccUtil import SSBCCException;
 
 class open_drain(SSBCCperipheral):
   """Implement an open-drain IOB suitable for direct connection to a pin.  This can,
