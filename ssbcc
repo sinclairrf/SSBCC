@@ -185,12 +185,7 @@ try:
         raise SSBCCException('Malformed parameter specification: "%s"' % parameter);
       cmd = re.findall(r'(G_\w+)=(\S+)',parameter);
       cmd = cmd[0];
-      for ix in range(len(config.parameters)):
-        if config.parameters[ix][0] == cmd[0]:
-          break;
-      else:
-        raise SSBCCException('Command-line parameter "%s" must be specified in the architecture file' % cmd[0]);
-      config.parameters[ix] = (cmd[0],cmd[1],);
+      config.OverrideParameter(cmd[0],cmd[1]);
 
   #
   # Append peripherals from command-line.

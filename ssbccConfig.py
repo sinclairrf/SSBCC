@@ -11,6 +11,8 @@ import os
 import re
 import sys
 
+from ssbccUtil import SSBCCException
+
 class SSBCCconfig():
   """Container for ssbcc configuration commands, the associated parsing, and program generation"""
 
@@ -88,6 +90,14 @@ class SSBCCconfig():
 
   def InsertPeripheralPath(self,path):
     self.peripheralpaths.insert(-1,path);
+
+  def OverrideParameter(self,name,value):
+    for ix in range(len(self.parameters)):
+      if self.parameters[ix][0] == name:
+        break;
+    else:
+      raise SSBCCException('Command-line parameter "%s" must be specified in the architecture file' % name);
+    self.parameters[ix] = (name,value,);
 
   def ProcessInport(self,ixLine,line):
     cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
