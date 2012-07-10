@@ -6,9 +6,10 @@
 
 import re;
 
-from ssbccUtil import *;
+from ssbccPeripheral import SSBCCperipheral
+from ssbccUtil import SSBCCException;
 
-class UART_Tx:
+class UART_Tx(SSBCCperipheral):
   """Transmit side of a UART:
   1 start bit
   8 data bits
@@ -84,97 +85,47 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
 
   def __init__(self,config,param_list,ixLine):
     # Get the parameters.
-    self.baudmethod = None;
-    self.FIFO = None;
-    self.inport = None;
-    self.nStop = None;
-    self.outport = None;
-    self.outsignal = None;
     for param_tuple in param_list:
       param = param_tuple[0];
       param_arg = param_tuple[1];
-      # baudmethod=rate/baudrate or baudmethod=decimate_count
       if param == 'baudmethod':
-        if self.baudmethod != None:
-          raise SSBCCException('baudmethod can only be specified once at line %d' % ixLine);
-        if param_arg == None:
-          raise SSBCCException('baudmethod argument missing at line %d' % ixLine);
-        self.ProcessBaudMethod(config,param_arg);
-      # FIFO
+        baudformat = r'([1-9]\d*|(([1-9]\d*|G_\w+)/([1-9]\d*|G_\w+)))$';
+        self.AddAttr(config,'baudmethod',param_arg,baudformat,ixLine);
+        self.ProcessBaudMethod(config);
       elif param == 'FIFO':
-        if self.FIFO != None:
-          if type(self.FIFO) == int:
-            raise SSBCCException('FIFO can only be specified once at line %d' % ixLine);
-          else:
-            raise SSBCCException('FIFO cannot be specified after noFIFO line %d' % ixLine);
-        self.FIFO = int(param_arg);
-        if self.FIFO <= 0:
-          raise SSBCCException('FIFO length must be positive at line %d' % ixLine);
-      # inport
+        self.AddAttr(config,'FIFO',param_arg,r'[1-9]\d*$',ixLine);
+        self.FIFO = int(self.FIFO);
       elif param == 'inport':
-        if self.inport != None:
-          raise SSBCCException('inport can only be specified once at line %d' % ixLine);
-        if param_arg == None:
-          raise SSBCCException('inport symbol name missing at line %d' % ixLine);
-        if not re.match(r'^I_\w+$',param_arg):
-          raise SSBCCException('Malformed inport symbol name at line %d' % ixLine);
-        self.inport = param_arg;
-      # noFIFO
+        self.AddAttr(config,'inport',param_arg,'I_\w+$',ixLine);
       elif param == 'noFIFO':
-        if self.FIFO != None:
-          if type(self.FIFO) == int:
-            raise SSBCCException('noFIFO cannot be specified after "FIFO" at line %d' % ixLine);
-          else:
-            raise SSBCCException('noFIFO can only be specified once at line %d' % ixLine);
-        if param_arg != None:
-          raise SSBCCException('noFIFO cannot have an argument at line %d' % ixLine);
-        self.FIFO = False;
-      # nStop=
+        self.AddAttr(config,'noFIFO','True','True',ixLine);
       elif param == 'nStop':
-        if self.nStop != None:
-          raise SSBCCException('nStop can only be specified once at line %d' % ixLine);
-        if param_arg == None:
-          raise SSBCCException('nStop must have an argument at line %d' % ixLine);
-        try:
-          self.nStop = int(param_arg);
-        except:
-          raise SSBCCException('Malformed value for nStop at line %d' % ixLine);
-        if self.nStop <= 0:
-          raise SSBCCException('nStop must be 1 or more at line %d' % ixLine);
-      # outport
+        self.AddAttr(config,'nStop',param_arg,r'[12]$',ixLine);
+        self.nStop = int(self.nStop);
       elif param == 'outport':
-        if self.outport != None:
-          raise SSBCCException('outport can only be specified once at line %d' % ixLine);
-        if param_arg == None:
-          raise SSBCCException('outport symbol name missing at line %d' % ixLine);
-        if not re.match(r'^O_\w+$',param_arg):
-          raise SSBCCException('Malformed outport symbol name at line %d' % ixLine);
-        self.outport = param_arg;
-      # outsignal
+        self.AddAttr(config,'outport',param_arg,r'O_\w+$',ixLine);
       elif param == 'outsignal':
-        if self.outsignal != None:
-          raise SSBCCException('outsignal can only be specified once at line %d' % ixLine);
-        if param_arg == None:
-          raise SSBCCException('outsignal output port name missing at line %d' % ixLine);
-        if not re.match(r'o_\w+$',param_arg):
-          raise SSBCCException('Malformed outsignal output port name at line %d' % ixLine);
-        self.outsignal = param_arg;
+        self.AddAttr(config,'outsignal',param_arg,r'o_\w+$',ixLine);
       # no match
       else:
         raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
-    # Ensure the required parameters are provided and set non-specified optional parameters.
-    if self.outport == None:
-      raise SSBCCException('Required parameter "outport" is missing at line %d' % ixLine);
-    if self.inport == None:
-      raise SSBCCException('Required parameter "inport" is missing at line %d' % ixLine);
-    if self.baudmethod == None:
+    # Ensure the required parameters are provided.
+    if not hasattr(self,'baudmethod'):
       raise SSBCCException('Required parameter "baudmethod" is missing at line %d' % ixLine);
-    if self.FIFO == None:
-      self.FIFO = False;
-    if self.outsignal == None:
-      self.outsignal = 'o_UART_Tx';
-    if self.nStop == None:
+    if not hasattr(self,'inport'):
+      raise SSBCCException('Required parameter "inport" is missing at line %d' % ixLine);
+    if not hasattr(self,'outport'):
+      raise SSBCCException('Required parameter "outport" is missing at line %d' % ixLine);
+    # Set optional parameters.
+    if not hasattr(self,'nStop'):
       self.nStop = 1;
+    if not hasattr(self,'outsignal'):
+      self.outsignal = 'o_UART_Tx';
+    if not hasattr(self,'FIFO') and not hasattr(self,'noFIFO'):
+      self.noFIFO = True;
+    # Ensure parameters do not conflict.
+    if hasattr(self,'FIFO') and hasattr(self,'noFIFO'):
+      raise SSBCCException('Only one of "FIFO" and "noFIFO" can be specified at line %d' % ixLine);
     # List the I/Os and global signals required by this peripheral.
     config.AddIO(self.outsignal,1,'output');
     config.AddSignal('s__%s__Tx' % self.outsignal,8);
@@ -190,28 +141,18 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
     # Add the 'clog2' function to the core.
     config.functions['clog2'] = True;
 
-  def ProcessBaudMethod(self,config,param_arg):
-    if param_arg.find('/') > 0:
-      baudarg = re.findall('([^/]+)',param_arg);
+  def ProcessBaudMethod(self,config):
+    if self.baudmethod.find('/') > 0:
+      baudarg = re.findall('([^/]+)',self.baudmethod);
       if len(baudarg) != 2:
-        raise SSBCCException('baudmethod cannot have more than one "/" at line %d' % ixLine);
+        raise Exception('Program Bug:  Should not get here with two "/"s in baudmethod');
       if not (re.match(r'^\d+$',baudarg[0]) and re.match(r'^\d+$',baudarg[1])):
         raise SSBCCException('baudmethod doesn\'t accept parameters yet at line %d' % ixLine);
       self.baudmethod = (int(baudarg[0])+int(baudarg[1])/2)/int(baudarg[1]);
     else:
-      baudarg = param_arg;
-      if not re.match(r'^\d+$',baudarg):
+      if not re.match(r'^\d+$',self.baudmethod):
         raise SSBCCException('baudmethod doesn\'t accept parameters yet at line %d' % ixLine);
-      self.baudmethod = int(baudarg);
-
-  def GenAssembly(self,config):
-    pass;
-
-  def GenHDL(self,fp,config):
-    if config.Get('hdl') == 'Verilog':
-      self.GenVerilog(fp,config);
-    else:
-      raise Exception('HDL "%s" not implemented' % config.Get('hdl'));
+      self.baudmethod = int(self.baudmethod);
 
   def GenVerilog(self,fp,config):
     body = """//
@@ -285,6 +226,9 @@ always @ (posedge i_clk)
 @UARTBUSY@
 endgenerate
 """;
+    nofifobody = """// noFIFO
+wire s__@NAME@__go = s__@NAME@__wr;
+wire [7:0] s__@NAME@__Tx_data = s__@NAME@__Tx;""";
     fifobody = """// FIFO=@FIFO@
 localparam L__@NAME@__FIFO_LENGTH = @FIFO@;
 localparam L__@NAME@__FIFO_NBITS = @clog2@(L__@NAME@__FIFO_LENGTH);
@@ -328,18 +272,15 @@ always @ (posedge i_clk)
     s__@NAME@__Tx_data <= 8'd0;
   else
     s__@NAME@__Tx_data <= s__@NAME@__fifo_mem[s__@NAME@__fifo_addr_out[0+:L__@NAME@__FIFO_NBITS]];""";
-    nofifobody = """// noFIFO
-wire s__@NAME@__go = s__@NAME@__wr;
-wire [7:0] s__@NAME@__Tx_data = s__@NAME@__Tx;""";
-    if self.FIFO:
-      body = re.sub('@FIFOBODY@',fifobody,body);
-      body = re.sub('@UARTBUSY@','always @ (*) s__@NAME@__busy = s__@NAME@__fifo_full;',body);
-    else:
+    if hasattr(self,'noFIFO'):
       body = re.sub('@FIFOBODY@',nofifobody,body);
       body = re.sub('@UARTBUSY@','always @ (*) s__@NAME@__busy = s__@NAME@__uart_busy;',body);
+    else:
+      body = re.sub('@FIFOBODY@',fifobody,body);
+      body = re.sub('@UARTBUSY@','always @ (*) s__@NAME@__busy = s__@NAME@__fifo_full;',body);
+      body = re.sub('@FIFO@',str(self.FIFO),body);
     for subs in (
                   ('@BAUDMETHOD@', str(self.baudmethod),),
-                  ('@FIFO@',       str(self.FIFO),),
                   ('@NAME@',       self.outsignal,),
                   ('@NSTOP@',      str(self.nStop), ),
                 ):
