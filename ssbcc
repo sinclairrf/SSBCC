@@ -87,6 +87,8 @@ try:
       compiler = ('asm',cmd[0],);
     # CONSTANTS
     elif re.match(r'\s*CONSTANT\b',line):
+      if not config.Exists('architecture'):
+        raise SSBCCException('"CONSTANT"s cannot be defined before the "ARCHITECTURE" is defined at line %d' % ixLine);
       cmd = re.findall(r'\s*CONSTANT\s+(C_\w+)\s+(\w+)\s*$',line);
       if not cmd:
         raise SSBCCException('Malformed "CONSTANT" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
@@ -112,6 +114,8 @@ try:
         raise SSBCCException('Unrecognized HDL at line %d: "%s"' % (ixLine,cmd[0],));
     # INPORT
     elif re.match(r'\s*INPORT\b',line):
+      if not config.Exists('architecture'):
+        raise SSBCCException('"INPORT"s cannot be defined before the "ARCHITECTURE" is defined at line %d' % ixLine);
       config.ProcessInport(config,ixLine,line);
     # INSTRUCTION
     elif re.match(r'\s*INSTRUCTION\b',line):
@@ -125,6 +129,9 @@ try:
         raise SSBCCException('Instruction space cannot exceed %d at line %d' % (2**13,ixLine,));
     # MEMORY
     elif re.match(r'\s*MEMORY\b',line):
+      if not config.Exists('architecture'):
+        raise SSBCCException('"MEMORY"s cannot be defined before the "ARCHITECTURE" is defined at line %d' % ixLine);
+      # TODO -- make the maximum number of memories architecture dependent
       if len(memories['list']) >= 4:
         raise SSBCCException('Program is limited to 4 memories');
       cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)\s+(\S+)\s*$',line);
@@ -136,6 +143,8 @@ try:
       memories['arch'].append(cmd[2]);
     # OUTPORT
     elif re.match(r'\s*OUTPORT\b',line):
+      if not config.Exists('architecture'):
+        raise SSBCCException('"OUTPORT"s cannot be defined before the "ARCHITECTURE" is defined at line %d' % ixLine);
       config.ProcessOutport(line,ixLine);
     # PARAMETER
     elif re.match(r'\s*PARAMETER\b',line):
@@ -146,6 +155,8 @@ try:
       config.AddParameter(cmd[0],cmd[1]);
     # PERIPHERAL
     elif re.match(r'\s*PERIPHERAL\b',line):
+      if not config.Exists('architecture'):
+        raise SSBCCException('"PERIPHERAL"s cannot be defined before the "ARCHITECTURE" is defined at line %d' % ixLine);
       config.ProcessPeripheral(ixLine,line);
     # PORTCOMMENT
     elif re.match(r'\s*PORTCOMMENT\b',line):
