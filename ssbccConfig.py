@@ -13,50 +13,82 @@ import sys
 
 class SSBCCconfig():
   """Container for ssbcc configuration commands, the associated parsing, and program generation"""
+
   def __init__(self):
-    self.config         = dict();
-    self.constants      = dict();
-    self.functions      = dict();
-    self.inports        = list();
-    self.ios            = list();
-    self.outports       = list();
-    self.parameters     = list();
-    self.peripheral     = list();
-    self.signals        = list();
+    self.config         = dict();               # various settings, etc.
+    self.constants      = dict();               # CONSTANTs
+    self.functions      = dict();               # list of functions to define
+    self.inports        = list();               # INPORT definitions
+    self.ios            = list();               # List of I/Os
+    self.outports       = list();               # OUTPORT definitions
+    self.parameters     = list();               # PARAMETERs
+    self.peripheral     = list();               # PERIPHERALs
+    self.signals        = list();               # internal signals
+    self.symbols        = list();               # constant, I/O, inport, etc.  names
+
+    # initial search paths for peripherals
     self.peripheralpaths= list();
     self.peripheralpaths.append('.');
     self.peripheralpaths.append('peripherals');
     self.peripheralpaths.append(os.path.join(sys.path[0],'core/peripherals'));
+
   def AddConstant(self,name,value,ixLine):
     if name in self.constants:
       raise SSBCCException('CONSTANT "%s" already declared at line %d' % (name,ixLine,));
+    if name in self.symbols:
+      raise SSBCCException('Symbol "%s" already defined' % name);
     self.constants[name] = value;
+    self.symbols.append(name);
+
   def AddIO(self,name,nBits,iotype):
-    # TODO -- verify uniqueness
+    if name in self.symbols:
+      raise SSBCCException('Symbol "%s" already defined' % name);
     self.ios.append((name,nBits,iotype,));
+    self.symbols.append(name);
+
   def AddInport(self,port):
-    # TODO -- verify uniqueness
+    name = port[0];
+    if name in self.symbols:
+      raise SSBCCException('Symbol "%s" already defined' % name);
     self.inports.append(port);
+    self.symbols.append(name);
+
   def AddOutport(self,port):
-    # TODO -- verify uniqueness
+    name = port[0];
+    if name in self.symbols:
+      raise SSBCCException('Symbol "%s" already defined' % name);
     self.outports.append(port);
+    self.symbols.append(name);
+
   def AddParameter(self,name,value):
-    # TODO -- verify uniqueness
+    if name in self.symbols:
+      raise SSBCCException('Symbol "%s" already defined' % name);
     self.parameters.append((name,value,));
+    self.symbols.append(name);
+
   def AddSignal(self,name,nBits):
-    # TODO -- verify uniqueness
+    if name in self.symbols:
+      raise SSBCCException('Symbol "%s" already defined' % name);
     self.signals.append((name,nBits,));
+    self.symbols.append(name);
+
   def AddSignalWithInit(self,name,nBits,init):
-    # TODO -- verify uniqueness
+    if name in self.symbols:
+      raise SSBCCException('Symbol "%s" already defined' % name);
     self.signals.append((name,nBits,init,));
+    self.symbols.append(name);
+
   def Exists(self,name):
     return name in self.config;
+
   def Get(self,name):
     if name not in self.config:
       raise Exception('Program Bug:  "%s" not found in config' % name);
     return self.config[name];
+
   def InsertPeripheralPath(self,path):
     self.peripheralpaths.insert(-1,path);
+
   def ProcessInport(self,ixLine,line):
     cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(\w+)',line);
     modes = re.findall(r'([^,]+)',cmd[0][0]);
@@ -90,6 +122,7 @@ class SSBCCconfig():
       if nBits > 8:
         raise SSBCCException('Signal width too wide in "%s"' % line[:-1]);
     self.AddInport(thisPort);
+
   def ProcessOutport(self,line,ixLine):
     cmd = re.findall(r'^\s*OUTPORT\s+(\S+)\s+(\S+)\s+(\w+)\s*$',line);
     if not cmd:
@@ -123,6 +156,7 @@ class SSBCCconfig():
       if nBits > 8:
         raise SSBCCException('Signal width too wide on line %d:  in "%s"' % (ixLine,line[:-1],));
     self.AddOutport(thisPort);
+
   def ProcessPeripheral(self,ixLine,line):
     # Validate the format of the peripheral configuration command and the the name of the peripheral.
     cmd = re.findall(r'\s*PERIPHERAL\s+(\w+)\s*(.*)',line);
@@ -159,5 +193,6 @@ class SSBCCconfig():
         param_list.append((param_string,None));
     # Add the peripheral to the micro controller configuration.
     exec('self.peripheral.append(%s(self,param_list,ixLine));' % peripheral);
+
   def Set(self,name,value):
     self.config[name] = value;
