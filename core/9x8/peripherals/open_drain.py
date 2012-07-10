@@ -5,8 +5,8 @@
 ################################################################################
 
 class open_drain:
-  """Implement an open-drain IOB suitable for direct connection to a pin.  This can
-be used as an I/O port for an I2C device.
+  """Implement an open-drain IOB suitable for direct connection to a pin.  This can,
+for example, be used as an I/O port for an I2C device.
 
 Usage:
   PERIPHERAL open_drain inport=I_name \\
@@ -15,51 +15,37 @@ Usage:
                         [width=n]
 
 Where:
-  name
-    is the base name to be used for the peripheral.
+  inport=I_name
+    is the inport symbol to read the pin
+  outport=O_name
+    is the outport symbol to write to the pin
+    Note:  A "0" value activates the open drain while a "1" value releases the
+    open drain.
+  iosignal=io_name
+    is the tri-state pin for the open-drain I/O buffer
+    Note:  The initial value of the pin is "open."
   width=n
     is the optional width of the port
     Note:  The default is one bit
 
-The following OUTPORTs are provided by this module:
-  O_name
-    write the specified bit(s) to the open-drain I/O port
-    Note:  A "0" value activates the open drain while a "1" value releases the
-    open drain.
-
-The following INPORTs are provided by this module:
-  I_name
-    read the value of the tri-state I/O port
-
-The following I/Os are provided for the processor:
-  io_name
-    this is the tri-state signal implementing the open-drain I/O buffer
-
-Example:  Configure two ports for running an I2C bus:
+Example:  Configure two 1-bit ports implementing an I2C bus:
 
   PORTCOMMENT I2C bus
   PERIPHERAL open_drain inport=I_SCL outport=O_SCL iosignal=io_scl
   PERIPHERAL open_drain inport=I_SDA outport=O_SDA iosignal=io_sda
 
-Example:  Transmit a device address to an I2C peripheral and wait for the
-          acknowlegement.  The function "i2c_quarter_cycle" should cause a
-          quarter-I2C-clock cycle delay.
+  Transmit the start condition for an I2C bus by setting SDA low and then
+  setting SCL low.
 
-  ; set the start condition
-  0 .outport(O_SDA) .call(i2c_quarter_cycle) 0 .outport(O_SCL) .call(i2c_quarter_cycle)
-  ; transmit the byte, msb first
-  $(8-1) :loop
-    ; send the next bit of the address
-    swap <<msb O_SDA outport swap
-    ; send the four quarter phases of the clock, i.e., the sequence 0110
-    0x7 $(4-1) :scl swap O_SCL outport 0>> swap .call(i2c_quarter_cycle) .jumpc(scl,1-) drop
-  .jumpc(loop,1-) drop
-  ; Get the acknowledge status and leave it on the stack
-  1 .outport(O_SDA) .call(i2c_quarter_cycle)
-  1 .outport(O_SCL) .call(i2c_quarter_cycle)
-  .inport(I_SDA)
-  .call(i2c_quarter_cycle)
-  0 .outport(O_SCL) .call(i2c_quarter_cycle)
+  ; Set SDA low
+  0 .outport(O_SDA)
+  ; delay one fourth of a 400 kHz cycle (based on a 100 MHz clock)
+  ${int(100.e6/400.e3/3)-1} :delay .jumpc(delay,1-) drop
+  ; Set SCL low
+  0 .outport(O_SCL)
+
+  See the I2C examples for a complete demonstration of using the open_drain
+  peripheral.
 """
 
   def __init__(self,config,param_list,ixLine):
