@@ -23,6 +23,9 @@ class SSBCCperipheral:
       raise SSBCCException('Inport symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
     setattr(self,name,value);
 
+  def GenAssembly(self,config):
+    pass;
+
   def GenHDL(self,fp,config):
     if config.Get('hdl') == 'Verilog':
       self.GenVerilog(fp,config);
