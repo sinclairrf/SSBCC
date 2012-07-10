@@ -120,20 +120,20 @@ Example:  Transmit a device address to an I2C peripheral and wait for the
     # Add the I/O port and OUTPORT and INPORT signals for this peripheral.
     self.sname = 's__' + self.iosignal;
     sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
-    config['ios'].append((self.iosignal,self.width,'inout'));
-    config['signals'].append((self.sname,self.width,None,));
-    config['inports'].append((self.inport,
-                             (self.iosignal,self.width,'data',),
-                            ));
-    config['outports'].append((self.outport,
-                              (self.sname,self.width,'data',sname_init,),
-                             ));
+    config.AddIO(self.iosignal,self.width,'inout');
+    config.AddSignalWithInit(self.sname,self.width,None);
+    config.AddInport((self.inport,
+                     (self.iosignal,self.width,'data',),
+                    ));
+    config.AddOutport((self.outport,
+                      (self.sname,self.width,'data',sname_init,),
+                     ));
 
   def GenHDL(self,fp,config):
-    if config['hdl'] == 'Verilog':
+    if config.Get('hdl') == 'Verilog':
       self.GenVerilog(fp,config);
     else:
-      raise Exception('HDL "%s" not implemented' % config['hdl']);
+      raise Exception('HDL "%s" not implemented' % config.Get('hdl'));
 
   def GenVerilog(self,fp,config):
     body_1 = """//

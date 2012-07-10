@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-import math
-
 class trace:
   """Generate a human readable printout of the core execution.  The program
 counter and opcode are delayed so that they are aligned with the results of the
@@ -34,16 +32,16 @@ Example:  See core/9x8/tb/core which is used to validate correct operation of
     pass;
 
   def GenHDL(self,fp,config):
-    if config['hdl'] == 'Verilog':
+    if config.Get('hdl') == 'Verilog':
       self.GenVerilog(fp,config);
     else:
-      raise Exception('HDL "%s" not implemented' % config['hdl']);
+      raise Exception('HDL "%s" not implemented' % config.Get('hdl'));
 
   def GenVerilog(self,fp,config):
-    n_PC_nibbles = math.ceil(math.log(config['nInstructions'],2)/4);
-    n_Np_nibbles = math.ceil(math.log(config['data_stack'],2)/4);
+    n_PC_nibbles = math.ceil(math.log(config.Get('nInstructions'),2)/4);
+    n_Np_nibbles = math.ceil(math.log(config.Get('data_stack'),2)/4);
     n_R_nibbles  = max(n_PC_nibbles,2);
-    n_Rp_nibbles = math.ceil(math.log(config['return_stack'],2)/4);
+    n_Rp_nibbles = math.ceil(math.log(config.Get('return_stack'),2)/4);
     outformat = '%%0%dX %%03X %%s : %%0%dX %%02X %%02X : %%0%dX %%0%dX' % (n_PC_nibbles,n_Np_nibbles,n_R_nibbles,n_Rp_nibbles);
     fp.write('// Trace peripheral\n');
     fp.write('generate\n');

@@ -79,10 +79,10 @@ Where:
       self.finish = 0;
 
   def GenHDL(self,fp,config):
-    if config['hdl'] == 'Verilog':
+    if config.Get('hdl') == 'Verilog':
       self.GenVerilog(fp,config);
     else:
-      raise Exception('HDL "%s" not implemented' % config['hdl']);
+      raise Exception('HDL "%s" not implemented' % config.hdl);
 
   def GenVerilog(self,fp,config):
     # The validity of N and T are not monitored for invalid operations.  For
@@ -297,8 +297,8 @@ always @ (posedge i_clk)
 endgenerate
 """;
     outport_pure_strobe = '';
-    for ix in range(len(config['outports'])):
-      thisPort = config['outports'][ix][1:];
+    for ix in range(len(config.outports)):
+      thisPort = config.outports[ix][1:];
       thisOnlyStrobe = True;
       thisIsStrobe = False;
       for jx in range(len(thisPort)):

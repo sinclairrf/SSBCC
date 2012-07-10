@@ -118,29 +118,27 @@ Example:  Capture an external 24-bit counter:
     self.addr_width = int(math.ceil(math.log(self.i_width/8,2)));
     self.latch_width = 8*((self.i_width+7)/8);
     # Configure the processor I/Os, etc.
-    config['ios'].append((self.i_signal,self.i_width,'input',));
-    self.s_addr = 's_internal_%03X' % len(config['signals']);
-    config['signals'].append((self.s_addr,self.addr_width,));
-    self.s_signal = 's_internal_%03X' % len(config['signals']);
-    config['signals'].append((self.s_signal,8,));
-    config['inports'].append((self.i_read,
-                             (self.s_signal,8,'data',),
-                            ));
-    self.ix__o_latch = len(config['outports']);
-    config['outports'].append((self.o_latch,
-                             ));
-    self.ix__o_addr = len(config['outports']);
-    config['outports'].append((self.o_addr,
-                             ));
+    config.AddIO(self.i_signal,self.i_width,'input');
+    self.s_addr = 's_internal_%03X' % len(config.signals);
+    config.AddSignal(self.s_addr,self.addr_width);
+    self.s_signal = 's_internal_%03X' % len(config.signals);
+    config.AddSignal(self.s_signal,8);
+    config.AddInport((self.i_read,
+                     (self.s_signal,8,'data',),
+                    ));
+    self.ix__o_latch = len(config.outports);
+    config.AddOutport((self.o_latch,));
+    self.ix__o_addr = len(config.outports);
+    config.AddOutport((self.o_addr,));
 
   def GenAssembly(self,config):
     pass;
 
   def GenHDL(self,fp,config):
-    if config['hdl'] == 'Verilog':
+    if config.Get('hdl') == 'Verilog':
       self.GenVerilog(fp,config);
     else:
-      raise Exception('HDL "%s" not implemented' % config['hdl']);
+      raise Exception('HDL "%s" not implemented' % config.Get('hdl'));
 
   def GenVerilog(self,fp,config):
     body = """

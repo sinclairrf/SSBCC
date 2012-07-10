@@ -176,19 +176,19 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
     if self.nStop == None:
       self.nStop = 1;
     # List the I/Os and global signals required by this peripheral.
-    config['ios'].append((self.outsignal,1,'output',));
-    config['signals'].append(('s__%s__Tx' % self.outsignal,8,));
-    config['signals'].append(('s__%s__busy' % self.outsignal,1,));
-    config['signals'].append(('s__%s__wr' % self.outsignal,1,));
-    config['inports'].append((self.inport,
-                             ('s__%s__busy' % self.outsignal,1,'data',),
-                            ));
-    config['outports'].append((self.outport,
-                              ('s__%s__Tx' % self.outsignal,8,'data',),
-                              ('s__%s__wr' % self.outsignal,1,'strobe',),
-                             ));
+    config.AddIO(self.outsignal,1,'output');
+    config.AddSignal('s__%s__Tx' % self.outsignal,8);
+    config.AddSignal('s__%s__busy' % self.outsignal,1);
+    config.AddSignal('s__%s__wr' % self.outsignal,1);
+    config.AddInport((self.inport,
+                    ('s__%s__busy' % self.outsignal,1,'data',),
+                   ));
+    config.AddOutport((self.outport,
+                      ('s__%s__Tx' % self.outsignal,8,'data',),
+                      ('s__%s__wr' % self.outsignal,1,'strobe',),
+                     ));
     # Add the 'clog2' function to the core.
-    config['functions']['clog2'] = True;
+    config.functions['clog2'] = True;
 
   def ProcessBaudMethod(self,config,param_arg):
     if param_arg.find('/') > 0:
@@ -208,10 +208,10 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
     pass;
 
   def GenHDL(self,fp,config):
-    if config['hdl'] == 'Verilog':
+    if config.Get('hdl') == 'Verilog':
       self.GenVerilog(fp,config);
     else:
-      raise Exception('HDL "%s" not implemented' % config['hdl']);
+      raise Exception('HDL "%s" not implemented' % config.Get('hdl'));
 
   def GenVerilog(self,fp,config):
     body = """//
@@ -344,7 +344,7 @@ wire [7:0] s__@NAME@__Tx_data = s__@NAME@__Tx;""";
                   ('@NSTOP@',      str(self.nStop), ),
                 ):
       body = re.sub(subs[0],subs[1],body);
-    if config['define_clog2']:
+    if config.Get('define_clog2'):
       body = re.sub('@clog2@','clog2',body);
     else:
       body = re.sub('@clog2@','$clog2',body);
