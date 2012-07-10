@@ -63,7 +63,7 @@ Example:  Configure two 1-bit ports implementing an I2C bus:
       elif param == 'outport':
         self.AddAttr(config,'outport',param_arg,r'O_\w+$',ixLine);
       elif param == 'width':
-        self.AddAttr(config,'width',param,r'[1-9][0-9]*$',ixLine);
+        self.AddAttr(config,'width',param_arg,r'[1-9][0-9]*$',ixLine);
         self.width = int(self.width);
       else:
         raise SSBCCException('Unrecognized parameter at line %d:  "%s"' % (ixLine,param,));
