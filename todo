@@ -6,7 +6,6 @@
     validate signal names
       ensure that inport, outport, signal, and io names are not repeated
       ensure no collisions with signals within the core
-    add config['parameters'] and usage for peripherals
     put ssbccGenVerilog in a class in core/9x8
     Finish interrupt handling
     documentation
@@ -16,6 +15,7 @@
       INPORT and OUTPORT
       PERIPHERAL
         finish doc/peripheral.html
+      all error messages
     incorporate "COMBINE" feature to merge stacks or memories into large RAMs
     add VHDL
 
@@ -48,7 +48,7 @@
       create a base class for peripherals
 **    make all peripheral configuration commands match "open_drain" format
 **    add a 'function' key to config for:
-        clog
+        clog2
         instruction dump
       finish "monitor_stack" periperhal:
         detect out-of-range values for memory, inport, outport, etc.
@@ -80,7 +80,6 @@
 
   examples
     add more examples
-**    I2C Master -- TI TMP100 I2C Temperature Sensor
       "echo" program
       Jim Haberly -- accumulate 10 samples from an ADC
 
