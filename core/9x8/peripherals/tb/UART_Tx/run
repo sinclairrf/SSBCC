@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Copyright 2012, Sinclair R.F., Inc.
+#
+# Run the test benches for the open_drain peripheral
+
+NAME=UART_Tx
+
+ssbcc -q tb_${NAME}.9x8 || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+iverilog -o tb tb.v tb_${NAME}.v;
+./tb
+exit 0;
+./tb > tb.out;
+
+T="`md5sum -c md5sums | sed '/: OK$/d'`";
+if [ -z "${T}" ]; then
+  echo "Passed:  ${NAME}";
+else
+  echo "open drain failed" > /dev/stderr;
+  echo "${T}" > /dev/stderr;
+  exit 1;
+fi
+
+exit 0;
