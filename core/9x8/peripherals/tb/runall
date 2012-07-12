@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Copyright 2012, Sinclair R.F., Inc.
+#
+# Run all of the test benches for the peripherals.
+
+find -name run | while read runname; do
+  (
+    cd  ${runname:0:${#runname}-4};
+    ./run || exit 1;
+  )
+done
+
+echo "All tests passed!";
+exit 0;
