@@ -39,6 +39,7 @@ try:
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
   argListParser.add_argument('-G', metavar='parameter_name=value', type=str, action='append', help='Override parameter value');
   argListParser.add_argument('-P', metavar='peripheral_name[="parameters"]', type=str, action='append', help='Add peripheral');
+  argListParser.add_argument('-q', action='store_true', help='quiet');
   argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
   argListParser.add_argument('--verilator-tracing-on', action='store_true', help='show all signals in verilator waveform files');
   argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
@@ -260,7 +261,8 @@ try:
   cmd += ' ' + compiler[1];
 
   # Invoke the compiler and exit if it failed.
-  print 'Invoking the assember with the following command:  ' + cmd;
+  if not argList.q:
+    print 'Invoking the assember with the following command:  ' + cmd;
   cmdStatus = os.system(cmd);
   if cmdStatus != 0:
     raise SSBCCException('Running the assembler');
