@@ -39,3 +39,17 @@ class SSBCCperipheral:
 
   def GenVHDL(self,fp,config):
     raise Exception('VHDL is not implemented for this peripheral');
+
+  def IsInt(self,value):
+    if re.match(r'[1-9][0-9_]*$',value):
+      return True;
+    else:
+      return False;
+
+  def IsParameter(self,config,name):
+    return config.IsParameter(name);
+
+  def ParseInt(self,value):
+    if not self.IsInt(value):
+      raise Exception('Program Bug -- shouldn\'t call with a badly formatted integer');
+    return int(re.sub('_','',value));
