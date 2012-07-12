@@ -4,6 +4,7 @@
 #
 ################################################################################
 
+import math;
 import re;
 
 from ssbccPeripheral import SSBCCperipheral
@@ -18,10 +19,11 @@ class UART_Tx(SSBCCperipheral):
 Usage:
   PERIPHERAL UART_Tx outport=O_name \\
                      inport=I_name \\
-                     baudmethod={clk/rate,count} \\
+                     outsignal=o_name \\
+                     baudmethod={clk/rate|count} \\
                      [noFIFO|FIFO=n] \\
-                     [nStop=n] \\
-                     [outsignal=o_name]
+                     [nStop={1|2}]
+
 Where:
   outport=O_name
     specifies the symbol used by the outport instruction to write a byte to the
@@ -41,46 +43,58 @@ Where:
           command
       rate is the desired baud rate
         this is specified as per "clk"
+    2nd method:
+      specify the number of "i_clk" clock cycles between bit edges
+    Note:  clk, rate, and count can be parameters or constants.  For example,
+      the following uses the parameter G_CLK_FREQ_HZ for the clock frequency
+      and a hard-wired baud rate of 9600:  "baudmethod=G_CLK_FREQ_HZ/9600".
+    Note:  The numeric values can have Verilog-style '_' separators between the
+      digits.  For example, 100_000_000 represents 100 million.
   noFIFO
     the peripheral will not have a FIFO
-    this is the default
+    Note:  This is the default.
   FIFO=n
     adds a FIFO of depth n
+    Note:  n must be a power of 2.
   nStop=n
     configures the peripheral for n stop bits
     default:  1 stop bit
     Note:  n must be at least 1
     Note:  normal values are 1 and 2
-    2nd method:
-      specify the number of "i_clk" clock cycles between bit edges
   outsignal=o_name
     optionally specifies the name of the module's output signal
     Default:  o_UART_Tx
 
-The following OUTPORTs are provided by this peripheral:
-  O_name_TX
-    this is the next 8-bit value to transmit or to queue for transmission
+The following OUTPORT is provided by this peripheral:
+  O_name
+    output the next 8-bit value to transmit or to queue for transmission
 
-The following INPORTs are provided by this peripheral:
-  I_name_TX
+The following INPORT is provided by this peripheral:
+  I_name
     bit 0:  busy status
       this bit will be high when the core cannot accept more data
       Note:  If there is no FIFO this means that the core is still
         transmitting the last byte.  If there is a FIFO it means that the FIFO
         cannot accept any more data.
 
-Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
-          message "Hello World!"
+WARNING:  The HDL core is very simple and does not protect against writing a new
+          value in the middle of a transmition or writing to a full FIFO.
+          Adding such logic would be contrary to the design principle of
+          keeping the HDL small and relying on the assembly code to provide the
+          protection.
+
+Example:  Configure the UART for 115200 baud using a 100 MHz clock and transmit
+          the message "Hello World!"
 
   Within the processor architecture file include the configuration command:
 
-    PERIPHERAL UART_Tx O_UART_TX I_UART_TX baudmethod=100000000/115200
+  PERIPHERAL UART_Tx O_UART_TX I_UART_TX baudmethod=100_000_000/115200
 
-  Within the processor assembly, include the code:
+  Use the following assembly code to transmit the message "Hello World!".  This
+  transmits the entire message whether or not the core has a FIFO.
 
-    C"Hello World!\\r\\n"
-    :loop 1- swap .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop
-
+  N"Hello World!\\r\\n"
+  :loop .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop
 """
 
   def __init__(self,config,param_list,ixLine):
@@ -89,12 +103,12 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'baudmethod':
-        baudformat = r'([1-9]\d*|(([1-9]\d*|G_\w+)/([1-9]\d*|G_\w+)))$';
-        self.AddAttr(config,'baudmethod',param_arg,baudformat,ixLine);
-        self.ProcessBaudMethod(config);
+        self.ProcessBaudMethod(config,param_arg,ixLine);
       elif param == 'FIFO':
         self.AddAttr(config,'FIFO',param_arg,r'[1-9]\d*$',ixLine);
         self.FIFO = int(self.FIFO);
+        if math.modf(math.log(self.FIFO,2))[0] != 0:
+          raise SSBCCException('FIFO=%d must be a power of 2 at line %d' % (self.FIFO,ixLine,));
       elif param == 'inport':
         self.AddAttr(config,'inport',param_arg,'I_\w+$',ixLine);
       elif param == 'noFIFO':
@@ -126,7 +140,7 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
     # Ensure parameters do not conflict.
     if hasattr(self,'FIFO') and hasattr(self,'noFIFO'):
       raise SSBCCException('Only one of "FIFO" and "noFIFO" can be specified at line %d' % ixLine);
-    # List the I/Os and global signals required by this peripheral.
+    # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.outsignal,1,'output');
     config.AddSignal('s__%s__Tx' % self.outsignal,8);
     config.AddSignal('s__%s__busy' % self.outsignal,1);
@@ -138,21 +152,32 @@ Example:  Configure for 115200 baud using a 100 MHz clock and transmit the
                       ('s__%s__Tx' % self.outsignal,8,'data',),
                       ('s__%s__wr' % self.outsignal,1,'strobe',),
                      ));
-    # Add the 'clog2' function to the core.
+    # Add the 'clog2' function to the core (if required).
     config.functions['clog2'] = True;
 
-  def ProcessBaudMethod(self,config):
-    if self.baudmethod.find('/') > 0:
-      baudarg = re.findall('([^/]+)',self.baudmethod);
-      if len(baudarg) != 2:
-        raise Exception('Program Bug:  Should not get here with two "/"s in baudmethod');
-      if not (re.match(r'^\d+$',baudarg[0]) and re.match(r'^\d+$',baudarg[1])):
-        raise SSBCCException('baudmethod doesn\'t accept parameters yet at line %d' % ixLine);
-      self.baudmethod = (int(baudarg[0])+int(baudarg[1])/2)/int(baudarg[1]);
+  def ProcessBaudMethod(self,config,param_arg,ixLine):
+    if hasattr(self,'baudmethod'):
+      raise SSBCCException('baudmethod repeated at line %d' % ixLine);
+    if param_arg.find('/') < 0:
+      if self.IsInt(param_arg):
+        self.baudmethod = str(self.ParseInt(param_arg));
+      elif self.IsParameter(config,param_arg):
+        self.baudmethod = param_arg;
+      else:
+        raise SSBCCException('baudmethod must be an integer or a previously declared parameter at line %d' % ixLine);
     else:
-      if not re.match(r'^\d+$',self.baudmethod):
-        raise SSBCCException('baudmethod doesn\'t accept parameters yet at line %d' % ixLine);
-      self.baudmethod = int(self.baudmethod);
+      baudarg = re.findall('([^/]+)',param_arg);
+      if len(baudarg) == 2:
+        if not self.IsInt(baudarg[0]) and not self.IsParameter(config,baudarg[0]):
+          raise SSBCCException('Numerator in baudmethod must be an integer or a previously declared parameter at line %d' % ixLine);
+        if not self.IsInt(baudarg[1]) and not self.IsParameter(config,baudarg[1]):
+          raise SSBCCException('Denominator in baudmethod must be an integer or a previously declared parameter at line %d' % ixLine);
+        for ix in range(2):
+          if self.IsInt(baudarg[ix]):
+            baudarg[ix] = str(self.ParseInt(baudarg[ix]));
+        self.baudmethod = '('+baudarg[0]+'+'+baudarg[1]+'/2)/'+baudarg[1];
+    if not hasattr(self,'baudmethod'):
+      raise SSBCCException('Bad baudmethod value at line %d:  "%s"' % (ixLine,param_arg,));
 
   def GenVerilog(self,fp,config):
     body = """//
@@ -162,7 +187,7 @@ generate
 reg s__@NAME@__uart_busy;
 @FIFOBODY@
 // Count the clock cycles to decimate to the desired baud rate.
-localparam L__@NAME@__COUNT       = @BAUDMETHOD@;
+localparam L__@NAME@__COUNT       = @BAUDMETHOD@-1;
 localparam L__@NAME@__COUNT_NBITS = @clog2@(L__@NAME@__COUNT);
 reg [L__@NAME@__COUNT_NBITS-1:0] s__@NAME@__count = {(L__@NAME@__COUNT_NBITS){1\'b0}};
 reg s__@NAME@__count_is_zero = 1'b0;
@@ -212,7 +237,7 @@ always @ (posedge i_clk)
     s__@NAME@__ntx <= s__@NAME@__ntx - { {(L__@NAME@__NTX_NBITS-1){1'b0}}, 1'b1 };
   else
     s__@NAME@__ntx <= s__@NAME@__ntx;
-// The status bit is 1 if the core is done and 0 otherwise.
+// The status bit is 1 if the core is busy and 0 otherwise.
 initial s__@NAME@__uart_busy = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
