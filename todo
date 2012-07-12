@@ -43,14 +43,17 @@
       add non-return-stack-alteration restriction to some optional macro arguments
       implement .abbr directive
     peripherals
-**    finish incorporating SSBCCperipheral
-        adder_16bit
-        latch
-        monitor_stack
-        trace
-**    make all peripheral configuration commands match "open_drain" format
-**    make test benches for all peripherals
-        UART_Tx -- test FIFO and noFIFO options
+**    finish existing peripherials:
+        tasks:
+          match the "open_drain" coding style
+          incorporate SSBCCperipheral
+          add test benches
+        needed for the following
+          UART_Tx -- test FIFO and noFIFO options
+          adder_16bit
+          latch
+          monitor_stack
+          trace
       add a 'function' key to config for:
         clog2
         instruction dump
