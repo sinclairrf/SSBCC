@@ -94,7 +94,7 @@ Example:  Configure two 1-bit ports implementing an I2C bus:
     # Create the internal signal name and initialization.
     self.sname = 's__' + self.iosignal;
     sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
-    # Add the I/O port, internal signal, and the OUTPORT and INPORT signals for this peripheral.
+    # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.iosignal,self.width,'inout');
     config.AddSignalWithInit(self.sname,self.width,None);
     config.AddInport((self.inport,
@@ -106,12 +106,12 @@ Example:  Configure two 1-bit ports implementing an I2C bus:
 
   def GenVerilog(self,fp,config):
     body_1 = """//
-// open_drain peripheral for "@NAME@"
+// PERIPHERAL open_drain:  @NAME@
 //
 assign @IO_NAME@ = (@S_NAME@ == 1'b0) ? 1'b0 : 1'bz;
 """
     body_big = """//
-// open_drain peripheral for "@NAME@"
+// PERIPHERAL open_drain:  @NAME@
 //
 generate
 genvar ix__@NAME@;
