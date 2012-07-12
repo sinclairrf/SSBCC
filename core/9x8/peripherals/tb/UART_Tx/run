@@ -8,9 +8,7 @@ NAME=UART_Tx
 
 ssbcc -q tb_${NAME}.9x8 || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
 iverilog -o tb tb.v tb_${NAME}.v;
-./tb
-exit 0;
-./tb > tb.out;
+./tb | gawk -f tb.awk > tb.out;
 
 T="`md5sum -c md5sums | sed '/: OK$/d'`";
 if [ -z "${T}" ]; then
