@@ -9,16 +9,14 @@ NAME=open_drain
 for WIDTH in 1 5 8; do
   sed -e "s/@WIDTH@/width=${WIDTH}/" tb_${NAME}.9x8-template > tb_${NAME}.9x8;
   sed -e "s/@WIDTH@/${WIDTH}/" tb.v-template > tb.v;
-  ssbcc tb_${NAME}.9x8 || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+  ssbcc -q tb_${NAME}.9x8 || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
   iverilog -o tb tb.v tb_${NAME}.v;
   ./tb > tb_${WIDTH}.out;
 done
 
 T="`md5sum -c md5sums | sed '/: OK$/d'`";
 if [ -z "${T}" ]; then
-  echo
-  echo "*** ${NAME} ok ***";
-  echo
+  echo "Passed:  ${NAME}";
 else
   echo "open drain failed" > /dev/stderr;
   echo "${T}" > /dev/stderr;
