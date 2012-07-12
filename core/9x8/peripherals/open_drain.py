@@ -8,7 +8,7 @@ from ssbccPeripheral import SSBCCperipheral
 from ssbccUtil import SSBCCException;
 
 class open_drain(SSBCCperipheral):
-  """Implement an open-drain IOB suitable for direct connection to a pin.  This can,
+  """Implement an open-drain I/O suitable for direct connection to a pin.  This can,
 for example, be used as an I/O port for an I2C device.
 
 Usage:
@@ -31,14 +31,24 @@ Where:
     is the optional width of the port
     Note:  The default is one bit
 
+The following OUTPORTs are provided by this peripheral:
+  O_name
+    this is the new output for the open drain I/O
+
+The following INPORTs are provided by this peripheral:
+  I_name
+    this reads the current value of the open drain I/O
+
 Example:  Configure two 1-bit ports implementing an I2C bus:
+
+  Add the following to the architecture file:
 
   PORTCOMMENT I2C bus
   PERIPHERAL open_drain inport=I_SCL outport=O_SCL iosignal=io_scl
   PERIPHERAL open_drain inport=I_SDA outport=O_SDA iosignal=io_sda
 
-  Transmit the start condition for an I2C bus by setting SDA low and then
-  setting SCL low.
+  The following assembly will transmit the start condition for an I2C bus by
+  pulling SDA low and then pulling SCL low.
 
   ; Set SDA low
   0 .outport(O_SDA)
@@ -67,22 +77,24 @@ Example:  Configure two 1-bit ports implementing an I2C bus:
         self.width = int(self.width);
       else:
         raise SSBCCException('Unrecognized parameter at line %d:  "%s"' % (ixLine,param,));
-    # Set defaults for non-specified values.
+    # Ensure the required parameters are set.
     if not hasattr(self,'inport'):
       raise SSBCCException('Missing "inport=I_name" at line %d' % ixLine);
     if not hasattr(self,'iosignal'):
       raise SSBCCException('Missing "iosignal=io_name" at line %d' % ixLine);
     if not hasattr(self,'outport'):
       raise SSBCCException('Missing "outport=O_name" at line %d' % ixLine);
+    # Set defaults for non-specified values.
     if not hasattr(self,'width'):
       self.width = 1;
-    # Ensure the speicified values are reasonable.
+    # Ensure the specified values are reasonable.
     maxWidth = config.Get('data_width');
     if (self.width < 1) or (maxWidth < self.width):
       raise SSBCCException('width must be between 1 and %d inclusive at line %d' % (maxWidth,ixLine,));
-    # Add the I/O port and OUTPORT and INPORT signals for this peripheral.
+    # Create the internal signal name and initialization.
     self.sname = 's__' + self.iosignal;
     sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
+    # Add the I/O port, internal signal, and the OUTPORT and INPORT signals for this peripheral.
     config.AddIO(self.iosignal,self.width,'inout');
     config.AddSignalWithInit(self.sname,self.width,None);
     config.AddInport((self.inport,
@@ -102,9 +114,9 @@ assign @IO_NAME@ = (@S_NAME@ == 1'b0) ? 1'b0 : 1'bz;
 // open_drain peripheral for "@NAME@"
 //
 generate
-genvar ix__open_drain__@NAME@;
-for (ix__open_drain__@NAME@=0; ix__open_drain__@NAME@<@WIDTH@; ix__open_drain__@NAME@ = ix__open_drain__@NAME@+1) begin : gen_@NAME@
-  assign @IO_NAME@[ix__open_drain__@NAME@] = (@S_NAME@[ix__open_drain__@NAME@] == 1'b0) ? 1'b0 : 1'bz;
+genvar ix__@NAME@;
+for (ix__@NAME@=0; ix__@NAME@<@WIDTH@; ix__@NAME@ = ix__@NAME@+1) begin : gen_@NAME@
+  assign @IO_NAME@[ix__@NAME@] = (@S_NAME@[ix__@NAME@] == 1'b0) ? 1'b0 : 1'bz;
 end
 endgenerate
 """
