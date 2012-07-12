@@ -63,6 +63,8 @@ class SSBCCconfig():
     self.symbols.append(name);
 
   def AddParameter(self,name,value):
+    if not re.match(r'G_\w+$',name):
+      raise Exception('Program Bug -- bad parameter name');
     if name in self.symbols:
       raise SSBCCException('Symbol "%s" already defined' % name);
     self.parameters.append((name,value,));
@@ -90,6 +92,12 @@ class SSBCCconfig():
 
   def InsertPeripheralPath(self,path):
     self.peripheralpaths.insert(-1,path);
+
+  def IsParameter(self,name):
+    if re.match(r'G_\w+',name) and name in self.symbols:
+      return True;
+    else:
+      return False;
 
   def OverrideParameter(self,name,value):
     for ix in range(len(self.parameters)):
