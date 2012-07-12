@@ -49,7 +49,6 @@
           incorporate SSBCCperipheral
           add test benches
         needed for the following
-          UART_Tx -- test FIFO and noFIFO options
           adder_16bit
           latch
           monitor_stack
@@ -65,8 +64,6 @@
         add "history=n"
         add "log"
         add option to assert stack status at key program points
-*     finish "UART_Tx" peripheral
-        accomodate parameter names in baudmethod
       INTERRUPT
       timer
       UART_Rx -- single-byte deserializer w/ and w/o FIFO
