@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-class adder_16bit:
-  """Generate a 16-bit adder peripheral to the core.
+class adder_16bit(SSBCCperipheral):
+  """Implement a 16-bit adder peripheral.
 
 Usage:
   PERIPHERAL adder_16bit
@@ -95,12 +95,6 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:
     fp.write('  1 .outport(O_ADDER_16BIT_OP)\n');
     fp.write('  .inport(I_ADDER_16BIT_LSB) .inport(I_ADDER_16BIT_MSB)\n');
     fp.write('.return\n');
-
-  def GenHDL(self,fp,config):
-    if config.Get('hdl') == 'Verilog':
-      self.GenVerilog(fp,config);
-    else:
-      raise Exception('HDL "%s" not implemented' % config.Get('hdl'));
 
   def GenVerilog(self,fp,config):
     fp.write('always @ (posedge i_clk)\n');
