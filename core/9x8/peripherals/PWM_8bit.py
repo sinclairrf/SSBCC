@@ -100,7 +100,78 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
 """;
 
   def __init__(self,config,param_list,ixLine):
-    pass;
+    # Get the parameters.
+    for param_tuple in param_list:
+      param = param_tuple[0];
+      param_arg = param_tuple[1];
+      if param == 'outport':
+        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
+      elif param == 'outsignal':
+        self.AddAttr(config,param,param_arg,r'o_\w+$',ixLine);
+      elif param == 'ratemethod':
+        self.ProcessRateMethod(config,param_arg,ixLine);
+      elif param == 'invert':
+        self.AddAttrNoArg(config,param,param_arg,ixLine);
+      elif param == 'noinvert':
+        self.AddAttrNoArg(config,param,param_arg,ixLine);
+      elif param == 'instances':
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
+        self.instances = int(self.instances);
+      else:
+        raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
+    # Ensure the required parameters are provided.
+    if not hasattr(self,'instances'):
+      self.instances = 1;
+    # Set optional parameters.
+    if not hasattr(self,'invert') and not hasattr(self,'noinvert'):
+      self.noinvert = True;
+    # Ensure parameters do not conflict.
+    if hasattr(self,'invert') and hasattr(self,'noinvert'):
+      raise SSBCCException('Only one of "invert" or "noinvert" can be specified at line %d' % ixLine);
+    # Use only one of mutually exclusive configuration settings.
+    if hasattr(self,'noinvert'):
+      self.invert = False;
+    # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
+    self.AddIO(self.outsignal,self.instances,'output');
+    if self.instances == 1:
+      config.AddSignal('s__%s__tx' % self.outsignal, 8);
+      config.AddOutport((self.outport,
+                        ('s__%s__tx' % self.outsignal,8,'data',),
+                        ('s__%s__wr' % self.outsignal,1,'strobe',),
+                       ));
+    else:
+      for ixOutPort in range(self.instances):
+        config.AddSignal('s__%s__%d__tx' % (self.outsignal,ixOutPort,) ,8);
+        config.AddOutport((self.outport,
+                          ('s__%s__%d__tx' % (self.outsignal,ixOutPort,),8,'data',),
+                          ('s__%s__%d__wr' % (self.outsignal,ixOutPort,),1,'strobe',),
+                         ));
+    # Add the 'clog2' function to the core (if required).
+    config.functions['clog2'] = True;
+
+  def ProcessRateMethod(self,config,param_arg,ixLine):
+    if hasattr(self,'ratemethod'):
+      raise SSBCCException('ratemethod repeated at line %d' % ixLine);
+    if param_arg.find('/') < 0:
+      if self.IsInt(param_arg):
+        self.ratemethod = str(self.ParseInt(param_arg));
+      elif self.IsParameter(config,param_arg):
+        self.ratemethod = param_arg;
+      else:
+        raise SSBCCException('ratemethod with no "/" must be an integer or a previously declared parameter at line %d' % ixLine);
+    else:
+      baudarg = re.findall('([^/]+)',param_arg);
+      if len(baudarg) == 2:
+        if not self.IsInt(baudarg[0]) and not self.IsParameter(config,baudarg[0]):
+          raise SSBCCException('Numerator in ratemethod must be an integer or a previously declared parameter at line %d' % ixLine);
+        if not self.IsInt(baudarg[1]) and not self.IsParameter(config,baudarg[1]):
+          raise SSBCCException('Denominator in ratemethod must be an integer or a previously declared parameter at line %d' % ixLine);
+        for ix in range(2):
+          if self.IsInt(baudarg[ix]):
+            baudarg[ix] = str(self.ParseInt(baudarg[ix]));
+        self.ratemethod = '('+baudarg[0]+'+'+baudarg[1]+'/2)/'+baudarg[1];
+    if not hasattr(self,'ratemethod'):
+      raise SSBCCException('Bad ratemethod value at line %d:  "%s"' % (ixLine,param_arg,));
 
   def GenVerilog(self,fp,config):
     pass;
