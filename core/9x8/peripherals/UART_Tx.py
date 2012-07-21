@@ -62,7 +62,7 @@ Where:
     Note:  n must be at least 1
     Note:  normal values are 1 and 2
   outsignal=o_name
-    optionally specifies the name of the module's output signal
+    specifies the name of the output signal
     Default:  o_UART_Tx
 
 The following OUTPORT is provided by this peripheral:
@@ -105,21 +105,21 @@ Example:  Configure the UART for 115200 baud using a 100 MHz clock and transmit
       if param == 'baudmethod':
         self.ProcessBaudMethod(config,param_arg,ixLine);
       elif param == 'FIFO':
-        self.AddAttr(config,'FIFO',param_arg,r'[1-9]\d*$',ixLine);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
         self.FIFO = int(self.FIFO);
         if math.modf(math.log(self.FIFO,2))[0] != 0:
           raise SSBCCException('FIFO=%d must be a power of 2 at line %d' % (self.FIFO,ixLine,));
       elif param == 'inport':
-        self.AddAttr(config,'inport',param_arg,'I_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,'I_\w+$',ixLine);
       elif param == 'noFIFO':
-        self.AddAttr(config,'noFIFO','True','True',ixLine);
+        self.AddAttr(config,param,param_arg,None,ixLine);
       elif param == 'nStop':
-        self.AddAttr(config,'nStop',param_arg,r'[12]$',ixLine);
+        self.AddAttr(config,param,param_arg,r'[12]$',ixLine);
         self.nStop = int(self.nStop);
       elif param == 'outport':
-        self.AddAttr(config,'outport',param_arg,r'O_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
       elif param == 'outsignal':
-        self.AddAttr(config,'outsignal',param_arg,r'o_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'o_\w+$',ixLine);
       # no match
       else:
         raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
@@ -140,6 +140,11 @@ Example:  Configure the UART for 115200 baud using a 100 MHz clock and transmit
     # Ensure parameters do not conflict.
     if hasattr(self,'FIFO') and hasattr(self,'noFIFO'):
       raise SSBCCException('Only one of "FIFO" and "noFIFO" can be specified at line %d' % ixLine);
+    # Final parameter settings.
+    if not hasattr(self,'noFIFO'):
+      self.noFIFO = False;
+    if self.noFIFO:
+      self.FIFO = 0;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.outsignal,1,'output');
     config.AddSignal('s__%s__Tx' % self.outsignal,8);
@@ -164,7 +169,7 @@ Example:  Configure the UART for 115200 baud using a 100 MHz clock and transmit
       elif self.IsParameter(config,param_arg):
         self.baudmethod = param_arg;
       else:
-        raise SSBCCException('baudmethod must be an integer or a previously declared parameter at line %d' % ixLine);
+        raise SSBCCException('baudmethod with no "/" must be an integer or a previously declared parameter at line %d' % ixLine);
     else:
       baudarg = re.findall('([^/]+)',param_arg);
       if len(baudarg) == 2:
@@ -184,134 +189,133 @@ Example:  Configure the UART for 115200 baud using a 100 MHz clock and transmit
 // PERIPHERAL UART_Tx:  @NAME@
 //
 generate
-reg s__@NAME@__uart_busy;
-@FIFOBODY@
+reg  [7:0] s__Tx_data;
+reg        s__go;
+reg        s__uart_busy;
+if (@FIFO@ == 0) begin : gen_@NAME@_nofifo
+  always @ (s__uart_busy)
+    s__busy = s__uart_busy;
+  always @ (s__Tx)
+    s__Tx_data = s__Tx;
+  always @ (s__wr)
+    s__go = s__wr;
+end else begin : gen_@NAME@_fifo
+  localparam L__FIFO_NBITS = $clog2(@FIFO@);
+  reg [7:0] s__fifo_mem[@FIFO@-1:0];
+  reg [L__FIFO_NBITS:0] s__fifo_addr_in = {(L__FIFO_NBITS+1){1'b0}};
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__fifo_addr_in <= {(L__FIFO_NBITS+1){1'b0}};
+    else if (s__wr) begin
+      s__fifo_addr_in <= s__fifo_addr_in + { {(L__FIFO_NBITS){1'b0}}, 1'b1 };
+      s__fifo_mem[s__fifo_addr_in[0+:L__FIFO_NBITS]] <= s__Tx;
+    end
+  reg [L__FIFO_NBITS:0] s__fifo_addr_out;
+  reg s__fifo_has_data = 1'b0;
+  reg s__fifo_full = 1'b0;
+  always @ (posedge i_clk)
+    if (i_rst) begin
+      s__fifo_has_data <= 1'b0;
+      s__fifo_full <= 1'b0;
+    end else begin
+      s__fifo_has_data <= (s__fifo_addr_out != s__fifo_addr_in);
+      s__fifo_full <= (s__fifo_addr_out == (s__fifo_addr_in ^ { 1'b1, {(L__FIFO_NBITS){1'b0}} }));
+    end
+  initial s__fifo_addr_out = {(L__FIFO_NBITS+1){1'b0}};
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__fifo_addr_out <= {(L__FIFO_NBITS+1){1'b0}};
+    else if (s__go)
+      s__fifo_addr_out <= s__fifo_addr_out + { {(L__FIFO_NBITS){1'b0}}, 1'b1 };
+  initial s__go = 1'b0;
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__go <= 1'b0;
+    else if (s__fifo_has_data && !s__uart_busy && !s__go)
+      s__go <= 1'b1;
+    else
+      s__go <= 1'b0;
+  initial s__Tx_data = 8'd0;
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__Tx_data <= 8'd0;
+    else
+      s__Tx_data <= s__fifo_mem[s__fifo_addr_out[0+:L__FIFO_NBITS]];
+  always @ (s__fifo_full)
+    s__busy = s__fifo_full;
+end
 // Count the clock cycles to decimate to the desired baud rate.
-localparam L__@NAME@__COUNT       = @BAUDMETHOD@-1;
-localparam L__@NAME@__COUNT_NBITS = @clog2@(L__@NAME@__COUNT);
-reg [L__@NAME@__COUNT_NBITS-1:0] s__@NAME@__count = {(L__@NAME@__COUNT_NBITS){1\'b0}};
-reg s__@NAME@__count_is_zero = 1'b0;
+localparam L__COUNT       = @BAUDMETHOD@-1;
+localparam L__COUNT_NBITS = $clog2(L__COUNT+1);
+reg [L__COUNT_NBITS-1:0] s__count = {(L__COUNT_NBITS){1\'b0}};
+reg s__count_is_zero = 1'b0;
 always @ (posedge i_clk)
   if (i_rst) begin
-    s__@NAME@__count <= {(L__@NAME@__COUNT_NBITS){1\'b0}};
-    s__@NAME@__count_is_zero <= 1'b0;
-  end else if (s__@NAME@__go || s__@NAME@__count_is_zero) begin
-    s__@NAME@__count <= L__@NAME@__COUNT[0+:L__@NAME@__COUNT_NBITS];
-    s__@NAME@__count_is_zero <= 1'b0;
+    s__count <= {(L__COUNT_NBITS){1\'b0}};
+    s__count_is_zero <= 1'b0;
+  end else if (s__go || s__count_is_zero) begin
+    s__count <= L__COUNT[0+:L__COUNT_NBITS];
+    s__count_is_zero <= 1'b0;
   end else begin
-    s__@NAME@__count <= s__@NAME@__count - { {(L__@NAME@__COUNT_NBITS-1){1'b0}}, 1'b1 };
-    s__@NAME@__count_is_zero <= (s__@NAME@__count == { {(L__@NAME@__COUNT_NBITS-1){1'b0}}, 1'b1 });
+    s__count <= s__count - { {(L__COUNT_NBITS-1){1'b0}}, 1'b1 };
+    s__count_is_zero <= (s__count == { {(L__COUNT_NBITS-1){1'b0}}, 1'b1 });
   end
 // Latch the bits to output.
-reg [7:0] s__@NAME@__out_stream = 8'hFF;
+reg [7:0] s__out_stream = 8'hFF;
 always @ (posedge i_clk)
   if (i_rst)
-    s__@NAME@__out_stream <= 8'hFF;
-  else if (s__@NAME@__go)
-    s__@NAME@__out_stream <= s__@NAME@__Tx_data;
-  else if (s__@NAME@__count_is_zero)
-    s__@NAME@__out_stream <= { 1'b1, s__@NAME@__out_stream[1+:7] };
+    s__out_stream <= 8'hFF;
+  else if (s__go)
+    s__out_stream <= s__Tx_data;
+  else if (s__count_is_zero)
+    s__out_stream <= { 1'b1, s__out_stream[1+:7] };
   else
-    s__@NAME@__out_stream <= s__@NAME@__out_stream;
+    s__out_stream <= s__out_stream;
 // Generate the output bit stream.
 initial @NAME@ = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
     @NAME@ <= 1'b1;
-  else if (s__@NAME@__go)
+  else if (s__go)
     @NAME@ <= 1'b0;
-  else if (s__@NAME@__count_is_zero)
-    @NAME@ <= s__@NAME@__out_stream[0];
+  else if (s__count_is_zero)
+    @NAME@ <= s__out_stream[0];
   else
     @NAME@ <= @NAME@;
 // Count down the number of bits.
-localparam L__@NAME@__NTX       = 1+8+@NSTOP@-1;
-localparam L__@NAME@__NTX_NBITS = @clog2@(L__@NAME@__NTX);
-reg [L__@NAME@__NTX_NBITS-1:0] s__@NAME@__ntx = {(L__@NAME@__NTX_NBITS){1'b0}};
+localparam L__NTX       = 1+8+@NSTOP@-1;
+localparam L__NTX_NBITS = $clog2(L__NTX);
+reg [L__NTX_NBITS-1:0] s__ntx = {(L__NTX_NBITS){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
-    s__@NAME@__ntx <= {(L__@NAME@__NTX_NBITS){1'b0}};
-  else if (s__@NAME@__go)
-    s__@NAME@__ntx <= L__@NAME@__NTX[0+:L__@NAME@__NTX_NBITS];
-  else if (s__@NAME@__count_is_zero)
-    s__@NAME@__ntx <= s__@NAME@__ntx - { {(L__@NAME@__NTX_NBITS-1){1'b0}}, 1'b1 };
+    s__ntx <= {(L__NTX_NBITS){1'b0}};
+  else if (s__go)
+    s__ntx <= L__NTX[0+:L__NTX_NBITS];
+  else if (s__count_is_zero)
+    s__ntx <= s__ntx - { {(L__NTX_NBITS-1){1'b0}}, 1'b1 };
   else
-    s__@NAME@__ntx <= s__@NAME@__ntx;
+    s__ntx <= s__ntx;
 // The status bit is 1 if the core is busy and 0 otherwise.
-initial s__@NAME@__uart_busy = 1'b1;
+initial s__uart_busy = 1'b1;
 always @ (posedge i_clk)
   if (i_rst)
-    s__@NAME@__uart_busy <= 1'b0;
-  else if (s__@NAME@__go)
-    s__@NAME@__uart_busy <= 1'b1;
-  else if (s__@NAME@__count_is_zero && (s__@NAME@__ntx == {(L__@NAME@__NTX_NBITS){1'b0}}))
-    s__@NAME@__uart_busy <= 1'b0;
+    s__uart_busy <= 1'b0;
+  else if (s__go)
+    s__uart_busy <= 1'b1;
+  else if (s__count_is_zero && (s__ntx == {(L__NTX_NBITS){1'b0}}))
+    s__uart_busy <= 1'b0;
   else
-    s__@NAME@__uart_busy <= s__@NAME@__uart_busy;
-@UARTBUSY@
+    s__uart_busy <= s__uart_busy;
 endgenerate
 """;
-    nofifobody = """// noFIFO
-wire s__@NAME@__go = s__@NAME@__wr;
-wire [7:0] s__@NAME@__Tx_data = s__@NAME@__Tx;""";
-    fifobody = """// FIFO=@FIFO@
-localparam L__@NAME@__FIFO_LENGTH = @FIFO@;
-localparam L__@NAME@__FIFO_NBITS = @clog2@(L__@NAME@__FIFO_LENGTH);
-reg [7:0] s__@NAME@__fifo_mem[@FIFO@-1:0];
-reg [L__@NAME@__FIFO_NBITS:0] s__@NAME@__fifo_addr_in = {(L__@NAME@__FIFO_NBITS+1){1'b0}};
-always @ (posedge i_clk)
-  if (i_rst)
-    s__@NAME@__fifo_addr_in <= {(L__@NAME@__FIFO_NBITS+1){1'b0}};
-  else if (s__@NAME@__wr) begin
-    s__@NAME@__fifo_addr_in <= s__@NAME@__fifo_addr_in + { {(L__@NAME@__FIFO_NBITS){1'b0}}, 1'b1 };
-    s__@NAME@__fifo_mem[s__@NAME@__fifo_addr_in[0+:L__@NAME@__FIFO_NBITS]] <= s__@NAME@__Tx;
-  end
-reg [L__@NAME@__FIFO_NBITS:0] s__@NAME@__fifo_addr_out;
-reg s__@NAME@__fifo_has_data = 1'b0;
-reg s__@NAME@__fifo_full = 1'b0;
-always @ (posedge i_clk)
-  if (i_rst) begin
-    s__@NAME@__fifo_has_data <= 1'b0;
-    s__@NAME@__fifo_full <= 1'b0;
-  end else begin
-    s__@NAME@__fifo_has_data <= (s__@NAME@__fifo_addr_out != s__@NAME@__fifo_addr_in);
-    s__@NAME@__fifo_full <= (s__@NAME@__fifo_addr_out == (s__@NAME@__fifo_addr_in ^ { 1'b1, {(L__@NAME@__FIFO_NBITS){1'b0}} }));
-  end
-initial s__@NAME@__fifo_addr_out = {(L__@NAME@__FIFO_NBITS+1){1'b0}};
-always @ (posedge i_clk)
-  if (i_rst)
-    s__@NAME@__fifo_addr_out <= {(L__@NAME@__FIFO_NBITS+1){1'b0}};
-  else if (s__@NAME@__go)
-    s__@NAME@__fifo_addr_out <= s__@NAME@__fifo_addr_out + { {(L__@NAME@__FIFO_NBITS){1'b0}}, 1'b1 };
-reg s__@NAME@__go = 1'b0;
-always @ (posedge i_clk)
-  if (i_rst)
-    s__@NAME@__go <= 1'b0;
-  else if (s__@NAME@__fifo_has_data && !s__@NAME@__uart_busy && !s__@NAME@__go)
-    s__@NAME@__go <= 1'b1;
-  else
-    s__@NAME@__go <= 1'b0;
-reg [7:0] s__@NAME@__Tx_data = 8'd0;
-always @ (posedge i_clk)
-  if (i_rst)
-    s__@NAME@__Tx_data <= 8'd0;
-  else
-    s__@NAME@__Tx_data <= s__@NAME@__fifo_mem[s__@NAME@__fifo_addr_out[0+:L__@NAME@__FIFO_NBITS]];""";
-    if hasattr(self,'noFIFO'):
-      body = re.sub('@FIFOBODY@',nofifobody,body);
-      body = re.sub('@UARTBUSY@','always @ (*) s__@NAME@__busy = s__@NAME@__uart_busy;',body);
-    else:
-      body = re.sub('@FIFOBODY@',fifobody,body);
-      body = re.sub('@UARTBUSY@','always @ (*) s__@NAME@__busy = s__@NAME@__fifo_full;',body);
-      body = re.sub('@FIFO@',str(self.FIFO),body);
     for subs in (
-                  ('@BAUDMETHOD@', str(self.baudmethod),),
-                  ('@NAME@',       self.outsignal,),
-                  ('@NSTOP@',      str(self.nStop), ),
+                  (r'\bL__',            'L__@NAME@__',),
+                  (r'\bs__',            's__@NAME@__',),
+                  (r'@BAUDMETHOD@',     str(self.baudmethod),),
+                  (r'@FIFO@',           str(self.FIFO),),
+                  (r'@NSTOP@',          str(self.nStop), ),
+                  (r'@NAME@',           self.outsignal,),
                 ):
       body = re.sub(subs[0],subs[1],body);
-    if config.Get('define_clog2'):
-      body = re.sub('@clog2@','clog2',body);
-    else:
-      body = re.sub('@clog2@','$clog2',body);
+    body = self.GenVerilogFinal(config,body);
     fp.write(body);
