@@ -212,30 +212,10 @@ always @ (posedge i_clk)
       s__pwm_counter <= s__pwm_counter + 8'd1;
   else
     s__pwm_counter <= s__pwm_counter;
-@INSTANCESBODY@
-endgenerate
-""";
-    body_single = """// instantiate the channel
-reg [7:0] s__threshold = 8'd0;
-always @ (posedge i_clk)
-  if (i_rst)
-    s__threshold <= 8'd0;
-  else if (s_outport && (s_T == 8'd@IX_OUTPORT_0@))
-    s__threshold <= s_N;
-  else
-    s__threshold <= s__threshold;
-initial @NAME@ = @OFF@;
-always @ (posedge i_clk)
-  if (i_rst)
-    @NAME@ <= @OFF@;
-  else if (s__pwm_counter <= s__threshold)
-    @NAME@ <= @ON@;
-  else
-    @NAME@ <= @OFF@;
-""";
-    body_multi = """// Use a loop to instantiate each channel
+// Use a loop to instantiate each channel
+reg [@INSTANCES@-1:0] s__raw;
 genvar ix;
-for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen_ix
+for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen__channel
   reg [7:0] s__threshold = 8'd0;
   always @ (posedge i_clk)
     if (i_rst)
@@ -244,27 +224,43 @@ for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen_ix
       s__threshold <= s_N;
     else
       s__threshold <= s__threshold;
-  initial@NAME@[ix] = @OFF@;
+  wire [7:0] s__threshold_use;
+  if (@NORUNT@) begin : gen__norunt
+    reg [7:0] s__threshold_use_tmp = 8'd0;
+    always @ (posedge i_clk)
+      if (i_rst)
+        s__threshold_use_tmp = 8'd0;
+      else if (s__tick_counter_is_zero && (s__pwm_counter == 8'd255))
+        s__threshold_use_tmp = s__threshold;
+      else
+        s__threshold_use_tmp <= s__threshold_use_tmp;
+    assign s__threshold_use <= s__threshold_use_tmp;
+  end else begin : gen__not_norunt
+    assign s__threshold_use = s__threshold;
+  end
+  initial s__raw[ix] = @OFF@;
   always @ (posedge i_clk)
     if (i_rst)
-      @NAME@[ix] <= @OFF@;
-    else if (s__pwm_counter <= s__threshold)
-      @NAME@[ix] <= @ON@;
+      s__raw[ix] <= @OFF@;
     else
-      @NAME@[ix] <= @OFF@;
+      s__raw[ix] <= (s__pwm_counter <= s__threshold_use) ? @ON@ : @OFF@;
 end
+// needed since 1-bit wide signals don't have indices.
+always @ (s_raw)
+  @NAME@ = s_raw;
+endgenerate
 """;
-    if self.instances == 1:
-      body = re.sub(r'@INSTANCESBODY@\n',body_single,body);
-    else:
-      body = re.sub(r'@INSTANCESBODY@\n',body_multi,body);
     output_on = '1\'b1';
     output_off = '1\'b0';
     if self.invert:
       output_on = '1\'b0';
       output_off = '1\'b1';
+    norunt = '1\'b0';
+    if self.norunt:
+      norunt = '1\'b1';
     for subs in (
                   (r'\bL__',            'L__@NAME@__',),
+                  (r'\bgen__',          'gen__@NAME@__',),
                   (r'\bs__',            's__@NAME@__',),
                   (r'\bix\b',           'ix__@NAME@',),
                   (r'@COUNT@',          str(self.instances),),
@@ -272,8 +268,8 @@ end
                   (r'\b@OFF@\b',        output_off,),
                   (r'\b@ON@\b',         output_on,),
                   (r'@NAME@',           self.outsignal,),
+                  (r'@NORUNT@',         norunt,),
                 ):
       body = re.sub(subs[0],subs[1],body);
-    if config.Get('define_clog2'):
-      body = re.sub(r'\$clog2','clog2',body);
+    body = self.GenVerilogFinal(config,body);
     fp.write(body);
