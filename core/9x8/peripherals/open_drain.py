@@ -67,13 +67,13 @@ Example:  Configure two 1-bit ports implementing an I2C bus:
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'inport':
-        self.AddAttr(config,'inport',param_arg,r'I_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'I_\w+$',ixLine);
       elif param == 'iosignal':
-        self.AddAttr(config,'iosignal',param_arg,r'io_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'io_\w+$',ixLine);
       elif param == 'outport':
-        self.AddAttr(config,'outport',param_arg,r'O_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
       elif param == 'width':
-        self.AddAttr(config,'width',param_arg,r'[1-9][0-9]*$',ixLine);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
         self.width = int(self.width);
       else:
         raise SSBCCException('Unrecognized parameter at line %d:  "%s"' % (ixLine,param,));
@@ -92,7 +92,7 @@ Example:  Configure two 1-bit ports implementing an I2C bus:
     if (self.width < 1) or (maxWidth < self.width):
       raise SSBCCException('width must be between 1 and %d inclusive at line %d' % (maxWidth,ixLine,));
     # Create the internal signal name and initialization.
-    self.sname = 's__' + self.iosignal;
+    self.sname = 's__%s' % self.iosignal;
     sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.iosignal,self.width,'inout');
@@ -114,9 +114,9 @@ assign @IO_NAME@ = (@S_NAME@ == 1'b0) ? 1'b0 : 1'bz;
 // PERIPHERAL open_drain:  @NAME@
 //
 generate
-genvar ix__@NAME@;
-for (ix__@NAME@=0; ix__@NAME@<@WIDTH@; ix__@NAME@ = ix__@NAME@+1) begin : gen_@NAME@
-  assign @IO_NAME@[ix__@NAME@] = (@S_NAME@[ix__@NAME@] == 1'b0) ? 1'b0 : 1'bz;
+genvar ix;
+for (ix=0; ix<@WIDTH@; ix = ix+1) begin : gen_@NAME@
+  assign @IO_NAME@[ix] = (@S_NAME@[ix] == 1'b0) ? 1'b0 : 1'bz;
 end
 endgenerate
 """
@@ -125,10 +125,12 @@ endgenerate
     else:
       body = body_big;
     for subs in (
-                  ('@IO_NAME@', self.iosignal,),
-                  ('@NAME@',    self.iosignal,),
-                  ('@S_NAME@',  self.sname,),
-                  ('@WIDTH@',   str(self.width),),
+                  (r'\bix\b',           'ix__@NAME@',),
+                  (r'@IO_NAME@',        self.iosignal,),
+                  (r'@NAME@',           self.iosignal,),
+                  (r'@S_NAME@',         self.sname,),
+                  (r'@WIDTH@',          str(self.width),),
                 ):
       body = re.sub(subs[0],subs[1],body);
+    body = self.GenVerilogFinal(config,body);
     fp.write(body);
