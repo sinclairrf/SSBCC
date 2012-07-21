@@ -381,6 +381,7 @@ try:
       for ix in range(len(config.peripheral)):
         fpOutCore.write('\n');
         config.peripheral[ix].GenHDL(fpOutCore,config);
+        config.peripheral[ix].GenAssembly(config);
     # additional signals
     elif fillCommand == 'signals':
       genSignals(fpOutCore,config);
