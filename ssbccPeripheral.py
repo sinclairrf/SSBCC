@@ -17,11 +17,16 @@ class SSBCCperipheral:
   def AddAttr(self,config,name,value,reformat,ixLine):
     if hasattr(self,name):
       raise SSBCCperipheral('%s repeated at line %d' % (name,ixLine,));
-    if value == None:
-      raise SSBCCperipheral('%s missing value at line %d' % (name,ixLine,));
-    if not re.match(reformat,value):
-      raise SSBCCException('Inport symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
-    setattr(self,name,value);
+    if reformat == None:
+      if value != None:
+        raise SSBCCException('No parameter allowed for %s at line %d' % (name,ixLine,));
+      setattr(self,name,True);
+    else:
+      if value == None:
+        raise SSBCCperipheral('%s missing value at line %d' % (name,ixLine,));
+      if not re.match(reformat,value):
+        raise SSBCCException('Inport symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
+      setattr(self,name,value);
 
   def GenAssembly(self,config):
     pass;
@@ -36,6 +41,11 @@ class SSBCCperipheral:
 
   def GenVerilog(self,fp,config):
     raise Exception('Verilog is not implemented for this peripheral');
+
+  def GenVerilogFinal(self,config,body):
+    if config.Get('define_clog2'):
+      body = re.sub('\$clog2','clog2',body);
+    return body;
 
   def GenVHDL(self,fp,config):
     raise Exception('VHDL is not implemented for this peripheral');
