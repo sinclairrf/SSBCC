@@ -4,18 +4,15 @@
 #
 ################################################################################
 
+from ssbccPeripheral import SSBCCperipheral
+
 class adder_16bit(SSBCCperipheral):
-  """Implement a 16-bit adder peripheral.
+  """The "adder_16bit" peripheral adds or subtracts two 16 bit values.
 
 Usage:
   PERIPHERAL adder_16bit
 
-The core provides the following outputs from the adder (inputs to the processor):
-  port                description
-  I_ADDER_16BIT_MSB   MSB of the sum/difference
-  I_ADDER_16BIT_LSB   LSB of the sum/difference
-
-The core provides the following inputs to the adder (outputs from the processor):
+The following OUTPORTs are provided by the peripheral:
   port                description
   O_ADDER_16BIT_MSB1  MSB of first argument
   O_ADDER_16BIT_LSB1  LSB of first argument
@@ -23,14 +20,27 @@ The core provides the following inputs to the adder (outputs from the processor)
   O_ADDER_16BIT_LSB2  LSB of second argument
   O_ADDER_16BIT_OP    0 ==> add, 1 ==> subtract
 
+The following INPORTs are provided by the peripheral:
+  port                description
+  I_ADDER_16BIT_MSB   MSB of the sum/difference
+  I_ADDER_16BIT_LSB   LSB of the sum/difference
+
 Example:  Incorporate the peripheral:
-  PERIPHERAL adder_16bit
 
 Example:  Add an 8-bit value and a 16-bit value from the stack:
 
+  Within the processor architecture file include the configuration command:
+
+  PERIPHERAL adder_16bit
+
+  Use the following assembly code to perform the addition to implement a
+  function that adds an 8-bit value at the top of the data stack to the 16-bit
+  value immediately below it:
+
   ; ( u2_LSB u2_MSB u1 - (u1+u2)_LSB (u1+u2)_MSB
-  .function add_8bit_16bit
-    ; write the 8-bit value to the peripheral
+  .function add_u8_u16__u16
+    ; write the 8-bit value to the peripheral (after converting it to a 16 bit
+    ; value)
     0 .outport(O_ADDER_16BIT_MSB1) .outport(O_ADDER_16BIT_LSB1)
     ; write the 16-bit value to the peripheral
     .outport(O_ADDER_16BIT_MSB2) .outport(O_ADDER_16BIT_LSB2)
@@ -43,66 +53,65 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:
 
   def __init__(self,config,params,ixLine):
     # List the signals to be declared for the peripheral.
-    config.AddSignal('s_adder_16bit_out_MSB',8);
-    config.AddSignal('s_adder_16bit_out_LSB',8);
-    config.AddSignal('s_adder_16bit_in_MSB1',8);
-    config.AddSignal('s_adder_16bit_in_LSB1',8);
-    config.AddSignal('s_adder_16bit_in_MSB2',8);
-    config.AddSignal('s_adder_16bit_in_LSB2',8);
-    config.AddSignal('s_adder_16bit_in_op',1);
+    config.AddSignal('s__adder_16bit_out_MSB',8);
+    config.AddSignal('s__adder_16bit_out_LSB',8);
+    config.AddSignal('s__adder_16bit_in_MSB1',8);
+    config.AddSignal('s__adder_16bit_in_LSB1',8);
+    config.AddSignal('s__adder_16bit_in_MSB2',8);
+    config.AddSignal('s__adder_16bit_in_LSB2',8);
+    config.AddSignal('s__adder_16bit_in_op',1);
     # List the input ports to the core.
     config.AddInport(('I_ADDER_16BIT_MSB',
-                     ('s_adder_16bit_out_MSB',8,'data',),
+                     ('s__adder_16bit_out_MSB',8,'data',),
                     ));
     config.AddInport(('I_ADDER_16BIT_LSB',
-                     ('s_adder_16bit_out_LSB',8,'data',),
+                     ('s__adder_16bit_out_LSB',8,'data',),
                     ));
     # List the output ports to the core.
     config.AddOutport(('O_ADDER_16BIT_MSB1',
-                       ('s_adder_16bit_in_MSB1',8,'data',),
+                       ('s__adder_16bit_in_MSB1',8,'data',),
                      ));
     config.AddOutport(('O_ADDER_16BIT_LSB1',
-                      ('s_adder_16bit_in_LSB1',8,'data',),
+                      ('s__adder_16bit_in_LSB1',8,'data',),
                      ));
     config.AddOutport(('O_ADDER_16BIT_MSB2',
-                      ('s_adder_16bit_in_MSB2',8,'data',),
+                      ('s__adder_16bit_in_MSB2',8,'data',),
                      ));
     config.AddOutport(('O_ADDER_16BIT_LSB2',
-                      ('s_adder_16bit_in_LSB2',8,'data',),
+                      ('s__adder_16bit_in_LSB2',8,'data',),
                      ));
     config.AddOutport(('O_ADDER_16BIT_OP',
-                      ('s_adder_16bit_in_op',1,'data',),
+                      ('s__adder_16bit_in_op',1,'data',),
                      ));
 
   def GenAssembly(self,config):
-    fp = fopen('adder_16bit.s');
-    fp.write('; Copyright 2012, Sinclair R.F., Inc.\n');
-    fp.write('; adder_16bit.s\n');
-    fp.write('; library to facilitate using the 16-bit adder peripheral\n');
-    fp.write('\n');
-    fp.write('; ( u_1_LSB u_1_MSB u_2_LSB u_2_MSB - (u_1+u_2)_LSB (u_1+u_2)_MSB )\n');
-    fp.write('.function adder_16bit_add\n');
-    fp.write('  .outport(O_ADDER_16BIT_MSB2) .outport(O_ADDER_16BIT_LSB2)\n');
-    fp.write('  .outport(O_ADDER_16BIT_MSB1) .outport(O_ADDER_16BIT_LSB1)\n');
-    fp.write('  0 .outport(O_ADDER_16BIT_OP)\n');
-    fp.write('  .inport(I_ADDER_16BIT_LSB) .inport(I_ADDER_16BIT_MSB)\n');
-    fp.write('.return\n');
-    fp.write('\n');
-    fp.write('; ( u_1_LSB u_1_MSB u_2_LSB u_2_MSB - (u_1-u_2)_LSB (u_1-u_2)_MSB )\n');
-    fp.write('.function adder_16bit_sub\n');
-    fp.write('  .outport(O_ADDER_16BIT_MSB2) .outport(O_ADDER_16BIT_LSB2)\n');
-    fp.write('  .outport(O_ADDER_16BIT_MSB1) .outport(O_ADDER_16BIT_LSB1)\n');
-    fp.write('  1 .outport(O_ADDER_16BIT_OP)\n');
-    fp.write('  .inport(I_ADDER_16BIT_LSB) .inport(I_ADDER_16BIT_MSB)\n');
-    fp.write('.return\n');
+    fp = file('adder_16bit.s','w');
+    fp.write("""; Copyright 2012, Sinclair R.F., Inc.
+; adder_16bit.s
+; library to facilitate using the 16-bit adder peripheral
+
+; ( u_1_LSB u_1_MSB u_2_LSB u_2_MSB u_op - (u_1+u_2)_LSB (u_1+u_2)_MSB )
+.function addsub_u16_u16__u16
+  .outport(O_ADDER_16BIT_OP)
+  .outport(O_ADDER_16BIT_MSB2) .outport(O_ADDER_16BIT_LSB2)
+  .outport(O_ADDER_16BIT_MSB1) .outport(O_ADDER_16BIT_LSB1)
+  .inport(I_ADDER_16BIT_LSB) I_ADDER_16BIT_MSB
+.return(inport)
+""");
 
   def GenVerilog(self,fp,config):
-    fp.write('always @ (posedge i_clk)\n');
-    fp.write('  if (s_adder_16bit_in_op == 1\'b0)\n');
-    fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_LSB }\n');
-    fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }\n');
-    fp.write('       + { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 };\n');
-    fp.write('  else\n');
-    fp.write('    { s_adder_16bit_out_MSB, s_adder_16bit_out_LSB }\n');
-    fp.write('      <= { s_adder_16bit_in_MSB1, s_adder_16bit_in_LSB1 }\n');
-    fp.write('       - { s_adder_16bit_in_MSB2, s_adder_16bit_in_LSB2 };\n');
+    body = """//
+// PERIPHERAL adder_16bit:
+//
+always @ (posedge i_clk)
+  if (s__adder_16bit_in_op == 1\'b0)
+    { s__adder_16bit_out_MSB, s__adder_16bit_out_LSB }
+      <= { s__adder_16bit_in_MSB1, s__adder_16bit_in_LSB1 }
+       + { s__adder_16bit_in_MSB2, s__adder_16bit_in_LSB2 };
+  else
+    { s__adder_16bit_out_MSB, s__adder_16bit_out_LSB }
+      <= { s__adder_16bit_in_MSB1, s__adder_16bit_in_LSB1 }
+       - { s__adder_16bit_in_MSB2, s__adder_16bit_in_LSB2 };
+""";
+    body = self.GenVerilogFinal(config,body);
+    fp.write(body);
