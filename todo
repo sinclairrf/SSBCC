@@ -47,9 +47,8 @@
         tasks:
           match the "open_drain" coding style
           incorporate SSBCCperipheral
-          add test benches
-        needed for the following
-          adder_16bit
+          add test bench
+        needed for the following:
           latch
           monitor_stack
           trace
