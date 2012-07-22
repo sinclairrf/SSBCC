@@ -7,8 +7,8 @@ NAME=open_drain
 for WIDTH in 1 5 8; do
   sed -e "s/@WIDTH@/width=${WIDTH}/" tb_${NAME}.9x8-template > tb_${NAME}.9x8;
   sed -e "s/@WIDTH@/${WIDTH}/" tb.v-template > tb.v;
-  ssbcc -q tb_${NAME}.9x8 || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
-  iverilog -o tb tb.v tb_${NAME}.v;
+  ssbcc -q tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+  iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
   ./tb > tb_${WIDTH}.out;
 done
 
