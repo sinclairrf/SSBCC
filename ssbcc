@@ -241,6 +241,10 @@ try:
   #
   ################################################################################
 
+  # Generate peripheral libraries (if any).
+  for ix in range(len(config.peripheral)):
+    config.peripheral[ix].GenAssembly(config);
+
   # Compute the file name to store the assembler output
   assemblerOutput = os.path.splitext(argList.filename.name)[0]+'.9x8-meta'
 
@@ -381,7 +385,6 @@ try:
       for ix in range(len(config.peripheral)):
         fpOutCore.write('\n');
         config.peripheral[ix].GenHDL(fpOutCore,config);
-        config.peripheral[ix].GenAssembly(config);
     # additional signals
     elif fillCommand == 'signals':
       genSignals(fpOutCore,config);
