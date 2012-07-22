@@ -40,9 +40,8 @@ tb_UART_Tx #(
 always @ (s_uart1_tx, s_uart2_tx, s_uart3_tx, s_done)
   $display("%12d : %b %b %b", $time, s_uart1_tx, s_uart2_tx, s_uart3_tx);
 
-always @ (s_clk)
-  if (s_done) begin
+always @ (posedge s_clk)
+  if (s_done)
     $finish;
-  end
 
 endmodule
