@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Copyright 2012, Sinclair R.F., Inc.
+
+NAME=adder_16bit
+
+ssbcc -q tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+./tb > tb.out;
+
+T="`md5sum -c md5sums | sed '/: OK$/d'`";
+if [ -z "${T}" ]; then
+  echo "Passed:  ${NAME}";
+else
+  echo "${NAME} failed" > /dev/stderr;
+  echo "${T}" > /dev/stderr;
+  exit 1;
+fi
+
+exit 0;
