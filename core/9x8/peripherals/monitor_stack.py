@@ -7,7 +7,10 @@
 import math
 import re
 
-class monitor_stack:
+from ssbccPeripheral import SSBCCperipheral
+from ssbccUtil import SSBCCException;
+
+class monitor_stack(SSBCCperipheral):
   """Simulation-specific peripheral to flag invalid stack operations.
 
 Invalid data stack operations are:
