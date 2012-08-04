@@ -56,6 +56,14 @@ class SSBCCperipheral:
     else:
       return False;
 
+  def IsIntExpr(self,value):
+    if re.match(r'[1-9][0-9_]*',value):
+      return True;
+    elif re.match(r'\([1-9][0-9_]*(\*[1-9][0-9_]*)+\)',value):
+      return True;
+    else:
+      return False;
+
   def IsParameter(self,config,name):
     return config.IsParameter(name);
 
@@ -63,3 +71,8 @@ class SSBCCperipheral:
     if not self.IsInt(value):
       raise Exception('Program Bug -- shouldn\'t call with a badly formatted integer');
     return int(re.sub('_','',value));
+
+  def ParseIntExpr(self,value):
+    if not self.IsIntExpr(value):
+      raise Exception('Program Bug -- shouldn\'t call with a badly formatted integer expression');
+    return eval(re.sub('_','',value));
