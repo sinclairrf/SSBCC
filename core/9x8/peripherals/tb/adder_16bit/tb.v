@@ -10,6 +10,7 @@
 
 module tb;
 
+// 100 MHz clock
 reg s_clk = 1'b1;
 always @ (s_clk)
   s_clk <= #5 ~s_clk;
