@@ -4,17 +4,15 @@
 
 NAME=adder_16bit
 
-ssbcc -q tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+ssbcc -q -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
 iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
 ./tb > tb.out;
 
-T="`md5sum -c md5sums | sed '/: OK$/d'`";
-if [ -z "${T}" ]; then
-  echo "Passed:  ${NAME}";
-else
+T="`md5sum -c md5sums 2>&1 | sed '/: OK$/d'`";
+if [ -n "${T}" ]; then
   echo "${NAME} failed" > /dev/stderr;
-  echo "${T}" > /dev/stderr;
   exit 1;
 fi
 
+echo "Passed:  ${NAME}";
 exit 0;
