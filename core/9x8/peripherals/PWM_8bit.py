@@ -8,7 +8,7 @@ from ssbccPeripheral import SSBCCperipheral
 from ssbccUtil import SSBCCException;
 
 class PWM_8bit(SSBCCperipheral):
-   """Pulse Width Modulator (PWM) with 8-bit control.
+  """Pulse Width Modulator (PWM) with 8-bit control.
 
 This peripheral creates one or more PWMs.  The PWM is designed so that
 
@@ -27,6 +27,7 @@ Where:
     Note:  The name must start with "O_".
   outsignal=o_name
     specifies the name of the output signal
+    Note:  The name must start with "o_".
   ratemethod={clk/rate|count}
     specifies the frequency at which the PWM counter is incremented
     Example:  ratemethod=count means to increment the PWM counter once every
@@ -52,9 +53,13 @@ The following OUTPORT is provided by this peripheral when instances=1:
 The following OUTPORT is provided by this peripheral when instances=n is larger
 than 1:
   O_name_0, O_name_1, ..., O_name_{n-1}
-    If instances=n where n>1, then n outports are created
+    output the next 8-bit value to transmit on the specified PWM
     Note:  O_name_i = ${O_name_0+i) where 0<=i<n.
     Note:  The PWM for o_name[i] is controlled by the outport O_name_i
+    Example:  If "instances=3" is specified, then the following outports are
+              provided:  O_name_0, O_name_1, and O_name_2.  The assembly
+              sequence "5 .outport(O_name_1)" will change the PWM control for
+              the second of these three PWMs to 5.
 
 Note:  The PWM counter is an 8-bit count that ranges from 1 to 255.  Each PWM
        output is '1' when this count is less than or equal to the commanded
@@ -88,7 +93,7 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
                         invert \
                         instances=3
 
-  Use the following assembly to set the LEDs to 0x10 0x20 and 0x55:
+  Use the following assembly to set the LED intensities to 0x10 0x20 and 0x55:
 
   0x10 .outport(O_PWM_LED_0)
   0x20 .outport(O_PWM_LED_1)
@@ -99,8 +104,8 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
   how to increment the outport index):
 
   ; ( u_pwm_led_2 u_pwm_led_1 u_pwm_led_0 - )
-  .function set_led_pwms
-  O_PWM_LED_0 ${3-1} :loop r> swap over outport drop 1+ r> .jumpc(loop,1-) drop
+  .function set_pwm_led
+    O_PWM_LED_0 ${3-1} :loop r> swap over outport drop 1+ r> .jumpc(loop,1-) drop
   .return(drop)
 """;
 
@@ -133,7 +138,7 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
     if not hasattr(self,'invert') and not hasattr(self,'noinvert'):
       self.noinvert = True;
     if not hasattr(self,'norunt'):
-      self.norunt = True;
+      self.norunt = False;
     # Ensure parameters do not conflict.
     if hasattr(self,'invert') and hasattr(self,'noinvert'):
       raise SSBCCException('Only one of "invert" or "noinvert" can be specified at line %d' % ixLine);
@@ -141,10 +146,10 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
     if hasattr(self,'noinvert'):
       self.invert = False;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    self.AddIO(self.outsignal,self.instances,'output');
-    self.ix_outport_0 = len(config.outports)+1;
+    config.AddIO(self.outsignal,self.instances,'output');
+    self.ix_outport_0 = len(config.outports);
     if self.instances == 1:
-      tmpOutport = self.output;
+      tmpOutport = self.outport;
       config.AddOutport((tmpOutport,
                        ));
     else:
@@ -159,8 +164,8 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
     if hasattr(self,'ratemethod'):
       raise SSBCCException('ratemethod repeated at line %d' % ixLine);
     if param_arg.find('/') < 0:
-      if self.IsInt(param_arg):
-        self.ratemethod = str(self.ParseInt(param_arg));
+      if self.IsIntExpr(param_arg):
+        self.ratemethod = str(self.ParseIntExpr(param_arg));
       elif self.IsParameter(config,param_arg):
         self.ratemethod = param_arg;
       else:
@@ -168,13 +173,13 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
     else:
       baudarg = re.findall('([^/]+)',param_arg);
       if len(baudarg) == 2:
-        if not self.IsInt(baudarg[0]) and not self.IsParameter(config,baudarg[0]):
+        if not self.IsIntExpr(baudarg[0]) and not self.IsParameter(config,baudarg[0]):
           raise SSBCCException('Numerator in ratemethod must be an integer or a previously declared parameter at line %d' % ixLine);
-        if not self.IsInt(baudarg[1]) and not self.IsParameter(config,baudarg[1]):
+        if not self.IsIntExpr(baudarg[1]) and not self.IsParameter(config,baudarg[1]):
           raise SSBCCException('Denominator in ratemethod must be an integer or a previously declared parameter at line %d' % ixLine);
         for ix in range(2):
-          if self.IsInt(baudarg[ix]):
-            baudarg[ix] = str(self.ParseInt(baudarg[ix]));
+          if self.IsIntExpr(baudarg[ix]):
+            baudarg[ix] = str(self.ParseIntExpr(baudarg[ix]));
         self.ratemethod = '('+baudarg[0]+'+'+baudarg[1]+'/2)/'+baudarg[1];
     if not hasattr(self,'ratemethod'):
       raise SSBCCException('Bad ratemethod value at line %d:  "%s"' % (ixLine,param_arg,));
@@ -186,19 +191,19 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
 generate
 // generate the ticks for the PWM
 localparam L__COUNT = @COUNT@-1;
-localparam L__COUNT_NBITS = clog2(L__COUNT+1);
+localparam L__COUNT_NBITS = $clog2(L__COUNT+1);
 reg [L__COUNT_NBITS-1:0] s__tick_counter = L__COUNT[0+:L__COUNT_NBITS];
 reg s__tick_counter_is_zero = 1'b0;
 always @ (posedge i_clk)
   if (i_rst) begin
     s__tick_counter <= L__COUNT[0+:L__COUNT_NBITS];
-    s__tick_counter_is_zero = 1'b0;
+    s__tick_counter_is_zero <= 1'b0;
   end else if (s__tick_counter_is_zero) begin
     s__tick_counter <= L__COUNT[0+:L__COUNT_NBITS];
-    s__tick_counter_is_zero = 1'b0;
+    s__tick_counter_is_zero <= 1'b0;
   end else begin
     s__tick_counter <= s__tick_counter - { {(L__COUNT_NBITS-1){1'b0}}, 1'b1 };
-    s__tick_counter_is_zero = (s__tick_counter == { {(L__COUNT_NBITS-1){1'b0}}, 1'b1 });
+    s__tick_counter_is_zero <= (s__tick_counter == { {(L__COUNT_NBITS-1){1'b0}}, 1'b1 });
   end
 // run the 1 to 255 PWM counter
 reg [7:0] s__pwm_counter = 8'd1;
@@ -234,7 +239,7 @@ for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen__channel
         s__threshold_use_tmp = s__threshold;
       else
         s__threshold_use_tmp <= s__threshold_use_tmp;
-    assign s__threshold_use <= s__threshold_use_tmp;
+    assign s__threshold_use = s__threshold_use_tmp;
   end else begin : gen__not_norunt
     assign s__threshold_use = s__threshold;
   end
@@ -246,8 +251,8 @@ for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen__channel
       s__raw[ix] <= (s__pwm_counter <= s__threshold_use) ? @ON@ : @OFF@;
 end
 // needed since 1-bit wide signals don't have indices.
-always @ (s_raw)
-  @NAME@ = s_raw;
+always @ (s__raw)
+  @NAME@ = s__raw;
 endgenerate
 """;
     output_on = '1\'b1';
@@ -263,10 +268,11 @@ endgenerate
                   (r'\bgen__',          'gen__@NAME@__',),
                   (r'\bs__',            's__@NAME@__',),
                   (r'\bix\b',           'ix__@NAME@',),
-                  (r'@COUNT@',          str(self.instances),),
+                  (r'@COUNT@',          self.ratemethod,),
+                  (r'@INSTANCES@',      str(self.instances),),
                   (r'@IX_OUTPORT_0@',   str(self.ix_outport_0),),
-                  (r'\b@OFF@\b',        output_off,),
-                  (r'\b@ON@\b',         output_on,),
+                  (r'@OFF@',            output_off,),
+                  (r'@ON@',             output_on,),
                   (r'@NAME@',           self.outsignal,),
                   (r'@NORUNT@',         norunt,),
                 ):
