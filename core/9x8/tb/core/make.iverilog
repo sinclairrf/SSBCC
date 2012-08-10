@@ -1,6 +1,6 @@
 #!/bin/bash
 
-../../../../ssbcc core.9x8 \
+../../../../ssbcc -q core.9x8 \
 || exit 1;
 
 iverilog -o tb tb.v core.v \
@@ -10,3 +10,5 @@ if [ -n "`./tb | cmp - tb.good`" ]; then
   echo "core trace differs from nominal output" > /dev/stderr;
   exit 1;
 fi
+
+echo "Test passed"
