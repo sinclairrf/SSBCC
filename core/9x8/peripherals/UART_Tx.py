@@ -120,7 +120,6 @@ Example:  Configure the UART for 115200 baud using a 100 MHz clock and transmit
         self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
       elif param == 'outsignal':
         self.AddAttr(config,param,param_arg,r'o_\w+$',ixLine);
-      # no match
       else:
         raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Ensure the required parameters are provided.
@@ -151,8 +150,8 @@ Example:  Configure the UART for 115200 baud using a 100 MHz clock and transmit
     config.AddSignal('s__%s__busy' % self.outsignal,1);
     config.AddSignal('s__%s__wr' % self.outsignal,1);
     config.AddInport((self.inport,
-                    ('s__%s__busy' % self.outsignal,1,'data',),
-                   ));
+                     ('s__%s__busy' % self.outsignal,1,'data',),
+                    ));
     config.AddOutport((self.outport,
                       ('s__%s__Tx' % self.outsignal,8,'data',),
                       ('s__%s__wr' % self.outsignal,1,'strobe',),
