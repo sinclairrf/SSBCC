@@ -1,7 +1,6 @@
   BUGS:
- 
+
   ssbcc
-    add "function"s for use by peripherals and incorporate all functions at the top of the peripheral section
     validate signal names
       ensure no collisions with signals within the core
     put ssbccGenVerilog in a class in core/9x8
@@ -15,6 +14,9 @@
         finish doc/peripheral.html
       all error messages
     incorporate "COMBINE" feature to merge stacks or memories into large RAMs
+      INSTRUCTION+RAM/ROM
+      INSTRUCTION+DATA_STACK
+      ROM/RAM?
     add VHDL
 
   core/9x8
@@ -33,7 +35,6 @@
         interrupts
       peripherals
     core.v
-      change major opcodes to constants and incorporate in the diagnostic peripherals
       speed up core
       determine settings to maximize speed or minimize resources
       implement interrupt handling
@@ -42,27 +43,10 @@
       improve error message for missing input files
       add non-return-stack-alteration restriction to some optional macro arguments
       implement .abbr directive
+      add .compile_if(...) {.compile_elif(...)} [.compile_else] .compile_endif directive set
     peripherals
-**    finish existing peripherials:
-        tasks:
-          match the "open_drain" coding style
-          incorporate SSBCCperipheral
-          add test bench
-        needed for the following:
-          latch
-          monitor_stack
-          trace
-      add a 'function' key to config for:
-        clog2
-        instruction dump
-      augment "trace" peripheral:
-        add additional signals as commanded (to facilitate testing)
-      finish "monitor_stack" periperhal:
+      finish "monitor_stack"
         detect out-of-range values for memory, inport, outport, etc.
-        add "finish=n"
-        add "history=n"
-        add "log"
-        add option to assert stack status at key program points
       INTERRUPT
       timer
       UART_Rx -- single-byte deserializer w/ and w/o FIFO
@@ -72,13 +56,14 @@
       multiplier
       PICK -- emulate the Forth operator?
       bus slave peripherals -- store external commands in a FIFO and statuses in dual-port RAM for external reads
-        SPI
-        I2C
+        SPI_slave
+        I2C_slave
       SoC Interconnects
         wishbone_slave
         avalon_slave
         wishbone_master
         avalon_master
+        ARM_slave
     core.vhd
       do this once core.v is completed
 
@@ -86,6 +71,7 @@
     add more examples
       "echo" program
       Jim Haberly -- accumulate 10 samples from an ADC
+    JPEG compression example
 
   lib/9x8/math.s
     -- incorporate adder peripheral
