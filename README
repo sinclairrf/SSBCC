@@ -351,6 +351,13 @@ Stack errors include underflow and overflow, malformed data validity, and
 incorrect use of the values on the return stack (returns to data values and data
 operations on return addresses).
 
+When stack errors are detected the last 50 instructions are dumped to the
+console and the simulation terminates.  This facilitates diagnosing coding
+errors.  The dump includes the PC, numeric opcode, textual representation of the
+opcode, data stack pointer, next-to-top of the data stack, top of the data
+stack, top of the return stack, and the return stack pointer.  Invalid stack
+values are displayed as "XX".  The length of the history dumped is configurable.
+
 
 SIMULATIONS
 ================================================================================
