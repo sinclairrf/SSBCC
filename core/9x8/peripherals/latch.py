@@ -7,7 +7,10 @@
 import math;
 import re;
 
-class latch:
+from ssbccPeripheral import SSBCCperipheral
+from ssbccUtil import SSBCCException;
+
+class latch(SSBCCperipheral):
   """Latch a large input port for piecewise input to the core.
 
 This peripheral is used to input large counters and such so that the pieces of
@@ -20,172 +23,162 @@ The chunk is specified by an outport to O_name_ADDR and is then read by an
 inport from I_name_READ.
 
 Usage:
-  PERIPHERAL latch O_LATCH O_ADDR I_READ width=n signal=i_name
+  PERIPHERAL latch outport_latch=O_LATCH \\
+                   outport_addr=O_ADDR \\
+                   inport=I_READ \\
+                   insignal=i_name \\
+                   width=n
 
 Where:
-  O_LATCH
+  outport_latch=O_LATCH
     is the symbol used by the processor to register the input signal
     Note:  The name must start with "O_".
-  O_ADDR
+  outport_addr=O_ADDR
     is the symbol used by the processor to indicate which byte of the registered
     input signal is to input by the next inport from I_name_READ
     Note:  The name must start with "O_".
-  I_READ
+  inport=I_READ
     is the symbol used by the processor to read the byte specified by the last
     outport to O_name_ADDR
     Note:  The name must start with "I_".
+  insignal=i_name
+    specifies the name of the input signal
+    Note:  The name must start with "i_".
   width=n
     specified with width of the input signal
     Note:  The signal is broken into ceil(n/8) 8-bit words
-  signal=i_name
-    specifies the name of the input signal
-    Note:  The name must start with "i_".
+    Note:  This peripheral doesn't make sense when width < 8.  It will issue an
+           error when this condition is encountered.
 
 The following outports are provided by this peripheral:
   O_LATCH
+    this outport instructs the peripheral to latch the specified signal
+    Note:  No argument is required for this outport.  I.e., it is equivalent to
+           a "strobe" outport.
   O_ADDR
+    this outport specifies which 8-bit chunk of the latched signal will be read
+    by I_READ
 
-The following inports are provided by this peripheral:
+The following inport is provided by this peripheral:
   I_READ
+    this inport is used to read the 8-bit segment of the latched signal as
+    specified by O_ADDR
 
 The following processor inputs are provided by this peripheral:
   i_name
+    this is a "width" wide signal connected to the FPGA fabric
 
 Example:  Capture an external 24-bit counter:
 
   Within the processor architecture file include the configuration command:
 
-    PERIPHERAL latch O_COUNT_LATCH O_COUNT_ADDR I_COUNT_READ width=24 signal=i_count
+    PERIPHERAL latch outport_latch=O_COUNT_LATCH \\
+                     outport_addr=O_COUNT_ADDR \\
+                     inport=I_COUNT_READ \\
+                     insignal=i_count \\
+                     width=24
 
   To read the counter and put it on the stack with the MSB at the top of the
   stack:
 
-    O_LATCH outport             ; strobe doesn't need a value to output
-    0 .outport(O_ADDR) .inport(I_READ)
-    1 .outport(O_ADDR) .inport(I_READ)
-    2 .outport(O_ADDR) .inport(I_READ)
+    O_COUNT_LATCH outport       ; doesn't need a value to output
+    0 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
+    1 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
+    2 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
 
   or
 
-    O_LATCH outport             ; strobe doesn't need a value to output
-    0 :loop O_ADDR outport .inport(I_READ) swap 1+ dup 3 - .jumpc(loop) drop
+    O_COUNT_LATCH outport
+    0 :loop O_COUNT_ADDR outport .inport(I_COUNT_READ) swap 1+ dup 3 - .jumpc(loop) drop
 
 """
 
   def __init__(self,config,param_list,ixLine):
-    # Ensure the right number of arguments was provided.
-    if len(param_list) != 5:
-      print __doc__;
-      raise SSBCCException('Wrong number of arguments to peripheral "latch" at line %d' % ixLine);
-    # parse the required positional parameters
-    if param_list[0][0][0:2] != 'O_':
-      print __doc__;
-      raise SSBCCException('First positional argument must start with "O_" at line %d' % ixLine);
-    if param_list[1][0][0:2] != 'O_':
-      print __doc__;
-      raise SSBCCException('Second positional argument must start with "O_" at line %d' % ixLine);
-    if param_list[2][0][0:2] != 'I_':
-      print __doc__;
-      raise SSBCCException('Third positional argument must start with "I_" at line %d' % ixLine);
-    self.o_latch = param_list[0][0];
-    self.o_addr  = param_list[1][0];
-    self.i_read  = param_list[2][0];
-    # parse the non-positional parameters
-    self.i_width = None;
-    self.i_signal = None;
-    for param_tuple in param_list[3:]:
+    # Parse the parameters.
+    for param_tuple in param_list:
       param = param_tuple[0];
-      param_arg = param_tuple[1:];
-      # processor input signal name
-      if param == 'signal':
-        if type(self.i_signal) != type(None):
-          raise SSBCCException('"signal=i_name" can only be specified once at line %d' % ixLine);
-        if param_arg[0][0:2] != 'i_':
-          raise SSBCCException('signal name must start with "i_" at line %d' % ixLine);
-        self.i_signal = param_arg[0];
+      param_arg = param_tuple[1];
+      if param == 'outport_latch':
+        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
+      elif param == 'outport_addr':
+        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
+      elif param == 'inport':
+        self.AddAttr(config,param,param_arg,r'I_\w+$',ixLine);
+      elif param == 'insignal':
+        self.AddAttr(config,param,param_arg,r'i_\w+$',ixLine);
       elif param == 'width':
-        if type(self.i_width) != type(None):
-          raise SSBCCException('"width=n" can only be specified once at line %d' % ixLine);
-        self.i_width = int(param_arg[0]);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
+        self.width = int(self.width);
       else:
-        raise SSBCCException('Unrecognized option at line %d: "%s"' % (ixLine,param,));
+        raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Ensure the required parameters are set.
-    if type(self.i_signal) == type(None):
-      raise SSBCCException('signal name not set at line %d' % ixLine);
-    if type(self.i_width) == type(None):
-      raise SSBCCException('signal width not set at line %d' % ixLine);
+    for param in ('outport_latch', 'outport_addr', 'inport', 'insignal', 'width', ):
+      if not hasattr(self,param):
+        raise SSBCCException('Required parameter "%s" not provided at line %d', (param,ixLine,));
+    # Ensure parameters are reasonable.
+    if self.width <= 8:
+      raise SSBCCException('The "latch" peripheral doesn\'t make sense when width <= 8 on line %d' % ixLine);
     # Derived parameters
-    self.addr_width = int(math.ceil(math.log(self.i_width/8,2)));
-    self.latch_width = 8*((self.i_width+7)/8);
+    self.latch_width = 8*((self.width+7)/8);
+    self.addr_width = int(math.ceil(math.log(self.latch_width/8,2)));
     # Configure the processor I/Os, etc.
-    config.AddIO(self.i_signal,self.i_width,'input');
-    self.s_addr = 's_internal_%03X' % len(config.signals);
-    config.AddSignal(self.s_addr,self.addr_width);
-    self.s_signal = 's_internal_%03X' % len(config.signals);
-    config.AddSignal(self.s_signal,8);
-    config.AddInport((self.i_read,
-                     (self.s_signal,8,'data',),
+    config.AddIO(self.insignal,self.width,'input');
+    config.AddSignal('s__%s__select' % self.insignal,8);
+    config.AddInport((self.inport,
+                     ('s__%s__select' % self.insignal,8,'data',),
                     ));
     self.ix__o_latch = len(config.outports);
-    config.AddOutport((self.o_latch,));
+    config.AddOutport((self.outport_latch,));
     self.ix__o_addr = len(config.outports);
-    config.AddOutport((self.o_addr,));
-
-  def GenAssembly(self,config):
-    pass;
-
-  def GenHDL(self,fp,config):
-    if config.Get('hdl') == 'Verilog':
-      self.GenVerilog(fp,config);
-    else:
-      raise Exception('HDL "%s" not implemented' % config.Get('hdl'));
+    config.AddOutport((self.outport_addr,));
 
   def GenVerilog(self,fp,config):
     body = """
 //
-// latch peripheral for @I_SIGNAL@
+// latch peripheral for @INSIGNAL@
 //
 generate
 // Register the input signal when  commanded.
-reg [@LATCH_WIDTH@-1:0] s_latch = {(@LATCH_WIDTH@){1'b0}};
+reg [@LATCH_WIDTH@-1:0] s__latch = {(@LATCH_WIDTH@){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
-    s_latch <= {(@LATCH_WIDTH@){1'b0}};
-  else if (s_outport && (s_T == 8'd@IX__O_LATCH@))
-    s_latch[0+:@WIDTH@] <= @I_SIGNAL@;
+    s__latch <= {(@LATCH_WIDTH@){1'b0}};
+  else if (s_outport && (s_T == 8'd@IX_O_LATCH@))
+    s__latch[0+:@WIDTH@] <= @INSIGNAL@;
   else
-    s_latch <= s_latch;
+    s__latch <= s__latch;
 // Latch the mux address when commanded.
-reg [@ADDR_WIDTH@-1:0] s_addr = {(@ADDR_WIDTH@){1'b0}};
+reg [@ADDR_WIDTH@-1:0] s__addr = {(@ADDR_WIDTH@){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
-    s_addr <= {(@ADDR_WIDTH@){1'b0}};
-  else if (s_outport && (s_T == 8'd@IX__O_ADDR@))
-    s_addr <= s_N[0+:@ADDR_WIDTH@];
+    s__addr <= {(@ADDR_WIDTH@){1'b0}};
+  else if (s_outport && (s_T == 8'd@IX_O_ADDR@))
+    s__addr <= s_N[0+:@ADDR_WIDTH@];
   else
-    s_addr <= s_addr;
+    s__addr <= s__addr;
 // Run the mux.
 integer ix;
-initial @S_SIGNAL@ = 8'h00;
+initial s__select = 8'h00;
 always @ (posedge i_clk)
   if (i_rst)
-    @S_SIGNAL@ <= 8'h00;
+    s__select <= 8'h00;
   else begin
-    @S_SIGNAL@ <= 8'h00;
+    s__select <= 8'h00;
     for (ix=0; ix<@LATCH_WIDTH@/8; ix=ix+1)
-      if (ix[0+:@ADDR_WIDTH@] == s_addr)
-        @S_SIGNAL@ <= s_latch[8*ix+:8];
+      if (ix[0+:@ADDR_WIDTH@] == s__addr)
+        s__select <= s__latch[8*ix+:8];
   end
 endgenerate
 """;
     for subs in (
+                  (r'\bix\b',           'ix__@INSIGNAL@',),
+                  (r'\bs__',            's__@INSIGNAL@__',),
                   ('@ADDR_WIDTH@',      str(self.addr_width),),
-                  ('@IX__O_ADDR@',      str(self.ix__o_addr),),
-                  ('@IX__O_LATCH@',     str(self.ix__o_latch),),
+                  ('@IX_O_ADDR@',       str(self.ix__o_addr),),
+                  ('@IX_O_LATCH@',      str(self.ix__o_latch),),
                   ('@LATCH_WIDTH@',     str(self.latch_width),),
-                  ('@S_SIGNAL@',        self.s_signal,),
-                  ('@I_SIGNAL@',        self.i_signal,),
-                  ('@WIDTH@',           str(self.i_width),),
+                  ('@INSIGNAL@',        self.insignal,),
+                  ('@WIDTH@',           str(self.width),),
                 ):
       body = re.sub(subs[0],subs[1],body);
     fp.write(body);
