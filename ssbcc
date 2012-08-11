@@ -261,6 +261,8 @@ try:
   for ix in range(len(memories['list'])):
     cmd += (' -S %s=%d' % (memories['list'][ix],eval(memories['arch'][ix])));
   cmd += ' -o ' + assemblerOutput;
+  for stack_name in ('data_stack','return_stack',):
+    cmd += ' -s %s=%d' % (stack_name,config.config[stack_name],);
   cmd += ' -L %s/%s' % (sys.path[0], 'lib/9x8');
   cmd += ' ' + compiler[1];
 

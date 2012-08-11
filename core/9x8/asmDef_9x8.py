@@ -159,6 +159,9 @@ class asmDef_9x8:
   def RegisterMemoryLength(self,name,length):
     self.memoryLength[name] = length;
 
+  def RegisterStackLength(self,name,length):
+    self.stackLength[name] = length;
+
   ################################################################################
   #
   # Check a list of raw tokens to ensure their proper format.
@@ -415,6 +418,8 @@ class asmDef_9x8:
     sizes=dict();
     for name in self.memoryLength:
       sizes[name] = self.memoryLength[name];
+    for name in self.stackLength:
+      sizes[name] = self.stackLength[name];
     t['size'] = sizes;
     return t;
 
@@ -915,6 +920,7 @@ class asmDef_9x8:
     #
 
     self.memoryLength = dict();
+    self.stackLength = dict();
 
     #
     # Configure the containers for the expanded main, interrupt, function,
