@@ -18,6 +18,7 @@ initial begin
   repeat (5) @ (posedge s_clk);
   s_rst <= 1'b0;
   repeat (69) @ (posedge s_clk);
+  @ (negedge s_clk); // ensure $write's finish before the $finish is performed
   $finish;
 end
 
