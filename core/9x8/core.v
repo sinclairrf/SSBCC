@@ -31,6 +31,8 @@ reg      [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top;
 
 //@SSBCC@ verilator_tracing
 
+//@SSBCC@ functions
+
 //@SSBCC@ signals
 
 /*******************************************************************************

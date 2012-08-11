@@ -360,8 +360,11 @@ try:
       fpOutCore.write(line);
       continue;
     fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
+    # functions and tasks
+    if fillCommand == "functions":
+      genFunctions(fpOutCore,config);
     # inports
-    if fillCommand == 'inports':
+    elif fillCommand == 'inports':
       genInports(fpOutCore,config);
     # instructions
     elif fillCommand == 'instructions':
