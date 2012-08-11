@@ -51,7 +51,7 @@ always @ (posedge i_clk) begin
   s__PC_s[0] <= s_PC;
   s__PC_s[1] <= s__PC_s[0];
   s__opcode_s <= s_opcode;
-  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s_N, s_T, s_R, s_Rw_ptr });
+  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, 1'b1, s_N, 1'b1, s_T, 1'b1, s_R, s_Rw_ptr });
 end
 endgenerate
 """;

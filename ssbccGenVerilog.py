@@ -120,6 +120,7 @@ def genLocalParam(fp,config):
   fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config.Get('nInstructions')));
   fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config.Get('return_stack')));
   fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config.Get('data_stack')));
+  fp.write('localparam C_RETURN_WIDTH                          = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;\n');
   if ('clog2' in config.functions) and config.Get('define_clog2'):
     fp.write("""
 // Use constant function instead of builtin $clog2.
@@ -139,23 +140,29 @@ endfunction
 localparam L__TRACE_SIZE        = C_PC_WIDTH            // pc width
                                 + 9                     // opcode width
                                 + C_DATA_PTR_WIDTH      // data stack pointer width
+                                + 1                     // s_N_valid
                                 + 8                     // s_N
+                                + 1                     // s_T_valid
                                 + 8                     // s_T
-                                + C_RETURN_WIDTH        // return stack entry width
+                                + 1                     // s_R_valid
+                                + C_RETURN_WIDTH        // s_R
                                 + C_RETURN_PTR_WIDTH    // return stack pointer width
                                 ;
 task display_trace;
-  input             [L__TRACE_SIZE-1:0] s_raw;
+  input                     [L__TRACE_SIZE-1:0] s_raw;
   reg                  [C_PC_WIDTH-1:0] s_PC;
   reg                             [8:0] s_opcode;
   reg            [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr;
+  reg                                   s_N_valid;
   reg                             [7:0] s_N;
+  reg                                   s_T_valid;
   reg                             [7:0] s_T;
+  reg                                   s_R_valid;
   reg              [C_RETURN_WIDTH-1:0] s_R;
   reg          [C_RETURN_PTR_WIDTH-1:0] s_Rw_ptr;
   reg                         [7*8-1:0] s_opcode_name;
   begin
-    { s_PC, s_opcode, s_Np_stack_ptr, s_N, s_T, s_R, s_Rw_ptr } = s_raw;
+    { s_PC, s_opcode, s_Np_stack_ptr, s_N_valid, s_N, s_T_valid, s_T, s_R_valid, s_R, s_Rw_ptr } = s_raw;
     casez (s_opcode)
       9'b00_0000_000 : s_opcode_name = "nop    ";
       9'b00_0000_001 : s_opcode_name = "<<0    ";
@@ -200,7 +207,11 @@ task display_trace;
       9'b1_????_???? : s_opcode_name = "push   ";
              default : s_opcode_name = "INVALID";
     endcase
-    $display("@OUTFORMAT@",s_PC,s_opcode,s_opcode_name,s_Np_stack_ptr,s_N,s_T,s_R,s_Rw_ptr);
+    $write("%X %X %s : %X", s_PC, s_opcode, s_opcode_name, s_Np_stack_ptr);
+    if (s_N_valid) $write(" %x",s_N); else $write(" XX");
+    if (s_T_valid) $write(" %x",s_T); else $write(" XX");
+    if (s_R_valid) $write(" : %x",s_R); else $write(" : %s",{((C_RETURN_WIDTH+3)/4){8'h58}});
+    $write(" %X\\n",s_Rw_ptr);
   end
 endtask
 """;

@@ -276,13 +276,13 @@ always @ (posedge i_clk) begin
   s__opcode_s <= s_opcode;
   for (ix__history=1; ix__history<@HISTORY@; ix__history=ix__history+1)
     s__history[ix__history-1] <= s__history[ix__history];
-  s__history[@HISTORY@-1] <= { s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s_N, s_T, s_R, s_Rw_ptr };
+  s__history[@HISTORY@-1] <= { s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rw_ptr };
 end
 wire s_terminate = s__data_stack_error || s__return_stack_error || s__R_address_error;
 always @ (posedge s_terminate) begin
   for (ix__history=0; ix__history<@HISTORY@; ix__history=ix__history+1)
     display_trace(s__history[ix__history]);
-  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s_N, s_T, s_R, s_Rw_ptr });
+  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rw_ptr });
   $finish;
 end
 endgenerate

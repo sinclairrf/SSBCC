@@ -13,9 +13,6 @@
 // configuration file determined parameters
 //@SSBCC@ localparam
 
-// computed parameters
-localparam C_RETURN_WIDTH = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;
-
 /*******************************************************************************
  *
  * Declare the signals used throughout the system.
