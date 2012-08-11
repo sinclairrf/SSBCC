@@ -281,17 +281,19 @@ try:
     # blank line
     if re.match('^\s*$',line):
       continue;
-    # memory type, name, and length
+    # memory type, name, index, and length
     elif re.match(':memory',line):
       cmd = re.findall(':memory (\S+) (\S+) (\S+) (\S+)',line);
       cmd = cmd[0];
       if cmd[1] not in memories['list']:
         raise SSBCCException('%s "%s" not declared %s' % (cmd[0],cmd[1],argList.filename,));
       ixMem = memories['list'].index(cmd[1]);
-      if memories['type'][ixMem] != cmd[0]:
+      if cmd[0] != memories['type'][ixMem]:
         raise SSBCCException('Type of memory "%s" is inconsistent' % cmd[1]);
-      if int(cmd[2]) > eval(memories['arch'][ixMem]):
-        raise SSBCCException('Length of memory "%s" = %s which exceeds limit of %d' % (cmd[1],cmd[2],eval(memories['arch'][ixMem]),));
+      if int(cmd[2]) != ixMem:
+        raise Exception('Program Bug:  Memory index for "%s" from assembler does not match commanded index' % cmd[1]);
+      if int(cmd[3]) > eval(memories['arch'][ixMem]):
+        raise SSBCCException('Length of memory "%s" is %s which exceeds limit of %d' % (cmd[1],cmd[3],eval(memories['arch'][ixMem]),));
       memories['bank'][ixMem] = int(cmd[2]);
       memories['length'][ixMem] = cmd[3];
       memoryBody = list();
