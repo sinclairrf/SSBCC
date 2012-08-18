@@ -99,6 +99,9 @@ class SSBCCconfig():
     else:
       return False;
 
+  def IsSymbol(self,name):
+    return (name in self.symbols);
+
   def OverrideParameter(self,name,value):
     for ix in range(len(self.parameters)):
       if self.parameters[ix][0] == name:

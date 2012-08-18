@@ -1,8 +1,6 @@
   BUGS:
 
   ssbcc
-    validate signal names
-      ensure no collisions with signals within the core
     Finish interrupt handling
     documentation
       top-level overview, point to implemented cores

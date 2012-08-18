@@ -383,10 +383,14 @@ try:
   #
 
   for line in fpRawCore:
-    if not re.match('..@SSBCC@',line):
+    if not re.match(r'..@SSBCC@',line):
+      if re.match(r'\s*(reg|wire)\s',line):
+        cmd = re.findall(r'\s*(reg|wire)\s+([[][^]]+]\s+)?(\w+)\b',line);
+        if config.IsSymbol(cmd[0][-1]):
+          raise SSBCCException('Symbol "%s" is used by the core and cannot be used by peripherals, etc.' % cmd[0][-1]);
       fpOutCore.write(line);
       continue;
-    fillCommand = re.findall('..@SSBCC@\s+(\S+)',line)[0];
+    fillCommand = re.findall(r'..@SSBCC@\s+(\S+)',line)[0];
     # functions and tasks
     if fillCommand == "functions":
       genFunctions(fpOutCore,config);
