@@ -50,4 +50,4 @@ ASSEMBLY led.s
 # Instruct the compiler to generate Verilog.
 #
 
-HDL Verilog led
+HDL Verilog

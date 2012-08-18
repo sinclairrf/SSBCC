@@ -17,4 +17,4 @@ PERIPHERAL      open_drain      inport=I_OD \
                                 @WIDTH@
 
 ASSEMBLY tb_open_drain.s
-HDL Verilog tb_open_drain
+HDL Verilog

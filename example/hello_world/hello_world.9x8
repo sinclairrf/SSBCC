@@ -21,4 +21,4 @@ PERIPHERAL      UART_Tx outport=O_UART_TX \
 
 ASSEMBLY hello_world.s
 
-HDL Verilog hello_world
+HDL Verilog

@@ -3,7 +3,6 @@
   ssbcc
     validate signal names
       ensure no collisions with signals within the core
-    put ssbccGenVerilog in a class in core/9x8
     Finish interrupt handling
     documentation
       top-level overview, point to implemented cores

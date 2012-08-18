@@ -15,4 +15,4 @@ OUTPORT         1-bit           o_done          O_DONE
 PERIPHERAL      adder_16bit
 
 ASSEMBLY tb_adder_16bit.s
-HDL Verilog tb_adder_16bit
+HDL Verilog

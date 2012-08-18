@@ -39,6 +39,7 @@ try:
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
   argListParser.add_argument('-G', metavar='parameter_name=value', type=str, action='append', help='Override parameter value');
   argListParser.add_argument('-P', metavar='peripheral_name[="parameters"]', type=str, action='append', help='Add peripheral');
+  argListParser.add_argument('-o', metavar='outCoreName', type=str, help='output core name');
   argListParser.add_argument('-q', action='store_true', help='quiet');
   argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
   argListParser.add_argument('--verilator-tracing-on', action='store_true', help='show all signals in verilator waveform files');
@@ -46,12 +47,22 @@ try:
   argList = argListParser.parse_args();
 
   #
-  # Read the SSBCC configuration file.
+  # Set the command-line dependent configuration parameters.
   #
 
   config = SSBCCconfig();
+
   config.Set('define_clog2',argList.define_clog2);
   config.Set('verilator_tracing_on',argList.verilator_tracing_on);
+
+  if argList.o:
+    config.Set('outCoreName',argList.o);
+  else:
+    config.Set('outCoreName',os.path.splitext(os.path.basename(argList.filename.name))[0]);
+
+  #
+  # Read the configuration file.
+  #
 
   ixLine = 0;
   bufLine = "";
@@ -109,12 +120,10 @@ try:
     elif re.match(r'\s*HDL\s',line):
       if config.Exists('hdl'):
         raise SSBCCException('HDL already specified before line %d' % ixLine);
-      cmd = re.findall(r'\s*HDL\s+(\S*)\s+(\S*)', line);
-      if cmd[0][0] in ('Verilog','VHDL',):
-        config.Set('hdl',cmd[0][0]);
-        outCoreName = cmd[0][1];
-      else:
-        raise SSBCCException('Unrecognized HDL at line %d: "%s"' % (ixLine,cmd[0],));
+      cmd = re.findall(r'\s*HDL\s+(\S+)\s*$', line);
+      if not cmd:
+        raise SSBCCException('Malformed "HDL" configuration command on line %d:  "%s"' % (ixLine,line[:-1],));
+      config.Set('hdl',cmd[0]);
     # INPORT
     elif re.match(r'\s*INPORT\b',line):
       if not config.Exists('architecture'):
@@ -345,19 +354,33 @@ try:
   #
   ################################################################################
 
+  #
+  # Access the language-specific core generator and core.
+  #
+
   if config.Get('hdl') == 'Verilog':
-    from ssbccGenVerilog import *;
+    ssbccGenFile = 'ssbccGenVerilog.py';
+  elif config.Get('hdl') == 'VHDL':
+    ssbccGenFile = 'ssbccGenVHDL.py';
   else:
     raise SSBCCException('Unrecognized hdl = "%s"' % config.Get('hdl'));
 
-  if config.Get('hdl') == 'Verilog':
-    fpRawCore = open(os.path.join(corepath,'core.v'),'r');
-    fpOutCore = open(outCoreName+'.v','w');
-  elif config.Get('hdl') == 'VHDL':
-    fpRawCore = open(os.path.join(corepath,'core.vhd'),'r');
-    fpOutCore = open(outCoreName+'.vhd','w');
-  else:
-    raise Exception('Program Bug:  unrecognized hdl = "%s"', config.Get('hdl'));
+  ssbccGenFile = os.path.join(corepath,ssbccGenFile);
+  if not os.path.isfile(ssbccGenFile):
+    raise SSBCCException('Core generator "%s" missing for hdl = "%s"' % (ssbccGenFile,config.Get('hdl'),));
+  execfile(ssbccGenFile);
+
+  rawCoreName = os.path.join(corepath,genCoreName());
+  if not os.path.isfile(rawCoreName):
+    raise SSBCCException('Core "%s% missing for hdl = "%s"' % (rawCoreName,config.Get('hdl'),));
+  fpRawCore = open(rawCoreName,'r');
+
+  outName = genOutName(config.Get('outCoreName'));
+  fpOutCore = open(outName,'w');
+
+  #
+  # Loop through the core, copying or filling in the file as required.
+  #
 
   for line in fpRawCore:
     if not re.match('..@SSBCC@',line):
@@ -381,7 +404,7 @@ try:
       genMemory(fpOutCore,memories);
     # module
     elif fillCommand == 'module':
-      genModule(fpOutCore,outCoreName,config);
+      genModule(fpOutCore,config);
     # outports
     elif fillCommand == 'outports':
       genOutports(fpOutCore,config);

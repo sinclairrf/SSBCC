@@ -25,4 +25,4 @@ PERIPHERAL      UART_Tx         outport=O_UART_TX \
                                 baudmethod=97000000/9600
 
 ASSEMBLY i2c_tmp100.s
-HDL Verilog i2c_tmp100
+HDL Verilog

@@ -56,7 +56,8 @@ EXAMPLE:
 The LED flasher example demonstrates the simplicity of the architectural
 specification and the Forth-like assembly language.
 
-The architecture file (with the comments and user header removed) is as follows:
+The architecture file, named 'led.9x8', with the comments and user header
+removed, is as follows:
 
   ARCHITECTURE core/9x8
 
@@ -68,7 +69,7 @@ The architecture file (with the comments and user header removed) is as follows:
   OUTPORT 1-bit o_led O_LED
 
   ASSEMBLY led.s
-  HDL Verilog led
+  HDL Verilog
 
 The ARCHITECTURE configuration command specifies the 9x8 core.  The INSTRUCTION,
 RETURN_STACK, and DATA_STACK configuration commands specify the lengths of the

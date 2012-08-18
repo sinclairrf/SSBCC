@@ -26,4 +26,4 @@ OUTPORT 8-bit,strobe o_test,o_test_wr O_TEST
 OUTPORT 1-bit o_done O_DONE
 
 ASSEMBLY tb_latch.s
-HDL Verilog tb_latch
+HDL Verilog

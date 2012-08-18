@@ -38,4 +38,4 @@ PORTCOMMENT termination signal
 OUTPORT 1-bit o_done O_DONE
 
 ASSEMBLY tb_PWM_8bit.s
-HDL Verilog tb_PWM_8bit
+HDL Verilog

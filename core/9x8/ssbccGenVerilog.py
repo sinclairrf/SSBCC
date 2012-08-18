@@ -13,6 +13,21 @@ from ssbccUtil import *;
 
 ################################################################################
 #
+# Generate input and output core names.
+#
+################################################################################
+
+def genCoreName():
+  return 'core.v';
+
+def genOutName(rootName):
+  if re.match('.*\.v$',rootName):
+    return rootName;
+  else:
+    return ("%s.v" % rootName);
+
+################################################################################
+#
 # Generate the code to run the INPORT selection, the associated output
 # strobes,and the set-reset latches.
 #
@@ -272,8 +287,8 @@ def genMemory(fp,memories):
     fp.write('    default : s_memory = 8\'h00;\n');
     fp.write('  endcase\n');
 
-def genModule(fp,outCoreName,config):
-  fp.write('module %s(\n' % outCoreName);
+def genModule(fp,config):
+  fp.write('module %s(\n' % config.Get('outCoreName'));
   fp.write('  // synchronous reset and processor clock\n');
   fp.write('  input  wire           i_rst,\n');
   fp.write('  input  wire           i_clk');

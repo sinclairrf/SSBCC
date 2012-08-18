@@ -34,4 +34,4 @@ PERIPHERAL      UART_Tx         outport=O_UART3_TX \
 OUTPORT 1-bit o_done O_DONE
 
 ASSEMBLY tb_UART_Tx.s
-HDL Verilog tb_UART_Tx
+HDL Verilog
