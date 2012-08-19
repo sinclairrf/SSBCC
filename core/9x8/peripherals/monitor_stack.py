@@ -260,6 +260,26 @@ always @ (posedge i_clk)
     end
   end
 //
+reg s__range_error = 1'b0;
+reg [8:0] s__mem_address_limit[0:3];
+initial begin
+  s__mem_address_limit[0] = @MEM_LIMIT_0@;
+  s__mem_address_limit[1] = @MEM_LIMIT_1@;
+  s__mem_address_limit[2] = @MEM_LIMIT_2@;
+  s__mem_address_limit[3] = @MEM_LIMIT_3@;
+end
+always @ (posedge i_clk)
+  if ((s_opcode[3+:6] == 6'b000110) && ({ 1'b0, s_T } >= @LAST_INPORT@)) begin
+    $display("%12d : Range error on inport", $time);
+    s__range_error <= 1'b1;
+  end else if ((s_opcode[3+:6] == 6'b000111) && ({ 1'b0, s_T } >= @LAST_OUTPORT@)) begin
+    $display("%12d : Range error on outport", $time);
+    s__range_error <= 1'b1;
+  end else if ((s_opcode[5+:4] == 4'b0011) && ({ 1'b0, s_T } >= s__mem_address_limit[s_opcode[0+:2]])) begin
+    $display("%12d : Range error on memory operation", $time);
+    s__range_error <= 1'b1;
+  end
+//
 reg       [L__TRACE_SIZE-1:0] s__history[@HISTORY@-1:0];
 reg                     [8:0] s__opcode_s = 9'b0;
 reg          [C_PC_WIDTH-1:0] s__PC_s[1:0];
@@ -278,7 +298,7 @@ always @ (posedge i_clk) begin
     s__history[ix__history-1] <= s__history[ix__history];
   s__history[@HISTORY@-1] <= { s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rw_ptr };
 end
-wire s_terminate = s__data_stack_error || s__return_stack_error || s__R_address_error;
+wire s_terminate = s__data_stack_error || s__return_stack_error || s__R_address_error || s__range_error;
 always @ (posedge s_terminate) begin
   for (ix__history=0; ix__history<@HISTORY@; ix__history=ix__history+1)
     display_trace(s__history[ix__history]);
@@ -312,7 +332,16 @@ endgenerate
                   (r'\\bix__',                  'ix__monitor_stack__',),
                   (r'\\bs__',                   's__monitor_stack__',),
                   (r'@HISTORY@',                str(self.history),),
+                  (r'@LAST_INPORT@',            '9\'h%03X' % config.NInports(),),
+                  (r'@LAST_OUTPORT@',           '9\'h%03X' % config.NOutports(),),
                   (r'@OUTPORT_PURE_STROBE@',    outport_pure_strobe,),
                 ):
       body = re.sub(subs[0],subs[1],body);
+    for ixBank in range(4):
+      memParam = config.GetMemoryByBank(ixBank);
+      if memParam:
+        maxLength = memParam['maxLength'];
+      else:
+        maxLength = 0;
+      body = re.sub('@MEM_LIMIT_%d@' % ixBank, str(maxLength), body);
     fp.write(body);

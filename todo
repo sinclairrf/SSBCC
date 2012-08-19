@@ -42,8 +42,6 @@
       implement .abbr directive
       add .compile_if(...) {.compile_elif(...)} [.compile_else] .compile_endif directive set
     peripherals
-      finish "monitor_stack"
-        detect out-of-range values for memory, inport, outport, etc.
       INTERRUPT
       timer
       UART_Rx -- single-byte deserializer w/ and w/o FIFO
