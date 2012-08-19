@@ -56,7 +56,7 @@ EXAMPLE:
 The LED flasher example demonstrates the simplicity of the architectural
 specification and the Forth-like assembly language.
 
-The architecture file, named 'led.9x8', with the comments and user header
+The architecture file, named "led.9x8", with the comments and user header
 removed, is as follows:
 
   ARCHITECTURE core/9x8
@@ -80,7 +80,7 @@ and outputs.  The single OUTPORT statement specifies a 1-bit signal named
 "o_led."  This signal is accessed in the assembly code through the symbol
 "O_LED."  The ASSEMBLY command specifies the single input file "led.s," which is
 listed below.  Finally, the HDL statement specifies the Verilog language with
-the output going to "led.v"
+the output going to "led.v".
 
 The "led.s" assembly file is as follows:
 
@@ -350,7 +350,8 @@ build.
 
 Stack errors include underflow and overflow, malformed data validity, and
 incorrect use of the values on the return stack (returns to data values and data
-operations on return addresses).
+operations on return addresses).  Other errors include out-of-range for memory,
+inport, and outport operations.
 
 When stack errors are detected the last 50 instructions are dumped to the
 console and the simulation terminates.  This facilitates diagnosing coding
@@ -358,6 +359,8 @@ errors.  The dump includes the PC, numeric opcode, textual representation of the
 opcode, data stack pointer, next-to-top of the data stack, top of the data
 stack, top of the return stack, and the return stack pointer.  Invalid stack
 values are displayed as "XX".  The length of the history dumped is configurable.
+
+A "trace" peripheral is also provided that dumps the entire execution history.
 
 
 SIMULATIONS
