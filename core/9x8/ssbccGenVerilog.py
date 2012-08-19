@@ -134,7 +134,7 @@ def genInports(fp,config):
     fp.write('// no input ports\n');
     return
   haveBitInportSignals = False;
-  for ix in range(len(config.inports)):
+  for ix in range(config.NInports()):
     thisPort = config.inports[ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
@@ -144,7 +144,7 @@ def genInports(fp,config):
   if haveBitInportSignals:
     fp.write('always @ (*)\n');
     fp.write('  case (s_T)\n');
-  for ix in range(len(config.inports)):
+  for ix in range(config.NInports()):
     thisPort = config.inports[ix][1:];
     nBits = 0;
     bitString = '';
@@ -173,7 +173,7 @@ def genInports(fp,config):
     fp.write('  endcase\n');
     fp.write('\n');
   # Generate all the INPORT strobes.
-  for ix in range(len(config.inports)):
+  for ix in range(config.NInports()):
     thisPort = config.inports[ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
@@ -190,7 +190,7 @@ def genInports(fp,config):
         fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('\n');
   # Generate all the INPORT "set-reset"s.
-  for ix in range(len(config.inports)):
+  for ix in range(config.NInports()):
     thisPort = config.inports[ix][1:];
     if thisPort[0][2] == 'set-reset':
       signalName = thisPort[0][0];
@@ -341,7 +341,7 @@ def genOutports(fp,config):
   if not config.outports:
     fp.write('// no output ports\n');
     return;
-  for ix in range(len(config.outports)):
+  for ix in range(config.NOutports()):
     thisPort = config.outports[ix][1:];
     bitWidth = 0;
     bitName = '';

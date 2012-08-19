@@ -127,9 +127,9 @@ Example:  Capture an external 24-bit counter:
     config.AddInport((self.inport,
                      ('s__%s__select' % self.insignal,8,'data',),
                     ));
-    self.ix__o_latch = len(config.outports);
+    self.ix__o_latch = config.NOutports();
     config.AddOutport((self.outport_latch,));
-    self.ix__o_addr = len(config.outports);
+    self.ix__o_addr = config.NOutports();
     config.AddOutport((self.outport_addr,));
 
   def GenVerilog(self,fp,config):

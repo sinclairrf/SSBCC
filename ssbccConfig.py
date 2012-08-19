@@ -144,8 +144,14 @@ class SSBCCconfig():
       outlist += ((self.memories['name'][ix],self.memories['maxLength'][ix],),);
     return outlist;
 
+  def NInports(self):
+    return len(self.inports);
+
   def NMemories(self):
     return len(self.memories['name']);
+
+  def NOutports(self):
+    return len(self.outports);
 
   def OverrideParameter(self,name,value):
     for ix in range(len(self.parameters)):

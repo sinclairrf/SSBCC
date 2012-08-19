@@ -288,7 +288,7 @@ end
 endgenerate
 """;
     outport_pure_strobe = '';
-    for ix in range(len(config.outports)):
+    for ix in range(config.NOutports()):
       thisPort = config.outports[ix][1:];
       thisOnlyStrobe = True;
       thisIsStrobe = False;

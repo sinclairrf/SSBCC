@@ -147,7 +147,7 @@ Example:  Similarly to obove, but for the three controls of a tri-color LED:
       self.invert = False;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.outsignal,self.instances,'output');
-    self.ix_outport_0 = len(config.outports);
+    self.ix_outport_0 = config.NOutports();
     if self.instances == 1:
       tmpOutport = self.outport;
       config.AddOutport((tmpOutport,

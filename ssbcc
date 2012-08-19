@@ -252,9 +252,9 @@ try:
     cmd += (' -C %s=%s' % (name,config.constants[name],));
   for ix in range(len(config.parameters)):
     cmd += (' -G %s' % config.parameters[ix][0]);
-  for ix in range(len(config.inports)):
+  for ix in range(config.NInports()):
     cmd += (' -I %s=%d' % (config.inports[ix][0],ix));
-  for ix in range(len(config.outports)):
+  for ix in range(config.NOutports()):
     cmd += (' -O %s=%d' % (config.outports[ix][0],ix));
   for memNameLength in config.MemoryNameLengthList():
     cmd += (' -S %s=%d' % memNameLength);
