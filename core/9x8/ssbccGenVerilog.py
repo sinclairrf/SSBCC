@@ -234,19 +234,18 @@ def genLocalParam(fp,config):
   fp.write('localparam C_RETURN_WIDTH                          = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;\n');
 
 # TODO -- accommodate m*n architecture statements
-def genMemory(fp,memories):
+def genMemory(fp,config):
   for ixBank in range(4):
-    if ixBank not in memories['bank']:
+    memParam = config.GetMemoryByBank(ixBank);
+    if not memParam:
       continue;
-    ixMem = memories['bank'].index(ixBank);
     memName = 's_mem%d' % ixBank;
-    memLength = eval(memories['arch'][ixMem]);
-    nMemLengthBits = CeilLog2(memLength);
-    fp.write('reg [7:0] %s[%d:0];\n' % (memName,memLength-1));
+    nMemLengthBits = CeilLog2(memParam['maxLength']);
+    fp.write('reg [7:0] %s[%d:0];\n' % (memName,memParam['maxLength']-1));
     fp.write('initial begin\n');
     ixAddr = 0;
     name = None;
-    for line in memories['body'][ixMem]:
+    for line in memParam['body']:
       if line[0] == '-':
         name = line[2:-1];
         continue;
@@ -256,11 +255,11 @@ def genMemory(fp,memories):
         name = None;
       fp.write('\n');
       ixAddr = ixAddr + 1;
-    while ixAddr < memLength:
+    while ixAddr < memParam['maxLength']:
       fp.write('  %s[\'h%X] = 8\'h00;\n' % (memName,ixAddr));
       ixAddr = ixAddr + 1;
     fp.write('end\n');
-    if memories['type'][ixMem] == 'RAM':
+    if memParam['type'] == 'RAM':
       fp.write('always @ (posedge i_clk)\n');
       fp.write('  if (s_mem_wr && (s_opcode[0+:2] == 2\'d%d))\n' % ixBank);
       if nMemLengthBits < 8:
@@ -273,16 +272,17 @@ def genMemory(fp,memories):
     else:
       fp.write('wire [7:0] s_mem%d_out = %s[s_T];\n' % (ixBank,memName));
     fp.write('\n');
-  if len(memories['list']) == 0:
+  if config.NMemories() == 0:
     fp.write('wire [7:0] s_memory = 8\'h00;\n');
-  elif len(memories['list']) == 1:
-    fp.write('wire [7:0] s_memory = s_mem%d_out;\n' % memories['bank'][0]);
+  elif config.NMemories() == 1:
+    memParam = config.GetMemoryByBank(0);
+    fp.write('wire [7:0] s_memory = s_mem%d_out;\n' % memParam['bank']);
   else:
     fp.write('reg [7:0] s_memory = 8\'h00;\n');
     fp.write('always @ (*)\n');
     fp.write('  case (s_opcode[0+:2])\n');
     for ixBank in range(4):
-      if ixBank in memories['bank']:
+      if config.GetMemoryByBank(ixBank):
         fp.write('    2\'d%d : s_memory = s_mem%d_out;\n' % (ixBank,ixBank));
     fp.write('    default : s_memory = 8\'h00;\n');
     fp.write('  endcase\n');

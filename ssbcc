@@ -67,7 +67,6 @@ try:
   ixLine = 0;
   bufLine = "";
   compiler = [];
-  memories = dict(list=list(), type=list(), arch=list());
   user_header = list();
   for tmpLine in argList.filename:
     ixLine = ixLine + 1;
@@ -144,15 +143,12 @@ try:
       if not config.Exists('architecture'):
         raise SSBCCException('"MEMORY"s cannot be defined before the "ARCHITECTURE" is defined at line %d' % ixLine);
       # TODO -- make the maximum number of memories architecture dependent
-      if len(memories['list']) >= 4:
+      if config.NMemories() >= 4:
         raise SSBCCException('Program is limited to 4 memories');
       cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)\s+(\S+)\s*$',line);
       if (not cmd) or (len(cmd[0]) != 3):
         raise SSBCCException('Malformed MEMORY configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      cmd = cmd[0];
-      memories['type'].append(cmd[0]);
-      memories['list'].append(cmd[1]);
-      memories['arch'].append(cmd[2]);
+      config.AddMemory(cmd[0]);
     # OUTPORT
     elif re.match(r'\s*OUTPORT\b',line):
       if not config.Exists('architecture'):
@@ -236,13 +232,6 @@ try:
   # Compute the memory bank indices.
   ixRAM = 0;
   ixROM = 3;
-  memories['bank'] = list();
-  memories['length'] = list();
-  memories['body'] = list();
-  for memType in memories['type']:
-    memories['bank'].append(None);
-    memories['length'].append(None);
-    memories['body'].append(None);
 
   ################################################################################
   #
@@ -267,8 +256,8 @@ try:
     cmd += (' -I %s=%d' % (config.inports[ix][0],ix));
   for ix in range(len(config.outports)):
     cmd += (' -O %s=%d' % (config.outports[ix][0],ix));
-  for ix in range(len(memories['list'])):
-    cmd += (' -S %s=%d' % (memories['list'][ix],eval(memories['arch'][ix])));
+  for memNameLength in config.MemoryNameLengthList():
+    cmd += (' -S %s=%d' % memNameLength);
   cmd += ' -o ' + assemblerOutput;
   for stack_name in ('data_stack','return_stack',):
     cmd += ' -s %s=%d' % (stack_name,config.config[stack_name],);
@@ -296,24 +285,22 @@ try:
     elif re.match(':memory',line):
       cmd = re.findall(':memory (\S+) (\S+) (\S+) (\S+)',line);
       cmd = cmd[0];
-      if cmd[1] not in memories['list']:
-        raise SSBCCException('%s "%s" not declared %s' % (cmd[0],cmd[1],argList.filename,));
-      ixMem = memories['list'].index(cmd[1]);
-      if cmd[0] != memories['type'][ixMem]:
-        raise SSBCCException('Type of memory "%s" is inconsistent' % cmd[1]);
-      if int(cmd[2]) != ixMem:
-        raise Exception('Program Bug:  Memory index for "%s" from assembler does not match commanded index' % cmd[1]);
-      if int(cmd[3]) > eval(memories['arch'][ixMem]):
-        raise SSBCCException('Length of memory "%s" is %s which exceeds limit of %d' % (cmd[1],cmd[3],eval(memories['arch'][ixMem]),));
-      memories['bank'][ixMem] = int(cmd[2]);
-      memories['length'][ixMem] = cmd[3];
+      memName = cmd[1];
+      if not config.IsMemory(memName):
+        raise SSBCCException('%s "%s" not declared in %s' % (cmd[0],memName,argList.filename,));
+      memParam = config.GetMemoryParameters(memName);
+      if cmd[0] != memParam['type']:
+        raise SSBCCException('Type of memory "%s" is inconsistent' % memName);
+      if int(cmd[3]) > memParam['maxLength']:
+        raise SSBCCException('Length of memory "%s" is %s which exceeds limit of %d' % (memName,cmd[3],memParam['maxLength'],));
       memoryBody = list();
       for line in fpAssemberOutput:
         ixLine = ixLine + 1;
-        if len(line) <= 1:
-          memories['body'][ixMem] = memoryBody;
+        if len(line) > 1:
+          memoryBody.append(line)
+        else:
           break;
-        memoryBody.append(line)
+      config.SetMemoryParameters(memParam,dict(bank=int(cmd[2]),length=int(cmd[3]),body=memoryBody));
     # program .main, optional .interrupt, and length
     elif re.match(':program',line):
       cmd = re.findall(':program (\d+) (\S+) (\d+)',line);
@@ -343,10 +330,11 @@ try:
   #
   ################################################################################
 
-  # Ensure all desired memories are used.
-  for ixMem in range(len(memories['list'])):
-    if not memories['length'][ixMem]:
-      raise SSBCCException('Memory "%s" not used in program' % memories['list'][ixMem]);
+  # Ensure all memories are used.
+  for ixMem in range(config.NMemories()):
+    memParam = config.GetMemoryParameters(ixMem);
+    if not memParam['length']:
+      raise SSBCCException('Memory "%s" not used in program' % memParam['name']);
 
   ################################################################################
   #
@@ -405,7 +393,7 @@ try:
       genLocalParam(fpOutCore,config);
     # memory
     elif fillCommand == 'memory':
-      genMemory(fpOutCore,memories);
+      genMemory(fpOutCore,config);
     # module
     elif fillCommand == 'module':
       genModule(fpOutCore,config);

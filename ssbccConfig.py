@@ -28,6 +28,9 @@ class SSBCCconfig():
     self.signals        = list();               # internal signals
     self.symbols        = list();               # constant, I/O, inport, etc.  names
 
+    # list of memories
+    self.memories = dict(name=list(), type=list(), maxLength=list());
+
     # initial search paths for peripherals
     self.peripheralpaths= list();
     self.peripheralpaths.append('.');
@@ -54,6 +57,11 @@ class SSBCCconfig():
       raise SSBCCException('Symbol "%s" already defined' % name);
     self.inports.append(port);
     self.symbols.append(name);
+
+  def AddMemory(self,cmd):
+    self.memories['type'].append(cmd[0]);
+    self.memories['name'].append(cmd[1]);
+    self.memories['maxLength'].append(eval(cmd[2]));
 
   def AddOutport(self,port):
     name = port[0];
@@ -90,8 +98,36 @@ class SSBCCconfig():
       raise Exception('Program Bug:  "%s" not found in config' % name);
     return self.config[name];
 
+  def GetMemoryByBank(self,ixBank):
+    if not 'bank' in self.memories:
+      return None;
+    if ixBank not in self.memories['bank']:
+      return None;
+    ixMem = self.memories['bank'].index(ixBank);
+    return self.GetMemoryParameters(ixMem);
+
+  def GetMemoryParameters(self,rawIndex):
+    if type(rawIndex) == str:
+      if not self.IsMemory(rawIndex):
+        raise Exception('Program Bug:  reference to non-existent memory');
+      ix = self.memories['name'].index(rawIndex);
+    elif type(rawIndex) == int:
+      if (rawIndex < 0) or (rawIndex >= len(self.memories['name'])):
+        raise Exception('Program Bug:  bad memory index %d' % rawIndex);
+      ix = rawIndex;
+    else:
+      raise Exception('Program Bug:  unrecognized index type "%s"' % type(rawIndex));
+    outvalue = dict();
+    outvalue['index'] = ix;
+    for field in self.memories:
+      outvalue[field] = self.memories[field][ix];
+    return outvalue;
+
   def InsertPeripheralPath(self,path):
     self.peripheralpaths.insert(-1,path);
+
+  def IsMemory(self,name):
+    return (name in self.memories['name']);
 
   def IsParameter(self,name):
     if re.match(r'G_\w+',name) and name in self.symbols:
@@ -101,6 +137,15 @@ class SSBCCconfig():
 
   def IsSymbol(self,name):
     return (name in self.symbols);
+
+  def MemoryNameLengthList(self):
+    outlist = tuple();
+    for ix in range(len(self.memories['name'])):
+      outlist += ((self.memories['name'][ix],self.memories['maxLength'][ix],),);
+    return outlist;
+
+  def NMemories(self):
+    return len(self.memories['name']);
 
   def OverrideParameter(self,name,value):
     for ix in range(len(self.parameters)):
@@ -217,3 +262,12 @@ class SSBCCconfig():
 
   def Set(self,name,value):
     self.config[name] = value;
+
+  def SetMemoryParameters(self,memParam,values):
+    index = memParam['index'];
+    for field in values:
+      if field not in self.memories:
+        self.memories[field] = list();
+        for ix in range(len(self.memories['name'])):
+          self.memories[field].append(None);
+      self.memories[field][index] = values[field];
