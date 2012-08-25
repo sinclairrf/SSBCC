@@ -1,7 +1,6 @@
   BUGS:
 
   ssbcc
-*   add "localparam"
     incorporate "COMBINE" feature to merge stacks or memories into large RAMs
       INSTRUCTION+RAM/ROM
       INSTRUCTION+DATA_STACK
@@ -49,7 +48,9 @@
       improve error message for missing input files
       add non-return-stack-alteration restriction to some optional macro arguments
       implement .abbr directive
-      add .compile_if(...) [.compile_elif(...)]* [.compile_else] .compile_endif directive set
+      add .if(...) [.elif(...)]* [.else] .endif directive set
+        avoid full parsing of false branches (accommodate other cores?)
+        add symbol for current core -- is9x8 (?)
     peripherals
       INTERRUPT
       timer
@@ -59,7 +60,8 @@
       multi-byte adder
       multiplier
       PICK -- emulate the Forth operator?
-      bus slave peripherals -- store external commands in a FIFO and statuses in dual-port RAM for external reads
+        this can be done if the data stack is in its own dual-port memory, but that kinds of defeats the purpose of a small micro controller
+      bus slave peripherals -- store external commands in a FIFO and statuses in dual-port RAM or shared RAM for external reads
         SPI_slave
         I2C_slave
       SoC Interconnects
