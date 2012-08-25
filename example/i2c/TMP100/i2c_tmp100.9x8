@@ -3,7 +3,7 @@
 # Run a TI TMP100 I2C Temperature sensor.  Report the temperature once per
 # second over a 9600 baud UART as a hex value.
 
-ARCHITECTURE core/9x8
+ARCHITECTURE core/9x8 Verilog
 
 INSTRUCTION     1024
 DATA_STACK      32
@@ -25,4 +25,3 @@ PERIPHERAL      UART_Tx         outport=O_UART_TX \
                                 baudmethod=97000000/9600
 
 ASSEMBLY i2c_tmp100.s
-HDL Verilog

@@ -84,10 +84,12 @@ try:
     elif re.match(r'\s*ARCHITECTURE\b',line):
       if config.Exists('architecture'):
         raise SSBCCException('ARCHITECTURE already specified before line %d' % ixLine);
-      cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)',line);
+      cmd = re.findall(r'\s*ARCHITECTURE\s+(\S+)\s+(\S+)$',line);
       if not cmd:
         raise SSBCCException('Malformed ARCHITECTURE configuration command on line %d: "%s"' % (ixLine,line[:-1],));
+      cmd = cmd[0];
       config.Set('architecture',cmd[0]);
+      config.Set('hdl',cmd[1]);
       corepath = os.path.join(sys.path[0],config.Get('architecture'));
       if not os.path.isdir(corepath):
         raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,ixLine,));
@@ -115,14 +117,6 @@ try:
       if not cmd:
         raise SSBCCException('Malformed "DATA_STACK" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       config.Set('data_stack',int(cmd[0]));
-    # HDL
-    elif re.match(r'\s*HDL\s',line):
-      if config.Exists('hdl'):
-        raise SSBCCException('HDL already specified before line %d' % ixLine);
-      cmd = re.findall(r'\s*HDL\s+(\S+)\s*$', line);
-      if not cmd:
-        raise SSBCCException('Malformed "HDL" configuration command on line %d:  "%s"' % (ixLine,line[:-1],));
-      config.Set('hdl',cmd[0]);
     # INPORT
     elif re.match(r'\s*INPORT\b',line):
       if not config.Exists('architecture'):
@@ -222,8 +216,6 @@ try:
     raise SSBCCException('Required ARCHITECTURE configuration command missing');
   if not config.Exists('data_stack'):
     raise SSBCCException('Required DATA_STACK configuration command missing');
-  if not config.Exists('hdl'):
-    raise SSBCCException('Required HDL configuration command missing');
   if not config.Exists('nInstructions'):
     raise SSBCCException('Required INSTRUCTION configuration command missing');
   if not config.Exists('return_stack'):

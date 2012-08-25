@@ -4,7 +4,7 @@
 # Test bench for UART_Tx peripheral.
 #
 
-ARCHITECTURE    core/9x8
+ARCHITECTURE    core/9x8 Verilog
 INSTRUCTION     64
 DATA_STACK      32
 RETURN_STACK    16
@@ -34,4 +34,3 @@ PERIPHERAL      UART_Tx         outport=O_UART3_TX \
 OUTPORT 1-bit o_done O_DONE
 
 ASSEMBLY tb_UART_Tx.s
-HDL Verilog

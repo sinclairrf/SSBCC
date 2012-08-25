@@ -19,7 +19,7 @@ END_USER_HEADER
 # 9-bit opcodes and 8-bit data
 #
 
-ARCHITECTURE core/9x8
+ARCHITECTURE core/9x8 Verilog
 
 #
 # Define the memory widths and the structure of the associated ROMs and RAMs.
@@ -45,9 +45,3 @@ OUTPORT 1-bit o_led O_LED
 #
 
 ASSEMBLY led.s
-
-#
-# Instruct the compiler to generate Verilog.
-#
-
-HDL Verilog

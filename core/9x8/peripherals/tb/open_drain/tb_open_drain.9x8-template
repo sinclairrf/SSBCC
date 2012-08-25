@@ -4,7 +4,7 @@
 # Test bench for open_drain peripheral.
 #
 
-ARCHITECTURE    core/9x8
+ARCHITECTURE    core/9x8 Verilog
 INSTRUCTION     64
 DATA_STACK      32
 RETURN_STACK    16
@@ -17,4 +17,3 @@ PERIPHERAL      open_drain      inport=I_OD \
                                 @WIDTH@
 
 ASSEMBLY tb_open_drain.s
-HDL Verilog

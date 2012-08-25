@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-ARCHITECTURE core/9x8
+ARCHITECTURE core/9x8 Verilog
 
 INSTRUCTION             32
 RETURN_STACK            32
@@ -20,5 +20,3 @@ PERIPHERAL      UART_Tx outport=O_UART_TX \
                         baudmethod=G_CLK_FREQ_HZ/115200
 
 ASSEMBLY hello_world.s
-
-HDL Verilog
