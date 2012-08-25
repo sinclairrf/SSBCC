@@ -332,10 +332,22 @@ def genModule(fp,config):
         raise Exception('Program Bug -- unrecognized ios "%s"' % signalType);
   fp.write('\n');
   fp.write(');\n');
+  # Write parameter and localparam statements (with separating blank lines).
   if config.parameters:
-    fp.write('\n');
+    isfirst = True;
     for parameter in config.parameters:
-      fp.write('parameter %s = %s;\n' % (parameter[0],parameter[1]));
+      if parameter[0][0] == 'G':
+        if isfirst:
+          fp.write('\n');
+          isfirst = False;
+        fp.write('parameter %s = %s;\n' % (parameter[0],parameter[1]));
+    isfirst = True;
+    for parameter in config.parameters:
+      if parameter[0][0] == 'L':
+        if isfirst:
+          fp.write('\n');
+          isfirst = False;
+        fp.write('localparam %s = %s;\n' % (parameter[0],parameter[1]));
 
 def genOutports(fp,config):
   if not config.outports:

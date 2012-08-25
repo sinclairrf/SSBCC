@@ -347,11 +347,11 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Label not allowed at %s' % flc_loc);
     return dict(type='label', value=raw[1:], loc=flc_loc);
   # look for parameters with range specification
-  a = re.match('G_\w+[[]\d+\+?:\d+]$',raw);
+  a = re.match('[LG]_\w+[[]\d+\+?:\d+]$',raw);
   if a:
     if 'symbol' not in allowed:
       raise AsmException('Symbol not allowed at %s' % flc_loc);
-    a = re.findall('(G_\w+)([[].*)',raw)[0];
+    a = re.findall('([LG]_\w+)([[].*)',raw)[0];
     return dict(type='symbol', value=a[0], range=a[1], loc=flc_loc);
   # look for symbols
   # Note:  This should be the last check performed as every other kind of

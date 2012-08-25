@@ -23,7 +23,7 @@ class SSBCCconfig():
     self.inports        = list();               # INPORT definitions
     self.ios            = list();               # List of I/Os
     self.outports       = list();               # OUTPORT definitions
-    self.parameters     = list();               # PARAMETERs
+    self.parameters     = list();               # PARAMETERs and LOCALPARAMs
     self.peripheral     = list();               # PERIPHERALs
     self.signals        = list();               # internal signals
     self.symbols        = list();               # constant, I/O, inport, etc.  names
@@ -71,7 +71,7 @@ class SSBCCconfig():
     self.symbols.append(name);
 
   def AddParameter(self,name,value):
-    if not re.match(r'G_\w+$',name):
+    if not re.match(r'[LG]_\w+$',name):
       raise Exception('Program Bug -- bad parameter name');
     if name in self.symbols:
       raise SSBCCException('Symbol "%s" already defined' % name);
@@ -158,7 +158,7 @@ class SSBCCconfig():
       if self.parameters[ix][0] == name:
         break;
     else:
-      raise SSBCCException('Command-line parameter "%s" must be specified in the architecture file' % name);
+      raise SSBCCException('Command-line parameter or localparam "%s" must be specified in the architecture file' % name);
     self.parameters[ix] = (name,value,);
 
   def ProcessInport(self,ixLine,line):

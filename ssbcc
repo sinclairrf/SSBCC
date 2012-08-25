@@ -132,6 +132,13 @@ try:
       config.Set('nInstructions',int(cmd[0]));
       if config.Get('nInstructions') > 2**13:
         raise SSBCCException('Instruction space cannot exceed %d at line %d' % (2**13,ixLine,));
+    # LOCALPARM
+    elif re.match(r'\s*LOCALPARAM\b',line):
+      cmd = re.findall(r'\s*LOCALPARAM\s+(L_\w+)\s+(\S+)$',line);
+      if (not cmd) or (len(cmd[0]) != 2):
+        raise SSBCCException('Malformed LOCALPARAM configuration command on line %d: "%s"' % (ixLine,line[:-1],));
+      cmd = cmd[0];
+      config.AddParameter(cmd[0],cmd[1]);
     # MEMORY
     elif re.match(r'\s*MEMORY\b',line):
       if not config.Exists('architecture'):
@@ -189,14 +196,14 @@ try:
   argList.filename.close();
 
   #
-  # Incorporate command-line specified parameters values
+  # Incorporate command-line specified parameter and localparam values.
   #
 
   if argList.G:
     for parameter in argList.G:
-      if not re.match(r'G_\w+=\S+$',parameter):
+      if not re.match(r'[LG]_\w+=\S+$',parameter):
         raise SSBCCException('Malformed parameter specification: "%s"' % parameter);
-      cmd = re.findall(r'(G_\w+)=(\S+)',parameter);
+      cmd = re.findall(r'([LG]_\w+)=(\S+)',parameter);
       cmd = cmd[0];
       config.OverrideParameter(cmd[0],cmd[1]);
 

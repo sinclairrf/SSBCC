@@ -310,27 +310,43 @@ instruction drops the top of the data stack (which contained the port number)
 and sends the next-to-the-top of the data stack to the designated output port.
 
 
-PARAMETER
+PARAMETER and LOCALPARAM
 ================================================================================
 
-Parameters are incorporated through the PARAMETER configuration command.  For
-example,
+Parameters are incorporated through the PARAMETER and LOCALPARAM configuration
+commands.  For example, the clock frequency in hertz is needed for UARTs for
+their baud rate generator.  The configuration command
 
-  PARAMETER G_VERSION 24'h00_00_00
+  PARAMETER G_CLK_FREQ_HZ 97_000_000
 
-specifies a 24-bit parameter named "G_VERSION."  The 8-bit major, minor, and
+specifies the clock frequency as 97 MHz.  The HDL instantiating the processor
+can change this specification.  The frequency can also be changed through the
+command-line invokation of the computer compiler.  For example,
+
+  ssbcc -G "G_CLK_FREQ_HZ=100_000_000" myprogram.9x8
+
+specifies a frequency of 100 MHz instead of the default frequency of 97 MHz.
+
+The LOCALPARAM configuration command can be used to specify parameters that
+should not be changed by the surrounding HDL.  For example,
+
+  LOCALPARAM L_VERSION 24'h00_00_00
+
+specifies a 24-bit parameter named "L_VERSION".  The 8-bit major, minor, and
 build sections of the parameter can be accessed in an assembly program using
-"G_VERSION[16+:8]", "G_VERSION[8+:8]", and "G_VERSION[0+:8]".  The default range
-is "[0+:8]".  The instruction memory is initialized using the parameter value
-during synthesis, not the value used to initialize the parameter.  That is, the
-memory initialization will look like:
+"L_VERSION[16+:8]", "L_VERSION[8+:8]", and "L_VERSION[0+:8]".
 
-  s_opcodeMemory[...] = { 1'b1, G_VERSION[16+:8] };
+For both parameters and localparams, the default range is "[0+:8]".  The
+instruction memory is initialized using the parameter value during synthesis,
+not the value used to initialize the parameter.  That is, the memory
+initialization will look like:
 
-The initial value of the parameter can be set when the computer compiler is run
-using the "-G" option.  For example,
+  s_opcodeMemory[...] = { 1'b1, L_VERSION[16+:8] };
 
-  ssbcc -G "G_VERSION=24'h01_04_03" myprogram.9x8
+The value of the localparam can be set when the computer compiler is run using
+the "-G" option.  For example,
+
+  ssbcc -G "L_VERSION=24'h01_04_03" myprogram.9x8
 
 can be used in a makefile to set the version number for a release without
 modifying the micro controller architecture file.
