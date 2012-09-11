@@ -727,7 +727,7 @@ class asmDef_9x8:
     if type(name) == str:
       fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName(name)));
     elif (chr(value) in string.printable) and (chr(value) not in string.whitespace):
-      fp.write('1%02X %02X %s\n' % ((value % 0x100),value,self.EmitName('\'%c\'' % value)));
+      fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName('%02X \'%c\'' % (value,value,))));
     else:
       fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName('0x%02X' % value)));
 
