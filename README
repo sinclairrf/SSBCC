@@ -387,3 +387,13 @@ ISIM.  Icarus Verilog is good for short, simple simulations, Verilator for long
 simulations of large, complex systems, and ISIM when Xilinx-specific cores are
 used.  Verilator is over an order of magnitude faster than the other simulators
 I've used.
+
+
+MISCELLANEOUS
+================================================================================
+
+The INSTRUCTION size can have the format "N*M" where N is the size of the memory
+blocks and M is the number of memory blocks to allocation.  For example, on an
+Altera Cyclone III, the configuration command "INSTRUCTION 1024*3" allocates
+three M9Ks for the instruction space, saving one M9K as compared to the
+configuration command "INSTRUCTION 4096".
