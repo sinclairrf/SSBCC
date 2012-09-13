@@ -206,29 +206,58 @@ def genInports(fp,config):
       fp.write('    s_SETRESET_%s <= s_SETRESET_%s;\n' % (signalName,signalName));
 
 def genInstructions(fp,programBody,config):
-  nInstructions = config.Get('nInstructions');
-  addrWidth = int(math.ceil(math.log(nInstructions,2)/4));
-  formatp = '  s_opcodeMemory[\'h%%0%dX] = { 1\'b1, %%s };\n' % addrWidth;
-  formatn = '  s_opcodeMemory[\'h%%0%dX] = 9\'h%%s; // %%s\n' % addrWidth;
-  fp.write('reg [8:0] s_opcodeMemory[%d:0];\n' % (nInstructions-1));
-  fp.write('initial begin\n');
-  programBodyIx = 0;
-  for ix in range(len(programBody)):
-    if programBody[ix][0] == '-':
-      fp.write('  // %s\n' % programBody[ix][2:]);
+  instructionMemory = config.Get('nInstructions');
+  addrWidth = (instructionMemory['nbits_blockSize']+3)/4;
+  nameIndexWidth = (instructionMemory['nbits_nBlocks']+3)/4;
+  ixRecordedBody = 0;
+  for ixBlock in range(instructionMemory['nBlocks']):
+    if instructionMemory['nBlocks'] == 1:
+      memName = 's_opcodeMemory';
     else:
-      if programBody[ix][0] == 'p':
-        fp.write(formatp % (programBodyIx,programBody[ix][2:]));
+      memNameFormat = 's_opcodeMemory_%%0%dX' % nameIndexWidth;
+      memName = memNameFormat % ixBlock;
+    formatp = '  %s[\'h%%0%dX] = { 1\'b1, %%s };\n' % (memName,addrWidth,);
+    formatn = '  %s[\'h%%0%dX] = 9\'h%%s; // %%s\n' % (memName,addrWidth,);
+    formate = '  %s[\'h%%0%dX] = 9\'h000;\n' % (memName,addrWidth,);
+    fp.write('reg [8:0] %s[%d:0];\n' % (memName,instructionMemory['blockSize']-1,));
+    fp.write('initial begin\n');
+    for ixMem in range(instructionMemory['blockSize']):
+      if ixRecordedBody < len(programBody):
+        for ixRecordedBody in range(ixRecordedBody,len(programBody)):
+          if programBody[ixRecordedBody][0] == '-':
+            fp.write('  // %s\n' % programBody[ixRecordedBody][2:]);
+          else:
+            if programBody[ixRecordedBody][0] == 'p':
+              fp.write(formatp % (ixMem,programBody[ixRecordedBody][2:]));
+            else:
+              fp.write(formatn % (ixMem,programBody[ixRecordedBody][0:3],programBody[ixRecordedBody][4:]));
+            break;
+        ixRecordedBody = ixRecordedBody + 1;
       else:
-        fp.write(formatn % (programBodyIx,programBody[ix][0:3],programBody[ix][4:]));
-      programBodyIx = programBodyIx + 1;
-  for ix in range(programBodyIx,nInstructions):
-    formate = '  s_opcodeMemory[\'h%%0%dX] = 9\'h000;\n' % addrWidth;
-    fp.write(formate % ix);
-  fp.write('end\n');
+        fp.write(formate % ixMem);
+    fp.write('end\n');
+  fp.write("""
+initial s_opcode = 9'h000;
+always @ (posedge i_clk)
+  if (i_rst)
+    s_opcode <= 9'h000;
+""");
+  if instructionMemory['nBlocks'] == 1:
+    fp.write('  else\n');
+    fp.write('    s_opcode <= s_opcodeMemory[s_PC];\n');
+  else:
+    fp.write('  else case (s_PC[%d+:%d])\n' % (instructionMemory['nbits_blockSize'],instructionMemory['nbits_nBlocks'],));
+    for ixBlock in range(instructionMemory['nBlocks']):
+      memName = memNameFormat % ixBlock;
+      thisLine = '%d\'h%s : s_opcode <= %s[s_PC[0+:%d]];\n' % (instructionMemory['nbits_nBlocks'],memName[15:],memName,instructionMemory['nbits_blockSize'],);
+      while thisLine.index(':') < 12:
+        thisLine = ' ' + thisLine;
+      fp.write(thisLine);
+    fp.write('    default : s_opcode <= 9\'h000;\n');
+    fp.write('  endcase\n');
 
 def genLocalParam(fp,config):
-  fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config.Get('nInstructions')));
+  fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config.Get('nInstructions')['length']));
   fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config.Get('return_stack')));
   fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config.Get('data_stack')));
   fp.write('localparam C_RETURN_WIDTH                          = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;\n');

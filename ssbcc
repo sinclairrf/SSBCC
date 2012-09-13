@@ -126,12 +126,12 @@ try:
     elif re.match(r'\s*INSTRUCTION\b',line):
       if config.Exists('nInstructions'):
         raise SSBCCException('INSTRUCTION already specified before line %d' % ixLine);
-      cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)',line);
+      cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)\*?([1-9]\d*)?',line);
       if not cmd:
         raise SSBCCException('Malformed "INSTRUCTION" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      config.Set('nInstructions',int(cmd[0]));
-      if config.Get('nInstructions') > 2**13:
-        raise SSBCCException('Instruction space cannot exceed %d at line %d' % (2**13,ixLine,));
+      config.SetMemoryBlock('nInstructions',cmd[0],(ixLine,line[:-1],));
+      if config.Get('nInstructions')['length'] > 2**13:
+        raise SSBCCException('Instruction space cannot exceed %d at line %d: "%s"' % (2**13,ixLine,line[:-1],));
     # LOCALPARM
     elif re.match(r'\s*LOCALPARAM\b',line):
       cmd = re.findall(r'\s*LOCALPARAM\s+(L_\w+)\s+(\S+)$',line);
@@ -318,8 +318,8 @@ try:
           programBodyLength = programBodyLength + 1;
       if programBodyLength != mainLength:
         raise SSBCCException('Program Bug:  program length doesn\'t match declared length');
-      if programBodyLength > config.Get('nInstructions'):
-        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,config.Get('nInstructions'),));
+      if programBodyLength > config.Get('nInstructions')['length']:
+        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,eval(config.Get('nInstructions')),));
     else:
       raise Exception('Program Bug:  Unrecognized line at %s:%d :  "%s"' % (fpAssemberOutput.filename,ixLine,line[:-1],));
 

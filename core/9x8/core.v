@@ -530,13 +530,6 @@ always @ (posedge i_clk)
 
 //@SSBCC@ instructions
 
-initial s_opcode = 9'h000;
-always @ (posedge i_clk)
-  if (i_rst)
-    s_opcode <= 9'h000;
-  else
-    s_opcode <= s_opcodeMemory[s_PC];
-
 //@SSBCC@ peripherals
 
 endmodule

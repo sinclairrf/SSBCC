@@ -11,7 +11,7 @@ import os
 import re
 import sys
 
-from ssbccUtil import SSBCCException
+from ssbccUtil import *
 
 class SSBCCconfig():
   """Container for ssbcc configuration commands, the associated parsing, and program generation"""
@@ -268,6 +268,24 @@ class SSBCCconfig():
 
   def Set(self,name,value):
     self.config[name] = value;
+
+  def SetMemoryBlock(self,name,value,errorInfo):
+    blockSize = int(value[0]);
+    nbits_blockSize = int(round(math.log(blockSize,2)));
+    if blockSize != 2**nbits_blockSize:
+      raise SSBCCException('block size must be a power of 2 on line %d: "%s"' % errorInfo);
+    if len(value[1]) == 0:
+      nBlocks = 1;
+    else:
+      nBlocks = int(value[1]);
+    nbits_nBlocks = CeilLog2(nBlocks);
+    self.Set(name, dict(
+                   length=blockSize*nBlocks,
+                   nbits=nbits_blockSize+nbits_nBlocks,
+                   blockSize=blockSize,
+                   nbits_blockSize=nbits_blockSize,
+                   nBlocks=nBlocks,
+                   nbits_nBlocks=nbits_nBlocks));
 
   def SetMemoryParameters(self,memParam,values):
     index = memParam['index'];
