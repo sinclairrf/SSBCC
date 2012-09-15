@@ -72,15 +72,14 @@ removed, is as follows:
   HDL Verilog
 
 The ARCHITECTURE configuration command specifies the 9x8 core.  The INSTRUCTION,
-RETURN_STACK, and DATA_STACK configuration commands specify the lengths of the
-instruction space, return stack length, and data stack length.  The content of
-the PORTCOMMENT configuration command is inserted in the module declaration --
-this facilitates identifying signals in micro controllers with a lot of inputs
-and outputs.  The single OUTPORT statement specifies a 1-bit signal named
-"o_led."  This signal is accessed in the assembly code through the symbol
-"O_LED."  The ASSEMBLY command specifies the single input file "led.s," which is
-listed below.  Finally, the HDL statement specifies the Verilog language with
-the output going to "led.v".
+RETURN_STACK, and DATA_STACK configuration commands specify the sizes of the
+instruction space, return stack, and data stack.  The content of the PORTCOMMENT
+configuration command is inserted in the module declaration -- this facilitates
+identifying signals in micro controllers with a lot of inputs and outputs.  The
+single OUTPORT statement specifies a 1-bit signal named "o_led."  This signal is
+accessed in the assembly code through the symbol "O_LED."  The ASSEMBLY command
+specifies the single input file "led.s," which is listed below.  Finally, the
+HDL statement specifies the Verilog language with the output going to "led.v".
 
 The "led.s" assembly file is as follows:
 
@@ -189,9 +188,9 @@ and outputs.  For example
   INPORT 8-bit i_value I_VALUE
 
 specifies a single 8-bit input signal named "i_value" for the module.  The port
-is accessed in assembly by ".inport(I_VALUE)" which is equivalent to "I_VALUE
-inport."  To input an 8-bit value from a FIFO and send a single-clock-cycle wide
-acknowledgment strobe, use
+is accessed in assembly by ".inport(I_VALUE)" which is equivalent to the
+two-instruction sequence "I_VALUE inport."  To input an 8-bit value from a FIFO
+and send a single-clock-cycle wide acknowledgment strobe, use
 
   INPORT 8-bit,strobe i_fifo,o_fifo_ack I_FIFO
 
@@ -309,6 +308,8 @@ release it is "1 .outport(O_SCL)".  These instruction sequences are actually
 instruction drops the top of the data stack (which contained the port number)
 and sends the next-to-the-top of the data stack to the designated output port.
 
+Two examples of I2C device operation are included in the examples directory.
+
 
 PARAMETER and LOCALPARAM
 ================================================================================
@@ -338,8 +339,8 @@ build sections of the parameter can be accessed in an assembly program using
 
 For both parameters and localparams, the default range is "[0+:8]".  The
 instruction memory is initialized using the parameter value during synthesis,
-not the value used to initialize the parameter.  That is, the memory
-initialization will look like:
+not the value used to initialize the parameter.  That is, the instruction memory
+initialization will be:
 
   s_opcodeMemory[...] = { 1'b1, L_VERSION[16+:8] };
 
@@ -392,8 +393,8 @@ I've used.
 MISCELLANEOUS
 ================================================================================
 
-The INSTRUCTION size can have the format "N*M" where N is the size of the memory
-blocks and M is the number of memory blocks to allocation.  For example, on an
-Altera Cyclone III, the configuration command "INSTRUCTION 1024*3" allocates
+The INSTRUCTION memory size can have the format "N*M" where N is the size of the
+memory blocks and M is the number of memory blocks to allocate.  For example, on
+an Altera Cyclone III, the configuration command "INSTRUCTION 1024*3" allocates
 three M9Ks for the instruction space, saving one M9K as compared to the
 configuration command "INSTRUCTION 4096".
