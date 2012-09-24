@@ -276,18 +276,18 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
     if type(tParseNumber) != int:
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
-  # look for a repeated single-byte numeric value
-  a = re.match(r'[1-9][0-9]*\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})$',raw);
+  # look for a repeated single-byte numeric value (N*M where M is the repeat count)
+  a = re.match(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*[1-9]\d*$',raw);
   if a:
     if 'multivalue' not in allowed:
       raise AsmException('Multi-byte value not allowed at %s' % flc_loc);
-    b = re.findall(r'([1-9][0-9]*)\*(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\b',a.group(0));
+    b = re.findall(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*)\b',a.group(0));
     b = b[0];
-    tParseNumber = ParseNumber(b[1]);
+    tParseNumber = ParseNumber(b[0]);
     if type(tParseNumber) != int:
-      raise AsmException('Malformed multi-byte value at %s' % (fl_loc + ':' + str(col+len(b[0])+2)));
+      raise AsmException('Malformed multi-byte value at %s' % (fl_loc + ':' + str(col+1)));
     tValue = list();
-    for ix in range(int(b[0])):
+    for ix in range(int(b[1])):
       tValue.append(tParseNumber);
     return dict(type='value', value=tValue, loc=flc_loc);
   # look for a single-byte numeric value
