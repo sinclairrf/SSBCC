@@ -63,6 +63,14 @@ Where:
 // monitor_stack peripheral
 //
 generate
+reg s__PC_error = 1'b0;
+localparam L__INSTRUCTION_MAX = @NINSTRUCTIONS@-1;
+always @ (posedge i_clk)
+  if (s_PC > L__INSTRUCTION_MAX[0+:C_PC_WIDTH]) begin
+    $display("%12d : PC passed instruction space", $time);
+    s__PC_error <= 1'b1;
+  end
+//
 reg s__N_valid;
 reg s__R_valid;
 reg s__T_valid;
@@ -298,7 +306,7 @@ always @ (posedge i_clk) begin
     s__history[ix__history-1] <= s__history[ix__history];
   s__history[@HISTORY@-1] <= { s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rw_ptr };
 end
-wire s_terminate = s__data_stack_error || s__return_stack_error || s__R_address_error || s__range_error;
+wire s_terminate = s__PC_error || s__data_stack_error || s__return_stack_error || s__R_address_error || s__range_error;
 always @ (posedge s_terminate) begin
   for (ix__history=0; ix__history<@HISTORY@; ix__history=ix__history+1)
     display_trace(s__history[ix__history]);
@@ -334,6 +342,7 @@ endgenerate
                   (r'@HISTORY@',                str(self.history),),
                   (r'@LAST_INPORT@',            '9\'h%03X' % config.NInports(),),
                   (r'@LAST_OUTPORT@',           '9\'h%03X' % config.NOutports(),),
+                  (r'@NINSTRUCTIONS@',          str(config.Get('nInstructions')['length']),),
                   (r'@OUTPORT_PURE_STROBE@',    outport_pure_strobe,),
                 ):
       body = re.sub(subs[0],subs[1],body);
