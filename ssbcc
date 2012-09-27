@@ -332,7 +332,7 @@ try:
   # Ensure all memories are used.
   for ixMem in range(config.NMemories()):
     memParam = config.GetMemoryParameters(ixMem);
-    if not memParam['length']:
+    if 'length' not in memParam:
       raise SSBCCException('Memory "%s" not used in program' % memParam['name']);
 
   ################################################################################
