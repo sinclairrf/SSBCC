@@ -356,7 +356,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
   # look for symbols
   # Note:  This should be the last check performed as every other kind of
   #        token should be recognizable
-  a = re.match(r'[A-Za-z]\w+$',raw);
+  a = re.match(r'[A-Za-z]\w*$',raw);
   if a:
     if 'symbol' not in allowed:
       raise AsmException('Symbol not allowed at %s' % flc_loc);
