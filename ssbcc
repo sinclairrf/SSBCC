@@ -146,7 +146,7 @@ try:
       # TODO -- make the maximum number of memories architecture dependent
       if config.NMemories() >= 4:
         raise SSBCCException('Program is limited to 4 memories');
-      cmd = re.findall(r'\s*MEMORY\s+(\S+)\s+(\S+)\s+(\S+)\s*$',line);
+      cmd = re.findall(r'\s*MEMORY\s+(RAM|ROM)\s+([A-Za-z]\w*)\s+(\S+)\s*$',line);
       if (not cmd) or (len(cmd[0]) != 3):
         raise SSBCCException('Malformed MEMORY configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       config.AddMemory(cmd[0]);
