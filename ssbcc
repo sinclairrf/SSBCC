@@ -149,7 +149,7 @@ try:
       cmd = re.findall(r'\s*MEMORY\s+(RAM|ROM)\s+([A-Za-z]\w*)\s+(\S+)\s*$',line);
       if (not cmd) or (len(cmd[0]) != 3):
         raise SSBCCException('Malformed MEMORY configuration command on line %d: "%s"' % (ixLine,line[:-1],));
-      config.AddMemory(cmd[0]);
+      config.AddMemory(cmd[0],ixLine);
     # OUTPORT
     elif re.match(r'\s*OUTPORT\b',line):
       if not config.Exists('architecture'):

@@ -58,9 +58,12 @@ class SSBCCconfig():
     self.inports.append(port);
     self.symbols.append(name);
 
-  def AddMemory(self,cmd):
+  def AddMemory(self,cmd,ixLine):
     self.memories['type'].append(cmd[0]);
     self.memories['name'].append(cmd[1]);
+    maxLength = eval(cmd[2]);
+    if not IsPowerOf2(maxLength):
+      raise SSBCCException('Memory length must be a power of 2, not "%s", at line %d' % (cmd[2],ixLine,));
     self.memories['maxLength'].append(eval(cmd[2]));
 
   def AddOutport(self,port):
