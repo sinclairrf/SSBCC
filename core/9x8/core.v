@@ -26,8 +26,6 @@ reg    [C_RETURN_PTR_WIDTH-1:0] s_Rp_ptr;       // read return stack pointer
 reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
 reg                       [7:0] s_T;            // top of the data stack
 reg                       [7:0] s_N;            // next-to-top on the data stack
-reg      [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top;
-                                                // read data stack pointer
 
 //@SSBCC@ verilator_tracing
 
@@ -465,37 +463,24 @@ always @ (posedge i_clk)
 // TODO -- replace this temporary implementation of the data stack
 reg [7:0] s_data_stack[2**C_DATA_PTR_WIDTH-1:0];
 
-reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_next;
-
 // reference data stack pointer
-reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr = { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
+reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
 always @ (posedge i_clk)
   if (i_rst)
-    s_Np_stack_ptr <= { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 };
-  else
-    s_Np_stack_ptr <= s_Np_stack_ptr_next;
+    s_Np_stack_ptr <= { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
+  else case (s_stack)
+    C_STACK_INC: s_Np_stack_ptr <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+    C_STACK_DEC: s_Np_stack_ptr <= s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+        default: s_Np_stack_ptr <= s_Np_stack_ptr;
+  endcase
+
 
 // pointer to top of data stack and next data stack
-initial                    s_Np_stack_ptr_next = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
-initial                    s_Np_stack_ptr_top  = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
+reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
 always @ (*)
   case (s_stack)
-    C_STACK_NOP: begin
-                 s_Np_stack_ptr_next = s_Np_stack_ptr;
-                 s_Np_stack_ptr_top  = s_Np_stack_ptr;
-                 end
-    C_STACK_INC: begin
-                 s_Np_stack_ptr_next = s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                 s_Np_stack_ptr_top  = s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                 end
-    C_STACK_DEC: begin
-                 s_Np_stack_ptr_next = s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-                 s_Np_stack_ptr_top  = s_Np_stack_ptr;
-                 end
-        default: begin
-                 s_Np_stack_ptr_next = s_Np_stack_ptr;
-                 s_Np_stack_ptr_top  = s_Np_stack_ptr;
-                 end
+    C_STACK_INC: s_Np_stack_ptr_top = s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+        default: s_Np_stack_ptr_top = s_Np_stack_ptr;
   endcase
 
 always @ (posedge i_clk)

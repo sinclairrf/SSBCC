@@ -116,7 +116,7 @@ always @ (posedge i_clk)
     s__data_stack_valid <= 1'b0;
   else if (s_stack == C_STACK_INC)
     s__data_stack_valid <= s__N_valid;
-  else if ((s_stack == C_STACK_DEC) && (s_Np_stack_ptr_next == {(C_DATA_PTR_WIDTH){1'b0}}))
+  else if ((s_stack == C_STACK_DEC) && (s_Np_stack_ptr == {(C_DATA_PTR_WIDTH){1'b0}}))
     s__data_stack_valid <= 1'b0;
   else
     s__data_stack_valid <= s__data_stack_valid;
@@ -137,11 +137,11 @@ always @ (posedge i_clk)
       $display("%12d : Data stack validity inversion", $time);
       s__data_stack_error <= 1'b1;
     end
-    if (!s__T_valid && (s_Np_stack_ptr != { {(C_DATA_PTR_WIDTH-1){1'b1}}, 1'b0 })) begin
+    if (!s__T_valid && (s_Np_stack_ptr != { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 })) begin
       $display("%12d : Malformed top-of-data-stack validity", $time);
       s__data_stack_error <= 1'b1;
     end
-    if (!s__N_valid && (s_Np_stack_ptr[1+:C_DATA_PTR_WIDTH-1] != {(C_DATA_PTR_WIDTH-1){1'b1}})) begin
+    if (!s__N_valid && (s_Np_stack_ptr[2+:C_DATA_PTR_WIDTH-2] != {(C_DATA_PTR_WIDTH-2){1'b1}})) begin
       $display("%12d : Malformed next-to-top-of-data-stack validity", $time);
       s__data_stack_error <= 1'b1;
     end
