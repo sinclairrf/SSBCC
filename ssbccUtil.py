@@ -20,5 +20,8 @@ def CeilLog2(v):
     tmp = tmp + 1;
   return tmp;
 
+def CeilPow2(v):
+  return 2**CeilLog2(v);
+
 def IsPowerOf2(v):
   return v == 2**int(math.log(v,2)+0.5);
