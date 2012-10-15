@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-ARCHITECTURE core/9x8
+ARCHITECTURE core/9x8 Verilog
 INSTRUCTION             2048
 RETURN_STACK            32
 DATA_STACK              32
@@ -14,4 +14,3 @@ DATA_STACK              32
 PERIPHERAL trace
 
 ASSEMBLY core.s
-HDL Verilog core
