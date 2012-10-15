@@ -4,7 +4,7 @@
 
 NAME=UART_Tx
 
-ssbcc -q -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+../../../../../ssbcc -q -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
 iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
 ./tb | gawk -f tb.awk > tb.out;
 
