@@ -100,6 +100,9 @@ try:
     elif re.match(r'\s*ASSEMBLY\b',line):
       cmd = re.findall(r'\s*ASSEMBLY\s+(\S.*)',line);
       compiler = ('asm',cmd[0],);
+    # COMBINE
+    elif re.match(r'\s*COMBINE\b',line):
+      config.ProcessCombine(ixLine,line);
     # CONSTANTS
     elif re.match(r'\s*CONSTANT\b',line):
       if not config.Exists('architecture'):
@@ -126,12 +129,10 @@ try:
     elif re.match(r'\s*INSTRUCTION\b',line):
       if config.Exists('nInstructions'):
         raise SSBCCException('INSTRUCTION already specified before line %d' % ixLine);
-      cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*)\*?([1-9]\d*)?',line);
+      cmd = re.findall(r'\s*INSTRUCTION\s+([1-9]\d*\*?[1-9]?\d*)\s*$',line);
       if not cmd:
         raise SSBCCException('Malformed "INSTRUCTION" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       config.SetMemoryBlock('nInstructions',cmd[0],(ixLine,line[:-1],));
-      if config.Get('nInstructions')['length'] > 2**13:
-        raise SSBCCException('Instruction space cannot exceed %d at line %d: "%s"' % (2**13,ixLine,line[:-1],));
     # LOCALPARM
     elif re.match(r'\s*LOCALPARAM\b',line):
       cmd = re.findall(r'\s*LOCALPARAM\s+(L_\w+)\s+(\S+)$',line);
@@ -228,6 +229,14 @@ try:
   if not config.Exists('return_stack'):
     raise SSBCCException('Required RETURN_STACK configuration command missing');
 
+  # Ensure reasonable values
+  if config.Get('nInstructions')['length'] > 2**13:
+    raise SSBCCException('Instruction space cannot exceed %d at line %d: "%s"' % (2**13,ixLine,line[:-1],));
+
+  # Add memories that are not combined into singleton entries in the "combined"
+  # list and complete the address range assignments.
+  config.CompleteCombines();
+
   ################################################################################
   #
   # Compile the processor code and read the tables it generated.
@@ -314,8 +323,9 @@ try:
           programBodyLength = programBodyLength + 1;
       if programBodyLength != mainLength:
         raise SSBCCException('Program Bug:  program length doesn\'t match declared length');
-      if programBodyLength > config.Get('nInstructions')['length']:
-        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,eval(config.Get('nInstructions')),));
+      maxProgramBodyLength = config.Get('nInstructions')['length'];
+      if programBodyLength > maxProgramBodyLength:
+        raise SSBCCException('Program body length = %d is longer than the allocated instruction table = %d' % (programBodyLength,maxProgramBodyLength,));
     else:
       raise Exception('Program Bug:  Unrecognized line at %s:%d :  "%s"' % (fpAssemberOutput.filename,ixLine,line[:-1],));
 
@@ -380,15 +390,12 @@ try:
     # inports
     elif fillCommand == 'inports':
       genInports(fpOutCore,config);
-    # instructions
-    elif fillCommand == 'instructions':
-      genInstructions(fpOutCore,programBody,config);
     # localparam
     elif fillCommand == 'localparam':
       genLocalParam(fpOutCore,config);
-    # memory
-    elif fillCommand == 'memory':
-      genMemory(fpOutCore,config);
+    # memories
+    elif fillCommand == 'memories':
+      genMemories(fpOutCore,config,programBody);
     # module
     elif fillCommand == 'module':
       genModule(fpOutCore,config);
@@ -402,6 +409,12 @@ try:
       for ix in range(len(config.peripheral)):
         fpOutCore.write('\n');
         config.peripheral[ix].GenHDL(fpOutCore,config);
+    # "s_memory" declaration
+    elif fillCommand == 's_memory':
+      if config.NMemories() == 0:
+        fpOutCore.write('wire [7:0] s_memory = 8\'h00;\n');
+      else:
+        fpOutCore.write('reg [7:0] s_memory;\n');
     # additional signals
     elif fillCommand == 'signals':
       genSignals(fpOutCore,config);

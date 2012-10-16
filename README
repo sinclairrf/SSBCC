@@ -377,7 +377,88 @@ opcode, data stack pointer, next-to-top of the data stack, top of the data
 stack, top of the return stack, and the return stack pointer.  Invalid stack
 values are displayed as "XX".  The length of the history dumped is configurable.
 
+Out-of-range PC checks are also performed if the instruction space is not a
+power of 2.
+
 A "trace" peripheral is also provided that dumps the entire execution history.
+This was used to validate the processor core.
+
+
+RESOURCE ALLOCATION
+================================================================================
+
+The DATA_STACK, INSTRUCTION, MEMORY, and RETURN_STACK configuration commands
+allocate memory for the data stack, instruction ROM, memory RAM and ROM, and the
+return stack respectively.  This section describes the COMBINE configuration
+command that will reduce the memory resources required for the processor or make
+it more usable on architecture that do not have distributed memory.
+
+The INSTRUCTION memory size can have the format "N*M" where N is the size of the
+memory blocks and M is the number of memory blocks to allocate.  For example, on
+an Altera Cyclone III, the configuration command "INSTRUCTION 1024*3" allocates
+three M9Ks for the instruction space, saving one M9K as compared to the
+configuration command "INSTRUCTION 4096".
+
+The COMBINE command can be used to instruct the computer compiler to use a large
+single-port memory for the RAM/ROM instead of individual distributed memories.
+To combine all of the RAM/ROM use:
+
+  COMBINE MEMORY
+
+To combine specific memories, such as ram_a, ram_b, and rom_c into a single
+memory use:
+
+  COMBINE MEMORY(ram_a,ram_b,rom_c)
+
+The following combine commands instruct the computer compiler to use a dual-port
+memory for the two specified memories, where either "N" or "N*M" is used to
+specify the extent of the combined memory space:
+
+  COMBINE INSTRUCTION,DATA_STACK {N|N*M}
+  COMBINE INSTRUCTION,MEMORY {N|N*M}
+  COMBINE INSTRUCTION,MEMORY(list) {N|N*M}
+
+The following combine commands can be used with the data stack and the RAM/ROM
+memories:
+
+  COMBINE DATA_STACK,MEMORY
+  COMBINE DATA_STACK,MEMORY(list)
+
+The following combine configuration commands can be used for the return stack
+and either the data stack or the RAM/ROM memories.  The expression "xN"
+specifies the width of the memory.  It can be either a power of 2 that is at
+least 8 or it can be the width of the return stack.
+
+  COMBINE RETURN_STACK,DATA_STACK xN
+  COMBINE RETURN_STACK,MEMORY xN
+  COMBINE RETURN_STACK,MEMORY(list) xN
+
+For example, if the instruction space is 2048, then the return stack width is 11
+and values of "x11" and "x16" make sense for "xN".  A value of "x8" only makes
+sense if the instruction space is 256 or less.  The data stack or the memory
+will be implemented as floor(N/8) bytes wide where N is the specified width.
+I.e., if "x11" is specified then the data stack or memory will be one byte wide.
+If "x16" is specified then the data stack or memory will be two bytes wide and
+the number of memory slots required to store the data stack or memory will be
+halved.
+
+The following illustrates a possible configuration for a Spartan-6 with a
+2048-long SRAM and 32-deep long distributed memory.  The data stack will be in
+the last 64 elements of the instruction memory, the return stack will be from 11
+bits of a 16-bit wide distributed memory, and the memory will be pack with two
+8-bit values per 16-bit wide entry in the distributed memory.
+
+  DATA_STACK 64
+  MEMORY RAM ram_a 32
+  RETURN_STACK 16
+  COMBINE INSTRUCTION,DATA_STACK 2048
+  COMBINE RETURN_STACK,MEMORY x16
+
+The following illustrates a possible configuration for a Cyclone-III with three
+M9Ks for the instruction ROM and the data stack.
+
+  DATA_STACK 64
+  COMBINE INSTRUCTION,DATA_STACK 1024*3
 
 
 SIMULATIONS
@@ -388,13 +469,3 @@ ISIM.  Icarus Verilog is good for short, simple simulations, Verilator for long
 simulations of large, complex systems, and ISIM when Xilinx-specific cores are
 used.  Verilator is over an order of magnitude faster than the other simulators
 I've used.
-
-
-MISCELLANEOUS
-================================================================================
-
-The INSTRUCTION memory size can have the format "N*M" where N is the size of the
-memory blocks and M is the number of memory blocks to allocate.  For example, on
-an Altera Cyclone III, the configuration command "INSTRUCTION 1024*3" allocates
-three M9Ks for the instruction space, saving one M9K as compared to the
-configuration command "INSTRUCTION 4096".

@@ -137,8 +137,7 @@ reg [7:0] s_T_inport = 8'h00;
  ******************************************************************************/
 
 reg s_mem_wr = 1'b0;
-
-//@SSBCC@ memory
+//@SSBCC@ s_memory
 
 /*******************************************************************************
  *
@@ -367,9 +366,7 @@ always @ (posedge i_clk)
  * Operate the return stack.
  */
 
-// Declare the return stack.
-reg [C_RETURN_WIDTH-1:0] s_R_stack[2**C_RETURN_PTR_WIDTH-1:0];
-
+// reference data stack pointer
 reg [C_RETURN_PTR_WIDTH-1:0] s_Rp_stack_ptr = { {(C_RETURN_PTR_WIDTH-1){1'b1}}, 1'b0 };
 always @ (posedge i_clk)
   if (i_rst)
@@ -387,9 +384,7 @@ always @ (*)
          default: s_Rp_stack_ptr_top = s_Rp_stack_ptr;
   endcase
 
-always @ (posedge i_clk)
-  if (s_return == C_RETURN_INC)
-    s_R_stack[s_Rp_stack_ptr_top] <= s_R;
+wire [C_RETURN_WIDTH-1:0] s_Rp_stack;
 
 initial s_R = {(C_RETURN_WIDTH){1'b0}};
 always @ (posedge i_clk)
@@ -397,7 +392,7 @@ always @ (posedge i_clk)
     s_R <= {(C_RETURN_WIDTH){1'b0}};
   else case (s_return)
     C_RETURN_INC: s_R <= s_R_pre;
-    C_RETURN_DEC: s_R <= s_R_stack[s_Rp_stack_ptr_top];
+    C_RETURN_DEC: s_R <= s_Rp_stack;
          default: s_R <= s_R;
   endcase
 
@@ -426,9 +421,6 @@ always @ (posedge i_clk)
  * Operate the next-to-top of the data stack.
  */
 
-// TODO -- replace this temporary implementation of the data stack
-reg [7:0] s_data_stack[2**C_DATA_PTR_WIDTH-1:0];
-
 // reference data stack pointer
 reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
 always @ (posedge i_clk)
@@ -440,7 +432,6 @@ always @ (posedge i_clk)
         default: s_Np_stack_ptr <= s_Np_stack_ptr;
   endcase
 
-
 // pointer to top of data stack and next data stack
 reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
 always @ (*)
@@ -449,9 +440,7 @@ always @ (*)
         default: s_Np_stack_ptr_top = s_Np_stack_ptr;
   endcase
 
-always @ (posedge i_clk)
-  if (s_stack == C_STACK_INC)
-    s_data_stack[s_Np_stack_ptr_top] <= s_N;
+wire [7:0] s_Np_stack;
 
 initial s_N = 8'h00;
 always @ (posedge i_clk)
@@ -459,7 +448,7 @@ always @ (posedge i_clk)
     s_N <= 8'h00;
   else case (s_bus_n)
     C_BUS_N_N:          s_N <= s_N;
-    C_BUS_N_STACK:      s_N <= s_data_stack[s_Np_stack_ptr_top];
+    C_BUS_N_STACK:      s_N <= s_Np_stack;
     C_BUS_N_T:          s_N <= s_T;
     C_BUS_N_MEM:        s_N <= s_memory;
     default:            s_N <= s_N;
@@ -479,7 +468,13 @@ always @ (posedge i_clk)
  *
  ******************************************************************************/
 
-//@SSBCC@ instructions
+//@SSBCC@ memories
+
+/*******************************************************************************
+ *
+ * Instantiate the peripherals (if any).
+ *
+ ******************************************************************************/
 
 //@SSBCC@ peripherals
 
