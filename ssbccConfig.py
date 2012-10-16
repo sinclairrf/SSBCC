@@ -273,7 +273,13 @@ class SSBCCconfig():
     self.config[name] = value;
 
   def SetMemoryBlock(self,name,value,errorInfo):
-    blockSize = int(value[0]);
+    findStar = value.find('*');
+    if findStar == -1:
+      blockSize = int(value);
+      nBlocks = 1;
+    else:
+      blockSize = int(value[0:findStar]);
+      nBlocks = int(value[findStar+1:]);
     nbits_blockSize = int(round(math.log(blockSize,2)));
     if blockSize != 2**nbits_blockSize:
       raise SSBCCException('block size must be a power of 2 on line %d: "%s"' % errorInfo);
