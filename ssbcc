@@ -228,10 +228,6 @@ try:
   if not config.Exists('return_stack'):
     raise SSBCCException('Required RETURN_STACK configuration command missing');
 
-  # Compute the memory bank indices.
-  ixRAM = 0;
-  ixROM = 3;
-
   ################################################################################
   #
   # Compile the processor code and read the tables it generated.
