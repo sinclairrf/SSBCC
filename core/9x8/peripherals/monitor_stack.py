@@ -208,9 +208,9 @@ initial s__R_valid = 1'b0;
 always @ (posedge i_clk)
   if (i_rst)
     s__R_valid <= 1'b0;
-  else if (s_R_memWr)
+  else if (s_return == C_RETURN_INC)
     s__R_valid <= 1'b1;
-  else if (s_R_memRd)
+  else if (s_return == C_RETURN_DEC)
     s__R_valid <= s__return_stack_valid;
   else
     s__R_valid <= s__R_valid;
@@ -219,10 +219,10 @@ initial s__return_stack_valid = 1'b0;
 always @ (posedge i_clk)
   if (i_rst)
     s__return_stack_valid <= 1'b0;
-  else if (s_R_memWr)
+  else if (s_return == C_RETURN_INC)
     s__return_stack_valid <= s__R_valid;
-  else if (s_R_memRd)
-    if (s_Rp_ptr == {(C_RETURN_PTR_WIDTH){1'b0}})
+  else if (s_return == C_RETURN_DEC)
+    if (s_Rp_stack_ptr == {(C_RETURN_PTR_WIDTH){1'b0}})
       s__return_stack_valid <= 1'b0;
     else
       s__return_stack_valid <= s__return_stack_valid;
@@ -236,7 +236,7 @@ always @ (posedge i_clk)
       $display("%12d : Return stack underflow", $time);
       s__return_stack_error <= 1'b1;
     end
-    if ((s_return == C_RETURN_INC) && (s_Rw_ptr == {(C_RETURN_PTR_WIDTH){1'b1}}) && s__return_stack_valid) begin
+    if ((s_return == C_RETURN_INC) && (s_Rp_stack_ptr == {(C_RETURN_PTR_WIDTH){1'b1}}) && s__return_stack_valid) begin
       $display("%12d : Return stack overflow", $time);
       s__return_stack_error <= 1'b1;
     end
@@ -248,11 +248,11 @@ always @ (posedge i_clk)
   if (i_rst) begin
     s__R_is_address <= 1'b0;
     s__return_is_address <= {(2**C_RETURN_PTR_WIDTH){1'b0}};
-  end else if (s_R_memWr) begin
+  end else if (s_return == C_RETURN_INC) begin
     s__R_is_address <= (s_bus_r == C_BUS_R_PC);
-    s__return_is_address[s_Rw_ptr] <= s__R_is_address;
-  end else if (s_R_memRd) begin
-    s__R_is_address <= s__return_is_address[s_Rp_ptr];
+    s__return_is_address[s_Rp_stack_ptr_top] <= s__R_is_address;
+  end else if (s_return == C_RETURN_DEC) begin
+    s__R_is_address <= s__return_is_address[s_Rp_stack_ptr_top];
   end
 //
 reg s__R_address_error = 1'b0;
@@ -304,13 +304,13 @@ always @ (posedge i_clk) begin
   s__opcode_s <= s_opcode;
   for (ix__history=1; ix__history<@HISTORY@; ix__history=ix__history+1)
     s__history[ix__history-1] <= s__history[ix__history];
-  s__history[@HISTORY@-1] <= { s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rw_ptr };
+  s__history[@HISTORY@-1] <= { s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rp_stack_ptr };
 end
 wire s_terminate = s__PC_error || s__data_stack_error || s__return_stack_error || s__R_address_error || s__range_error;
 always @ (posedge s_terminate) begin
   for (ix__history=0; ix__history<@HISTORY@; ix__history=ix__history+1)
     display_trace(s__history[ix__history]);
-  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rw_ptr });
+  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_Rp_stack_ptr });
   $finish;
 end
 endgenerate
