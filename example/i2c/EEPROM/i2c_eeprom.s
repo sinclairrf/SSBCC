@@ -8,7 +8,7 @@
 .include ../lib_i2c.s
 
 .memory RAM ram
-.variable ram__msg 16*0
+.variable ram__msg 0*16
 
 .memory ROM messages
 .variable msg__bad_device_number        N"Bad Device Number"
