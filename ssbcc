@@ -180,6 +180,14 @@ try:
       if not cmd:
         raise SSBCCException('Malformed "RETURN_STACK" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       config.Set('return_stack',int(cmd[0]));
+    # SRAM_WIDTH
+    elif re.match(r'\s*SRAM_WIDTH\b',line):
+      if config.Exists('sram_width'):
+        raise SSBCCException('SRAM_WIDTH already specified before line %d' % ixLine);
+      cmd = re.findall(r'\s*SRAM_WIDTH\s+([1-9]\d*)',line);
+      if not cmd:
+        raise SSBCCException('Malformed "SRAM_WIDTH" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
+      config.Set('sram_width',int(cmd[0]));
     # USER_HEADER
     elif re.match(r'\s*USER_HEADER\b',line):
       user_header_done = False;
@@ -215,6 +223,13 @@ try:
   if argList.P:
     for peripheral in argList.P:
       config.ProcessPeripheral(-1,'PERIPHERAL '+peripheral);
+
+  #
+  # Set unspecified default values
+  #
+
+  if not config.Exists('sram_width'):
+    config.Set('sram_width',9);
 
   #
   # end-of-file processing
