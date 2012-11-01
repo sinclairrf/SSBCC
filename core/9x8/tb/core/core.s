@@ -36,4 +36,7 @@
   0x11 0x12 or drop
   0x11 0x12 ^  drop
 
+  ; Test the increment and decrement operators
+  0xFE 1+ 1+ 1+ 1- 1- 1- drop
+
   :loop .jump(loop)
