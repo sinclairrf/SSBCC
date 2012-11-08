@@ -247,7 +247,7 @@ class asmDef_9x8:
     for token in rawTokens:
       if token['type'] == 'value':
         if type(token['value']) == int:
-          tokens.append(token['value']);
+          tokens.append(token['value'] % 0x100);
         else:
           for lToken in token['value']:
             tokens.append(lToken);
