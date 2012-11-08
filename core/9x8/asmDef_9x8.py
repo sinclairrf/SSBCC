@@ -67,9 +67,9 @@ class asmDef_9x8:
     if length >= 0:
       return length;
     if token['value'] == '.fetchvector':
-      return int(token['argument'][1]) + 1;
+      return int(token['argument'][1]['value']) + 1;
     if token['value'] == '.storevector':
-      return int(token['argument'][1]) + 2;
+      return int(token['argument'][1]['value']) + 2;
     raise Exception('Program Bug');
 
   def MacroNumberArgs(self,name):
