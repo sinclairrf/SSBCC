@@ -11,6 +11,8 @@ INSTRUCTION             2048
 RETURN_STACK            32
 DATA_STACK              32
 
+MEMORY RAM ram 8
+
 PERIPHERAL trace
 
 ASSEMBLY core.s

@@ -2,6 +2,10 @@
 ;
 ; Test the core instructions.
 
+.memory RAM ram
+.variable fred 3 -3
+.variable joe  0*6
+
 .main
 
   ; Test the left rotation instructions.
@@ -39,4 +43,9 @@
   ; Test the increment and decrement operators
   0xFE 1+ 1+ 1+ 1- 1- 1- drop
 
-  :loop .jump(loop)
+  ; Test the memory access operators
+  .fetchvector(fred,2) drop drop
+  ${size['ram']-1} :set_mem 0xFF swap .jumpc(set_mem,.store-(ram)) drop
+  .fetchvector(fred,2) drop drop
+
+  :infinite .jump(infinite)
