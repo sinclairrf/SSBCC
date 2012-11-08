@@ -565,11 +565,11 @@ def genMemories(fp,config,programBody):
               conditionalString = conditionalString + ' || ';
             conditionalString = conditionalString + ('(s_opcode[0+:2] == 2\'d%d)' % thisMemParam['bank']);
         if thisMemParam['memWidth'] == 8:
-          sourceString = 's_T';
+          sourceString = 's_N';
         elif thisMemParam['memWidth'] == 9:
-          sourceString = '{ 1\'b0, s_T }';
+          sourceString = '{ 1\'b0, s_N }';
         else:
-          sourceString = '{ %d\'d0, s_T }' % (thisMemParam['memWidth']-8,);
+          sourceString = '{ %d\'d0, s_N }' % (thisMemParam['memWidth']-8,);
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (s_mem_wr && (%s))\n' % conditionalString);
         fp.write('    %s[%s] <= %s;\n' % (memName,addrName,sourceString));
