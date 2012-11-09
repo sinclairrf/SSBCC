@@ -671,7 +671,7 @@ class asmDef_9x8:
     elif token['value'] == '.storevector':
       (addr,ixBank) = self.Emit_GetAddrAndBank(token['argument'][0]['value']);
       N = int(token['argument'][1]['value']);
-      self.EmitPush(fp,addr+N-1,token['argument'][0]['value']);
+      self.EmitPush(fp,addr,token['argument'][0]['value']);
       for dummy in range(N):
         self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
       self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
