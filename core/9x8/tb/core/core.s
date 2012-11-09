@@ -47,5 +47,6 @@
   .fetchvector(fred,2) drop drop
   ${size['ram']-1} :set_mem 0xFF swap .jumpc(set_mem,.store-(ram)) drop
   .fetchvector(fred,2) drop drop
+  joe .fetch(ram) 1- joe .store(ram) drop .fetchvalue(joe) drop
 
   :infinite .jump(infinite)
