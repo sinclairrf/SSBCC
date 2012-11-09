@@ -43,10 +43,30 @@
   ; Test the increment and decrement operators
   0xFE 1+ 1+ 1+ 1- 1- 1- drop
 
-  ; Test the memory access operators
-  .fetchvector(fred,2) drop drop
-  ${size['ram']-1} :set_mem 0xFF swap .jumpc(set_mem,.store-(ram)) drop
-  .fetchvector(fred,2) drop drop
-  joe .fetch(ram) 1- joe .store(ram) drop .fetchvalue(joe) drop
+  ;
+  ; Test the memory access operators.
+  ;
 
+  ; get the two pre-loaded values for "fred"
+  .fetchvector(fred,2) drop drop
+
+  ; Set the entire RAM "ram" to 0xFF.
+  ${size['ram']-1} :set_mem 0xFF swap .jumpc(set_mem,.store-(ram)) drop
+
+  ; Ensure "fred" was changed.
+  .fetchvector(fred,2) drop drop
+
+  ; Fetch, alter, and store the first value in "joe" using raw ".fetch(ram)" and ".store(ram)" macros.
+  joe .fetch(ram) 1- joe .store(ram) drop
+
+  ; Do the same using ".fetchvalue" and ".storevalue" macros.
+  .fetchvalue(joe) 1- .storevalue(joe) .fetchvalue(joe) drop
+
+  ; Do the same to the third element of "joe".
+  2 .fetchindexed(joe) 1- 2 .storeindexed(joe) ${joe+2} .fetch(ram) drop
+
+  ; Check the ".storevector" and ".fetch+" macros.
+  6 7 .storevector(fred,2) fred .fetch+(ram) .fetch(ram) drop drop
+
+  ; Hang in an infinite loop.
   :infinite .jump(infinite)
