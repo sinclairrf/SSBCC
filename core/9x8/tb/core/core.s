@@ -68,5 +68,13 @@
   ; Check the ".storevector" and ".fetch+" macros.
   6 7 .storevector(fred,2) fred .fetch+(ram) .fetch(ram) drop drop
 
+  ; Test "call" and "callc" opcodes.
+  .call(test_callc,3) drop
+
   ; Hang in an infinite loop.
   :infinite .jump(infinite)
+
+; Function to test "callc" opcode
+; ( u - \sum_n=1^u{n} )
+.function test_callc
+  dup 1- .callc(test_callc,nop) .return(+)
