@@ -22,7 +22,7 @@
 // listed in useful dispay order
 reg            [C_PC_WIDTH-1:0] s_PC;           // program counter
 reg                       [8:0] s_opcode;       // current opcode
-reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
+wire       [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
 reg                       [7:0] s_T;            // top of the data stack
 reg                       [7:0] s_N;            // next-to-top on the data stack
 
@@ -366,34 +366,23 @@ always @ (posedge i_clk)
  * Operate the return stack.
  */
 
+reg [C_RETURN_PTR_WIDTH-1:0] s_R_stack_ptr_next;
+
 // reference data stack pointer
-reg [C_RETURN_PTR_WIDTH-1:0] s_Rp_stack_ptr = { {(C_RETURN_PTR_WIDTH-1){1'b1}}, 1'b0 };
+reg [C_RETURN_PTR_WIDTH-1:0] s_R_stack_ptr = {(C_RETURN_PTR_WIDTH){1'b1}};
 always @ (posedge i_clk)
   if (i_rst)
-    s_Rp_stack_ptr <= { {(C_RETURN_PTR_WIDTH-1){1'b1}}, 1'b0 };
-  else case (s_return)
-    C_RETURN_INC: s_Rp_stack_ptr <= s_Rp_stack_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-    C_RETURN_DEC: s_Rp_stack_ptr <= s_Rp_stack_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-         default: s_Rp_stack_ptr <= s_Rp_stack_ptr;
-  endcase
+    s_R_stack_ptr <= {(C_RETURN_PTR_WIDTH){1'b1}};
+  else
+    s_R_stack_ptr <= s_R_stack_ptr_next;
 
-reg [C_RETURN_PTR_WIDTH-1:0] s_Rp_stack_ptr_top = { {(C_RETURN_PTR_WIDTH-1){1'b1}}, 1'b0 };
+// reference data stack pointer
+initial s_R_stack_ptr_next = {(C_RETURN_PTR_WIDTH){1'b1}};
 always @ (*)
   case (s_return)
-    C_RETURN_INC: s_Rp_stack_ptr_top = s_Rp_stack_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-         default: s_Rp_stack_ptr_top = s_Rp_stack_ptr;
-  endcase
-
-wire [C_RETURN_WIDTH-1:0] s_Rp_stack;
-
-initial s_R = {(C_RETURN_WIDTH){1'b0}};
-always @ (posedge i_clk)
-  if (i_rst)
-    s_R <= {(C_RETURN_WIDTH){1'b0}};
-  else case (s_return)
-    C_RETURN_INC: s_R <= s_R_pre;
-    C_RETURN_DEC: s_R <= s_Rp_stack;
-         default: s_R <= s_R;
+    C_RETURN_INC: s_R_stack_ptr_next <= s_R_stack_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+    C_RETURN_DEC: s_R_stack_ptr_next <= s_R_stack_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+         default: s_R_stack_ptr_next <= s_R_stack_ptr;
   endcase
 
 /*

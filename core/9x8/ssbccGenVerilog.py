@@ -421,6 +421,7 @@ def genMemories(fp,config,programBody):
   fp.write('\n');
   for ixCombine in range(len(mems)):
     if mems[ixCombine][0] == 'RETURN_STACK':
+      isLUT = (len(mems[ixCombine]) == 1);
       bitwidth = args[ixCombine][0]['rsArch'];
       thisPacked = packed[ixCombine];
       memName = thisPacked['memName'];
@@ -428,32 +429,48 @@ def genMemories(fp,config,programBody):
       thisBitWidth = args[ixCombine][0]['rsArch'];
       if thisBitWidth < minBitWidth:
         raise Exception('Program bug');
-      if thisBitWidth == minBitWidth:
-        s_R = 's_R';
-        s_Rp_stack = 's_Rp_stack';
+      s_R_write = 's_R_pre';
+      if isLUT:
+        s_R_read = 's_R';
       else:
-        s_R = '{ %d\'h0, s_R }' % (thisBitWidth-minBitWidth,);
-        s_Rp_stack = '{ not_used_s_Rp_stack, s_Rp_stack }'
-      if len(thisPacked['packing']) == 1:
-        ptrString = 's_Rp_stack_ptr_top';
-      else:
+        s_R_read = 's_R_reg';
+      if thisBitWidth > minBitWidth:
+        s_R_write = '{ %d\'h0, %s }' % (thisBitWidth-minBitWidth,s_R_write,);
+        s_R_read = '{ not_used_s_R, %s }' % (s_R_read,);
+      ptrString = 's_R_stack_ptr';
+      ptrStringNext = 's_R_stack_ptr_next';
+      if len(thisPacked['packing']) != 1:
         for ixPacked in range(len(thisPacked['packing'])):
           thisPacking = thisPacked['packing'][ixPacked];
-          if thisPacking['name'] == '_return_stack':
-            nbitsEntire = CeilLog2(thisPacked['length']);
-            nbitsThis = CeilLog2(thisPacking['length']);
-            nbitsTop = nbitsEntire - nbitsThis;
-            ptrString = ('{ %d\'h%%0%dX, s_Rp_stack_ptr_top }' % (nbitsTop,(nbitsTop+3)/4,)) % (thisPacking['offset']/2**nbitsThis);
-            break;
-      fp.write('always @ (posedge i_clk)\n');
+          if thisPacking['name'] != '_return_stack':
+            continue;
+          nbitsThis = CeilLog2(thisPacking['length']);
+          nbitsTop = CeilLog2(thisPacking['length']) - nbitsThis;
+          ptrStringFormat = ('{ %d\'h%%0%dX, %%%%s }' % (nbitsTop,(nbitsTop+3)/4,)) % (thisPacking['offset']/2**nbitsThis,);
+          ptrString = ptrStringFormat % ptrString;
+          ptrStringNext = ptrStringFormat % ptrStringNext;
+      if not isLUT:
+        fp.write('reg [%d:0] s_R_reg = %d\'d0;\n' % (thisBitWidth-1,thisBitWidth,));
+      if not isLUT and thisBitWidth == minBitWidth+1:
+        fp.write('reg not_used_s_R = 1\'b0;\n');
+      if not isLUT and thisBitWidth > minBitWidth+1:
+        fp.write('reg [%d:0] not_used_s_R = %d\'d0;\n' % (thisBitWidth-minBitWidth-1,thisBitWidth-minBitWidth,));
+      fp.write('always @ (posedge i_clk) begin\n');
       fp.write('  if (s_return == C_RETURN_INC)\n');
-      fp.write('    %s[%s] <= %s;\n' % (memName,ptrString,s_R,));
-      fp.write('\n');
-      if thisBitWidth == minBitWidth+1:
-        fp.write('wire not_used_s_Rp_stack;\n');
-      elif thisBitWidth > minBitWidth+1:
-        fp.write('wire [%d:0] not_used_s_Rp_stack;\n' % (thisBitWidth-minBitWidth-1,));
-      fp.write('assign %s = %s[%s];\n' % (s_Rp_stack,memName,ptrString,));
+      if isLUT:
+        fp.write('    %s[%s] <= %s;\n' % (memName,ptrStringNext,s_R_write,));
+      else:
+        fp.write('    %s[%s] = %s; // coerce write-through\n' % (memName,ptrStringNext,s_R_write,));
+        fp.write('  %s <= %s[%s];\n' % (s_R_read,memName,ptrStringNext,));
+      fp.write('end\n');
+      if isLUT and thisBitWidth == minBitWidth+1:
+        fp.write('wire not_used_s_R;\n');
+      if isLUT and thisBitWidth > minBitWidth+1:
+        fp.write('wire [%d:0] not_used_s_R;\n' % (thisBitWidth-minBitWidth-1,thisBitWidth-minBitWidth,));
+      if isLUT:
+        fp.write('assign %s = %s[%s];\n' % (s_R_read,memName,ptrString,));
+      else:
+        fp.write('assign s_R = s_R_reg;\n');
       fp.write('\n');
       break;
   else:
