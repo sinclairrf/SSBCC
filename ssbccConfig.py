@@ -285,6 +285,8 @@ class SSBCCconfig():
         entries.append(dict(length=self.Get('data_stack'), name=memName, width=8, ratio=1));
       elif memName == '_return_stack':
         nbits = self.Get('nInstructions')['nbits'];
+        if nbits < 8:
+          nbits = 8;
         if nCombined == 1:
           ratio = 1;
         else:
