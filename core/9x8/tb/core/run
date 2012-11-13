@@ -11,4 +11,4 @@ if [ -n "`./tb | cmp - tb.good 2>&1`" ]; then
   exit 1;
 fi
 
-echo "Test passed"
+echo "Passed:  core"
