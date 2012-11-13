@@ -250,7 +250,7 @@ always @ (posedge i_clk)
     s__return_is_address <= {(2**C_RETURN_PTR_WIDTH){1'b0}};
   end else if (s_return == C_RETURN_INC) begin
     s__R_is_address <= (s_bus_r == C_BUS_R_PC);
-    s__return_is_address[s_R_stack_ptr] <= s__R_is_address;
+    s__return_is_address[s_R_stack_ptr_next] <= s__R_is_address;
   end else if (s_return == C_RETURN_DEC) begin
     s__R_is_address <= s__return_is_address[s_R_stack_ptr];
   end
