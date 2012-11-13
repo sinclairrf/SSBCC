@@ -225,7 +225,13 @@ def genMemories(fp,config,programBody):
     else:
       instructionMemNameFormat = 's_opcodeMemory_%%0%dX' % instructionNameIndexWidth;
       memName = instructionMemNameFormat % ixBlock;
-    fp.write('reg [8:0] %s[%d:0];\n' % (memName,instructionMemory['blockSize']-1,));
+    for ixCombine in range(len(mems)):
+      if 'INSTRUCTION' in mems[ixCombine]:
+        instruction_mem_width = packed[ixCombine]['width'];
+        break;
+    else:
+      raise Exception('Program bug');
+    fp.write('reg [%d:0] %s[%d:0];\n' % (instruction_mem_width-1,memName,instructionMemory['blockSize']-1,));
   # Declare data stack RAM if it isn't combined into another memory.
   for ixCombine in range(len(mems)):
     if mems[ixCombine][0] == 'DATA_STACK':
@@ -307,7 +313,7 @@ def genMemories(fp,config,programBody):
     for ixPacking in range(1,len(thisPacked['packing'])):
       thisPacking = thisPacked['packing'][ixPacking];
       thisPacking['offset'] = thisPacking['offset'] - offset0;
-    genMemories_init(fp,config,thisPacked['packing'][1:],memName,9);
+    genMemories_init(fp,config,thisPacked['packing'][1:],memName,width);
   fp.write('end\n\n');
   # Initialize the data stack.
   for ixCombine in range(len(mems)):
@@ -344,21 +350,31 @@ def genMemories(fp,config,programBody):
   fp.write('//\n');
   fp.write('\n');
   fp.write('initial s_opcode = 9\'h000;\n');
+  if instruction_mem_width == 10:
+    fp.write('reg not_used_s_opcode = 1\'b0;\n');
+  elif instruction_mem_width > 10:
+    fp.write('reg [%d:0] not_used_s_opcode = %d\'d0;\n' % (instruction_mem_width-10,instruction_mem_width-9,));
   fp.write('always @ (posedge i_clk)\n');
-  fp.write('  if (i_rst)\n');
+  fp.write('  if (i_rst) begin\n');
   fp.write('    s_opcode <= 9\'h000;\n');
+  if instruction_mem_width > 9:
+    fp.write('    not_used_s_opcode <= %d\'d0;\n' % (instruction_mem_width-9,));
+  if instruction_mem_width == 9:
+    instructionReadTarget = 's_opcode';
+  else:
+    instructionReadTarget = '{ not_used_s_opcode, s_opcode }';
   if instructionMemory['nBlocks'] == 1:
-    fp.write('  else\n');
-    fp.write('    s_opcode <= s_opcodeMemory[s_PC];\n');
+    fp.write('  end else\n');
+    fp.write('    %s <= s_opcodeMemory[s_PC];\n' % instructionReadTarget);
   else:
     fp.write('  else case (s_PC[%d+:%d])\n' % (instructionMemory['nbits_blockSize'],instructionMemory['nbits_nBlocks'],));
     for ixBlock in range(instructionMemory['nBlocks']):
       memName = instructionMemNameFormat % ixBlock;
-      thisLine = '%d\'h%X : s_opcode <= %s[s_PC[0+:%d]];\n' % (instructionMemory['nbits_nBlocks'],ixBlock,memName,instructionMemory['nbits_blockSize'],);
+      thisLine = '%d\'h%X : %s <= %s[s_PC[0+:%d]];\n' % (instructionMemory['nbits_nBlocks'],ixBlock,instructionReadTarget,memName,instructionMemory['nbits_blockSize'],);
       while thisLine.index(':') < 12:
         thisLine = ' ' + thisLine;
       fp.write(thisLine);
-    fp.write('    default : s_opcode <= 9\'h000;\n');
+    fp.write('    default : %s <= %d\'h000;\n' % (instructionReadTarget,instruction_mem_width,));
     fp.write('  endcase\n');
   fp.write('\n');
   #
