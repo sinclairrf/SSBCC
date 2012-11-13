@@ -12,7 +12,7 @@ RETURN_STACK    32
 DATA_STACK      32
 
 PORTCOMMENT simulation completed strobe
-OUTPORT         strobe  o_done_strobe  O_DONE_STROBE
+OUTPORT         strobe  o_done_strobe   O_DONE_STROBE
 
 PERIPHERAL      trace
 
