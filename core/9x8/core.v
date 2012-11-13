@@ -421,24 +421,23 @@ always @ (posedge i_clk)
  * Operate the next-to-top of the data stack.
  */
 
+reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr;
+
 // reference data stack pointer
-reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
+reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_next;
+always @ (*)
+  case (s_stack)
+    C_STACK_INC: s_Np_stack_ptr_next <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+    C_STACK_DEC: s_Np_stack_ptr_next <= s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+        default: s_Np_stack_ptr_next <= s_Np_stack_ptr;
+  endcase
+
+initial s_Np_stack_ptr = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
 always @ (posedge i_clk)
   if (i_rst)
     s_Np_stack_ptr <= { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
-  else case (s_stack)
-    C_STACK_INC: s_Np_stack_ptr <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-    C_STACK_DEC: s_Np_stack_ptr <= s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-        default: s_Np_stack_ptr <= s_Np_stack_ptr;
-  endcase
-
-// pointer to top of data stack and next data stack
-reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_top = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };
-always @ (*)
-  case (s_stack)
-    C_STACK_INC: s_Np_stack_ptr_top = s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-        default: s_Np_stack_ptr_top = s_Np_stack_ptr;
-  endcase
+  else
+    s_Np_stack_ptr <= s_Np_stack_ptr_next;
 
 wire [7:0] s_Np_stack;
 

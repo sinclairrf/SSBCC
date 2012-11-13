@@ -362,6 +362,7 @@ def genMemories(fp,config,programBody):
   fp.write('\n');
   for ixCombine in range(len(mems)):
     if 'DATA_STACK' in mems[ixCombine]:
+      isLUT = (len(mems[ixCombine]) == 1);
       if mems[ixCombine][0] == 'INSTRUCTION':
         bitwidth = 9;
       elif mems[ixCombine][0] == 'RETURN_STACK':
@@ -370,32 +371,45 @@ def genMemories(fp,config,programBody):
         bitwidth = 8;
       thisPacked = packed[ixCombine];
       memName = thisPacked['memName'];
-      if bitwidth == 8:
-        s_N = 's_N';
+      if isLUT:
         s_Np_stack = 's_Np_stack';
       else:
-        s_N = '{ %d\'h0, s_N }' % (bitwidth-8,);
-        s_Np_stack = '{ not_used_s_Np_stack, s_Np_stack }'
-      if len(thisPacked['packing']) == 1:
-        ptrString = 's_Np_stack_ptr_top';
+        s_Np_stack = 's_Np_stack_reg';
+      if bitwidth == 8:
+        s_N = 's_N';
       else:
+        s_N = '{ %d\'h0, s_N }' % (bitwidth-8,);
+        s_Np_stack = '{ not_used_s_Np_stack, %s }' % (s_Np_stack,);
+      ptrString = 's_Np_stack_ptr';
+      ptrStringTop = 's_Np_stack_ptr_next';
+      if len(thisPacked['packing']) != 1:
         for ixPacked in range(len(thisPacked['packing'])):
           thisPacking = thisPacked['packing'][ixPacked];
-          if thisPacking['name'] == '_data_stack':
-            nbitsEntire = CeilLog2(thisPacked['length']);
-            nbitsThis = CeilLog2(thisPacking['length']);
-            nbitsTop = nbitsEntire - nbitsThis;
-            ptrString = ('{ %d\'h%%0%dX, s_Np_stack_ptr_top }' % (nbitsTop,(nbitsTop+3)/4,)) % (thisPacking['offset']/2**nbitsThis);
-            break;
-      fp.write('always @ (posedge i_clk)\n');
-      fp.write('  if (s_stack == C_STACK_INC)\n');
-      fp.write('    %s[%s] <= %s;\n' % (memName,ptrString,s_N,));
-      fp.write('\n');
+          if thisPacking['name'] != '_data_stack':
+            continue;
+          nbitsThis = CeilLog2(thisPacking['length']);
+          nbitsTop = CeilLog2(thisPacked['length']) - nbitsThis;
+          ptrStringFormat = ('{ %d\'h%%0%dX, %%%%s }' % (nbitsTop,(nbitsTop+3)/4,)) % (thisPacking['offset']/2**nbitsThis,);
+          ptrString = ptrStringFormat % (ptrString,);
+          ptrStringTop = ptrStringFormat % (ptrStringTop,);
+      if not isLUT:
+        fp.write('reg [7:0] s_Np_stack_reg = 8\'d0;\n');
       if bitwidth == 9:
-        fp.write('wire not_used_s_Np_stack;\n');
+        fp.write('reg not_used_s_Np_stack = 1\'b0;\n');
       elif bitwidth > 9:
-        fp.write('wire [%d:0] not_used_s_Np_stack;\n' % (bitwidth-9,));
-      fp.write('assign %s = %s[%s];\n' % (s_Np_stack,memName,ptrString,));
+        fp.write('reg [%d:0] not_used_s_Np_stack = %d\'d0;\n' % (bitwidth-9,bitwidth-8,));
+      fp.write('always @ (posedge i_clk) begin\n');
+      fp.write('  if (s_stack == C_STACK_INC)\n');
+      if isLUT:
+        fp.write('    %s[%s] <= %s;\n' % (memName,ptrStringTop,s_N,));
+      else:
+        fp.write('    %s[%s] = %s; // coerce write-first\n' % (memName,ptrStringTop,s_N,));
+        fp.write('  %s <= %s[%s];\n' % (s_Np_stack,memName,ptrStringTop,));
+      fp.write('end\n');
+      if isLUT:
+        fp.write('assign s_Np_stack = %s[%s];\n' % (memName,ptrString,));
+      else:
+        fp.write('assign s_Np_stack = s_Np_stack_reg;\n');
       fp.write('\n');
       break;
   else:
@@ -578,7 +592,7 @@ def genMemories(fp,config,programBody):
 # TODO -- accommodate width=16, ...
 def genMemories_init(fp,config,packing,memName,width=8):
   nbits = CeilLog2(packing[-1]['offset'] + packing[-1]['occupy']);
-  if nbits == 8:
+  if width == 8:
     formatd = '  %s[\'h%%0%dX] = 8\'h%%s;' % (memName,(nbits+3)/4,);
   else:
     formatd = '  %s[\'h%%0%dX] = { %d\'d0, 8\'h%%s };' % (memName,(nbits+3)/4,width-8,);
