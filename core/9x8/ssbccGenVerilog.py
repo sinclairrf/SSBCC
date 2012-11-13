@@ -645,7 +645,6 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
     elif mode == 'read' and isLUT:
       fp.write('assign %s = %s[%s];\n' % (thisSignal,memName,thisAddr,));
 
-# TODO -- accommodate width=16, ...
 def genMemories_init(fp,config,packing,memName,width=8):
   nbits = CeilLog2(packing[-1]['offset'] + packing[-1]['occupy']);
   if width == 8:
