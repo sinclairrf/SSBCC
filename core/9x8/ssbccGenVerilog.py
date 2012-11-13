@@ -454,7 +454,7 @@ def genMemories(fp,config,programBody):
   else:
     fp.write('assign s_R = s_R_reg;\n');
   fp.write('\n');
-#
+  #
   # Coalesce the memory bank indices and the corresponding memory names, offsets, lengths, etc.
   #
   lclMemName = [];
@@ -465,7 +465,8 @@ def genMemories(fp,config,programBody):
       lclMemName.append(memParam['name']);
       lclMemParam.append(dict(bank=memParam['bank'],type=memParam['type']));
   maxMemWidth = 0;
-  for thisPacked in packed:
+  for ixCombine in range(len(packed)):
+    thisPacked = packed[ixCombine];
     thisMemWidth = thisPacked['width'];
     for thisPacking in thisPacked['packing']:
       thisName = thisPacking['name'];
@@ -479,9 +480,9 @@ def genMemories(fp,config,programBody):
       ixLclMem = lclMemName.index(thisName);
       thisLclMemParam = lclMemParam[ixLclMem];
       thisLclMemParam['name'] = thisPacking['name'];
-      thisLclMemParam['memName'] = packed[ixCombine]['memName'];
+      thisLclMemParam['memName'] = thisPacked['memName'];
       thisLclMemParam['memWidth'] = thisPacking['width'];
-      thisLclMemParam['nMemAddrBits'] = CeilLog2(packed[ixCombine]['length']);
+      thisLclMemParam['nMemAddrBits'] = CeilLog2(thisPacked['length']);
       thisLclMemParam['offset'] = thisPacking['offset'];
       thisLclMemParam['nAddrBits'] = CeilLog2(thisPacking['length']);
       if thisLclMemParam['nAddrBits'] < 8:
