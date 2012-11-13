@@ -117,7 +117,7 @@ class SSBCCconfig():
       self.config['combine']['args'].append([dict(length=self.Get('data_stack'))]);
     if not self.IsCombined('RETURN_STACK'):
       self.config['combine']['mems'].append(['RETURN_STACK']);
-      self.config['combine']['args'].append([dict(length=self.Get('return_stack'), rsArch=CeilLog2(self.Get('nInstructions')['length']))]);
+      self.config['combine']['args'].append([dict(length=self.Get('return_stack'))]);
     for memName in self.memories['name']:
       if not self.IsCombinedMemory(memName):
         self.config['combine']['mems'].append(['MEMORY']);
@@ -142,8 +142,11 @@ class SSBCCconfig():
             thisMemList.append(memName);
         else:
           raise Exception('Program bug');
+      nCombined = len(thisMemList);
+      if hasInstructions:
+        nCombined = nCombined + 1;
       if len(thisMemList) > 0:
-        thisPacked = self.PackCombinedMemory(thisMemList);
+        thisPacked = self.PackCombinedMemory(thisMemList,nCombined);
       else:
         thisPacked = dict(packing=[]);
       if hasInstructions:
@@ -154,10 +157,18 @@ class SSBCCconfig():
           instructionLength = instructionLength - thisPacked['length'];
           thisPacked['length'] = self.Get('nInstructions')['length'];
           self.Get('nInstructions')['length'] = instructionLength;
-        eInstructions = dict(length=instructionLength, name='_instructions', offset=0, occupy=instructionLength);
+        eInstructions = dict(length=instructionLength, name='_instructions', offset=0, occupy=instructionLength, width=9, ratio=1);
         for e in thisPacked['packing']:
           e['offset'] = e['offset'] + instructionLength;
         thisPacked['packing'].insert(0,eInstructions);
+      width = 0;
+      for thisPacking in thisPacked['packing']:
+        if thisPacking['ratio'] > 1:
+          if self.Get('sram_width') > width:
+            width = self.Get('sram_width');
+        elif thisPacking['width'] > width:
+          width = thisPacking['width'];
+      thisPacked['width'] = width;
       if thisMem[0] == 'MEMORY':
         thisPacked['ixMemory'] = ixMemory;
         ixMemory = ixMemory + 1;
@@ -265,18 +276,24 @@ class SSBCCconfig():
       raise SSBCCException('Command-line parameter or localparam "%s" must be specified in the architecture file' % name);
     self.parameters[ix] = (name,value,);
 
-  def PackCombinedMemory(self,memlist):
+  def PackCombinedMemory(self,memlist,nCombined):
     entries = [];
     for memName in memlist:
       if memName == '_instructions':
         raise Exists('Program bug');
       elif memName == '_data_stack':
-        entries.append(dict(length=self.Get('data_stack'),name=memName));
+        entries.append(dict(length=self.Get('data_stack'), name=memName, width=8, ratio=1));
       elif memName == '_return_stack':
-        entries.append(dict(length=self.Get('return_stack'),name=memName));
+        nbits = self.Get('nInstructions')['nbits'];
+        if nCombined == 1:
+          ratio = 1;
+        else:
+          sram_width = self.Get('sram_width');
+          ratio = CeilPow2((nbits+sram_width-1)/sram_width);
+        entries.append(dict(length=ratio*self.Get('return_stack'), name=memName, width=nbits, ratio=ratio));
       else:
         thisMemories = self.GetMemoryParameters(memName);
-        entries.append(dict(length=CeilPow2(thisMemories['maxLength']), name=memName));
+        entries.append(dict(length=CeilPow2(thisMemories['maxLength']), name=memName, width=8, ratio=1));
     # Sort and coalesce the entries until the list is only one unit long.
     def sortfn(x):
       return x['length'];
@@ -315,7 +332,7 @@ class SSBCCconfig():
     cmd = re.findall(r'\s*COMBINE\s+(\S+)\s*(\S+)?\s*$',line);
     if not cmd:
       raise SSBCCException('Malformed "COMBINE" configuration command on line %d' % ixLine);
-    cmd = cmd[0];
+    cmd = list(cmd[0]);
     if re.match(r'^\s*MEMORY(\(\S+\))?\s*$',cmd[0]):
       mems = [ cmd[0] ];
     else:
@@ -342,10 +359,10 @@ class SSBCCconfig():
     if mems[0] in ('DATA_STACK', 'INSTRUCTION', 'RETURN_STACK',):
       if mems[1] == '':
         raise SSBCCException('Second memory type missing in "COMBINE INSTRUCTION,..." at line %d' % ixLine);
-      if mems[0] == "DATA_STACK":
-        allows.remove('DATA_STACK');
-      allows.remove('INSTRUCTION');
-      allows.remove('RETURN_STACK');
+      if mems[0] in allows:
+        allows.remove(mems[0]);
+      if 'INSTRUCTION' in allows:
+        allows.remove('INSTRUCTION');
       found = False;
       for ix in range(len(allows)):
         if re.match(allows[ix]+'$',mems[1]):
@@ -397,23 +414,14 @@ class SSBCCconfig():
       if not re.match(r'[1-9]\d*(\*[1-9]\d*)?$',cmd[1]):
         raise SSBCCException('Malformed length "%s" in configuration command at line %d' % (cmd[1],ixLine,));
       self.SetMemoryBlock('nInstructions',cmd[1],(ixLine,line[:-1],));
+      cmd[1] = '';
     # Check for required RETURN_STACK architecture
     elif mems[0] == 'RETURN_STACK':
       if not self.Exists('nInstructions'):
         raise SSBCCException('INSTRUCTION space must be sized before "COMBINE RETURN_STACK,..." configuration command at line %d' % ixLine);
-      if not re.match(r'x[1-9]\d*$',cmd[1]):
-        raise SSBCCException('Malformed RETURN_STACK architecture "%s" at line %d' % (cmd[1],ixLine,));
-      rsWidth = CeilLog2(self.Get('nInstructions')['length']);
-      rsArch = eval(cmd[1][1:]);
-      if rsArch < rsWidth:
-        raise SSBCCException('RETURN_STACK architecture "%s" must be at least %d in configuration command line %d' % (cmd[1],rsWidth,ixLine,));
-      if rsArch != rsWidth and rsArch != 8*(rsArch/8):
-        raise SSBCCException('RETURN_STACK architecture "%s" must be %d or a multiple of 8 in configuration command line %d' % (cmd[1],rsWidth,ixLine,));
-      args[0] = dict(rsArch=rsArch);
     # Ensure second parameter isn't provided in all other cases
-    else:
-      if cmd[1] != '':
-        raise SSBCCException('Extra parameter "%s" in COMBINE configuration command at line %d' % (mems[1],ixLine,));
+    if cmd[1] != '':
+      raise SSBCCException('Extra parameter "%s" in COMBINE configuration command at line %d' % (mems[1],ixLine,));
     # Append the parsed COMMAND configuration command to the associated dictionary
     if not self.Exists('combine'):
       self.config['combine'] = dict(mems=[], args=[]);

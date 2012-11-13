@@ -230,16 +230,17 @@ def genMemories(fp,config,programBody):
   for ixCombine in range(len(mems)):
     if mems[ixCombine][0] == 'DATA_STACK':
       memName = 's_data_stack';
-      data_stack_length = packed[ixCombine]['length'];
-      fp.write('reg [7:0] %s[%d:0];\n' % (memName,packed[ixCombine]['length']-1,));
+      memWidth = packed[ixCombine]['width'];
+      fp.write('reg [%d:0] %s[%d:0];\n' % (memWidth-1,memName,packed[ixCombine]['length']-1,));
       packed[ixCombine]['memName'] = memName;
       break;
   # Declare return stack RAM.
   for ixCombine in range(len(mems)):
     if mems[ixCombine][0] == 'RETURN_STACK':
       memName = 's_R_stack';
+      memWidth = packed[ixCombine]['width'];
       return_stack_args = args[ixCombine][0];
-      fp.write('reg [%d:0] %s[%d:0];\n' % (return_stack_args['rsArch']-1,memName,packed[ixCombine]['length']-1,));
+      fp.write('reg [%d:0] %s[%d:0];\n' % (memWidth-1,memName,packed[ixCombine]['length']-1,));
       packed[ixCombine]['memName'] = memName;
       break;
   # Count the number of memories and then declare them.
@@ -255,8 +256,9 @@ def genMemories(fp,config,programBody):
           thisMemName = 's_mem';
         else:
           thisMemName = memNameFormat % packed[ixCombine]['ixMemory'];
+        memWidth = packed[ixCombine]['width'];
+        fp.write('reg [%d:0] %s[%d:0];\n' % (memWidth-1,thisMemName,packed[ixCombine]['length']-1,));
         packed[ixCombine]['memName'] = thisMemName;
-        fp.write('reg [7:0] %s[%d:0];\n' % (thisMemName,packed[ixCombine]['length']-1,));
   fp.write('\n');
   # Initialize the instruction memory.
   fp.write('initial begin\n');
@@ -265,6 +267,7 @@ def genMemories(fp,config,programBody):
     if mems[ixCombine][0] == 'INSTRUCTION':
       thisPacked = packed[ixCombine];
       break;
+  width = thisPacked['width'];
   ixInstruction = 0;
   instructionBodyLength = thisPacked['packing'][0]['length'];
   for ixBlock in range(instructionMemory['nBlocks']):
@@ -273,9 +276,14 @@ def genMemories(fp,config,programBody):
     else:
       memName = ('s_opcodeMemory_%%0%dX' % instructionNameIndexWidth) % ixBlock;
     thisPacked['memName'] = memName;
-    formatp = '  %s[\'h%%0%dX] = { 1\'b1, %%s };\n' % (memName,instructionAddrWidth,);
-    formatn = '  %s[\'h%%0%dX] = 9\'h%%s; // %%s\n' % (memName,instructionAddrWidth,);
-    formate = '  %s[\'h%%0%dX] = 9\'h000;\n' % (memName,instructionAddrWidth,);
+    if width == 9:
+      formatp = '  %s[\'h%%0%dX] = { 1\'b1, %%s };\n' % (memName,instructionAddrWidth,);
+      formatn = '  %s[\'h%%0%dX] = 9\'h%%s; // %%s\n' % (memName,instructionAddrWidth,);
+      formate = '  %s[\'h%%0%dX] = 9\'h000;\n' % (memName,instructionAddrWidth,);
+    else:
+      formatp = '  %s[\'h%%0%dX] = { %d\'d0, 1\'b1, %%s };\n' % (memName,instructionAddrWidth,width-9,);
+      formatn = '  %s[\'h%%0%dX] = { %d\'d0, 9\'h%%s }; // %%s\n' % (memName,instructionAddrWidth,width-9,);
+      formate = '  %s[\'h%%0%dX] = { %d\'d0, 9\'h000 };\n' % (memName,instructionAddrWidth,width-9,);
     for ixMem in range(instructionMemory['blockSize']):
       if ixRecordedBody < len(programBody):
         for ixRecordedBody in range(ixRecordedBody,len(programBody)):
@@ -299,15 +307,16 @@ def genMemories(fp,config,programBody):
     for ixPacking in range(1,len(thisPacked['packing'])):
       thisPacking = thisPacked['packing'][ixPacking];
       thisPacking['offset'] = thisPacking['offset'] - offset0;
-    genMemories_init(fp,config,thisPacked['packing'][1:],memName,width=9);
+    genMemories_init(fp,config,thisPacked['packing'][1:],memName,9);
   fp.write('end\n\n');
   # Initialize the data stack.
   for ixCombine in range(len(mems)):
     if mems[ixCombine][0] == 'DATA_STACK':
       thisPacked = packed[ixCombine];
       memName = thisPacked['memName'];
+      width = thisPacked['width'];
       fp.write('initial begin\n');
-      genMemories_init(fp,config,thisPacked['packing'],memName);
+      genMemories_init(fp,config,thisPacked['packing'],memName,width);
       fp.write('end\n\n');
       break;
   # Initialize the return stack.
@@ -315,13 +324,9 @@ def genMemories(fp,config,programBody):
     if mems[ixCombine][0] == 'RETURN_STACK':
       thisPacked = packed[ixCombine];
       memName = thisPacked['memName'];
-      rsArch = args[ixCombine][0]['rsArch'];
-      if rsArch < 8:
-        width = 8;
-      else:
-        width = rsArch;
+      width = thisPacked['width'];
       fp.write('initial begin\n');
-      genMemories_init(fp,config,thisPacked['packing'],memName,width=width);
+      genMemories_init(fp,config,thisPacked['packing'],memName,width);
       fp.write('end\n\n');
       break;
   # Initialize the memories
@@ -329,8 +334,9 @@ def genMemories(fp,config,programBody):
     if mems[ixCombine][0] == 'MEMORY':
       thisPacked = packed[ixCombine];
       memName = thisPacked['memName'];
+      width = thisPacked['width'];
       fp.write('initial begin\n');
-      genMemories_init(fp,config,thisPacked['packing'],memName);
+      genMemories_init(fp,config,thisPacked['packing'],memName,width);
       fp.write('end\n\n');
   # Generate the opcode read logic.
   fp.write('//\n');
@@ -355,127 +361,102 @@ def genMemories(fp,config,programBody):
     fp.write('    default : s_opcode <= 9\'h000;\n');
     fp.write('  endcase\n');
   fp.write('\n');
+  #
   # Generate the data_stack read and write logic.
+  #
   fp.write('//\n');
   fp.write('// data stack read and write logic\n');
   fp.write('//\n');
   fp.write('\n');
   for ixCombine in range(len(mems)):
     if 'DATA_STACK' in mems[ixCombine]:
-      isLUT = (len(mems[ixCombine]) == 1);
-      if mems[ixCombine][0] == 'INSTRUCTION':
-        bitwidth = 9;
-      elif mems[ixCombine][0] == 'RETURN_STACK':
-        bitwidth = args[ixCombine][0]['rsArch'];
-      else:
-        bitwidth = 8;
+      # Get the packing information.
       thisPacked = packed[ixCombine];
-      memName = thisPacked['memName'];
-      if isLUT:
-        s_Np_stack = 's_Np_stack';
+      for thisPacking in thisPacked['packing']:
+        if thisPacking['name'] == '_data_stack':
+          break;
       else:
-        s_Np_stack = 's_Np_stack_reg';
-      if bitwidth == 8:
-        s_N = 's_N';
-      else:
-        s_N = '{ %d\'h0, s_N }' % (bitwidth-8,);
-        s_Np_stack = '{ not_used_s_Np_stack, %s }' % (s_Np_stack,);
-      ptrString = 's_Np_stack_ptr';
-      ptrStringTop = 's_Np_stack_ptr_next';
-      if len(thisPacked['packing']) != 1:
-        for ixPacked in range(len(thisPacked['packing'])):
-          thisPacking = thisPacked['packing'][ixPacked];
-          if thisPacking['name'] != '_data_stack':
-            continue;
-          nbitsThis = CeilLog2(thisPacking['length']);
-          nbitsTop = CeilLog2(thisPacked['length']) - nbitsThis;
-          ptrStringFormat = ('{ %d\'h%%0%dX, %%%%s }' % (nbitsTop,(nbitsTop+3)/4,)) % (thisPacking['offset']/2**nbitsThis,);
-          ptrString = ptrStringFormat % (ptrString,);
-          ptrStringTop = ptrStringFormat % (ptrStringTop,);
-      if not isLUT:
-        fp.write('reg [7:0] s_Np_stack_reg = 8\'d0;\n');
-      if bitwidth == 9:
-        fp.write('reg not_used_s_Np_stack = 1\'b0;\n');
-      elif bitwidth > 9:
-        fp.write('reg [%d:0] not_used_s_Np_stack = %d\'d0;\n' % (bitwidth-9,bitwidth-8,));
-      fp.write('always @ (posedge i_clk) begin\n');
-      fp.write('  if (s_stack == C_STACK_INC)\n');
-      if isLUT:
-        fp.write('    %s[%s] <= %s;\n' % (memName,ptrStringTop,s_N,));
-      else:
-        fp.write('    %s[%s] = %s; // coerce write-first\n' % (memName,ptrStringTop,s_N,));
-        fp.write('  %s <= %s[%s];\n' % (s_Np_stack,memName,ptrStringTop,));
-      fp.write('end\n');
-      if isLUT:
-        fp.write('assign s_Np_stack = %s[%s];\n' % (memName,ptrString,));
-      else:
-        fp.write('assign s_Np_stack = s_Np_stack_reg;\n');
-      fp.write('\n');
+        raise Exception('Program bug');
       break;
   else:
     raise Exception('Program bug');
+  # Get the memory type, memory name, widths, ...
+  isLUT = (len(thisPacked['packing']) == 1);
+  thisWidth = thisPacking['width'];                             # width of the data stack
+  totalWidth = thisPacking['ratio'] * thisPacked['width'];      # width of the [multi-]word memory access
+  # Generate the core.
+  if not isLUT:
+    fp.write('reg [%d:0] s_Np_stack_reg = %d\'d0;\n' % (thisWidth-1,thisWidth,));
+    if totalWidth == thisWidth+1:
+      fp.write('reg not_used_s_Np_stack_reg = 1\'b0;\n');
+    if totalWidth > thisWidth+1:
+      fp.write('reg [%d:0] not_used_s_Np_stack_reg = %d\'d0;\n' % (totalWidth-thisWidth-1,totalWidth-thisWidth,));
+  fp.write('always @ (posedge i_clk) begin\n');
+  fp.write('  if (s_stack == C_STACK_INC) begin\n');
+  genMemories_assign(fp,'write',thisPacked,thisPacking,'s_Np_stack_ptr_next','s_N');
+  fp.write('  end\n');
+  if not isLUT:
+    genMemories_assign(fp,'read',thisPacked,thisPacking,'s_Np_stack_ptr_next','s_Np_stack_reg');
+  fp.write('end\n');
+  if isLUT and totalWidth == thisWidth+1:
+    fp.write('wire not_used_s_Np_stack_reg;\n');
+  if isLUT and totalWidth > thisWidth+1:
+    fp.write('wire [%d:0] not_used_s_Np_stack_reg;\n' % (totalWidth-thisWidth-1,totalWidth-thisWidth,));
+  if isLUT:
+    genMemories_assign(fp,'read',thisPacked,thisPacking,'s_Np_stack_ptr','s_Np_stack');
+  else:
+    fp.write('assign s_Np_stack = s_Np_stack_reg;\n');
+  fp.write('\n');
+  #
   # Generate the return_stack read and write logic.
+  #
   fp.write('//\n');
   fp.write('// return stack read and write logic\n');
   fp.write('//\n');
   fp.write('\n');
   for ixCombine in range(len(mems)):
-    if mems[ixCombine][0] == 'RETURN_STACK':
-      isLUT = (len(mems[ixCombine]) == 1);
-      bitwidth = args[ixCombine][0]['rsArch'];
+    if 'RETURN_STACK' in mems[ixCombine]:
+      # Get the packing information.
       thisPacked = packed[ixCombine];
-      memName = thisPacked['memName'];
-      minBitWidth = CeilLog2(config.Get('nInstructions')['length']);
-      thisBitWidth = args[ixCombine][0]['rsArch'];
-      if thisBitWidth < minBitWidth:
+      for ixPacked in range(len(thisPacked['packing'])):
+        thisPacking = thisPacked['packing'][ixPacked];
+        if thisPacking['name'] == '_return_stack':
+          break;
+      else:
         raise Exception('Program bug');
-      s_R_write = 's_R_pre';
-      if isLUT:
-        s_R_read = 's_R';
-      else:
-        s_R_read = 's_R_reg';
-      if thisBitWidth > minBitWidth:
-        s_R_write = '{ %d\'h0, %s }' % (thisBitWidth-minBitWidth,s_R_write,);
-        s_R_read = '{ not_used_s_R, %s }' % (s_R_read,);
-      ptrString = 's_R_stack_ptr';
-      ptrStringNext = 's_R_stack_ptr_next';
-      if len(thisPacked['packing']) != 1:
-        for ixPacked in range(len(thisPacked['packing'])):
-          thisPacking = thisPacked['packing'][ixPacked];
-          if thisPacking['name'] != '_return_stack':
-            continue;
-          nbitsThis = CeilLog2(thisPacking['length']);
-          nbitsTop = CeilLog2(thisPacking['length']) - nbitsThis;
-          ptrStringFormat = ('{ %d\'h%%0%dX, %%%%s }' % (nbitsTop,(nbitsTop+3)/4,)) % (thisPacking['offset']/2**nbitsThis,);
-          ptrString = ptrStringFormat % ptrString;
-          ptrStringNext = ptrStringFormat % ptrStringNext;
-      if not isLUT:
-        fp.write('reg [%d:0] s_R_reg = %d\'d0;\n' % (thisBitWidth-1,thisBitWidth,));
-      if not isLUT and thisBitWidth == minBitWidth+1:
-        fp.write('reg not_used_s_R = 1\'b0;\n');
-      if not isLUT and thisBitWidth > minBitWidth+1:
-        fp.write('reg [%d:0] not_used_s_R = %d\'d0;\n' % (thisBitWidth-minBitWidth-1,thisBitWidth-minBitWidth,));
-      fp.write('always @ (posedge i_clk) begin\n');
-      fp.write('  if (s_return == C_RETURN_INC)\n');
-      if isLUT:
-        fp.write('    %s[%s] <= %s;\n' % (memName,ptrStringNext,s_R_write,));
-      else:
-        fp.write('    %s[%s] = %s; // coerce write-through\n' % (memName,ptrStringNext,s_R_write,));
-        fp.write('  %s <= %s[%s];\n' % (s_R_read,memName,ptrStringNext,));
-      fp.write('end\n');
-      if isLUT and thisBitWidth == minBitWidth+1:
-        fp.write('wire not_used_s_R;\n');
-      if isLUT and thisBitWidth > minBitWidth+1:
-        fp.write('wire [%d:0] not_used_s_R;\n' % (thisBitWidth-minBitWidth-1,thisBitWidth-minBitWidth,));
-      if isLUT:
-        fp.write('assign %s = %s[%s];\n' % (s_R_read,memName,ptrString,));
-      else:
-        fp.write('assign s_R = s_R_reg;\n');
-      fp.write('\n');
       break;
   else:
     raise Exception('Program bug');
+  # Get the memory type, memory name, widths, ...
+  isLUT = (len(thisPacked['packing']) == 1);
+  thisWidth = thisPacking['width'];                             # width of the data stack
+  totalWidth = thisPacking['ratio'] * thisPacked['width'];      # width of the [multi-]word memory access
+  # Generate the core.
+  if not isLUT:
+    fp.write('reg [%d:0] s_R_reg = %d\'d0;\n' % (thisWidth-1,thisWidth,));
+    if totalWidth == thisWidth+1:
+      fp.write('reg not_used_s_R_reg = 1\'b0;\n');
+    if totalWidth > thisWidth+1:
+      fp.write('reg [%d:0] not_used_s_R_reg = %d\'d0;\n' % (totalWidth-thisWidth-1,totalWidth-thisWidth,));
+  fp.write('always @ (posedge i_clk) begin\n');
+  fp.write('  if (s_return == C_RETURN_INC) begin\n');
+  genMemories_assign(fp,'write',thisPacked,thisPacking,'s_R_stack_ptr_next','s_R_pre');
+  fp.write('  end\n');
+  if not isLUT:
+    genMemories_assign(fp,'read',thisPacked,thisPacking,'s_R_stack_ptr_next','s_R_reg');
+  fp.write('end\n');
+  if isLUT and totalWidth == thisWidth+1:
+    fp.write('wire not_used_s_R;\n');
+  if isLUT and totalWidth > thisWidth+1:
+    fp.write('wire [%d:0] not_used_s_R;\n' % (totalWidth-thisWidth-1,totalWidth-thisWidth,));
+  if isLUT:
+    genMemories_assign(fp,'read',thisPacked,thisPacking,'s_R_stack_ptr','s_R');
+  else:
+    fp.write('assign s_R = s_R_reg;\n');
+  fp.write('\n');
+#
   # Coalesce the memory bank indices and the corresponding memory names, offsets, lengths, etc.
+  #
   lclMemName = [];
   lclMemParam = [];
   for ixBank in range(4):
@@ -484,17 +465,10 @@ def genMemories(fp,config,programBody):
       lclMemName.append(memParam['name']);
       lclMemParam.append(dict(bank=memParam['bank'],type=memParam['type']));
   maxMemWidth = 0;
-  for ixCombine in range(len(packed)):
-    if mems[ixCombine][0] == 'INSTRUCTION':
-      thisMemWidth = 9;
-    elif mems[ixCombine][0] == 'RETURN_STACK':
-      thisMemWidth = args[ixCombine][0]['rsArch'];
-    else:
-      thisMemWidth = 8;
-    thisPacking = packed[ixCombine]['packing'];
-    for ix in range(len(thisPacking)):
-      thisPacked = thisPacking[ix];
-      thisName = thisPacked['name'];
+  for thisPacked in packed:
+    thisMemWidth = thisPacked['width'];
+    for thisPacking in thisPacked['packing']:
+      thisName = thisPacking['name'];
       if thisName[0] == '_':
         continue;
       if thisName not in lclMemName:
@@ -504,12 +478,12 @@ def genMemories(fp,config,programBody):
         maxMemWidth = thisMemWidth;
       ixLclMem = lclMemName.index(thisName);
       thisLclMemParam = lclMemParam[ixLclMem];
-      thisLclMemParam['name'] = thisPacked['name'];
+      thisLclMemParam['name'] = thisPacking['name'];
       thisLclMemParam['memName'] = packed[ixCombine]['memName'];
-      thisLclMemParam['memWidth'] = thisMemWidth;
+      thisLclMemParam['memWidth'] = thisPacking['width'];
       thisLclMemParam['nMemAddrBits'] = CeilLog2(packed[ixCombine]['length']);
-      thisLclMemParam['offset'] = thisPacked['offset'];
-      thisLclMemParam['nAddrBits'] = CeilLog2(thisPacked['length']);
+      thisLclMemParam['offset'] = thisPacking['offset'];
+      thisLclMemParam['nAddrBits'] = CeilLog2(thisPacking['length']);
       if thisLclMemParam['nAddrBits'] < 8:
         addrString = 's_T[%d:0]' % (thisLclMemParam['nAddrBits']-1,);
       else:
@@ -605,6 +579,54 @@ def genMemories(fp,config,programBody):
         fp.write('  if (s_mem_wr && (%s))\n' % conditionalString);
         fp.write('    %s[%s] <= %s;\n' % (memName,addrName,sourceString));
         fp.write('\n');
+
+def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
+  if mode not in ['write','read']:
+    raise Exception('Program Bug: %s' % mode);
+  memName = thisPacked['memName'];
+  memWidth = thisPacked['width'];
+  ratio = thisPacking['ratio']
+  sigWidth = thisPacking['width'];
+  nbitsRatio = CeilLog2(ratio);
+  notUsedWidth = ratio*memWidth - sigWidth;
+  isLUT = len(thisPacked['packing']) == 1;
+  if not isLUT:
+    memAddrWidth = CeilLog2(thisPacked['length']);
+    thisAddrWidth = CeilLog2(thisPacking['length']);
+    nbitsOffset = memAddrWidth - thisAddrWidth;
+    addr = '%d\'h%%0%dx, %s' % (nbitsOffset,(nbitsOffset+3)/4,addr,) % (thisPacking['offset']/2**thisAddrWidth,);
+  for ixRatio in range(ratio):
+    ix0 = ixRatio*memWidth;
+    ix1 = ix0+memWidth;
+    if ratio == 1:
+      thisAddr = addr;
+    else:
+      thisAddr = '%s, %d\'h%%0%dx' % (addr,nbitsRatio,(nbitsRatio+3)/4,) % ixRatio;
+    if thisAddr.find(',') != -1:
+      thisAddr = '{ %s }' % thisAddr;
+    if ix1 <= sigWidth:
+      thisSignal = '%s[%d:%d]' % (sigName,ix1-1,ix0,);
+    elif ix0 <= sigWidth:
+      nEmpty = ix1-sigWidth;
+      if mode == 'write':
+        thisSignal = '{ %d\'d0, %s[%d:%d] }' % (nEmpty,sigName,sigWidth-1,ix0,);
+      elif notUsedWidth == 1:
+        thisSignal = '{ not_used_%s, %s[%d:%d] }' % (sigName,sigName,sigWidth-1,ix0,);
+      else:
+        thisSignal = '{ not_used_%s[%d:0], %s[%d:%d] }' % (sigName,ix1-sigWidth-1,sigName,sigWidth-1,ix0,);
+    else:
+      if mode == 'write':
+        thisSignal = '%d\'0' % memWidth;
+      else:
+        thisSignal = 'not_used_%s[%d:%d]' % (sigName,ix1-sigWidth-1,ix0-sigWidth,);
+    if mode == 'write' and isLUT:
+      fp.write('    %s[%s] <= %s;\n' % (memName,thisAddr,thisSignal,));
+    elif mode == 'write' and not isLUT:
+      fp.write('    %s[%s] = %s; // coerce write-through\n' % (memName,thisAddr,thisSignal,));
+    elif mode == 'read' and not isLUT:
+      fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
+    elif mode == 'read' and isLUT:
+      fp.write('assign %s = %s[%s];\n' % (thisSignal,memName,thisAddr,));
 
 # TODO -- accommodate width=16, ...
 def genMemories_init(fp,config,packing,memName,width=8):
