@@ -1,0 +1,21 @@
+#!/bin/bash
+
+NAME="arch";
+
+for MODE in nomem; do
+  for ARCH in arch-${MODE}-*.9x8; do
+    cp ${ARCH} arch.9x8
+    ../../../../ssbcc -q arch.9x8 || exit 1;
+    iverilog -o tb tb.v arch.v || exit 1;
+    if [ -n "`./tb | cmp - tb-${MODE}.good 2>&1`" ]; then
+      echo "${NAME}/${ARCH} failed" > /dev/stderr;
+      exit 1;
+    fi
+    echo "Tested:  ${ARCH}";
+  done
+done
+
+rm -f arch.9x8 arch.v tb;
+
+echo "Passed:  ${NAME}";
+exit 0;
