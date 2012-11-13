@@ -1,0 +1,19 @@
+################################################################################
+#
+# Copyright 2012, Sinclair R.F., Inc.
+#
+# Architecture test -- no memories
+#
+################################################################################
+
+ARCHITECTURE core/9x8 Verilog
+RETURN_STACK    32
+DATA_STACK      32
+COMBINE         INSTRUCTION,DATA_STACK  2048
+
+PORTCOMMENT simulation completed strobe
+OUTPORT         strobe  o_done_strobe   O_DONE_STROBE
+
+PERIPHERAL      trace
+
+ASSEMBLY        arch-nomem.s
