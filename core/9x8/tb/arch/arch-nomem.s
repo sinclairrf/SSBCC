@@ -4,11 +4,24 @@
 
 .main
 
-  ; test the data stack
-  1 2 3 4 drop drop drop drop
+  ;
+  ; test all bits of the data stack
+  ;
 
-  ; test data movements onto and off of the return stack
-  1 >r 2 >r 3 4 >r >r r@ drop r> drop r> r> nip drop r@ r> nip drop
+  ; Push 0x01 ... 0x80 onto the data stack far enough to be out of T and N and into the data stack memory.
+  0x01 :loop_data_stack_bits dup .jumpc(loop_data_stack_bits,<<0)
+
+  ; Drop everything from the data stack
+  ${10-1} :loop_drop_data_stack_bits nip .jumpc(loop_drop_data_stack_bits,1-) drop
+
+  ;
+  ; Test all data bits on the return stack.
+  ;
+
+  0x01 :loop_return_stack_bits dup >r .jumpc(loop_return_stack_bits,<<0) drop
+
+  ; Drop everything from the return stack
+  ${9-1} :loop_drop_return_stack_bits r> drop .jumpc(loop_drop_return_stack_bits,1-) drop
 
   ; test function calls mixed with return stack operations
   .call(testfn,3) drop
