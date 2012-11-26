@@ -15,6 +15,17 @@ for MODE in nomem; do
   done
 done
 
+for ARCH in arch-calls-*.9x8; do
+    cp ${ARCH} arch.9x8
+    ../../../../ssbcc -q arch.9x8 || exit 1;
+    iverilog -o tb tb.v arch.v || exit 1;
+    if [ -n "`./tb | cmp - ${ARCH/9x8/good} 2>&1`" ]; then
+      echo "${NAME}/${ARCH} failed" > /dev/stderr;
+      exit 1;
+    fi
+    echo "Tested:  ${ARCH}";
+done
+
 rm -f arch.9x8 arch.9x8-meta arch.v tb;
 
 echo "Passed:  ${NAME}";
