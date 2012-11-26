@@ -447,16 +447,11 @@ instead of packing the 10-bit values into two memory entries of a 9-bit wide
 memory.
 
 The following illustrates a possible configuration for a Spartan-6 with a
-2048-long SRAM and 32-deep long distributed memory.  The data stack will be in
-the last 64 elements of the instruction memory, the return stack will be from 11
-bits of a 16-bit wide distributed memory, and the memory will be pack with two
-8-bit values per 16-bit wide entry in the distributed memory.
+2048-long SRAM and relatively large 64-deep data stack.  The data stack will be in
+the last 64 elements of the instruction memory.
 
   DATA_STACK 64
-  MEMORY RAM ram_a 32
-  RETURN_STACK 16
-  COMBINE INSTRUCTION,DATA_STACK 2048
-  COMBINE RETURN_STACK,MEMORY
+  COMBINE    INSTRUCTION,DATA_STACK 2048
 
 The following illustrates a possible configuration for a Cyclone-III with three
 M9Ks for the instruction ROM and the data stack.
