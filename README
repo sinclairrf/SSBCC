@@ -59,17 +59,16 @@ specification and the Forth-like assembly language.
 The architecture file, named "led.9x8", with the comments and user header
 removed, is as follows:
 
-  ARCHITECTURE core/9x8
+  ARCHITECTURE    core/9x8 Verilog
 
-  INSTRUCTION             2048
-  RETURN_STACK            32
-  DATA_STACK              32
+  INSTRUCTION     2048
+  RETURN_STACK    32
+  DATA_STACK      32
 
   PORTCOMMENT LED on/off signal
   OUTPORT 1-bit o_led O_LED
 
   ASSEMBLY led.s
-  HDL Verilog
 
 The ARCHITECTURE configuration command specifies the 9x8 core.  The INSTRUCTION,
 RETURN_STACK, and DATA_STACK configuration commands specify the sizes of the
