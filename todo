@@ -1,15 +1,17 @@
   BUGS:
 
   ssbcc
-    incorporate "COMBINE" feature to merge stacks or memories into large RAMs
-      INSTRUCTION+RAM/ROM
-      INSTRUCTION+DATA_STACK
-      ROM/RAM?
+*   finish COMBINE/RETURN_STACK tests
+    write COMBINE MEMORY tests
+    remove example/led/led.fs
     add "share memory" feature?
       for dual-port memories in slave peripherals (i.e., registers readable by the bus master)
       for peripherals such as adders where long chains of outputs and inports would have been required and .store+/- and .fetch+/- would be much more efficient code-wise
       how to accommodate multiple "shared memory" peripherals?
     finish interrupt handling
+    remove dead parameters and dead code
+    rework design as required to make it more robust
+    use _doc_string_ comments throughout
     documentation
       top-level overview, point to implemented cores
       required:  ARCHITECTURE and sizes, ASSEMBLY, and HDL
@@ -18,6 +20,7 @@
       PERIPHERAL
         finish doc/peripheral.html
       all error messages
+    generate Altera SOPC/Qsys TCL script
     add VHDL
 
   core/9x8
