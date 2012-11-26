@@ -277,17 +277,23 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
   # look for a repeated single-byte numeric value (N*M where M is the repeat count)
-  a = re.match(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*[1-9]\d*$',raw);
+  a = re.match(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|\$\{\S+\})$',raw);
   if a:
     if 'multivalue' not in allowed:
       raise AsmException('Multi-byte value not allowed at %s' % flc_loc);
-    b = re.findall(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*)\b',a.group(0));
+    b = re.findall(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|\$\{\S+\})$',a.group(0));
     b = b[0];
     tParseNumber = ParseNumber(b[0]);
     if type(tParseNumber) != int:
       raise AsmException('Malformed multi-byte value at %s' % (fl_loc + ':' + str(col+1)));
     tValue = list();
-    for ix in range(int(b[1])):
+    if re.match(r'[1-9]',b[1]):
+      repeatCount = int(b[1]);
+    elif re.match(r'\$',b[1]):
+      repeatCount = eval(b[1][2:-1],ad.SymbolDict());
+    else:
+      raise Exception('Program Bug -- unrecognized repeat count');
+    for ix in range(repeatCount):
       tValue.append(tParseNumber);
     return dict(type='value', value=tValue, loc=flc_loc);
   # look for a single-byte numeric value

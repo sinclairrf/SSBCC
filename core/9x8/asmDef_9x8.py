@@ -242,30 +242,48 @@ class asmDef_9x8:
   #
   ################################################################################
 
-  def ByteList(self,rawTokens):
-    tokens=list();
-    for token in rawTokens:
-      if token['type'] == 'value':
-        if type(token['value']) == int:
-          tokens.append(token['value'] % 0x100);
+  def ByteList(self,rawTokens,limit=False):
+    """
+    Return either (1) a list comprised of a single token which may not be a
+    byte or (2) a list comprised of multiple tokens, each of which is a single
+    byte.
+    """
+    if len(rawTokens) > 1:
+      limit = True;
+    values = list();
+    try:
+      for token in rawTokens:
+        if token['type'] == 'value':
+          v = token['value'];
+          if type(v) == int:
+            if limit and (v < -128 or 256 <= v):
+              raise Exception();
+            values.append(v);
+          else:
+            for v in token['value']:
+              if v < -128 or 256 <= v:
+                raise Exception();
+              values.append(v);
         else:
-          for lToken in token['value']:
-            tokens.append(lToken);
-      else:
-        raise asmDef.AsmException('Illegal token "%s" at %s:%d:%d', (token['type'],token['loc']));
-    return tokens;
+          raise asmDef.AsmException('Illegal token "%s" at %s:%d:%d', (token['type'],token['loc']));
+    except:
+      raise asmDef.AsmException('Out-of-range token "%s" at %s:%d:%d', (token['type'],token['loc']));
+    return values;
 
   def ExpandSymbol(self,token,singleValue):
     if token['value'] not in self.symbols['list']:
-      raise asmDef.AsmException('Symbol "%s" not in symbol list at %s' %(token['value'],token['loc']));
+      raise asmDef.AsmException('Symbol "%s" not in symbol list at %s' %(token['value'],token['loc'],));
     ix = self.symbols['list'].index(token['value']);
     if self.symbols['type'][ix] == 'RAM':
       return dict(type='RAM', value=token['value']);
     elif self.symbols['type'][ix] == 'ROM':
       return dict(type='ROM', value=token['value']);
     elif self.symbols['type'][ix] == 'constant':
-      if singleValue and len(self.symbols['body'][ix])!=1:
-        raise asmDef.AsmException('Constant "%s" must evaluate to a single byte at %s' % (token['value'],token['loc']))
+      if singleValue:
+        if len(self.symbols['body'][ix])!=1:
+          raise asmDef.AsmException('Constant "%s" must evaluate to a single byte at %s' % (token['value'],token['loc'],))
+        if token['value'] < -128 or 256 <= token['value']:
+          raise asmDef.AsmException('Constant "%s" must be a byter value at %s' % (token['value'],token['loc'],));
       return dict(type='constant', value=token['value']);
     elif self.symbols['type'][ix] == 'inport':
       return dict(type='inport', value=token['value']);
@@ -288,33 +306,34 @@ class asmDef_9x8:
     for token in rawTokens:
       # insert labels
       if token['type'] == 'label':
-        tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
+        tokens.append(dict(type=token['type'], value=token['value'], offset=offset, loc=token['loc']));
         # labels don't change the offset
       # append instructions
       elif token['type'] == 'instruction':
-        tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
+        tokens.append(dict(type=token['type'], value=token['value'], offset=offset, loc=token['loc']));
         offset = offset + 1;
       # append values
       elif token['type'] == 'value':
         if type(token['value']) == int:
-          tokens.append(dict(type=token['type'], value=token['value'], offset=offset));
+          tokens.append(dict(type=token['type'], value=token['value'], offset=offset, loc=token['loc']));
           offset = offset + 1;
         else:
           revTokens = copy.copy(token['value']);
           revTokens.reverse();
           for lToken in revTokens:
-            tokens.append(dict(type=token['type'], value=lToken, offset=offset));
+            tokens.append(dict(type=token['type'], value=lToken, offset=offset, loc=token['loc']));
             offset = offset + 1;
       # append macros
       elif token['type'] == 'macro':
         if self.MacroOptArgIsSymbol(token):
           token['argument'][-1] = self.ExpandSymbol(token['argument'][-1],singleValue=True);
-        tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument']));
+        tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument'], loc=token['loc']));
         offset = offset + self.MacroLength(token);
       # interpret and append symbols
       elif token['type'] == 'symbol':
         newToken = self.ExpandSymbol(token,singleValue=False);
         newToken['offset'] = offset;
+        newToken['loc'] = token['loc'];
         tokens.append(newToken);
         if token['type'] == 'constant':
           ix = self.symbols['list'].index(newToken['value']);
@@ -379,7 +398,7 @@ class asmDef_9x8:
         raise asmDef.AsmException('Bad variable name at %s' % secondToken['loc']);
       ixMem = self.symbols['list'].index(self.currentMemory);
       currentMemoryBody = self.symbols['body'][ixMem];
-      byteList = self.ByteList(rawTokens[2:]);
+      byteList = self.ByteList(rawTokens[2:],limit=True);
       body = dict(memory=self.currentMemory, start=currentMemoryBody['length'], value=byteList);
       self.AddSymbol(secondToken['value'], 'variable', body=body);
       currentMemoryBody['length'] = currentMemoryBody['length'] + len(byteList);
@@ -695,7 +714,7 @@ class asmDef_9x8:
       ix = self.symbols['list'].index(name);
       if len(self.symbols['body'][ix]) != 1:
         raise asmDef.AsmException('Optional constant can only be one byte at %s' % token['loc']);
-      self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name));
+      self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name),tokenLoc=token['loc']);
     elif token['type'] in ('inport','outport'):
       name = token['value'];
       if name not in self.symbols['list']:
@@ -707,7 +726,7 @@ class asmDef_9x8:
     elif token['type'] == 'parameter':
       self.EmitParameter(fp,token);
     elif token['type'] == 'value':
-      self.EmitPush(fp,token['value']);
+      self.EmitPush(fp,token['value'],tokenLoc=token['loc']);
     elif token['type'] == 'variable':
       self.EmitVariable(fp,token['value']);
     elif token['type'] == 'macro':
@@ -721,7 +740,12 @@ class asmDef_9x8:
       raise Exception('Program Bug');
     fp.write('p %s%s\n' % (name,token['range'],));
 
-  def EmitPush(self,fp,value,name=None):
+  def EmitPush(self,fp,value,name=None,tokenLoc=None):
+    if value < -128 or 256 <= value:
+      if tokenLoc == None:
+        raise Exception('Program Bug -- untrapped out-of-range token');
+      else:
+        raise asmDef.AsmException('Value not representable by a byte at "%s"' % tokenLoc);
     if (-128 <= value <= -1):
       value = value + 256;
     if type(name) == str:
@@ -758,7 +782,7 @@ class asmDef_9x8:
       self.emitLabelList = '';
       for token in self.functionEvaluation['body'][ix]:
         if token['type'] == 'value':
-          self.EmitPush(fp,token['value']);
+          self.EmitPush(fp,token['value'],tokenLoc=token['loc']);
         elif token['type'] == 'label':
           self.Emit_AddLabel(token['value']);
         elif token['type'] == 'constant':
@@ -766,14 +790,14 @@ class asmDef_9x8:
             raise Exception('Program Bug');
           ix = self.symbols['list'].index(token['value']);
           body = self.symbols['body'][ix];
-          self.EmitPush(fp,body[-1],token['value']);
+          self.EmitPush(fp,body[-1],token['value'],tokenLoc=token['loc']);
           for v in body[-2::-1]:
-            self.EmitPush(fp,v);
+            self.EmitPush(fp,v,tokenLoc=token['loc']);
         elif token['type'] in ('inport','outport',):
           if token['value'] not in self.symbols['list']:
             raise Exception('Program Bug');
           ix = self.symbols['list'].index(token['value']);
-          self.EmitPush(fp,self.symbols['body'][ix]['address'],token['value']);
+          self.EmitPush(fp,self.symbols['body'][ix]['address'],token['value'],tokenLoc=token['loc']);
         elif token['type'] == 'instruction':
           self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
         elif token['type'] == 'macro':
@@ -781,7 +805,7 @@ class asmDef_9x8:
         elif token['type'] == 'parameter':
           self.EmitParameter(fp,token);
         elif token['type'] == 'symbol':
-          self.EmitPush(fp,token['value'],token['name']);
+          self.EmitPush(fp,token['value'],token['name'],tokenLoc=token['loc']);
         elif token['type'] == 'variable':
           self.EmitVariable(fp,token['value']);
         else:
