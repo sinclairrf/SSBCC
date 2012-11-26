@@ -2,7 +2,7 @@
  *
  * Copyright 2012, Sinclair R.F., Inc.
  *
- * Test bench for led.v.
+ * Test bench for core.v.
  *
  ******************************************************************************/
 
