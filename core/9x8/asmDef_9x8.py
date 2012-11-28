@@ -563,6 +563,8 @@ class asmDef_9x8:
           continue;
         fp.write('- %s\n' % self.symbols['list'][ixSymbol]);
         for v in vBody['value']:
+          if v < -128 or 256 <= v:
+            raise Exception('Program Bug -- value not representable by a byte');
           fp.write('%02X\n' % (v % 0x100,));
       fp.write('\n');
 
