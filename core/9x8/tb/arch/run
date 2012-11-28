@@ -16,14 +16,23 @@ for MODE in nomem; do
 done
 
 for ARCH in arch-calls-*.9x8; do
-    cp ${ARCH} arch.9x8
+  SIZE="`echo ${ARCH} | sed -e 's/arch-calls-//' -e 's/[.-].*//'`";
+  for ((ixcombine=0; ixcombine<3; ++ixcombine )); do
+    case ${ixcombine} in
+      ( 0 ) sed -e "s/@COMBINE@/INSTRUCTION ${SIZE}/" ${ARCH} > arch.9x8;;
+      ( 1 ) sed -e "s/@COMBINE@/COMBINE INSTRUCTION,RETURN_STACK ${SIZE}/" ${ARCH} > arch.9x8;;
+      ( 2 ) sed -e "s/@COMBINE@/INSTRUCTION ${SIZE}\nCOMBINE RETURN_STACK,DATA_STACK/" ${ARCH} > arch.9x8;;
+      ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
+            exit 1;;
+    esac
     ../../../../ssbcc -q arch.9x8 || exit 1;
     iverilog -o tb tb.v arch.v || exit 1;
-    if [ -n "`./tb | cmp - ${ARCH/9x8/good} 2>&1`" ]; then
-      echo "${NAME}/${ARCH} failed" > /dev/stderr;
+    if [ -n "`./tb | cmp - "arch-calls-${SIZE}.good" 2>&1`" ]; then
+      echo "${NAME}/${ARCH}@${ixcombine} failed" > /dev/stderr;
       exit 1;
     fi
-    echo "Tested:  ${ARCH}";
+    echo "Tested:  ${ARCH}@${ixcombine}";
+  done
 done
 
 rm -f arch.9x8 arch.9x8-meta arch.v tb;
