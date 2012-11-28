@@ -2,7 +2,7 @@
 #
 # Copyright 2012, Sinclair R.F., Inc.
 #
-# Architecture test -- no memories
+# Architecture test -- 9-bit return stack tests
 #
 ################################################################################
 
