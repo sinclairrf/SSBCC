@@ -293,6 +293,8 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       repeatCount = eval(b[1][2:-1],ad.SymbolDict());
     else:
       raise Exception('Program Bug -- unrecognized repeat count');
+    if repeatCount <= 0:
+      raise AsmException('Repeat count must be positive at %s' % (fl_loc + ':' + str(col+1+len(b[0])+1),));
     for ix in range(repeatCount):
       tValue.append(tParseNumber);
     return dict(type='value', value=tValue, loc=flc_loc);
