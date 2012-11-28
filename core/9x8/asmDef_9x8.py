@@ -563,7 +563,7 @@ class asmDef_9x8:
           continue;
         fp.write('- %s\n' % self.symbols['list'][ixSymbol]);
         for v in vBody['value']:
-          fp.write('%02X\n' % v);
+          fp.write('%02X\n' % (v % 0x100,));
       fp.write('\n');
 
   ################################################################################
