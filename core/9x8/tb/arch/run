@@ -2,6 +2,7 @@
 
 NAME="arch";
 
+# Test moving data into and out of the data stack and the return stack.
 for MODE in nomem; do
   for ARCH in arch-${MODE}-*.9x8; do
     cp ${ARCH} arch.9x8
@@ -15,9 +16,11 @@ for MODE in nomem; do
   done
 done
 
+# Test the high-order bits of the return stack for several PC widths and
+# "COMBINE" configuration commands.
 for ARCH in arch-calls-*.9x8; do
   SIZE="`echo ${ARCH} | sed -e 's/arch-calls-//' -e 's/[.-].*//'`";
-  for ((ixcombine=0; ixcombine<3; ++ixcombine )); do
+  for (( ixcombine=0; ixcombine<3; ++ixcombine )); do
     case ${ixcombine} in
       ( 0 ) sed -e "s/@COMBINE@/INSTRUCTION ${SIZE}/" ${ARCH} > arch.9x8;;
       ( 1 ) sed -e "s/@COMBINE@/COMBINE INSTRUCTION,RETURN_STACK ${SIZE}/" ${ARCH} > arch.9x8;;
@@ -35,7 +38,29 @@ for ARCH in arch-calls-*.9x8; do
   done
 done
 
+# Test memory writes and reads when there is only one memory for several memory
+# sizes and "COMBINE" configuration commands.
+ARCH="arch-1mem";
+for SIZE in 16 32 64 128 256; do
+  for (( ixcombine=0; ixcombine<1; ++ixcombine )); do
+    case ${ixcombine} in
+      ( 0 ) sed -e "s/@CONFIG@/INSTRUCTION 2048\nMEMORY RAM ram_a ${SIZE}/" arch-1mem.9x8 > arch.9x8;;
+      ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
+            exit 1;;
+    esac
+    ../../../../ssbcc -q arch.9x8 || exit 1;
+    iverilog -o tb tb.v arch.v || exit 1;
+    if [ -n "`./tb | cmp - "${ARCH}-${SIZE}.good" 2>&1`" ]; then
+      echo "${NAME}/${ARCH}@${SIZE}.${ixcombine} failed" > /dev/stderr;
+      exit 1;
+    fi
+    echo "Tested:  ${ARCH}@${SIZE}.${ixcombine}";
+  done
+done
+
+# Remove the garbage files.
 rm -f arch.9x8 arch.9x8-meta arch.v tb;
 
+# Print success message and return success indication.
 echo "Passed:  ${NAME}";
 exit 0;
