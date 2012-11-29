@@ -42,9 +42,12 @@ done
 # sizes and "COMBINE" configuration commands.
 ARCH="arch-1mem";
 for SIZE in 16 32 64 128 256; do
-  for (( ixcombine=0; ixcombine<1; ++ixcombine )); do
+  for (( ixcombine=0; ixcombine<4; ++ixcombine )); do
     case ${ixcombine} in
-      ( 0 ) sed -e "s/@CONFIG@/INSTRUCTION 2048\nMEMORY RAM ram_a ${SIZE}/" arch-1mem.9x8 > arch.9x8;;
+      ( 0 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nINSTRUCTION 2048/" arch-1mem.9x8 > arch.9x8;;
+      ( 1 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nCOMBINE INSTRUCTION,MEMORY 2048/" arch-1mem.9x8 > arch.9x8;;
+      ( 2 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nINSTRUCTION 2048\nCOMBINE DATA_STACK,MEMORY/" arch-1mem.9x8 > arch.9x8;;
+      ( 3 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nINSTRUCTION 2048\nCOMBINE RETURN_STACK,MEMORY/" arch-1mem.9x8 > arch.9x8;;
       ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
             exit 1;;
     esac
