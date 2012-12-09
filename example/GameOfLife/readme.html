@@ -1,0 +1,36 @@
+<html>
+<title>
+Game of Life
+</title>
+<body>
+<tt>Game of Life example program</tt><br/>
+<tt>Copyright 2012, Sinclair R.F., Inc.</tt><br/>
+<h1>Introduction</h1>
+  <i>Conway's Game of Life</i>, see
+  <a href="http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Wikipedia</a>,
+  is used as an example of a more complicated SSBCC.9x8 application.<br/><br/>
+  The processor is used to propagate the machine state on a periodic basis as
+  controlled by user input, the FPGA fabric is used to generate the output
+  video, and several external SRAM are used as a ping pong buffer for the video
+  display.<br/><br/>
+  Scripts to build the game for various development boards are listed by FPGA
+  vendor name.<br/><br/>
+<h1>Theory of Operation</h1>
+  The bit pattern for the game of life is stored in a 256x256 memory as 256x32
+  8-bit values.  I.e., in 8&nbsp;kB of RAM.  Two copies of this memory are used,
+  one for the image being displayed and one for the image being
+  computed.<br/><br/>
+  The processor reads three lines of the image into buffers and computes the new
+  line of output based on those.  This architecture allows the processor to do
+  an in-place update for the maximum update rate.<br/><br/>
+<h1>Digital to NTSC Converter</h1>
+  <ul>
+  <li>See <a href="http://naturetm.com/?p=47">MSP430 project</a>.<br/><br/>
+    </li>
+  <li>See
+    <a href="http://www.batsocks.co.uk/readme/video_timing.htm">timing and sync</a>
+    for source information for the above.<br/><br/>
+    </li>
+  </ul>
+</body>
+</html>
