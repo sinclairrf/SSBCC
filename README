@@ -386,57 +386,69 @@ This was used to validate the processor core.
 RESOURCE ALLOCATION
 ================================================================================
 
-The DATA_STACK, INSTRUCTION, MEMORY, and RETURN_STACK configuration commands
+The DATA_STACK, RETURN_STACK, INSTRUCTION, and MEMORY configuration commands
 allocate memory for the data stack, instruction ROM, memory RAM and ROM, and the
-return stack respectively.  This section describes the COMBINE configuration
-command that will reduce the memory resources required for the processor or make
-it more usable on architecture that do not have distributed memory.
+return stack respectively.  The COMBINE configuration command is used to
+coalesce the allocated memories, thereby reducing the FPGA resources required to
+implement the processor or make it more usable on architectures that do not have
+distributed memory.  The SRAM_WIDTH configuration command is use to specify FPGA
+architectures with block memories more than 9 bits wide.
 
-The INSTRUCTION memory size can have the format "N*M" where N is the size of the
-memory blocks and M is the number of memory blocks to allocate.  For example, on
-an Altera Cyclone III, the configuration command "INSTRUCTION 1024*3" allocates
-three M9Ks for the instruction space, saving one M9K as compared to the
-configuration command "INSTRUCTION 4096".
+The DATA_STACK configuration command allocates memory for the data stack.  It
+has the form "DATA_STACK N" where N is the commanded size of the data stack.
+N must be a power of 2.
 
-The COMBINE command can be used to instruct the computer compiler to use a large
-single-port memory for the RAM/ROM instead of individual distributed memories.
-To combine all of the RAM/ROM use:
+The RETURN_STACK configuration command allocates memory for the return stack and
+has the same format as the DATA_STACK configuration command.
 
-  COMBINE MEMORY
+The INSTRUCTION configuration allocates memory for the processor instruction
+space.  It has the form "INSTRUCTION N" or "INSTRUCTION N*M" where N must be a
+power of 2.  The first form is used if the desired instruction memory size is a
+power of 2.  The second form is used to allocate M memory blocks of size N.  For
+example, on an Altera Cyclone III, the configuration command
+"INSTRUCTION 1024*3" allocates three M9Ks for the instruction space, saving one
+M9K as compared to the configuration command "INSTRUCTION 4096".
 
-To combine specific memories, such as ram_a, ram_b, and rom_c into a single
-memory use:
+The MEMORY configuration command is used to define one to four memories, either
+RAM or ROM, with up to 256 bytes.  If no MEMORY configuration command is issued,
+then no memories are allocated for the processor.  The MEMORY configuration
+command has the format "MEMORY {RAM|ROM} name N" where "{RAM|ROM}" specifies
+either a RAM or a ROM, name is the name of the memory and must start with an
+alphabetic character, and the size of the memory, N, must be a power of 2.  For
+example, "MEMORY RAM myram 64" allocates 64 bytes of memory to form a RAM named
+myram.  Similarly, "MEMORY ROM lut 256" defines a 256 byte ROM named lut.
 
-  COMBINE MEMORY(ram_a,ram_b,rom_c)
+The COMBINE configuration command can be used to combine the various memories
+for more efficient processor implementation as follows:
 
-The following combine commands instruct the computer compiler to use a dual-port
-memory for the two specified memories, where either "N" or "N*M" is used to
-specify the extent of the combined memory space:
+The configuration command "COMBINE MEMORY" will combine all of the memories,
+irrespective of whether they are RAMs or ROMs and irrespective of their size
+into the smallest single-port memory resource possible.  If a list of memories
+is provided, for example "COMBINE MEMORY(ram_a,ram_b,rom_c)," then the stated
+memories will be combined instead of all of the memories.
 
-  COMBINE INSTRUCTION,DATA_STACK {N|N*M}
-  COMBINE INSTRUCTION,RETURN_STACK {N|N*M}
-  COMBINE INSTRUCTION,MEMORY {N|N*M}
-  COMBINE INSTRUCTION,MEMORY(list) {N|N*M}
+The configuration command "COMBINE INSTRUCTION,mem_type {N|N*M}" is used to
+place the stated memory type at the end of the INSTRUCTION memory space.
+mem_type can be MEMORY, MEMORY(list), DATA_STACK, or RETURN_STACK.  If this
+command is used then it replaces the INSTRUCTION configuration command.  If the
+return stack is combined with the instruction memory space, then it may use two
+instruction addresses for each return stack entry.  For example, the
+configuration command "COMBINE INSTRUCTION,RETURN_STACK 1024" requires 10 bits
+for each return stack entry.  Since this doesn't fit in the presumed 9-bit
+memory width, two instruction addresses are required for each return stack
+entry.
 
-The following combine commands can be used with the data stack:
+The COMBINE configuration command can be used to combine any two of the
+following: MEMORY or MEMORY(list), DATA_STACK, or RETURN_STACK.  For example,
+"COMBINE MEMORY,DATA_STACK" will place all of the memories and the data stack in
+the same dual-port memory.  The same applies if a list of memory names is
+provided as an argument to MEMORY.
 
-  COMBINE DATA_STACK,RETURN_STACK
-  COMBINE DATA_STACK,MEMORY
-  COMBINE DATA_STACK,MEMORY(list)
-
-The following combine configuration commands can be used for the return stack
-and either the data stack or the RAM/ROM memories.
-
-  COMBINE RETURN_STACK,DATA_STACK
-  COMBINE RETURN_STACK,MEMORY
-  COMBINE RETURN_STACK,MEMORY(list)
-
-If the SRAM width is more than 9 bits, such as on Altera's Cyclone V family, the
-configuration command
-
-  SRAM_WIDTH 10
-
-may allow the memory to be used more efficiently.  For example,
+The SRAM_WIDTH configuration command is used to make the memory allocations more
+efficient when the memory block width is more than 9 bits.  For example,
+Altera's Cyclone V family has 10-bit wide memory blocks and the configuration
+command "SRAM_WIDTH 10" is appropriate.  For example, the configuration command
+sequence
 
   RETURN_STACK    32
   SRAM_WIDTH      10
