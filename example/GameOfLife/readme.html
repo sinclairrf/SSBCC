@@ -23,6 +23,51 @@ Game of Life
   The processor reads three lines of the image into buffers and computes the new
   line of output based on those.  This architecture allows the processor to do
   an in-place update for the maximum update rate.<br/><br/>
+<h1>Serial Protocol</h1>
+  This section lists the commands to configure and operate the game.<br/><br/>
+  <table>
+  <tr>
+    <th valign="top" align="left">Command</th>
+    <th valign="top" align="left">Description</th>
+    </tr>
+  <tr>
+    <td valign="top" align="left">c</td>
+    <td valign="top" align="left">clear the game and turn off wrapping</td>
+    </tr>
+  <tr>
+    <td valign="top" align="left">h</td>
+    <td valign="top" align="left">halt the game</td>
+    </tr>
+  <tr>
+    <td valign="top" align="left">i I</td>
+    <td valign="top" align="left">set the update interval to I<br/>
+      Note:  I must be between 0 and 255 inclusive
+      </td>
+    </tr>
+  <tr>
+    <td valign="top" align="left">r</td>
+    <td valign="top" align="left">run the game indefinitely</td>
+    </tr>
+  <tr>
+    <td valign="top" align="left">s</td>
+    <td valign="top" align="left">step the game (do one iteration of the game)</td>
+    </tr>
+  <tr>
+    <td valign="top" align="left">w</td>
+    <td valign="top" align="left">toggle wrapping</td>
+    </tr>
+  <tr>
+    <td valign="top" align="left">+ N M</td>
+    <td valign="top" align="left">set the pixel on the N'th column and M'th row<br/>
+      Note: N and M must be within the size constraints for the game (nominally
+      0 to 255 inclusive).
+      </td>
+    </tr>
+  <tr>
+    <td valign="top" align="left">- N M</td>
+    <td valign="top" align="left">clear the pixel on the N'th column and M'th row</td>
+    </tr>
+  </table>
 <h1>Digital to NTSC Converter</h1>
   <ul>
   <li>See <a href="http://naturetm.com/?p=47">MSP430 project</a>.<br/><br/>
