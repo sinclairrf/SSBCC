@@ -1,7 +1,7 @@
 ; Conway's Game of Life, SSBCC.9x8 implementation
 ; Copyright 2012, Sinclair R.F., Inc.
 
-.include ram.s
+.include memory.s
 .include propagate.s
 
 .main

@@ -138,13 +138,13 @@
   >r
 
   ; ( u_prev u_curr - u_prev u_curr n_prev )
-  over .fetch(ram)
+  over .fetch(nBitsSet)
 
   ; ( u_curr n_prev - u_curr n_prev+n_curr )
-  over .fetch(ram) +
+  over .fetch(nBitsSet) +
 
-  ; ( n_prev+n_curr - u_next n_total ) r: ( u_next - )
-  r> swap over .fetch(ram) +
+  ; ( n_prev+n_curr - u_next n_total=n_prev+n_curr+n_next ) r: ( u_next - )
+  r> swap over .fetch(nBitsSet) +
 
   ; ( n_total - u_bit ) r: ( u_new - )
   dup 3 - 0= swap 4 - 0= r> & or 0x01
