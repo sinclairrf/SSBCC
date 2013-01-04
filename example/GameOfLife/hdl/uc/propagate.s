@@ -1,5 +1,5 @@
 ; propagate.s
-; Copyright 2012, Sinclair R.F., Inc.
+; Copyright 2012-2013, Sinclair R.F., Inc.
 ;
 ; Propagate state for Conway's Game of Life, SSBCC.9x8 implementation
 
