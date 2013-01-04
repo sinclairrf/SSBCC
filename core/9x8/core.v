@@ -280,9 +280,9 @@ always @ (*) begin
                 s_mem_wr        = 1'b1;
                 end
       4'b1111:  begin // fetch+/fetch-
-                  s_bus_t       = C_BUS_T_ADDER;
-                  s_bus_n       = C_BUS_N_MEM;
-                  s_stack       = C_STACK_INC;
+                s_bus_t         = C_BUS_T_ADDER;
+                s_bus_n         = C_BUS_N_MEM;
+                s_stack         = C_STACK_INC;
                 end
       default:  // nop
                 ;
