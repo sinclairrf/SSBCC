@@ -44,13 +44,21 @@
   .jump(infinite)
 
 ; Clear the two ping pong buffers.
+; ( - )
 .function clear_ping_pong_buffers
-  1 :loop_sel
+  ; Loop through the memory banks.
+  ${C_N_MEM_BANKS-1} :loop_sel
+    ; Output the bank index, but don't remove it from the data stack.
     O_PING_PONG_SEL_WR .outport
-    0xFF :loop_high
+    ; Loop through the high memory addresses.
+    ${C_N_MEM_LINES-1} :loop_high
+      ; Output the line index, but don't remove it from the data stack.
       O_ADDR_HIGH .outport
-      0x1F :loop_low
+      ; Loop through the low memory addresses and write a 0 to the associated address.
+      ${C_N_MEM_WORDS-1} :loop_low
+        ; Output the word index, but don't remove it from the data stack.
         O_ADDR_LOW .outport
+        ; Clear all bits at the commanded word.
         0 .outport(O_BUFFER)
         .jumpc(loop_low,1-) drop
       .jumpc(loop_high,1-) drop
