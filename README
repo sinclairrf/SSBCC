@@ -70,15 +70,15 @@ removed, is as follows:
 
   ASSEMBLY led.s
 
-The ARCHITECTURE configuration command specifies the 9x8 core.  The INSTRUCTION,
-RETURN_STACK, and DATA_STACK configuration commands specify the sizes of the
-instruction space, return stack, and data stack.  The content of the PORTCOMMENT
-configuration command is inserted in the module declaration -- this facilitates
-identifying signals in micro controllers with a lot of inputs and outputs.  The
-single OUTPORT statement specifies a 1-bit signal named "o_led."  This signal is
-accessed in the assembly code through the symbol "O_LED."  The ASSEMBLY command
-specifies the single input file "led.s," which is listed below.  Finally, the
-HDL statement specifies the Verilog language with the output going to "led.v".
+The ARCHITECTURE configuration command specifies the 9x8 core and the Verilog
+language.  The INSTRUCTION, RETURN_STACK, and DATA_STACK configuration commands
+specify the sizes of the instruction space, return stack, and data stack.  The
+content of the PORTCOMMENT configuration command is inserted in the module
+declaration -- this facilitates identifying signals in micro controllers with a
+lot of inputs and outputs.  The single OUTPORT statement specifies a 1-bit
+signal named "o_led".  This signal is accessed in the assembly code through the
+symbol "O_LED".  The ASSEMBLY command specifies the single input file "led.s,"
+which is listed below.  The output module will be "led.v"
 
 The "led.s" assembly file is as follows:
 
@@ -188,20 +188,20 @@ and outputs.  For example
 
 specifies a single 8-bit input signal named "i_value" for the module.  The port
 is accessed in assembly by ".inport(I_VALUE)" which is equivalent to the
-two-instruction sequence "I_VALUE inport."  To input an 8-bit value from a FIFO
+two-instruction sequence "I_VALUE inport".  To input an 8-bit value from a FIFO
 and send a single-clock-cycle wide acknowledgment strobe, use
 
   INPORT 8-bit,strobe i_fifo,o_fifo_ack I_FIFO
 
 The assembly ".inport(I_FIFO)" will automatically send an acknowledgment strobe
-to the FIFO through "o_fifo_ack."
+to the FIFO through "o_fifo_ack".
 
 A write port to an 8-bit FIFO is similarly specified by
 
   OUTPORT 8-bit,strobe o_fifo,o_fifo_wr O_FIFO
 
 The assembly ".outport(O_FIFO)" which is equivalent to "O_FIFO outport drop"
-will automatically send a write strobe to the FIFO through "o_fifo_wr."
+will automatically send a write strobe to the FIFO through "o_fifo_wr".
 
 Multiple signals can be packed into a single input or output port by defining
 them in comma separated lists.  The associated bit masks can be defined
@@ -280,7 +280,7 @@ PERIPHERAL
 Peripherals are implemented via Python modules.  For example, an open drain I/O
 signal, such as is required for an I2C bus, does not fit the INPORT and OUTPORT
 functionality.  Instead, an "open_drain" peripheral is provided by the Python
-script in "core/9x8/peripherals/open_drain.py."  This puts a tri-state I/O in
+script in "core/9x8/peripherals/open_drain.py".  This puts a tri-state I/O in
 the module statement, allows it to be read through an "inport" instruction, and
 allows it to be set low or released through an "outport" instruction.  An I2C
 bus with separate SCL and SDA ports can then be incorporated into the processor
