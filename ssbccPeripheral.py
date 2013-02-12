@@ -11,7 +11,17 @@ from ssbccUtil import SSBCCException
 class SSBCCperipheral:
   """Base class for peripherals"""
 
-  def __init__(self,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,ixLine):
+    """
+    Prototype constructor.
+    peripheralFile      the full path name of the peripheral source
+                        Note:  "__file__" doesn't work because 'execfile" and
+                        "exec" are used to load the python script for the
+                        peripheral.
+    config              the ssbccConfig object for the processor core
+    param_list          parameter list for the processor
+    ixLine              line number for the peripheral in the architecture file
+    """
     pass;
 
   def AddAttr(self,config,name,value,reformat,ixLine):

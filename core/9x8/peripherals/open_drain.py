@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2012-2013, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -61,7 +61,9 @@ Example:  Configure two 1-bit ports implementing an I2C bus:
   peripheral.
 """
 
-  def __init__(self,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,ixLine):
+    # Use the externally provided file name for the peripheral
+    self.peripheralFile = peripheralFile;
     # Parse the parameters.
     for param_tuple in param_list:
       param = param_tuple[0];

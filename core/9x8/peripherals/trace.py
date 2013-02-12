@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2012-2013, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -33,12 +33,16 @@ Example:  See core/9x8/tb/core which is used to validate correct operation of
           the core.
 """
 
-  def __init__(self,config,params,ixLine):
+  def __init__(self,peripheralFile,config,params,ixLine):
+    # Use the externally provided file name for the peripheral
+    self.peripheralFile = peripheralFile;
     config.functions['display_trace'] = True;
 
   def GenVerilog(self,fp,config):
     body = """
+//
 // Trace peripheral
+//
 generate
 reg [C_PC_WIDTH-1:0] s__PC_s[1:0];
 reg            [8:0] s__opcode_s = 9'h000;

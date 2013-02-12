@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2012-2013, Sinclair R.F., Inc.
 #
 # Utilities required by ssbcc
 #
@@ -505,6 +505,9 @@ class SSBCCconfig():
       raise SSBCCException('Missing peripheral name in line %d:  %s' % (ixLine,line[:-1],));
     peripheral = cmd[0][0];
     # Find and execute the peripheral Python script.
+    # Note:  Because "execfile" and "exec" method are used to load the
+    #        peripheral python script, the __file__ object is set to be this
+    #        file, not the peripheral source file.
     for testPath in self.peripheralpaths:
       fullperipheral = os.path.join(testPath,'%s.py' % peripheral);
       if os.path.isfile(fullperipheral):
@@ -533,7 +536,7 @@ class SSBCCconfig():
       else:
         param_list.append((param_string,None));
     # Add the peripheral to the micro controller configuration.
-    exec('self.peripheral.append(%s(self,param_list,ixLine));' % peripheral);
+    exec('self.peripheral.append(%s(fullperipheral,self,param_list,ixLine));' % peripheral);
 
   def Set(self,name,value):
     self.config[name] = value;

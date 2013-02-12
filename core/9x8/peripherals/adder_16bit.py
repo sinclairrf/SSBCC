@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2012-2013, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -51,7 +51,9 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:
   .return
 """
 
-  def __init__(self,config,params,ixLine):
+  def __init__(self,peripheralFile,config,params,ixLine):
+    # Use the externally provided file name for the peripheral
+    self.peripheralFile = peripheralFile;
     # List the signals to be declared for the peripheral.
     config.AddSignal('s__adder_16bit_out_MSB',8);
     config.AddSignal('s__adder_16bit_out_LSB',8);
@@ -86,7 +88,7 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:
 
   def GenAssembly(self,config):
     fp = file('adder_16bit.s','w');
-    fp.write("""; Copyright 2012, Sinclair R.F., Inc.
+    fp.write("""; Copyright 2012-2013, Sinclair R.F., Inc.
 ; adder_16bit.s
 ; library to facilitate using the 16-bit adder peripheral
 
