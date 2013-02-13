@@ -26,7 +26,7 @@ class SSBCCperipheral:
 
   def AddAttr(self,config,name,value,reformat,ixLine):
     if hasattr(self,name):
-      raise SSBCCperipheral('%s repeated at line %d' % (name,ixLine,));
+      raise SSBCCException('%s repeated at line %d' % (name,ixLine,));
     if reformat == None:
       if value != None:
         raise SSBCCException('No parameter allowed for %s at line %d' % (name,ixLine,));
