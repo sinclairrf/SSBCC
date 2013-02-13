@@ -10,28 +10,29 @@ from ssbccPeripheral import SSBCCperipheral
 from ssbccUtil import SSBCCException;
 
 class trace(SSBCCperipheral):
-  """Generate a human readable printout of the core execution.  The program
-counter and opcode are delayed so that they are aligned with the results of the
-opcode.
+  """
+  Generate a human readable printout of the processor execution.  The program
+  counter and opcode are delayed so that they are aligned with the results of
+  the opcode.
 
-Usage:
-  PERIPHERAL trace
+  Usage:
+    PERIPHERAL trace
 
-The following values are displayed in this order during the execution:
-  program counter
-  numeric opcode
-  human-readable opcode
-  ':'
-  data stack pointer
-  next-to-top of the data stack
-  top of the data stack
-  ':'
-  top of the return stack
-  return stack pointer
+  The following values are displayed in this order during the execution:
+    program counter
+    numeric opcode
+    human-readable opcode
+    ':'
+    data stack pointer
+    next-to-top of the data stack
+    top of the data stack
+    ':'
+    top of the return stack
+    return stack pointer
 
-Example:  See core/9x8/tb/core which is used to validate correct operation of
-          the core.
-"""
+  Example:  See core/9x8/tb/core which is used to validate correct operation of
+            the core.
+  """
 
   def __init__(self,peripheralFile,config,params,ixLine):
     # Use the externally provided file name for the peripheral

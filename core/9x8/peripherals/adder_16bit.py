@@ -62,14 +62,14 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:
     config.AddSignal('s__adder_16bit_in_MSB2',8);
     config.AddSignal('s__adder_16bit_in_LSB2',8);
     config.AddSignal('s__adder_16bit_in_op',1);
-    # List the input ports to the core.
+    # List the input ports to the peripheral.
     config.AddInport(('I_ADDER_16BIT_MSB',
                      ('s__adder_16bit_out_MSB',8,'data',),
                     ));
     config.AddInport(('I_ADDER_16BIT_LSB',
                      ('s__adder_16bit_out_LSB',8,'data',),
                     ));
-    # List the output ports to the core.
+    # List the output ports from the peripheral.
     config.AddOutport(('O_ADDER_16BIT_MSB1',
                        ('s__adder_16bit_in_MSB1',8,'data',),
                      ));

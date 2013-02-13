@@ -11,87 +11,87 @@ from ssbccPeripheral import SSBCCperipheral
 from ssbccUtil import SSBCCException;
 
 class latch(SSBCCperipheral):
-  """Latch a large input port for piecewise input to the core.
+  """
+  Latch a large input port for piecewise input to the processor core.
 
-This peripheral is used to input large counters and such so that the pieces of
-the counter input to the processor are all valid at the same time.
+  This peripheral is used to input large counters and such so that the pieces of
+  the counter input to the processor are all valid at the same time.
 
-The external signal is registered when the processor does an outport to
-O_name_LATCH and is broken into 8-bit chunks that can be read by the processor.
-These chunks are number from 0 at the far right to ceil(n/8)-1 on the far left.
-The chunk is specified by an outport to O_name_ADDR and is then read by an
-inport from I_name_READ.
+  The external signal is registered when the processor does an outport to
+  O_name_LATCH and is broken into 8-bit chunks that can be read by the
+  processor.  These chunks are number from 0 at the far right to ceil(n/8)-1 on
+  the far left.  The chunk is specified by an outport to O_name_ADDR and is then
+  read by an inport from I_name_READ.
 
-Usage:
-  PERIPHERAL latch outport_latch=O_LATCH \\
-                   outport_addr=O_ADDR \\
-                   inport=I_READ \\
-                   insignal=i_name \\
-                   width=n
+  Usage:
+    PERIPHERAL latch outport_latch=O_LATCH \\
+                     outport_addr=O_ADDR \\
+                     inport=I_READ \\
+                     insignal=i_name \\
+                     width=n
 
-Where:
-  outport_latch=O_LATCH
-    is the symbol used by the processor to register the input signal
-    Note:  The name must start with "O_".
-  outport_addr=O_ADDR
-    is the symbol used by the processor to indicate which byte of the registered
-    input signal is to input by the next inport from I_name_READ
-    Note:  The name must start with "O_".
-  inport=I_READ
-    is the symbol used by the processor to read the byte specified by the last
-    outport to O_name_ADDR
-    Note:  The name must start with "I_".
-  insignal=i_name
-    specifies the name of the input signal
-    Note:  The name must start with "i_".
-  width=n
-    specified with width of the input signal
-    Note:  The signal is broken into ceil(n/8) 8-bit words
-    Note:  This peripheral doesn't make sense when width < 8.  It will issue an
-           error when this condition is encountered.
+  Where:
+    outport_latch=O_LATCH
+      is the symbol used by the processor to register the input signal
+      Note:  The name must start with "O_".
+    outport_addr=O_ADDR
+      is the symbol used by the processor to indicate which byte of the
+      registered input signal is to input by the next inport from I_name_READ
+      Note:  The name must start with "O_".
+    inport=I_READ
+      is the symbol used by the processor to read the byte specified by the last
+      outport to O_name_ADDR
+      Note:  The name must start with "I_".
+    insignal=i_name
+      specifies the name of the input signal
+      Note:  The name must start with "i_".
+    width=n
+      specified with width of the input signal
+      Note:  The signal is broken into ceil(n/8) 8-bit words
+      Note:  This peripheral doesn't make sense when width < 8.  It will issue
+             an error when this condition is encountered.
 
-The following outports are provided by this peripheral:
-  O_LATCH
-    this outport instructs the peripheral to latch the specified signal
-    Note:  No argument is required for this outport.  I.e., it is equivalent to
-           a "strobe" outport.
-  O_ADDR
-    this outport specifies which 8-bit chunk of the latched signal will be read
-    by I_READ
+  The following outports are provided by this peripheral:
+    O_LATCH
+      this outport instructs the peripheral to latch the specified signal
+      Note:  No argument is required for this outport.  I.e., it is equivalent
+             to a "strobe" outport.
+    O_ADDR
+      this outport specifies which 8-bit chunk of the latched signal will be read
+      by I_READ
 
-The following inport is provided by this peripheral:
-  I_READ
-    this inport is used to read the 8-bit segment of the latched signal as
-    specified by O_ADDR
+  The following inport is provided by this peripheral:
+    I_READ
+      this inport is used to read the 8-bit segment of the latched signal as
+      specified by O_ADDR
 
-The following processor inputs are provided by this peripheral:
-  i_name
-    this is a "width" wide signal connected to the FPGA fabric
+  The following processor inputs are provided by this peripheral:
+    i_name
+      this is a "width" wide signal connected to the FPGA fabric
 
-Example:  Capture an external 24-bit counter:
+  Example:  Capture an external 24-bit counter:
 
-  Within the processor architecture file include the configuration command:
+    Within the processor architecture file include the configuration command:
 
-    PERIPHERAL latch outport_latch=O_COUNT_LATCH \\
-                     outport_addr=O_COUNT_ADDR \\
-                     inport=I_COUNT_READ \\
-                     insignal=i_count \\
-                     width=24
+      PERIPHERAL latch outport_latch=O_COUNT_LATCH \\
+                       outport_addr=O_COUNT_ADDR \\
+                       inport=I_COUNT_READ \\
+                       insignal=i_count \\
+                       width=24
 
-  To read the counter and put it on the stack with the MSB at the top of the
-  stack:
+    To read the counter and put it on the stack with the MSB at the top of the
+    stack:
 
-    O_COUNT_LATCH outport       ; doesn't need a value to output
-    0 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
-    1 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
-    2 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
+      O_COUNT_LATCH outport       ; doesn't need a value to output
+      0 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
+      1 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
+      2 .outport(O_COUNT_ADDR) .inport(I_COUNT_READ)
 
-  or
+    or
 
-    O_COUNT_LATCH outport
-    0 :loop O_COUNT_ADDR outport .inport(I_COUNT_READ) swap 1+ dup 3 - .jumpc(loop) drop
-
-"""
+      O_COUNT_LATCH outport
+      0 :loop O_COUNT_ADDR outport .inport(I_COUNT_READ) swap 1+ dup 3 - .jumpc(loop) drop
+  """
 
   def __init__(self,peripheralFile,config,param_list,ixLine):
     # Use the externally provided file name for the peripheral

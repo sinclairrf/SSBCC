@@ -11,31 +11,32 @@ from ssbccPeripheral import SSBCCperipheral
 from ssbccUtil import SSBCCException;
 
 class monitor_stack(SSBCCperipheral):
-  """Simulation-specific peripheral to flag invalid stack operations.
+  """
+  Simulation-specific peripheral to flag invalid stack operations.
 
-Invalid data stack operations are:
-  pushing onto a full data stack
-  dropping from an empty data stack
-  nipping from an almost empty data stack
+  Invalid data stack operations are:
+    pushing onto a full data stack
+    dropping from an empty data stack
+    nipping from an almost empty data stack
 
-Invalid return stack operations are:
-  pushing onto a full return stack
-  dropping values from an empty return stack
-  returns from a data entry on the return stack
-  non-return  operations from an address entry on the return stack
+  Invalid return stack operations are:
+    pushing onto a full return stack
+    dropping values from an empty return stack
+    returns from a data entry on the return stack
+    non-return  operations from an address entry on the return stack
 
-Invalid data operations are:
-  swap on an empty or almost empty data stack
-  in-place operations on an empty or almost empty data stack
+  Invalid data operations are:
+    swap on an empty or almost empty data stack
+    in-place operations on an empty or almost empty data stack
 
-Usage:
-  PERIPHERAL monitor_stack \\
-             [history==n]
-Where:
-  history=n
-    display the n most recent operations when a stack error is encountered
-    Note:  Normally the last 50 instructions are displayed.
-"""
+  Usage:
+    PERIPHERAL monitor_stack \\
+               [history==n]
+  Where:
+    history=n
+      display the n most recent operations when a stack error is encountered
+      Note:  Normally the last 50 instructions are displayed.
+  """
 
   def __init__(self,peripheralFile,config,param_list,ixLine):
     # Use the externally provided file name for the peripheral
@@ -52,7 +53,7 @@ Where:
     # Set optional parameters.
     if not hasattr(self,'history'):
       self.history = 50;
-    # Configure the system for this core.
+    # Configure the system for this peripheral.
     config.functions['display_trace'] = True;
 
   def GenVerilog(self,fp,config):
