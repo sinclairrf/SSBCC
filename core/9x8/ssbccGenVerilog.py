@@ -693,25 +693,34 @@ def genMemories_init(fp,config,packing,memName,width=8):
         fp.write(formate % ix);
 
 def genModule(fp,config):
+  # Insert the always-there stuff at the start of the module.
+  config.ios.insert(0,('synchronous reset and processor clock',None,'comment',));
+  config.ios.insert(1,('i_rst',1,'input',));
+  config.ios.insert(2,('i_clk',1,'input',));
+  # Starting from the end, determine the termination character for each line of
+  # the module declaration
+  signalFound = False;
+  for ix in range(len(config.ios),0,-1):
+    thisIOs = config.ios[ix-1];
+    signalType = thisIOs[2];
+    if signalType == 'comment' or not signalFound:
+      thisIOs = thisIOs + ('\n',);
+    else:
+      thisIOs = thisIOs + (',\n',);
+    if signalType != 'comment':
+      signalFound = True;
+    config.ios[ix-1] = thisIOs;
+  # Write the module declaration.
   fp.write('module %s(\n' % config.Get('outCoreName'));
-  fp.write('  // synchronous reset and processor clock\n');
-  fp.write('  input  wire           i_rst,\n');
-  fp.write('  input  wire           i_clk');
   if config.ios:
-    wasComment = False;
     for ix in range(len(config.ios)):
       signal = config.ios[ix];
       signalName = signal[0];
       signalWidth = signal[1];
       signalType = signal[2];
-      if wasComment:
-        fp.write('\n');
-      else:
-        fp.write(',\n');
-      wasComment = False;
+      signalLineEnd = signal[3];
       if signalType == 'comment':
         fp.write('  // %s' % signalName);
-        wasComment = True;
       elif signalType == 'input':
         if signalWidth == 1:
           fp.write('  input  wire           %s' % signalName);
@@ -735,7 +744,7 @@ def genModule(fp,config):
           fp.write('  inout  wire    [%2d:0] %s' % (signalWidth-1,signalName));
       else:
         raise Exception('Program Bug -- unrecognized ios "%s"' % signalType);
-  fp.write('\n');
+      fp.write(signalLineEnd);
   fp.write(');\n');
   # Write parameter and localparam statements (with separating blank lines).
   if config.parameters:
