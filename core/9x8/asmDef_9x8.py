@@ -275,28 +275,30 @@ class asmDef_9x8:
       raise asmDef.AsmException('Symbol "%s" not in symbol list at %s' %(token['value'],token['loc'],));
     ix = self.symbols['list'].index(token['value']);
     if self.symbols['type'][ix] == 'RAM':
-      return dict(type='RAM', value=token['value']);
+      return dict(type='RAM', value=token['value'], loc=token['loc']);
     elif self.symbols['type'][ix] == 'ROM':
-      return dict(type='ROM', value=token['value']);
+      return dict(type='ROM', value=token['value'], loc=token['loc']);
     elif self.symbols['type'][ix] == 'constant':
       if singleValue:
-        if len(self.symbols['body'][ix])!=1:
+        thisBody = self.symbols['body'][ix];
+        if len(thisBody)!=1:
           raise asmDef.AsmException('Constant "%s" must evaluate to a single byte at %s' % (token['value'],token['loc'],))
-        if token['value'] < -128 or 256 <= token['value']:
-          raise asmDef.AsmException('Constant "%s" must be a byter value at %s' % (token['value'],token['loc'],));
-      return dict(type='constant', value=token['value']);
+        thisBody = thisBody[0];
+        if not (-128 <= thisBody and thisBody < 256):
+          raise asmDef.AsmException('Constant "%s" must be a byte value at %s' % (token['value'],token['loc'],));
+      return dict(type='constant', value=token['value'], loc=token['loc']);
     elif self.symbols['type'][ix] == 'inport':
-      return dict(type='inport', value=token['value']);
+      return dict(type='inport', value=token['value'], loc=token['loc']);
     elif self.symbols['type'][ix] == 'outport':
-      return dict(type='outport', value=token['value']);
+      return dict(type='outport', value=token['value'], loc=token['loc']);
     elif self.symbols['type'][ix] == 'parameter':
       if 'range' in token:
         trange = token['range'];
       else:
         trange = '[0+:8]';
-      return dict(type='parameter', value=token['value'], range=trange);
+      return dict(type='parameter', value=token['value'], range=trange, loc=token['loc']);
     elif self.symbols['type'][ix] == 'variable':
-      return dict(type='variable', value=token['value']);
+      return dict(type='variable', value=token['value'], loc=token['loc']);
     else:
       raise Exception('Program Bug');
 
