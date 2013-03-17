@@ -42,7 +42,7 @@ class SSBCCperipheral:
       setattr(self,name,True);
     else:
       if value == None:
-        raise SSBCCperipheral('%s missing value at line %d' % (name,ixLine,));
+        raise SSBCCException('%s missing value at line %d' % (name,ixLine,));
       if not re.match(reformat,value):
         raise SSBCCException('Inport symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
       setattr(self,name,value);
