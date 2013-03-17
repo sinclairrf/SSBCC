@@ -98,14 +98,16 @@ class open_drain(SSBCCperipheral):
     self.sname = 's__%s' % self.iosignal;
     sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.iosignal,self.width,'inout');
-    config.AddSignalWithInit(self.sname,self.width,None);
+    config.AddIO(self.iosignal,self.width,'inout',ixLine);
+    config.AddSignalWithInit(self.sname,self.width,None,ixLine);
     config.AddInport((self.inport,
                      (self.iosignal,self.width,'data',),
-                    ));
+                    ),
+                    ixLine);
     config.AddOutport((self.outport,
                       (self.sname,self.width,'data',sname_init,),
-                     ));
+                     ),
+                     ixLine);
 
   def GenVerilog(self,fp,config):
     body_1 = """//

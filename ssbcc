@@ -139,7 +139,7 @@ try:
       if (not cmd) or (len(cmd[0]) != 2):
         raise SSBCCException('Malformed LOCALPARAM configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       cmd = cmd[0];
-      config.AddParameter(cmd[0],cmd[1]);
+      config.AddParameter(cmd[0],cmd[1],ixLine);
     # MEMORY
     elif re.match(r'\s*MEMORY\b',line):
       if not config.Exists('architecture'):
@@ -162,7 +162,7 @@ try:
       if (not cmd) or (len(cmd[0]) != 2):
         raise SSBCCException('Malformed PARAMETER configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       cmd = cmd[0];
-      config.AddParameter(cmd[0],cmd[1]);
+      config.AddParameter(cmd[0],cmd[1],ixLine);
     # PERIPHERAL
     elif re.match(r'\s*PERIPHERAL\b',line):
       if not config.Exists('architecture'):
@@ -171,7 +171,7 @@ try:
     # PORTCOMMENT
     elif re.match(r'\s*PORTCOMMENT\b',line):
       cmd = re.findall(r'\s*PORTCOMMENT\s+(.*)',line[:-1]);
-      config.AddIO(cmd[0],0,'comment');
+      config.AddIO(cmd[0],0,'comment',ixLine);
     # RETURN_STACK
     elif re.match(r'\s*RETURN_STACK\b',line):
       if config.Exists('return_stack'):

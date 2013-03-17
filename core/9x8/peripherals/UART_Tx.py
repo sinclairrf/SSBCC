@@ -150,17 +150,17 @@ class UART_Tx(SSBCCperipheral):
     if self.noFIFO:
       self.FIFO = 0;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.outsignal,1,'output');
-    config.AddSignal('s__%s__Tx' % self.outsignal,8);
-    config.AddSignal('s__%s__busy' % self.outsignal,1);
-    config.AddSignal('s__%s__wr' % self.outsignal,1);
+    config.AddIO(self.outsignal,1,'output',ixLine);
+    config.AddSignal('s__%s__Tx' % self.outsignal,8,ixLine);
+    config.AddSignal('s__%s__busy' % self.outsignal,1,ixLine);
+    config.AddSignal('s__%s__wr' % self.outsignal,1,ixLine);
     config.AddInport((self.inport,
                      ('s__%s__busy' % self.outsignal,1,'data',),
-                    ));
+                    ),ixLine);
     config.AddOutport((self.outport,
                       ('s__%s__Tx' % self.outsignal,8,'data',),
                       ('s__%s__wr' % self.outsignal,1,'strobe',),
-                     ));
+                     ),ixLine);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 

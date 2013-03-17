@@ -124,15 +124,15 @@ class latch(SSBCCperipheral):
     self.latch_width = 8*((self.width+7)/8);
     self.addr_width = int(math.ceil(math.log(self.latch_width/8,2)));
     # Configure the processor I/Os, etc.
-    config.AddIO(self.insignal,self.width,'input');
-    config.AddSignal('s__%s__select' % self.insignal,8);
+    config.AddIO(self.insignal,self.width,'input',ixLine);
+    config.AddSignal('s__%s__select' % self.insignal,8,ixLine);
     config.AddInport((self.inport,
                      ('s__%s__select' % self.insignal,8,'data',),
-                    ));
+                    ),ixLine);
     self.ix__o_latch = config.NOutports();
-    config.AddOutport((self.outport_latch,));
+    config.AddOutport((self.outport_latch,),ixLine);
     self.ix__o_addr = config.NOutports();
-    config.AddOutport((self.outport_addr,));
+    config.AddOutport((self.outport_addr,),ixLine);
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
