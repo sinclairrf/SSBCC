@@ -246,6 +246,12 @@ mapping for the assembly code immediately after the port definition helps
 prevent inconsistencies between the port definition and the bit mapping in the
 assembly code.
 
+The normal initial value for an outport is zero.  This can be changed by
+including an optional initial value as follows.  This initial value will be
+applied on system startup and when the micro controller is reset.
+
+  OUTPORT 4-bit=4'hA o_signal O_SIGNAL
+
 An isolated output strobe can also be created using:
 
   OUTPORT strobe o_strobe O_STROBE
