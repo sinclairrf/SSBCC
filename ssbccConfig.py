@@ -158,19 +158,6 @@ class SSBCCconfig():
     self.signals.append((name,nBits,init,));
     self.symbols.append(name);
 
-  # TODO -- remove this method?
-  def CombinedComplementaryArg(self,name):
-    if not self.IsCombined(name):
-      raise Exception('Program bug');
-    mems = self.config['combine']['mems'];
-    for ixCombine in range(len(mems)):
-      if name in mems[ixCombine]:
-        if len(mems[ixCombine]) == 1:
-          raise Exception('Program bug');
-        ixName = mems[ixCombine].index(name);
-        return self.config['combine']['args'][ixCombine][1-ixName];
-    raise Exception('Program bug');
-
   def CompleteCombines(self):
     """
     Ensure all memories are assigned addresses.
@@ -318,13 +305,15 @@ class SSBCCconfig():
     """
     self.peripheralpaths.insert(-1,path);
 
-  # TODO -- check use of this function and IsCombinedMemory
   def IsCombined(self,name):
     """
-    Indicate whether or not the specified memory has already been listed in a
-    "COMBINE" configuration command.
+    Indicate whether or not the specified memory type has already been listed
+    in a "COMBINE" configuration command.  The memory type should be one of
+    DATA_STACK, INSTRUCTION, or RETURN_STACK.
 
-    name        name of the specified memory
+    name        name of the specified memory type
+
+    Note:  Use IsCombinedMemory for a RAM/ROM memory.
     """
     if not self.Exists('combine'):
       return False;
@@ -334,8 +323,13 @@ class SSBCCconfig():
         return True;
     return False;
 
-  # TODO -- add docstring after doing preceding "TODO"
   def IsCombinedMemory(self,name):
+    """
+    Indicate whether or not the MEMORY has already been listed in a "COMBINE"
+    configuration command.
+
+    name        name of the specified MEMORY
+    """
     if not self.Exists('combine'):
       return False;
     mems = self.config['combine']['mems'];
@@ -346,8 +340,7 @@ class SSBCCconfig():
       tmpMem = self.config['combine']['args'][ixCombine][ixMemory];
       if 'memlist' not in tmpMem:
         continue;
-      memlist = self.config['combine']['args'][ixCombine][ixMemory]['memlist'];
-      if name in memlist:
+      if name in tmpMem['memlist']:
         return True;
     return False;
 
@@ -464,8 +457,8 @@ class SSBCCconfig():
           ratio = CeilPow2((nbits+sram_width-1)/sram_width);
         entries.append(dict(length=ratio*self.Get('return_stack'), name=memName, width=nbits, ratio=ratio));
       else:
-        thisMemories = self.GetMemoryParameters(memName);
-        entries.append(dict(length=CeilPow2(thisMemories['maxLength']), name=memName, width=self.Get('data_width'), ratio=1));
+        thisMemory = self.GetMemoryParameters(memName);
+        entries.append(dict(length=CeilPow2(thisMemory['maxLength']), name=memName, width=self.Get('data_width'), ratio=1));
     # If the list of memories to pack is empty, then return an empty packing.
     # This should only happen when the memlist is a singleton consisting of the
     # instructions.
@@ -574,21 +567,15 @@ class SSBCCconfig():
             raise SSBCCException('Memory "%s" not found in COMBINE configuration command at line %d' % (mem,ixLine,));
       else:
         continue;
-      # Ensure each memory is only combined once.
-      if self.Exists('combine'):
-        for ixCombine in range(len(self.config['combine']['mems'])):
-          if 'MEMORY' in self.config['combine']['mems'][ixCombine]:
-            ixMemOld = self.config['combine']['mems'][ixCombine].index('MEMORY');
-            memListOld = self.config['combine']['args'][ixCombine][ixMemOld]['memlist'];
-            for memName in memlist:
-              if memName in memListOld:
-                raise SSBCCException('Memory "%s" already used in previous "COMBINE" configuration command at line %d' % (memName,ixLine,));
+      # Construct the list of memories being combined.  Also ensure each memory
+      # is only combined once.
       args[ixMem] = dict(memlist=memlist);
       entries = [];
       for memName in memlist:
-        if not self.IsCombined(memName):
-          thisMemories = self.GetMemoryParameters(memName);
-          entries.append(dict(length=CeilPow2(thisMemories['maxLength']), name=memName));
+        if self.IsCombinedMemory(memName):
+          raise SSBCCException('Memory "%s" already used in previous "COMBINE" configuration command at line %d' % (memName,ixLine,));
+        thisMemory = self.GetMemoryParameters(memName);
+        entries.append(dict(length=CeilPow2(thisMemory['maxLength']), name=memName));
     # Check for required INSTRUCTION length
     if mems[0] == 'INSTRUCTION':
       if self.Exists('nInstructions'):
