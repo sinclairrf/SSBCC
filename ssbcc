@@ -90,10 +90,10 @@ try:
       cmd = cmd[0];
       config.Set('architecture',cmd[0]);
       config.Set('hdl',cmd[1]);
-      corepath = os.path.join(sys.path[0],config.Get('architecture'));
-      if not os.path.isdir(corepath):
+      config.Set('corepath',os.path.join(sys.path[0],config.Get('architecture')));
+      if not os.path.isdir(config.Get('corepath')):
         raise SSBCCException('Architecture "%s" does not exist at line %d' % (cmd,ixLine,));
-      config.InsertPeripheralPath(os.path.join(corepath,'peripherals'));
+      config.InsertPeripheralPath(os.path.join(config.Get('corepath'),'peripherals'));
       # TODO -- move these assignments into an object
       config.Set('data_width',8);
     # ASSEMBLY language for processor code
@@ -266,7 +266,7 @@ try:
   assemblerOutput = os.path.splitext(argList.filename.name)[0]+'.9x8-meta'
 
   # Compute the command to invoke the compiler.
-  cmd = os.path.join(corepath, compiler[0]);
+  cmd = os.path.join(config.Get('corepath'), compiler[0]);
   for name in config.constants:
     cmd += (' -C %s=%s' % (name,config.constants[name],));
   for ix in range(len(config.parameters)):
@@ -373,12 +373,12 @@ try:
   else:
     raise SSBCCException('Unrecognized hdl = "%s"' % config.Get('hdl'));
 
-  ssbccGenFile = os.path.join(corepath,ssbccGenFile);
+  ssbccGenFile = os.path.join(config.Get('corepath'),ssbccGenFile);
   if not os.path.isfile(ssbccGenFile):
     raise SSBCCException('Core generator "%s" missing for hdl = "%s"' % (ssbccGenFile,config.Get('hdl'),));
   execfile(ssbccGenFile);
 
-  rawCoreName = os.path.join(corepath,genCoreName());
+  rawCoreName = os.path.join(config.Get('corepath'),genCoreName());
   if not os.path.isfile(rawCoreName):
     raise SSBCCException('Core "%s% missing for hdl = "%s"' % (rawCoreName,config.Get('hdl'),));
   fpRawCore = open(rawCoreName,'r');
