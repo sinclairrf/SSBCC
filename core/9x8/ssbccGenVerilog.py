@@ -7,6 +7,7 @@
 ################################################################################
 
 import math
+import os
 import re
 
 from ssbccUtil import *;
@@ -18,9 +19,15 @@ from ssbccUtil import *;
 ################################################################################
 
 def genCoreName():
+  """
+  Return the name of the file to use for the processor core.
+  """
   return 'core.v';
 
 def genOutName(rootName):
+  """
+  Return the name for the output micro controller module.
+  """
   if re.match('.*\.v$',rootName):
     return rootName;
   else:
@@ -34,6 +41,12 @@ def genOutName(rootName):
 ################################################################################
 
 def genFunctions(fp,config):
+  """
+  Output the optional bodies for the following functions and tasks:
+    clog2               when $clog2 isn't available by commanding "--define_clog2"
+                        on the ssbcc command line
+    display_trace       when the trace or monitor_stack peripherals are included
+  """
   if ('clog2' in config.functions) and config.Get('define_clog2'):
     fp.write("""
 // Use constant function instead of builtin $clog2.
@@ -48,88 +61,18 @@ function integer clog2;
 endfunction
 """);
   if 'display_trace' in config.functions:
-    fp.write("""
-// Display micro controller PC, opcode, and stacks.
-localparam L__TRACE_SIZE        = C_PC_WIDTH            // pc width
-                                + 9                     // opcode width
-                                + C_DATA_PTR_WIDTH      // data stack pointer width
-                                + 1                     // s_N_valid
-                                + 8                     // s_N
-                                + 1                     // s_T_valid
-                                + 8                     // s_T
-                                + 1                     // s_R_valid
-                                + C_RETURN_WIDTH        // s_R
-                                + C_RETURN_PTR_WIDTH    // return stack pointer width
-                                ;
-task display_trace;
-  input                     [L__TRACE_SIZE-1:0] s_raw;
-  reg                  [C_PC_WIDTH-1:0] s_PC;
-  reg                             [8:0] s_opcode;
-  reg            [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr;
-  reg                                   s_N_valid;
-  reg                             [7:0] s_N;
-  reg                                   s_T_valid;
-  reg                             [7:0] s_T;
-  reg                                   s_R_valid;
-  reg              [C_RETURN_WIDTH-1:0] s_R;
-  reg          [C_RETURN_PTR_WIDTH-1:0] s_Rw_ptr;
-  reg                         [7*8-1:0] s_opcode_name;
-  begin
-    { s_PC, s_opcode, s_Np_stack_ptr, s_N_valid, s_N, s_T_valid, s_T, s_R_valid, s_R, s_Rw_ptr } = s_raw;
-    casez (s_opcode)
-      9'b00_0000_000 : s_opcode_name = "nop    ";
-      9'b00_0000_001 : s_opcode_name = "<<0    ";
-      9'b00_0000_010 : s_opcode_name = "<<1    ";
-      9'b00_0000_011 : s_opcode_name = "<<msb  ";
-      9'b00_0000_100 : s_opcode_name = "0>>    ";
-      9'b00_0000_101 : s_opcode_name = "1>>    ";
-      9'b00_0000_110 : s_opcode_name = "msb>>  ";
-      9'b00_0000_111 : s_opcode_name = "lsb>>  ";
-      9'b00_0001_000 : s_opcode_name = "dup    ";
-      9'b00_0001_001 : s_opcode_name = "r@     ";
-      9'b00_0001_010 : s_opcode_name = "over   ";
-      9'b00_0010_010 : s_opcode_name = "swap   ";
-      9'b00_0011_000 : s_opcode_name = "+      ";
-      9'b00_0011_100 : s_opcode_name = "-      ";
-      9'b00_0100_000 : s_opcode_name = "0=     ";
-      9'b00_0100_001 : s_opcode_name = "0<>    ";
-      9'b00_0100_010 : s_opcode_name = "-1=    ";
-      9'b00_0100_011 : s_opcode_name = "-1<>   ";
-      9'b00_0101_000 : s_opcode_name = "return ";
-      9'b00_0110_000 : s_opcode_name = "inport ";
-      9'b00_0111_000 : s_opcode_name = "outport";
-      9'b00_1000_000 : s_opcode_name = ">r     ";
-      9'b00_1001_001 : s_opcode_name = "r>     ";
-      9'b00_1010_000 : s_opcode_name = "&      ";
-      9'b00_1010_001 : s_opcode_name = "or     ";
-      9'b00_1010_010 : s_opcode_name = "^      ";
-      9'b00_1010_011 : s_opcode_name = "nip    ";
-      9'b00_1010_100 : s_opcode_name = "drop   ";
-      9'b00_1011_000 : s_opcode_name = "1+     ";
-      9'b00_1011_100 : s_opcode_name = "1-     ";
-      9'b00_1100_000 : s_opcode_name = "store  ";
-      9'b00_1101_000 : s_opcode_name = "fetch  ";
-      9'b00_1110_000 : s_opcode_name = "store+ ";
-      9'b00_1110_100 : s_opcode_name = "store- ";
-      9'b00_1111_000 : s_opcode_name = "fetch+ ";
-      9'b00_1111_100 : s_opcode_name = "fetch- ";
-      9'b0_100_????? : s_opcode_name = "jump   ";
-      9'b0_110_????? : s_opcode_name = "call   ";
-      9'b0_101_????? : s_opcode_name = "jumpc  ";
-      9'b0_111_????? : s_opcode_name = "callc  ";
-      9'b1_????_???? : s_opcode_name = "push   ";
-             default : s_opcode_name = "INVALID";
-    endcase
-    $write("%X %X %s : %X", s_PC, s_opcode, s_opcode_name, s_Np_stack_ptr);
-    if (s_N_valid) $write(" %x",s_N); else $write(" XX");
-    if (s_T_valid) $write(" %x",s_T); else $write(" XX");
-    if (s_R_valid) $write(" : %x",s_R); else $write(" : %s",{((C_RETURN_WIDTH+3)/4){8'h58}});
-    $write(" %X\\n",s_Rw_ptr);
-  end
-endtask
-""");
+    displayTracePath = os.path.join(config.Get('corepath'),'display_trace.v');
+    fpDisplayTrace = open(displayTracePath,'r');
+    if not fpDisplayTrace:
+      raise Exception('Program Bug -- "%s" not found' % displayTracePath);
+    body = fpDisplayTrace.read();
+    fpDisplayTrace.close();
+    fp.write(body);
 
 def genInports(fp,config):
+  """
+  Generate the logic for the input signals.
+  """
   if not config.inports:
     fp.write('// no input ports\n');
     return
@@ -206,12 +149,20 @@ def genInports(fp,config):
       fp.write('    s_SETRESET_%s <= s_SETRESET_%s;\n' % (signalName,signalName));
 
 def genLocalParam(fp,config):
+  """
+  Generate the localparams for implementation-specific constants.
+  """
   fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config.Get('nInstructions')['length']));
   fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config.Get('return_stack')));
   fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config.Get('data_stack')));
   fp.write('localparam C_RETURN_WIDTH                          = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;\n');
 
 def genMemories(fp,config,programBody):
+  """
+  Generate the memories for the instructions, data stack, return stack, and the
+  memories and the operations to access these memories.  Initialize the
+  instruction memory.
+  """
   mems = config.config['combine']['mems'];
   args = config.config['combine']['args'];
   packed = config.config['combine']['packed'];
@@ -392,10 +343,10 @@ def genMemories(fp,config,programBody):
         if thisPacking['name'] == '_data_stack':
           break;
       else:
-        raise Exception('Program bug');
+        raise Exception('Program bug -- "_data_stack" not found');
       break;
   else:
-    raise Exception('Program bug');
+    raise Exception('Program bug -- "DATA_STACK" not found');
   # Get the memory type, memory name, widths, ...
   isLUT = (len(thisPacked['packing']) == 1);
   thisWidth = thisPacking['width'];                             # width of the data stack
@@ -598,6 +549,13 @@ def genMemories(fp,config,programBody):
         fp.write('\n');
 
 def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
+  """
+  Utility function for genMemories.
+
+  Generate the logic to perform memory writes, including writes to multiple
+  memory locations (for the return stack) and writing zeros to otherwise unused
+  bits.
+  """
   if mode not in ['write','read']:
     raise Exception('Program Bug: %s' % mode);
   memName = thisPacked['memName'];
@@ -646,6 +604,12 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
       fp.write('assign %s = %s[%s];\n' % (thisSignal,memName,thisAddr,));
 
 def genMemories_init(fp,config,packing,memName,width=8):
+  """
+  Utility function for genMemories.
+
+  Generate the logic to initialize memories based on the memory width and the
+  initializatin output from the assembler.
+  """
   nbits = CeilLog2(packing[-1]['offset'] + packing[-1]['occupy']);
   if width == 8:
     formatd = '  %s[\'h%%0%dX] = 8\'h%%s;' % (memName,(nbits+3)/4,);
@@ -693,6 +657,10 @@ def genMemories_init(fp,config,packing,memName,width=8):
         fp.write(formate % ix);
 
 def genModule(fp,config):
+  """
+  Generate the body of the module declaration and the parameter and localparam
+  declarations.
+  """
   # Insert the always-there stuff at the start of the module.
   config.ios.insert(0,('synchronous reset and processor clock',None,'comment',));
   config.ios.insert(1,('i_rst',1,'input',));
@@ -764,6 +732,9 @@ def genModule(fp,config):
         fp.write('localparam %s = %s;\n' % (parameter[0],parameter[1]));
 
 def genOutports(fp,config):
+  """
+  Generate the logic for the output signals.
+  """
   if not config.outports:
     fp.write('// no output ports\n');
     return;
@@ -772,47 +743,34 @@ def genOutports(fp,config):
     bitWidth = 0;
     bitName = '';
     bitInit = '';
-    nComponents = 0;
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalName = signal[0];
       signalWidth = signal[1];
       signalType = signal[2];
+      signalInit = '%d\'d0' % signalWidth if len(signal)==3 else signal[3];
       if signalType == 'data':
-        bitWidth = bitWidth + signalWidth;
-        if len(bitName) > 0:
+        if bitWidth > 0:
           bitName += ', ';
-        bitName += signalName;
-        if len(signal) > 3:
-          signalInit = signal[3];
-        else:
-          signalInit = '%d\'d0' % signalWidth;
-        if len(bitInit) > 0:
           bitInit += ', '
+        bitWidth = bitWidth + signalWidth;
+        bitName += signalName;
         bitInit += signalInit;
-        nComponents = nComponents + 1;
         fp.write('initial %s = %s;\n' % (signalName,signalInit,));
     if bitWidth == 0:
       pass;
     else:
-      if nComponents == 1:
-        fp.write('always @ (posedge i_clk)\n');
-        fp.write('  if (i_rst)\n');
-        fp.write('    %s <= %s;\n' % (bitName,bitInit,));
-        fp.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
-        fp.write('    %s <= s_N[0+:%d];\n' % (bitName,bitWidth));
-        fp.write('  else\n');
-        fp.write('    %s <= %s;\n' % (bitName,bitName));
-        fp.write('\n');
-      else:
-        fp.write('always @ (posedge i_clk)\n');
-        fp.write('  if (i_rst)\n');
-        fp.write('    { %s } <= { %s };\n' % (bitName,bitInit,));
-        fp.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
-        fp.write('    { %s } <= s_N[0+:%d];\n' % (bitName,bitWidth));
-        fp.write('  else\n');
-        fp.write('    { %s } <= { %s };\n' % (bitName,bitName));
-        fp.write('\n');
+      if ',' in bitName:
+        bitName = '{ ' + bitName + ' }';
+        bitInit = '{ ' + bitInit + ' }';
+      fp.write('always @ (posedge i_clk)\n');
+      fp.write('  if (i_rst)\n');
+      fp.write('    %s <= %s;\n' % (bitName,bitInit,));
+      fp.write('  else if (s_outport && (s_T == 8\'h%02X))\n' % ix);
+      fp.write('    %s <= s_N[0+:%d];\n' % (bitName,bitWidth));
+      fp.write('  else\n');
+      fp.write('    %s <= %s;\n' % (bitName,bitName));
+      fp.write('\n');
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
       signalName = signal[0];
@@ -830,9 +788,11 @@ def genOutports(fp,config):
         fp.write('    %s <= 1\'b0;\n' % signalName);
         fp.write('\n');
       else:
-        raise Exception('Program Bug -- signalType = "%s" shouldn\'t have been encountered' % signalType);
+        raise Exception('Program Bug -- unrecognized signal type "%s"' % signalType);
 
 def genSignals(fp,config):
+  """
+  """
   if not config.signals:
     fp.write('// no additional signals\n');
     return;
@@ -847,10 +807,7 @@ def genSignals(fp,config):
     thisSignal = config.signals[ix];
     signalName = thisSignal[0];
     signalWidth = thisSignal[1];
-    if len(thisSignal) < 3:
-      signalInit = '%d\'d0' % signalWidth;
-    else:
-      signalInit = thisSignal[2];
+    signalInit = "%d'd0" % signalWidth if len(thisSignal) < 3 else thisSignal[2];
     outString = 'reg ';
     if signalWidth == 1:
       outString += '       ';
@@ -859,7 +816,7 @@ def genSignals(fp,config):
     else:
       outString += ('[%2d:0] ' % (signalWidth-1));
     outString += signalName;
-    if type(signalInit) != type(None):
+    if signalInit != None:
       outString += ' '*(maxLength-len(outString));
       outString += ' = ' + signalInit;
     outString += ';\n'
