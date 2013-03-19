@@ -9,38 +9,34 @@
 import os
 import re
 
-################################################################################
-#
-# Exception class for the assembler.
-#
-################################################################################
-
 class AsmException(Exception):
+  """
+  Exception class for the assembler.\n
+  This allows the top-level module to capture error messages other than internal
+  errors and program bugs so that users see a single-line error relevant to
+  their code rather than the usual Python mess.
+  """
   def __init__(self,message):
     self.msg = message;
   def __str__(self):
     return self.msg;
 
-################################################################################
-#
-# Iterator for files that returns bodies of lines of the file.  Each body
-# contains optional comment lines preceding the directive, the line with the
-# directive, and optional lines following the directive up to the optional
-# comments preceding the next directive.
-#
-# The directive must be the first non-white spaces on a line.
-#
-# The iterator outputs a list whos first element is the line number for the
-# first line of the block and whose subsequent elements are the lines with the
-# content of the block.
-#
-# This iterator handles the ".include" directive.
-#
-################################################################################
-
 class FileBodyIterator:
+  """
+  Iterator for files that returns bodies of lines of the file.\n
+  The directive must be the first non-white spaces on a line.\n
+  The iterator outputs a list whos first element is the line number for the
+  first line of the block and whose subsequent elements are the lines with the
+  content of the block.\n
+  The iterator handles the ".include" directive.
+  """
 
   def __init__(self, fps, ad):
+    """
+    Initialize the iterator.\n
+    fps         list of file pointers from the argument line
+    ad          asmDef_9x8 object (required to identify the directives)
+    """
     # Do sanity check on arguments.
     if ad.IsDirective(".include"):
       raise Exception('".include" directive defined by FileBodyIterator');
@@ -61,12 +57,25 @@ class FileBodyIterator:
       self.included.append(fp.name);
     self.fpStack = list();
     self.fpStack.append(dict(fp=self.fpPending.pop(0), line=0));
-    self.pendingInclude = str();
+    self.pendingInclude = None;
 
   def __iter__(self):
+    """
+    Required function for an iterable object.
+    """
     return self;
 
   def next(self):
+    """
+    Return the next directive body from the iterator.\n
+    The body is a list with the following content:
+      the name of the file
+      the line number for the first line of the body
+      the body consisting of lines from the source file\n
+    The body contains comment lines preceding the directive, the line with the
+    directive, and optional lines following the directive up to the optional
+    comments preceding the next directive.
+    """
     # Discard the body emitted by the previous call.
     self.current = self.pending;
     self.pending = list();
@@ -93,10 +102,10 @@ class FileBodyIterator:
           if os.path.exists(fullInclude):
             fp_pending = open('%s/%s' % (path,self.pendingInclude),'r');
             break;
-        if not fp_pending:
+        else:
           raise AsmException('%s not found' % self.pendingInclude);
         self.fpStack.append(dict(fp=fp_pending, line=0));
-        self.pendingInclude = str();
+        self.pendingInclude = None;
       # Get the next file to process if fpStack is empty.
       if not self.fpStack:
         self.fpStack.append(dict(fp=self.fpPending.pop(0),line=0));
@@ -153,6 +162,10 @@ class FileBodyIterator:
     raise StopIteration;
 
   def AddSearchPath(self,path):
+    """
+    Use by the top level assembler to add search paths for opening included
+    files.
+    """
     self.searchPaths.append(path);
 
 ################################################################################
@@ -162,32 +175,52 @@ class FileBodyIterator:
 ################################################################################
 
 def ParseNumber(inString):
+  """
+  Test for recognized integer values and return the value if recognized,
+  otherwise return None.
+  """
   # look for single-digit 0
   if inString == '0':
     return 0;
   # look for decimal value
-  a = re.match(r'[+\-]?[1-9]\d*\b',inString);
+  a = re.match(r'[+\-]?[1-9]\d*$',inString);
   if a:
     return int(a.group(0),10);
   # look for an octal value
-  a = re.match(r'0[0-7]+\b',inString);
+  a = re.match(r'0[0-7]+$',inString);
   if a:
     return int(a.group(0),8);
   # look for a hex value
-  a = re.match(r'0x[0-9A-Fa-f]+\b',inString);
+  a = re.match(r'0x[0-9A-Fa-f]+$',inString);
   if a:
     return int(a.group(0),16);
   # Everything else is an error
   return None;
 
 def ParseString(inString):
-  if inString[0] in 'CNc':
-    ix = 2;
-  else:
-    ix = 1;
+  """
+  Parse strings recognized by the assembler.\n
+  A string consists of the following:
+    an optional count/termination character -- one of CNc
+    a starting double-quote character
+    the body of the string including escape sequences
+    a terminating double-quote character
+  Errors are indicated by returning the location (an integer) within the string
+  where the error occurs.
+  """
+  # Detect optional count/termination character.
+  ix = 1 if inString[0] in 'CNc' else 0;
+  # Ensure the required start double quote is preset.
+  if inString[ix] != '"' or inString[-1] != '"':
+    raise Exception('Program Bug -- missing one or more double quotes around argument');
+  ix = ix + 1;
+  # Convert the characters and escape sequences in the string to a list of their
+  # integer values.
   outString = list();
   while ix < len(inString)-1:
+    # Process escape sequences.
     if inString[ix] == '\\':
+      # Escape sequences cannot start at the end of the string body.
       if ix == len(inString)-1:
         return ix;
       ix = ix + 1;
@@ -215,35 +248,55 @@ def ParseString(inString):
       elif inString[ix] == 't': # horizontal tab
         outString.append(9); # control-I
         ix = ix + 1;
-      elif re.match(r'[0-7]',inString[ix]): # octal character
+      elif re.match(r'[0-7]',inString[ix]): # 3-digit octal value
         if ix >= len(inString)-3:
           return ix;
         if not re.match(r'[0-7]{3}',inString[ix:ix+3]):
           return ix;
         outString.append(int(inString[ix:ix+3],8));
         ix = ix + 3;
-      elif inString[ix] in ('X','x',): # hex character
+      elif inString[ix] in ('X','x',): # 2-digit hex character
         if ix >= len(inString)-3:
           return ix;
         if not re.match(r'[0-9A-Fa-f]{2}',inString[ix+1:ix+3]):
           return ix;
         outString.append(int(inString[ix+1:ix+3],16));
         ix = ix + 3;
+      # Unrecognized escape sequences are treated as ordinary characters.
       else:
         outString.append(ord(inString[ix]));
         ix = ix + 1;
+    # Ordinary character.
     else:
       outString.append(ord(inString[ix]));
       ix = ix + 1;
+  # Insert the optional character count or append the optional nul terminating
+  # character.
   if inString[0] == 'C':
     outString.insert(0,len(outString));
   elif inString[0] == 'N':
     outString.append(0);
   elif inString[0] == 'c':
     outString.insert(0,len(outString)-1);
+  # That's all.
   return outString;
 
 def ParseToken(ad,fl_loc,col,raw,allowed):
+  """
+  Examine the raw tokens and convert them into dictionary objects consisting of
+  the following:
+    type        the type of token
+    value       the value of the token
+                this can be the name of a symbol, a numeric value, a string body, ...
+    loc         start location of the token
+                this is is required by subsequent stages of the assembler for
+                error messages
+    argument    optional entry required for macros arguments
+    range       optional entry required when a range is provided for a parameter\n
+  The token type is compared against the allowed tokens.\n
+  Detect syntax errors and display error messages consisting of the error and
+  the location within the file where the error occurs.
+  """
   flc_loc = fl_loc + ':' + str(col+1);
   # look for instructions
   # Note:  Do this before anything else because instructions can be a
@@ -271,8 +324,9 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Multi-byte value not allowed at %s' % flc_loc);
     b = re.findall(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|\$\{\S+\})$',a.group(0));
     b = b[0];
-    tParseNumber = ParseNumber(b[0]);
-    if type(tParseNumber) != int:
+    try:
+      tParseNumber = ParseNumber(b[0]);
+    except:
       raise AsmException('Malformed multi-byte value at %s' % (fl_loc + ':' + str(col+1)));
     tValue = list();
     if re.match(r'[1-9]',b[1]):
@@ -291,8 +345,9 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
   if a:
     if 'singlevalue' not in allowed:
       raise AsmException('Value not allowed at %s' % flc_loc);
-    tParseNumber = ParseNumber(raw);
-    if type(tParseNumber) != int:
+    try:
+      tParseNumber = ParseNumber(raw);
+    except:
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
   # capture double-quoted strings
@@ -348,7 +403,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
     if 'symbol' not in allowed:
       raise AsmException('Symbol not allowed at %s' % flc_loc);
     a = re.findall('([LG]_\w+)([[].*)',raw)[0];
-    return dict(type='symbol', value=a[0], range=a[1], loc=flc_loc);
+    return dict(type='symbol', value=a[0], loc=flc_loc, range=a[1]);
   # look for symbols
   # Note:  This should be the last check performed as every other kind of
   #        token should be recognizable
@@ -369,7 +424,13 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
 ################################################################################
 
 def RawTokens(ad,filename,startLineNumber,lines):
-  """Extract the list of tokens from the provided list of lines"""
+  """
+  Extract the list of tokens from the provided list of lines.
+  Convert the directive body into a list of individual tokens.\n
+  Tokens are directive names, symbol names, values, strings, labels, etc.\n
+  The return is a list of the tokens in the sequence they are encountered.  Each
+  of these tokens is a dictionary object constructed by ParseToken.
+  """
   allowed = [
               'instruction',
               'label',
@@ -388,18 +449,19 @@ def RawTokens(ad,filename,startLineNumber,lines):
     spaceFound = True;
     while col < len(line):
       flc_loc = fl_loc + ':' + str(col+1);
-      # ignore white-space characters
+      # Identify and then ignore white-space characters.
       if re.match(r'\s',line[col:]):
         spaceFound = True;
         col = col + 1;
         continue;
+      # Ensure tokens start on new lines or are separated by spaces.
       if not spaceFound:
         raise AsmException('Missing space in %s:%d' % (fl_loc,col+1));
       spaceFound = False;
-      # ignore comments
+      # Ignore comments.
       if line[col] == ';':
         break;
-      # Catch strings
+      # Catch strings.
       if re.match(r'[CNc]?"',line[col:]):
         a = re.match(r'[CNc]?"([^\\"]|\\.)+"',line[col:]);
         if not a:
@@ -410,12 +472,15 @@ def RawTokens(ad,filename,startLineNumber,lines):
         if not a:
           raise AsmException('Malformed \'.\' at %s' % flc_loc);
       else:
-        # everything else is a white-space delimited token that needs to be parsed
+        # Everything else is a white-space delimited token.
         a = re.match(r'\S+',line[col:]);
+      # Determine which kinds of tokens are allowed at this location in the
+      # directive body.
       if not tokens:
         selAllowed = 'directive';
       else:
         selAllowed = allowed;
+      # Append the parsed token to the list of tokens.
       tokens.append(ParseToken(ad,fl_loc,col,a.group(0),selAllowed));
       col = col + len(a.group(0));
   return tokens;
