@@ -47,8 +47,7 @@ class SSBCCconfig():
   def AddConstant(self,name,value,ixLine):
     """
     Add the constant for the "CONSTANT" configuration command to the "constants"
-    dictionary.
-
+    dictionary.\n
     name        symbol for the constant
     value       value of the constant
     ixLine      line number in the architecture file for error messages
@@ -62,8 +61,7 @@ class SSBCCconfig():
 
   def AddIO(self,name,nBits,iotype,ixLine):
     """
-    Add an I/O signal to the processor interface to the system.
-
+    Add an I/O signal to the processor interface to the system.\n
     name        name of the I/O signal
     nBits       number of bits in the I/O signal
     iotype      signal direction:  "input", "output", or "inout"
@@ -75,8 +73,7 @@ class SSBCCconfig():
 
   def AddInport(self,port,ixLine):
     """
-    Add an INPORT symbol to the processor.
-
+    Add an INPORT symbol to the processor.\n
     port        name of the INPORT symbol
     ixLine      line number in the architecture file for error messages
     """
@@ -88,8 +85,7 @@ class SSBCCconfig():
 
   def AddMemory(self,cmd,ixLine):
     """
-    Add a memory to the list of memories.
-
+    Add a memory to the list of memories.\n
     cmd         3-element list as follows:
                 [0] ==> type:  "RAM" or "ROM"
                 [1] ==> memory name
@@ -105,8 +101,7 @@ class SSBCCconfig():
 
   def AddOutport(self,port,ixLine):
     """
-    Add an OUTPORT symbol to the processor.
-
+    Add an OUTPORT symbol to the processor.\n
     port        name of the INPORT symbol
     ixLine      line number in the architecture file for error messages
     """
@@ -118,8 +113,7 @@ class SSBCCconfig():
 
   def AddParameter(self,name,value,ixLine):
     """
-    Add a PARAMETER to the processor.
-
+    Add a PARAMETER to the processor.\n
     name        name of the PARAMETER
     value       value of the PARAMETER
     ixLine      line number in the architecture file for error messages
@@ -133,8 +127,7 @@ class SSBCCconfig():
 
   def AddSignal(self,name,nBits,ixLine):
     """
-    Add a signal without an initial value to the processor.
-
+    Add a signal without an initial value to the processor.\n
     name        name of the signal
     nBits       number of bits in the signal
     ixLine      line number in the architecture file for error messages
@@ -146,8 +139,7 @@ class SSBCCconfig():
 
   def AddSignalWithInit(self,name,nBits,init,ixLine):
     """
-    Add a signal with an initial/reset value to the processor.
-
+    Add a signal with an initial/reset value to the processor.\n
     name        name of the signal
     nBits       number of bits in the signal
     init        initial/reset value of the signal
@@ -160,11 +152,9 @@ class SSBCCconfig():
 
   def CompleteCombines(self):
     """
-    Ensure all memories are assigned addresses.
-
+    Ensure all memories are assigned addresses.\n
     The return value is a list of dictionaries, each of which defines a single
-    isolated or combined memory.  Each dictionary has the following entries:
-
+    isolated or combined memory.  Each dictionary has the following entries:\n
       packing   a list of the combined memories as per PackCombinedMemory
       width     bit width of the memory
       ixMemory  if a MEMORY is included in the packing, this optional parameter
@@ -252,8 +242,7 @@ class SSBCCconfig():
 
   def GetMemoryByBank(self,ixBank):
     """
-    Return the parameters for a memory by its bank address.
-
+    Return the parameters for a memory by its bank address.\n
     ixBank      index of the requested memory bank
     """
     if not 'bank' in self.memories:
@@ -265,8 +254,7 @@ class SSBCCconfig():
 
   def GetMemoryByName(self,name):
     """
-    Return the parameters for a memory by its name.
-
+    Return the parameters for a memory by its name.\n
     name        name of the requested memory
     """
     if not name in self.memories['name']:
@@ -276,8 +264,7 @@ class SSBCCconfig():
 
   def GetMemoryParameters(self,rawIndex):
     """
-    Return the parameters for a memory by its index in the list of memories.
-
+    Return the parameters for a memory by its index in the list of memories.\n
     rawIndex    index within the list of memories
     """
     if type(rawIndex) == str:
@@ -299,8 +286,7 @@ class SSBCCconfig():
   def InsertPeripheralPath(self,path):
     """
     Add the specified path to the beginning of the paths to search for
-    peripherals.
-
+    peripherals.\n
     path        path to add to the list
     """
     self.peripheralpaths.insert(-1,path);
@@ -309,10 +295,8 @@ class SSBCCconfig():
     """
     Indicate whether or not the specified memory type has already been listed
     in a "COMBINE" configuration command.  The memory type should be one of
-    DATA_STACK, INSTRUCTION, or RETURN_STACK.
-
-    name        name of the specified memory type
-
+    DATA_STACK, INSTRUCTION, or RETURN_STACK.\n
+    name        name of the specified memory type\n
     Note:  Use IsCombinedMemory for a RAM/ROM memory.
     """
     if not self.Exists('combine'):
@@ -326,8 +310,7 @@ class SSBCCconfig():
   def IsCombinedMemory(self,name):
     """
     Indicate whether or not the MEMORY has already been listed in a "COMBINE"
-    configuration command.
-
+    configuration command.\n
     name        name of the specified MEMORY
     """
     if not self.Exists('combine'):
@@ -396,8 +379,7 @@ class SSBCCconfig():
   def OverrideParameter(self,name,value):
     """
     Change the value of the specified parameter (based on the command line
-    argument instead of the architecture file).
-
+    argument instead of the architecture file).\n
     name        name of the parameter to change
     value       new value of the parameter
     """
@@ -410,13 +392,11 @@ class SSBCCconfig():
 
   def PackCombinedMemory(self,memlist):
     """
-    Utility function for CompleteCombines.
-
+    Utility function for CompleteCombines.\n
     Pack the memories being combined in as little address space as possible.
     This is done by recursively combining the two smallest memories or smallest
     combinations of memories until everything is combined.  This tree of memory
-    lengths is then divided into leaves with the following parameters:
-
+    lengths is then divided into leaves with the following parameters:\n
       length    number of elements in the memory based on the declared memory
                 size
                 Note:  This is based on the number of addresses required for
@@ -431,8 +411,7 @@ class SSBCCconfig():
       ratio     number of addresses for each memory entry
                 Note:  This allows instruction addresses to occupy more than 1
                        memory address when the return stack is combined with
-                       other memory addresses.
-
+                       other memory addresses.\n
     Note:  If memories are being combined with the instructions space, they are
            always packed at the end of the instruction space, so the
            instruction space allocation is not included in the packing.
@@ -500,8 +479,7 @@ class SSBCCconfig():
 
   def ProcessCombine(self,ixLine,line):
     """
-    Parse the "COMBINE" configuration command as follows:
-
+    Parse the "COMBINE" configuration command as follows:\n
     Validate the arguments to the "COMBINE" configuration command and append
     the list of combined memories and the associated arguments to "combine"
     property.
@@ -608,8 +586,7 @@ class SSBCCconfig():
         set-reset
         strobe
       That no other signals are specified in conjunction with a "set-reset" signal.
-      The total input data with does not exceed the maximum data width.
-
+      The total input data with does not exceed the maximum data width.\n
     The input port is appended to the list of inputs as a tuple.  The first
     entry in the tuple is the port name.  The subsequent entries are tuples
     consisting of the following:
@@ -658,8 +635,7 @@ class SSBCCconfig():
       The signal declarations are valid.
         n-bit[=value]
         strobe
-      The total output data with does not exceed the maximum data width.
-
+      The total output data with does not exceed the maximum data width.\n
     The output port is appended to the list of outports as a tuple.  The first
     entry in this tuple is the port name.  The subsequent entries are tuples
     consisting of the following:
@@ -770,8 +746,7 @@ class SSBCCconfig():
   def SetMemoryBlock(self,name,value,errorInfo):
     """
     Set an attribute in the ssbccConfig object for the specified memory with
-    the specified memory architecture.
-
+    the specified memory architecture.\n
     "value" must be a string with the format "\d+" or "\d+*\d+" where "\d+" is
     an integer.  The first format specifies a single memory with the stated
     size and the size must be a power of two.  The second format specified

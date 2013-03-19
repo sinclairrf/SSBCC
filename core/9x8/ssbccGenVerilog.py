@@ -550,8 +550,7 @@ def genMemories(fp,config,programBody):
 
 def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
   """
-  Utility function for genMemories.
-
+  Utility function for genMemories.\n
   Generate the logic to perform memory writes, including writes to multiple
   memory locations (for the return stack) and writing zeros to otherwise unused
   bits.
@@ -605,8 +604,7 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
 
 def genMemories_init(fp,config,packing,memName,width=8):
   """
-  Utility function for genMemories.
-
+  Utility function for genMemories.\n
   Generate the logic to initialize memories based on the memory width and the
   initializatin output from the assembler.
   """
@@ -792,6 +790,8 @@ def genOutports(fp,config):
 
 def genSignals(fp,config):
   """
+  Insert the definitions of additional signals for the module.\n
+  These can be signals required communications between the core and peripherals.
   """
   if not config.signals:
     fp.write('// no additional signals\n');
@@ -823,5 +823,8 @@ def genSignals(fp,config):
     fp.write(outString);
 
 def genUserHeader(fp,user_header):
+  """
+  Copy the user header to the output module.
+  """
   for ix in range(len(user_header)):
     fp.write('// %s\n' % user_header[ix]);
