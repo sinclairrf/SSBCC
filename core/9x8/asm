@@ -53,17 +53,20 @@ try:
   from asmDef_9x8 import asmDef_9x8
   ad = asmDef_9x8();
 
-  # Intialize lists.
-  constants = list();
-
-  # Register the input and output port definitions.
+  # Record the constants in the program symbol table.
   if argList.C:
     for constant in argList.C:
-      a=re.findall(r'^(C+\w+)=(\w+)$',constant);
+      a=re.findall(r'^(C_\w+)=(\w+)$',constant);
       if not a:
         raise asmDef.AsmException('Malformed -C argument: "%s"' % constant);
-      a = a[0];
-      constants.append((a[0],a[1],));
+      a = list(a[0]);
+      try:
+        a[1] = eval(a[1]);
+      except:
+        raise asmDef.AsmException('Cannot evaluate "%s"' % a[1]);
+      ad.AddSymbol(a[0], 'constant', body=[a[1]]);
+
+  # Record the input names and values in the appropriate record type
   if argList.G:
     for parameter in argList.G:
       a = re.findall(r'^([LG]_\w+)$',parameter);
@@ -72,7 +75,7 @@ try:
       ad.RegisterParameterName(a[0]);
   if argList.I:
     for inport in argList.I:
-      a=re.findall(r'^(\w+)=(\d+)$',inport);
+      a=re.findall(r'^(I_\w+)=(0|[1-9]\d*)$',inport);
       if not a:
         raise asmDef.AsmException('Malformed -I argument: "%s"' % inport);
       ix = int(a[0][1]);
@@ -81,7 +84,7 @@ try:
       ad.RegisterInport(a[0][0],ix);
   if argList.O:
     for outport in argList.O:
-      a=re.findall(r'^(\w+)=(\d+)$',outport);
+      a=re.findall(r'^(O_\w+)=(0|[1-9]\d*)$',outport);
       if not a:
         raise asmDef.AsmException('Malformed -O argument: "%s"' % outport);
       ix = int(a[0][1]);
@@ -90,23 +93,24 @@ try:
       ad.RegisterOutport(a[0][0],ix);
   if argList.S:
     for memory in argList.S:
-      a=re.findall(r'^(\w+)=(\d+)$',memory);
+      a=re.findall(r'^(\w+)=(0|[1-9]\d*)$',memory);
       if not a:
         raise asmDef.AsmException('Malformed -S argument: "%s"' % memory);
-      length = int(a[0][1]);
+      a=a[0];
+      length = int(a[1]);
       if not (0 < length <= 256):
         raise asmDef.AsmException('Out-of-range memory length:  "%s"' % outport);
-      ad.RegisterMemoryLength(a[0][0],length);
+      ad.RegisterMemoryLength(a[0],length);
   if argList.s:
     for stack in argList.s:
-      a=re.findall(r'^(\w+)=(\d+)$',stack);
+      a=re.findall(r'^(\w+)=(0|[1-9]\d*)$',stack);
       if not a:
         raise asmDef.AsmException('Malformed -s argument: "%s"' % stack);
-      length = int(a[0][1]);
-      ad.RegisterStackLength(a[0][0],length);
+      a = a[0];
+      ad.RegisterStackLength(a[0],int(a[1]));
 
   # Construct the iterator that loops through the code bodies.
-  fbi = asmDef.FileBodyIterator(constants,argList.filename,ad);
+  fbi = asmDef.FileBodyIterator(argList.filename,ad);
   if argList.L:
     for path in argList.L:
       fbi.AddSearchPath(path);
@@ -129,8 +133,11 @@ try:
   #
   ################################################################################
 
+  #
   # Loop through the directive bodies in the input files (including ".include"d
   # files).
+  #
+
   for bl in fbi:
     filename = bl[0];
     startLine = bl[1];
@@ -159,32 +166,10 @@ try:
   # ".interrupt" body was declared.
   #
 
-  if argList.i:
-    if not ad.Interrupt():
-      raise asmDef.AsmException('Required ".interrupt" body not provided');
-  else:
-    if ad.Interrupt():
-      raise asmDef.AsmException('".interrupt" body not allowed near %s' % ad.Interrupt()[0]['loc']);
-
-  # diagnostic -- print filled token lists
-  if False:
-    main = ad.Main();
-    print '.main, length=%d ' % main['length'];
-    for token in main['tokens']:
-      print token;
-    print
-    interrupt = ad.Interrupt();
-    if interrupt:
-      print '.interrupt, length=%d' % interrupt['length'];
-      for token in interrupt:
-        print token;
-      print
-    symbols = ad.Symbols();
-    for ix in range(len(symbols['list'])):
-      print 'symbol %s: type=%s, length=%d' % (symbols['list'][ix], symbols['type'][ix], symbols['length'][ix])
-      for token in symbols['tokens'][ix]:
-        print token;
-      print
+  if argList.i and not ad.Interrupt():
+    raise asmDef.AsmException('Required ".interrupt" body not provided');
+  if not argList.i and ad.Interrupt():
+    raise asmDef.AsmException('".interrupt" body not allowed near %s' % ad.Interrupt()[0]['loc']);
 
   ################################################################################
   #
@@ -216,7 +201,8 @@ try:
 
 ################################################################################
 #
-# Terminating except clause
+# Terminating except clause -- print fatal error message and indicate failure to
+# the invoking program.
 #
 ################################################################################
 

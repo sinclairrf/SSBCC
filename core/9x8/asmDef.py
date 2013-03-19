@@ -40,13 +40,12 @@ class AsmException(Exception):
 
 class FileBodyIterator:
 
-  def __init__(self, constants, fps, ad):
+  def __init__(self, fps, ad):
     # Do sanity check on arguments.
     if ad.IsDirective(".include"):
       raise Exception('".include" directive defined by FileBodyIterator');
     # Initialize the raw processing states
     self.ixConstants = 0;
-    self.constants = constants;
     self.fpPending = list(fps);
     self.ad = ad;
     self.current = list();
@@ -71,17 +70,6 @@ class FileBodyIterator:
     # Discard the body emitted by the previous call.
     self.current = self.pending;
     self.pending = list();
-    # Process command-line constants first.
-    if self.ixConstants < len(self.constants):
-      thisConstant = self.constants[self.ixConstants];
-      self.ixConstants = self.ixConstants + 1;
-      self.current = list();
-      self.current.append('command line');
-      self.current.append(0);
-      self.current.append('.constant');
-      self.current.append(thisConstant[0]);
-      self.current.append(thisConstant[1]);
-      return self.current;
     # Loop until all of the files have been processed
     while self.fpStack or self.fpPending or self.pendingInclude:
       # Ensure the bodies in closed files are all emitted before continuing to
