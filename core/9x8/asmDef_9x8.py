@@ -12,7 +12,9 @@ import string
 import asmDef
 
 class asmDef_9x8:
-  """SSBCC 9x8 specific parsing"""
+  """
+  Class for core-specific opcodes, macros, etc. for core/9x8.
+  """
 
   ################################################################################
   #
@@ -21,6 +23,9 @@ class asmDef_9x8:
   ################################################################################
 
   def IsDirective(self,name):
+    """
+    Indicate whether or not the string "name" is a directive.
+    """
     return name in self.directives['list'];
 
   ################################################################################
@@ -30,38 +35,83 @@ class asmDef_9x8:
   ################################################################################
 
   def AddMacro(self,name,macroLength,args):
+    """
+    Add a macro to the list of recognized macros.
+      name              string with the name of the macro
+      macroLength       number of instructions the macro expands to
+                        Note:  A negative value means that the macro has a
+                               variable length (see MacroLength below)
+      args              list of the arguments
+                        each element of this list is an array of strings specifying the following:
+                          1.  If the first element is the empty string, then
+                              there is no default value for the argument,
+                              otherwise the listed string is the default
+                              value of the optional argument.
+                          2.  The remaining elements of the list are the types
+                              of arguments that can be accepted for the
+                              required or optional arguments.
+                        Note:  Only the last list in args is allowed to
+                               indicate an optional value for that argument.
+                          
+    Also record the allowed number of allowed arguments to the macro.
+    """
+    if name in self.macros['list']:
+      raise Exception('Program Bug -- name "%s" has already been listed as a macro' % name);
     self.macros['list'].append(name);
     self.macros['length'].append(macroLength);
     self.macros['args'].append(args);
-    ix = len(args);
-    while (ix > 0) and (len(args[ix-1][0]) != 0):
-      ix = ix - 1;
-    self.macros['nArgs'].append(range(ix,len(args)+1));
+    # Compute the range of the number of allowed arguments by first counting
+    # the number of required arguments and then determining whether or not
+    # there is at most one optional argument.
+    nRequired = 0;
+    while (nRequired < len(args)) and (args[nRequired][0] == ''):
+      nRequired = nRequired + 1;
+    if nRequired < len(args)-1:
+      raise Exception('Program Bug -- Only the last macro argument can be optional');
+    self.macros['nArgs'].append(range(nRequired,len(args)+1));
 
   def IsMacro(self,name):
+    """
+    Indicate whether or not the string "name" is a recognized macro.
+    """
     return name in self.macros['list'];
 
   def IsSingleMacro(self,name):
+    """
+    Indicate whether or not the macro is only one instruction long.
+    """
     if name not in self.macros['list']:
-      return False;
+      raise Exception('Program Bug -- name "%s" is not a macro' % name);
     ix = self.macros['list'].index(name);
     return (self.macros['length'][ix] == 1);
 
   def MacroArgTypes(self,name,ixArg):
+    """
+    Return the list of allowed types for the macro name for argument ixArg.
+    """
     if name not in self.macros['list']:
-      raise Exception('Program Bug');
+      raise Exception('Program Bug -- name "%s" is not a macro' % name);
     ix = self.macros['list'].index(name);
     return self.macros['args'][ix][ixArg][1:];
 
   def MacroDefault(self,name,ixArg):
+    """
+    Return the default argument for the macro name for argument ixArg.
+    """
     if name not in self.macros['list']:
-      raise Exception('Program Bug');
+      raise Exception('Program Bug -- name "%s" is not a macro' % name);
     ix = self.macros['list'].index(name);
     return self.macros['args'][ix][ixArg][0];
 
   def MacroLength(self,token):
+    """
+    Return the length of fixed-length macros or compute and return the length
+    of variable-length macros.\n
+    Note:  The only variable length macros recognized are fetchvector and
+           storevector.
+    """
     if token['value'] not in self.macros['list']:
-      raise Exception('Program Bug');
+      raise Exception('Program Bug -- name "%s" is not a macro' % token['value']);
     ix = self.macros['list'].index(token['value']);
     length = self.macros['length'][ix];
     if length >= 0:
@@ -70,21 +120,16 @@ class asmDef_9x8:
       return int(token['argument'][1]['value']) + 1;
     if token['value'] == '.storevector':
       return int(token['argument'][1]['value']) + 2;
-    raise Exception('Program Bug');
+    raise Exception('Program Bug -- Unrecognized variable length macro "%s"' % token['value']);
 
   def MacroNumberArgs(self,name):
+    """
+    Return the range of the number of allowed arguments to the named macro.
+    """
     if name not in self.macros['list']:
-      raise Exception('Program bug');
+      raise Exception('Program bug -- name "%s" is not a macro' % name);
     ix = self.macros['list'].index(name);
     return self.macros['nArgs'][ix];
-
-  def MacroOptArgIsSymbol(self,token):
-    if not token['argument']:
-      return False;
-    lastArg = token['argument'][-1];
-    if type(lastArg) == str:
-      return False;
-    return lastArg['type'] == 'symbol';
 
   ################################################################################
   #
@@ -93,16 +138,25 @@ class asmDef_9x8:
   ################################################################################
 
   def AddInstruction(self,name,opcode):
+    """
+    Add an instruction to the list of recognized instructions.
+    """
     self.instructions['list'].append(name);
     self.instructions['opcode'].append(opcode);
 
   def IsInstruction(self,name):
+    """
+    Indicate whether or not the argument is an instruction.
+    """
     return name in self.instructions['list'];
 
-  def InstructionOpcode(self,symbolName):
-    if not self.IsInstruction(symbolName):
-      raise Exception('Program Bug:  %s not in instruction list' % symbolName);
-    ix = self.instructions['list'].index(symbolName);
+  def InstructionOpcode(self,name):
+    """
+    Return the opcode for the specified instruction.
+    """
+    if not self.IsInstruction(name):
+      raise Exception('Program Bug:  %s not in instruction list' % name);
+    ix = self.instructions['list'].index(name);
     return self.instructions['opcode'][ix];
 
   ################################################################################
@@ -168,6 +222,13 @@ class asmDef_9x8:
   #
   ################################################################################
 
+  def CheckSymbolToken(self,name,allowableTypes,loc):
+    if name not in self.symbols['list']:
+      raise asmDef.AsmException('Undefined symbol "%s" at %s' % (name,loc));
+    ixName = self.symbols['list'].index(name);
+    if self.symbols['type'][ixName] not in allowableTypes:
+      raise asmDef.AsmException('Illegal symbol at %s' % token['loc']);
+
   def CheckRawTokens(self,rawTokens):
     # Ensure the first token is a directive.
     firstToken = rawTokens[0];
@@ -212,29 +273,26 @@ class asmDef_9x8:
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] == '.inport'):
         if not self.IsInport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Input port "%s" not defined at %s' % (token['argument'][0]['value'],token['loc']));
+          raise asmDef.AsmException('Symbol "%s is not an input port at %s' % (token['argument'][0]['value'],token['loc']));
       if (token['type'] == 'macro') and (token['value'] == '.outport'):
         if not self.IsOutport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Output port "%s" not defined at %s' % (token['argument'][0]['value'],token['loc']));
-    # Ensure referenced symbols are already defined.
+          raise asmDef.AsmException('Symbol "%s" is not an output port "%s" at %s' % (token['argument'][0]['value'],token['loc']));
+    # Ensure referenced symbols are already defined (other than labels and
+    # function names for call and jump macros).
     checkBody = False;
     if (rawTokens[0]['type'] == 'directive') and (rawTokens[0]['value'] in ('.function','.interrupt','.main',)):
       checkBody = True;
     if checkBody:
       for token in rawTokens[2:]:
         if token['type'] == 'symbol':
-          name = token['value'];
           allowableTypes = ('constant','inport','macro','outport','parameter','variable',);
-        elif token['type'] == 'macro' and self.MacroOptArgIsSymbol(token):
-          name = token['argument'][-1]['value'];
+          self.CheckSymbolToken(token['value'],allowableTypes,token['loc']);
+        elif token['type'] == 'macro':
           allowableTypes = ('RAM','ROM','constant','inport','outport','parameter','variable',);
-        else:
-          continue;
-        if name not in self.symbols['list']:
-          raise asmDef.AsmException('Undefined symbol "%s" at %s' % (name,token['loc']));
-        ixName = self.symbols['list'].index(name);
-        if self.symbols['type'][ixName] not in allowableTypes:
-          raise asmDef.AsmException('Illegal symbol at %s' % token['loc']);
+          ixFirst = 1 if token['value'] in self.MacrosWithSpecialFirstSymbol else 0;
+          for arg in  token['argument'][ixFirst:]:
+            if arg['type'] == 'symbol':
+              self.CheckSymbolToken(arg['value'],allowableTypes,arg['loc']);
 
   ################################################################################
   #
@@ -327,8 +385,6 @@ class asmDef_9x8:
             offset = offset + 1;
       # append macros
       elif token['type'] == 'macro':
-        if self.MacroOptArgIsSymbol(token):
-          token['argument'][-1] = self.ExpandSymbol(token['argument'][-1],singleValue=True);
         tokens.append(dict(type=token['type'], value=token['value'], offset=offset, argument=token['argument'], loc=token['loc']));
         offset = offset + self.MacroLength(token);
       # interpret and append symbols
@@ -540,10 +596,6 @@ class asmDef_9x8:
     # Sanity checks for address range
     if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**13-1:
       raise asmDef.AsmException('Max address for program requires more than 13 bits');
-#    for ix in range(len(self.functionEvaluation['list'])):
-#      print self.functionEvaluation['list'][ix], self.functionEvaluation['address'][ix], self.functionEvaluation['length'][ix];
-#      for ix2 in range(len(self.functionEvaluation['body'][ix])):
-#        print self.functionEvaluation['body'][ix][ix2];
 
   ################################################################################
   #
@@ -711,6 +763,8 @@ class asmDef_9x8:
     fp.write('%03X %s\n' % (opcode,self.EmitName(name)));
 
   def EmitOptArg(self,fp,token):
+    if token['type'] == 'symbol':
+      token = self.ExpandSymbol(token,singleValue=True);
     if token['type'] == 'constant':
       name = token['value'];
       if name not in self.symbols['list']:
@@ -890,7 +944,11 @@ class asmDef_9x8:
     self.directives['list'].append('.variable');
 
     #
+    #
     # Configure the pre-defined macros
+    # Note:  'symbol' is a catch-call for functions, labels, variables, etc.
+    #        These are restricted to the appropriate types when the macros are
+    #        expanded.
     #
 
     self.macros = dict(list=list(), length=list(), args=list(), nArgs=list());
@@ -942,6 +1000,12 @@ class asmDef_9x8:
                                              ['','symbol'],
                                              ['','singlevalue','symbol'],
                                            ]);
+
+    #
+    # List the macros that have special symbols for their first argument.
+    #
+
+    self.MacrosWithSpecialFirstSymbol = ('.call','.callc','.jump','.jumpc',);
 
     #
     # Externally defined parameters.
