@@ -382,7 +382,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
     macroArgs = re.findall(r'([^,]+)',raw[len(b.group(0))+1:-1]);
     nArgs = ad.MacroNumberArgs(b.group(0))
     if len(macroArgs) not in nArgs:
-      raise AsmException('Wrong number of arguments to macro at %s:%d' % (fl_loc,col+1));
+      raise AsmException('Wrong number of arguments to macro "%s" at %s:%d' % (b.group(0),fl_loc,col+1));
     while len(macroArgs) < nArgs[-1]:
       macroArgs.append(ad.MacroDefault(b.group(0),len(macroArgs)));
     outArgs = list();
