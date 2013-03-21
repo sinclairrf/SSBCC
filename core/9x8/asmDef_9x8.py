@@ -30,6 +30,46 @@ class asmDef_9x8:
 
   ################################################################################
   #
+  # Record symbols
+  #
+  ################################################################################
+
+  def AddSymbol(self,name,stype,body=None):
+    """
+    Add the named global symbol to the list of symbols including its mandatory
+    type and an optional body.\n
+    Note:  Symbols include memory names, variables, constants, functions,
+           parameters, inports, outports, ...
+    """
+    if name in self.symbols['list']:
+      raise Exception('Program Bug -- name "%s" already exists is symbols');
+    self.symbols['list'].append(name);
+    self.symbols['type'].append(stype);
+    self.symbols['body'].append(body);
+
+  def SymbolDict(self):
+    """
+    Return a dict object usable by the eval function with the currently defines
+    symbols for constants, variables, memory lengths, and stack lengths.
+    """
+    t = dict();
+    for ixSymbol in range(len(self.symbols['list'])):
+      name = self.symbols['list'][ixSymbol];
+      stype = self.symbols['type'][ixSymbol];
+      if stype == 'constant':
+        t[name] = self.symbols['body'][ixSymbol][0];
+      elif stype == 'variable':
+        t[name] = self.symbols['body'][ixSymbol]['start'];
+    sizes=dict();
+    for name in self.memoryLength:
+      sizes[name] = self.memoryLength[name];
+    for name in self.stackLength:
+      sizes[name] = self.stackLength[name];
+    t['size'] = sizes;
+    return t;
+
+  ################################################################################
+  #
   # Configure the class for identifying and processing macros.
   #
   ################################################################################
@@ -155,7 +195,7 @@ class asmDef_9x8:
     Return the opcode for the specified instruction.
     """
     if not self.IsInstruction(name):
-      raise Exception('Program Bug:  %s not in instruction list' % name);
+      raise Exception('Program Bug:  "%s" not in instruction list' % name);
     ix = self.instructions['list'].index(name);
     return self.instructions['opcode'][ix];
 
@@ -166,54 +206,89 @@ class asmDef_9x8:
   ################################################################################
 
   def IsInport(self,name):
+    """
+    Indicate whether or not the named symbol is an inport.
+    """
     if name not in self.symbols['list']:
       return False;
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'inport';
 
   def IsOutport(self,name):
+    """
+    Indicate whether or not the named symbol is an outport.
+    """
     if name not in self.symbols['list']:
       return False;
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'outport';
 
   def IsParameter(self,name):
+    """
+    Indicate whether or not the named symbol is a parameter.
+    """
     if name not in self.symbols['list']:
       return False;
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'parameter';
 
   def InportAddress(self,name):
+    """
+    Return the address of the named inport.
+    """
     if not self.IsInport(name):
-      raise Exception('Program Bug');
+      raise Exception('Program Bug -- "%s" is not an inport' % name);
     ix = self.symbols['list'].index(name);
-    return self.symbols['body'][ix]['address'];
+    return self.symbols['body'][ix];
 
   def OutportAddress(self,name):
+    """
+    Return the address of the named outport.
+    """
     if not self.IsOutport(name):
-      raise Exception('Program Bug');
+      raise Exception('Program Bug -- "%s" is not an outport' % name);
     ix = self.symbols['list'].index(name);
-    return self.symbols['body'][ix]['address'];
+    return self.symbols['body'][ix];
 
   def RegisterInport(self,name,address):
+    """
+    Add the named inport to the list of recognized symbols and record its
+    address as the body of the inport.
+    """
     if self.IsInport(name):
       raise Exception('Program Bug');
-    self.AddSymbol(name,'inport',dict(address=address));
+    self.AddSymbol(name,'inport',address);
 
   def RegisterOutport(self,name,address):
+    """
+    Add the named outport to the list of recognized symbols and record its
+    address as the body of the outport.
+    """
     if self.IsOutport(name):
       raise Exception('Program Bug');
-    self.AddSymbol(name,'outport',dict(address=address));
+    self.AddSymbol(name,'outport',address);
 
   def RegisterParameterName(self,name):
+    """
+    Add the named parameter to the list of regognized symbols.\n
+    Note:  Parameters do not have a body.
+    """
     if self.IsParameter(name):
       raise Exception('Program Bug');
     self.AddSymbol(name,'parameter');
 
   def RegisterMemoryLength(self,name,length):
+    """
+    Record the length of the specified memory.\n
+    Note:  This is used to evaluate "size[name]" in "${...}" expressions.
+    """
     self.memoryLength[name] = length;
 
   def RegisterStackLength(self,name,length):
+    """
+    Record the length of the specified stack.\n
+    Note:  This is used to evaluate "size[name]" in "${...}" expressions.
+    """
     self.stackLength[name] = length;
 
   ################################################################################
@@ -223,6 +298,10 @@ class asmDef_9x8:
   ################################################################################
 
   def CheckSymbolToken(self,name,allowableTypes,loc):
+    """
+    Syntax check for symbols, either by themselves or as a macro argument.\n
+    Note:  This is used by CheckRawTokens.
+    """
     if name not in self.symbols['list']:
       raise asmDef.AsmException('Undefined symbol "%s" at %s' % (name,loc));
     ixName = self.symbols['list'].index(name);
@@ -230,6 +309,11 @@ class asmDef_9x8:
       raise asmDef.AsmException('Illegal symbol at %s' % token['loc']);
 
   def CheckRawTokens(self,rawTokens):
+    """
+    Syntax check for directive bodies.\n
+    Note:  This core-specific method is called by the top-level assembler after
+           the RawTokens method.
+    """
     # Ensure the first token is a directive.
     firstToken = rawTokens[0];
     if firstToken['type'] != 'directive':
@@ -304,7 +388,8 @@ class asmDef_9x8:
     """
     Return either (1) a list comprised of a single token which may not be a
     byte or (2) a list comprised of multiple tokens, each of which is a single
-    byte.
+    byte.\n
+    Note:  This is called by FillRawTokens.
     """
     if len(rawTokens) > 1:
       limit = True;
@@ -314,13 +399,13 @@ class asmDef_9x8:
         if token['type'] == 'value':
           v = token['value'];
           if type(v) == int:
-            if limit and (v < -128 or 256 <= v):
-              raise Exception();
+            if limit and not (-128 <= v < 256):
+              raise Exception('Program Bug -- unexpected out-of-range value');
             values.append(v);
           else:
             for v in token['value']:
-              if v < -128 or 256 <= v:
-                raise Exception();
+              if not (-128 <= v < 256):
+                raise Exception('Program Bug -- unexpected out-of-range value');
               values.append(v);
         else:
           raise asmDef.AsmException('Illegal token "%s" at %s:%d:%d', (token['type'],token['loc']));
@@ -329,38 +414,57 @@ class asmDef_9x8:
     return values;
 
   def ExpandSymbol(self,token,singleValue):
+    """
+    Convert the token for a symbol into a token for its specific type.
+    Optionally ensure constants expand to a single byte.  For parameters,
+    ensure that a range is provided.\n
+    Note:  Symbols must be defined before the directive bodies in which they
+           are used.\n
+    Note:  This is called in two spots.  The first is ExpandTokens, where
+           isolated symbols are processed, for example to get the value of a
+           constant.  The second is in EmitOptArg where symbols in arguments to
+           macros are expanded (this allows the macro-specific processing to
+           identify labels vs. symbols).
+    """
     if token['value'] not in self.symbols['list']:
       raise asmDef.AsmException('Symbol "%s" not in symbol list at %s' %(token['value'],token['loc'],));
     ix = self.symbols['list'].index(token['value']);
-    if self.symbols['type'][ix] == 'RAM':
+    symbolType = self.symbols['type'][ix];
+    if symbolType == 'RAM':
       return dict(type='RAM', value=token['value'], loc=token['loc']);
-    elif self.symbols['type'][ix] == 'ROM':
+    elif symbolType == 'ROM':
       return dict(type='ROM', value=token['value'], loc=token['loc']);
-    elif self.symbols['type'][ix] == 'constant':
+    elif symbolType == 'constant':
       if singleValue:
         thisBody = self.symbols['body'][ix];
-        if len(thisBody)!=1:
+        if len(thisBody) != 1:
           raise asmDef.AsmException('Constant "%s" must evaluate to a single byte at %s' % (token['value'],token['loc'],))
         thisBody = thisBody[0];
-        if not (-128 <= thisBody and thisBody < 256):
+        if not (-128 <= thisBody < 256):
           raise asmDef.AsmException('Constant "%s" must be a byte value at %s' % (token['value'],token['loc'],));
       return dict(type='constant', value=token['value'], loc=token['loc']);
-    elif self.symbols['type'][ix] == 'inport':
+    elif symbolType == 'inport':
       return dict(type='inport', value=token['value'], loc=token['loc']);
-    elif self.symbols['type'][ix] == 'outport':
+    elif symbolType == 'outport':
       return dict(type='outport', value=token['value'], loc=token['loc']);
-    elif self.symbols['type'][ix] == 'parameter':
+    elif symbolType == 'parameter':
       if 'range' in token:
         trange = token['range'];
       else:
         trange = '[0+:8]';
       return dict(type='parameter', value=token['value'], range=trange, loc=token['loc']);
-    elif self.symbols['type'][ix] == 'variable':
+    elif symbolType == 'variable':
       return dict(type='variable', value=token['value'], loc=token['loc']);
     else:
-      raise Exception('Program Bug');
+      raise Exception('Program Bug -- unrecognized symbol type "%s"' % symbolType);
 
   def ExpandTokens(self,rawTokens):
+    """
+    Compute the relative addresses for tokens within function bodies.\n
+    The return is a list of the tokens in the function body, each of which has
+    a type, value, offset (relative address), and location within the source
+    code.  Macro types also have the list of arguments provided to the macro.
+    """
     tokens = list();
     offset = 0;
     for token in rawTokens:
@@ -398,17 +502,27 @@ class asmDef_9x8:
           offset = offset + len(self.symbols['body'][ix]);
         else:
           offset = offset + 1;
-      # everything else is an error
+      # anything else is a program bug
       else:
         raise Exception('Program bug:  unexpected token type "%s"' % token['type']);
     return dict(tokens=tokens, length=offset);
 
   def FillRawTokens(self,rawTokens):
+    """
+    Do one of the following as required for the specified directive:
+      .constant         add the constant and its body to the list of symbols
+      .function         add the function and its body, along with the relative
+                        addresses, to the list of symbols
+      .interrupt        record the function body and relative addresses
+      .main             record the function body and relative addresses
+      .memory           record the definition of the memory and make it current
+                        for subsequent variable definitions.
+      .variable         add the variable and its associated memory, length, and
+                        initial values to the list of symbols
+    """
     firstToken = rawTokens[0];
     secondToken = rawTokens[1];
-    if firstToken['value'] == '.abbr':
-      raise Exception('TODO -- implement ".abbr"');
-    elif firstToken['value'] == '.constant':
+    if firstToken['value'] == '.constant':
       if secondToken['type'] != 'symbol':
         raise asmDef.AsmException('Bad constant name at %s' % secondToken['loc']);
       byteList = self.ByteList(rawTokens[2:]);
@@ -419,9 +533,7 @@ class asmDef_9x8:
         raise asmDef.AsmException('Expected symbol at %s' % secondToken['loc']);
       if secondToken['value'] in self.symbols['list']:
         raise asmDef.AsmException('Symbol %s already defined at %s' % (secondToken['value'],secondToken['loc']));
-      self.symbols['list'].append(secondToken['value']);
-      self.symbols['type'].append('function');
-      self.symbols['body'].append(self.ExpandTokens(rawTokens[2:]));
+      self.AddSymbol(secondToken['value'],'function',self.ExpandTokens(rawTokens[2:]));
     # Process ".interrupt" definition.
     elif firstToken['value'] == '.interrupt':
       if self.interrupt:
@@ -467,38 +579,20 @@ class asmDef_9x8:
       raise Exception('Program Bug:  Unrecognized directive %s at %s' % (firstToken['value'],firstToken['loc']));
 
   def Main(self):
+    """
+    Return the body of the .main function.
+    Note:  This is used by the top-level assembler to verify that the .main
+           function has been defined.
+    """
     return self.main;
 
   def Interrupt(self):
+    """
+    Return the body of the .interrupt function.
+    Note:  This is used by the top-level assembler to verify that the .interrupt
+           function has or has not been defined.
+    """
     return self.interrupt;
-
-  def AddSymbol(self,name,stype,body=None):
-    if name in self.symbols['list']:
-      raise Exception('Program Bug');
-    self.symbols['list'].append(name);
-    self.symbols['type'].append(stype);
-    self.symbols['body'].append(body);
-
-  def Symbols(self):
-    return self.symbols;
-
-  def SymbolDict(self):
-    """return a dict object usable by the eval function with the currently defines symbols"""
-    t = dict();
-    for ixSymbol in range(len(self.symbols['list'])):
-      name = self.symbols['list'][ixSymbol];
-      stype = self.symbols['type'][ixSymbol];
-      if stype == 'constant':
-        t[name] = self.symbols['body'][ixSymbol][0];
-      elif stype == 'variable':
-        t[name] = self.symbols['body'][ixSymbol]['start'];
-    sizes=dict();
-    for name in self.memoryLength:
-      sizes[name] = self.memoryLength[name];
-    for name in self.stackLength:
-      sizes[name] = self.stackLength[name];
-    t['size'] = sizes;
-    return t;
 
   ################################################################################
   #
@@ -507,6 +601,12 @@ class asmDef_9x8:
   ################################################################################
 
   def EvaluateMemoryTree(self):
+    """
+    Ensure defined memories are used.  Add the memory name, type, and length to
+    the list of memories.  Compute the bank index ascending from 0 for RAMs and
+    descending from 3 for ROMs and add that index to the memory attributes.
+    Ensure that no more than 4 memories are listed.
+    """
     self.memories = dict(list=list(), type=list(), length=list(), bank=list());
     ramBank = 0;
     romBank = 3;
@@ -543,6 +643,14 @@ class asmDef_9x8:
   ################################################################################
 
   def EvaluateFunctionTree(self):
+    """
+    Create a list of the functions required by the program, starting with the
+    required .main function and the optional .interrupt function.\n
+    Record the length of each function, its body, and its start address and
+    calculate the addresses of the labels within each function body.\n
+    Finally, ensure the function address space does not exceed the absolute
+    8192 address limit.
+    """
     self.functionEvaluation = dict(list=list(), length=list(), body=list(), address=list());
     nextStart = 0;
     # ".main" is always required.
@@ -587,10 +695,12 @@ class asmDef_9x8:
           labelAddress['list'].append(token['value']);
           labelAddress['address'].append(startAddress + token['offset']);
       for token in self.functionEvaluation['body'][ix]:
-        if (token['type'] == 'macro') and (token['value'] in ('.jump','.jumpc',)):
+        if token['type'] != 'macro':
+          continue;
+        if token['value'] in ('.jump','.jumpc',):
           ix = labelAddress['list'].index(token['argument'][0]['value']);
           token['address'] = labelAddress['address'][ix];
-        if (token['type'] == 'macro') and (token['value'] in ('.call','.callc',)):
+        elif token['value'] in ('.call','.callc',):
           ix = self.functionEvaluation['list'].index(token['argument'][0]['value']);
           token['address'] = self.functionEvaluation['address'][ix];
     # Sanity checks for address range
@@ -935,7 +1045,6 @@ class asmDef_9x8:
     self.directives = dict();
 
     self.directives['list']= list();
-    self.directives['list'].append('.abbr');
     self.directives['list'].append('.constant');
     self.directives['list'].append('.function');
     self.directives['list'].append('.interrupt');
