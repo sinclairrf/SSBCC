@@ -42,7 +42,7 @@ class asmDef_9x8:
            parameters, inports, outports, ...
     """
     if name in self.symbols['list']:
-      raise Exception('Program Bug -- name "%s" already exists is symbols');
+      raise Exception('Program Bug -- name "%s" already exists is symbols' % name);
     self.symbols['list'].append(name);
     self.symbols['type'].append(stype);
     self.symbols['body'].append(body);
@@ -704,7 +704,7 @@ class asmDef_9x8:
           ix = self.functionEvaluation['list'].index(token['argument'][0]['value']);
           token['address'] = self.functionEvaluation['address'][ix];
     # Sanity checks for address range
-    if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] > 2**13-1:
+    if self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1] >= 2**13:
       raise asmDef.AsmException('Max address for program requires more than 13 bits');
 
   ################################################################################
@@ -714,11 +714,31 @@ class asmDef_9x8:
   ################################################################################
 
   def EmitMemories(self,fp):
-    """Emit the memories"""
+    """
+    Print the memories to the metacode file.\n
+    The first line for each memory has the format
+      :memory type mem_name bank length
+    where
+      type              is RAM or ROM
+      mem_name          is the name of the memory
+      bank              is the assigned bank address
+      length            is the number of bytes used by the memory\n
+    The subsequent lines are sequences of
+      - variable_name
+      value(s)
+    where
+      '-'               indicates a variable name is present
+      variable_name     is the name of the variable
+      values(s)         is one or more lines for the values with one byte per line
+                        Note:  because the lines with variable names start with
+                               '-', negative values are converted to unsigned
+                               values\n
+    """
     # Emit the individual memories.
     for ixMem in range(len(self.memories['list'])):
       fp.write(':memory %s %s %d %d\n' % (self.memories['type'][ixMem],self.memories['list'][ixMem],self.memories['bank'][ixMem],self.memories['length'][ixMem]));
       memName = self.memories['list'][ixMem];
+      address = 0;
       for ixSymbol in range(len(self.symbols['list'])):
         if self.symbols['type'][ixSymbol] != 'variable':
           continue;
@@ -727,7 +747,7 @@ class asmDef_9x8:
           continue;
         fp.write('- %s\n' % self.symbols['list'][ixSymbol]);
         for v in vBody['value']:
-          if v < -128 or 256 <= v:
+          if not (-128 <=v < 256):
             raise Exception('Program Bug -- value not representable by a byte');
           fp.write('%02X\n' % (v % 0x100,));
       fp.write('\n');
@@ -738,26 +758,174 @@ class asmDef_9x8:
   #
   ################################################################################
 
+  #
+  # Utilities for building opcodes or the associated description strings.
+  #
+  # Note:  These utilities do not write to the metacode file.
+  #
+
   def Emit_AddLabel(self,name):
+    """
+    Append the label to the labels associated with the current program address.
+    """
     self.emitLabelList += ':' + name + ' ';
 
   def Emit_GetAddrAndBank(self,name):
+    """
+    For the specified variable, return an ordered tuple of the memory address
+    within its bank, the corresponding bank index, and the corresponding bank
+    name.\n
+    Note:  This is used for the .fetchvector and .storevector macro generation.
+    """
     if name not in self.symbols['list']:
       raise asmDef.AsmException('"%s" is not a recognized symbol' % name);
     ixName = self.symbols['list'].index(name);
     if self.symbols['type'][ixName] != 'variable':
       raise asmDef.AsmException('"%s" is not a variable' % name);
     body = self.symbols['body'][ixName];
-    ixMem = self.memories['list'].index(body['memory']);
-    return (self.memories['bank'][ixMem],body['start'],);
+    bankName = body['memory'];
+    ixMem = self.memories['list'].index(bankName);
+    return (body['start'],self.memories['bank'][ixMem],bankName,);
 
   def Emit_GetBank(self,name):
+    """
+    For the specified variable, return the memory bank index.\n
+    Note:  This is used for the .fetch, .fetch+, .fetch-, .store, .store+, and
+           .store- macros.
+    """
     if name not in self.memories['list']:
       raise asmDef.AsmException('"%s" not a memory' % name);
     ixMem = self.memories['list'].index(name);
     return self.memories['bank'][ixMem];
 
+  def Emit_String(self,name=''):
+    """
+    Append the specified string to the list of labels for the current
+    instruction, restart the list of labels, and return the composite string.
+    """
+    name = self.emitLabelList + name;
+    self.emitLabelList = '';
+    return name;
+
+  #
+  # Utilities to write single instructions to the metacode file.
+  #
+  # Note:  Other than the program header and the function names, these
+  #        utilities write the function bodies.
+  #
+
+  def EmitOpcode(self,fp,opcode,name):
+    """
+    Write the specified opcode and the associated comment string.\n
+    The leading bit for an opcode is always a '0'.
+    """
+    if not (0 <= opcode < 256):
+      raise Exception('Program Bug -- opcode "0x%X" out of range');
+    fp.write('0%02X %s\n' % (opcode,self.Emit_String(name)));
+
+  def EmitParameter(self,fp,token):
+    """
+    Write the name (and range) of the specified parameter and the optional
+    associated comment string.\n
+    The string 'p' specifies that the parameter is to be inserted into the
+    instruction body.\n
+    Note:  The comment string may be the empty string if there were no labels
+           immediately preceding the parameter.
+    """
+    name = token['value'];
+    if not self.IsParameter(name):
+      raise Exception('Program Bug');
+    commentString = self.Emit_String();
+    if commentString:
+      fp.write('p %s%s %s\n' % (name,token['range'],commentString,));
+    else:
+      fp.write('p %s%s\n' % (name,token['range'],));
+
+  def EmitPush(self,fp,value,name=None,tokenLoc=None):
+    """
+    Write the opcode to push a value onto the data stack.  Include the comment
+    string including either the optionally provided symbol name or a printable
+    representation of the value being pushed onto the stack.\n
+    Note:  The printable value is included when a name is not provided so that
+           the contents of single characters or of strings being pushed onto
+           the stack can be read.\n
+    Note:  The token location is an optional input required when the range of
+           the provided value may not have been previously ensured to fit in
+           one byte.
+    """
+    if not (-128 <= value < 256):
+      if tokenLoc == None:
+        raise Exception('Program Bug -- untrapped out-of-range token "%s"' % value);
+      else:
+        raise asmDef.AsmException('Value not representable by a byte at "%s"' % tokenLoc);
+    if value < 0:
+      value = value + 256;
+    if type(name) == str:
+      fp.write('1%02X %s\n' % ((value % 0x100),self.Emit_String(name)));
+    elif (chr(value) in string.printable) and (chr(value) not in string.whitespace):
+      fp.write('1%02X %s\n' % ((value % 0x100),self.Emit_String('%02X \'%c\'' % (value,value,))));
+    else:
+      fp.write('1%02X %s\n' % ((value % 0x100),self.Emit_String('0x%02X' % value)));
+
+  def EmitVariable(self,fp,name):
+    """
+    Use the EmitPush method to push the address of a variable onto the data
+    stack.
+    """
+    if name not in self.symbols['list']:
+      raise asmDef.AsmException('Variable "%s" not recognized' % name);
+    ixName = self.symbols['list'].index(name);
+    if self.symbols['type'][ixName] != 'variable':
+      raise asmDef.AsmException('"%s" is not a variable' % name);
+    self.EmitPush(fp,self.symbols['body'][ixName]['start'],name);
+
+  #
+  # EmitOpcode, EmitMacro, and EmitProgram emit composite or more complicated
+  # bodies.
+  #
+
+  def EmitOptArg(self,fp,token):
+    """
+    Write the metacode for optional arguments to macros.\n
+    These must be single-instruction arguments.
+    """
+    # Symbols encountered in macros are expanded here instead of the
+    # ExpandTokens method -- the code is much simpler this way even though the
+    # associated error detection was deferred in the processing.  The symbol
+    # must expand to a single value.
+    if token['type'] == 'symbol':
+      token = self.ExpandSymbol(token,singleValue=True);
+    if token['type'] == 'constant':
+      name = token['value'];
+      if name not in self.symbols['list']:
+        raise Exception('Program Bug');
+      ix = self.symbols['list'].index(name);
+      if len(self.symbols['body'][ix]) != 1:
+        raise asmDef.AsmException('Optional constant can only be one byte at %s' % token['loc']);
+      self.EmitPush(fp,self.symbols['body'][ix][0],self.Emit_String(name),tokenLoc=token['loc']);
+    elif token['type'] in ('inport','outport'):
+      name = token['value'];
+      if name not in self.symbols['list']:
+        raise Exception('Program Bug -- unrecognized inport/outport name "%s"');
+      ix = self.symbols['list'].index(name);
+      self.EmitPush(fp,self.symbols['body'][ix],self.Emit_String(name));
+    elif token['type'] == 'instruction':
+      self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
+    elif token['type'] == 'parameter':
+      self.EmitParameter(fp,token);
+    elif token['type'] == 'value':
+      self.EmitPush(fp,token['value'],tokenLoc=token['loc']);
+    elif token['type'] == 'variable':
+      self.EmitVariable(fp,token['value']);
+    elif token['type'] == 'macro':
+      self.EmitMacro(fp,token);
+    else:
+      raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
+
   def EmitMacro(self,fp,token):
+    """
+    Write the metacode for a macro.
+    """
     # .call
     if token['value'] == '.call':
       self.EmitPush(fp,token['address'] & 0xFF,'');
@@ -785,22 +953,26 @@ class asmDef_9x8:
       self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-('+name+')');
     # .fetchindexed
     elif token['value'] == '.fetchindexed':
-      ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
+      name = token['argument'][0]['value'];
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
+      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
       self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
-      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
+      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
     # .fetchvalue
     elif token['value'] == '.fetchvalue':
-      ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
-      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
+      name = token['argument'][0]['value'];
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
+      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
+      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
     # .fetchvector
     elif token['value'] == '.fetchvector':
-      name = token['argument'][0]['value']
-      (addr,ixBank) = self.Emit_GetAddrAndBank(name);
+      name = token['argument'][0]['value'];
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
       N = int(token['argument'][1]['value']);
       self.EmitPush(fp,addr+N-1,'%s+%d' % (name,N-1));
       for dummy in range(N-1):
-        self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-');
-      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch');
+        self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch- '+bankName);
+      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
     # .inport
     elif token['value'] == '.inport':
       name = token['argument'][0]['value'];
@@ -843,97 +1015,58 @@ class asmDef_9x8:
       self.EmitOpcode(fp,self.specialInstructions['store-'] | ixBank,'store- '+name);
     # .storeindexed
     elif token['value'] == '.storeindexed':
-      ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
+      name = token['argument'][0]['value'];
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
+      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
       self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
-      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
+      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+bankName);
       self.EmitOptArg(fp,token['argument'][1]);
     # .storevalue
     elif token['value'] == '.storevalue':
-      ixBank = self.EmitVariable(fp,token['argument'][0]['value']);
-      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store');
+      name = token['argument'][0]['value'];
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
+      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
+      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+bankName);
       self.EmitOptArg(fp,token['argument'][1]);
     # .storevector
     elif token['value'] == '.storevector':
-      (addr,ixBank) = self.Emit_GetAddrAndBank(token['argument'][0]['value']);
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(token['argument'][0]['value']);
       N = int(token['argument'][1]['value']);
       self.EmitPush(fp,addr,token['argument'][0]['value']);
       for dummy in range(N):
-        self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+');
+        self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+ '+bankName);
       self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
     # error
     else:
-      raise Exception('Program Bug:  Unrecognized macro "%s"' % token['value']);
-
-  def EmitName(self,name):
-    name = self.emitLabelList + name;
-    self.emitLabelList = '';
-    return name;
-
-  def EmitOpcode(self,fp,opcode,name):
-    fp.write('%03X %s\n' % (opcode,self.EmitName(name)));
-
-  def EmitOptArg(self,fp,token):
-    if token['type'] == 'symbol':
-      token = self.ExpandSymbol(token,singleValue=True);
-    if token['type'] == 'constant':
-      name = token['value'];
-      if name not in self.symbols['list']:
-        raise Exception('Program Bug');
-      ix = self.symbols['list'].index(name);
-      if len(self.symbols['body'][ix]) != 1:
-        raise asmDef.AsmException('Optional constant can only be one byte at %s' % token['loc']);
-      self.EmitPush(fp,self.symbols['body'][ix][0],self.EmitName(name),tokenLoc=token['loc']);
-    elif token['type'] in ('inport','outport'):
-      name = token['value'];
-      if name not in self.symbols['list']:
-        raise Exception('Program Bug');
-      ix = self.symbols['list'].index(name);
-      self.EmitPush(fp,self.symbols['body'][ix]['address'],self.EmitName(name));
-    elif token['type'] == 'instruction':
-      self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
-    elif token['type'] == 'parameter':
-      self.EmitParameter(fp,token);
-    elif token['type'] == 'value':
-      self.EmitPush(fp,token['value'],tokenLoc=token['loc']);
-    elif token['type'] == 'variable':
-      self.EmitVariable(fp,token['value']);
-    elif token['type'] == 'macro':
-      self.EmitMacro(fp,token);
-    else:
-      raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
-
-  def EmitParameter(self,fp,token):
-    name = token['value'];
-    if not self.IsParameter(name):
-      raise Exception('Program Bug');
-    fp.write('p %s%s\n' % (name,token['range'],));
-
-  def EmitPush(self,fp,value,name=None,tokenLoc=None):
-    if value < -128 or 256 <= value:
-      if tokenLoc == None:
-        raise Exception('Program Bug -- untrapped out-of-range token');
-      else:
-        raise asmDef.AsmException('Value not representable by a byte at "%s"' % tokenLoc);
-    if (-128 <= value <= -1):
-      value = value + 256;
-    if type(name) == str:
-      fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName(name)));
-    elif (chr(value) in string.printable) and (chr(value) not in string.whitespace):
-      fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName('%02X \'%c\'' % (value,value,))));
-    else:
-      fp.write('1%02X %s\n' % ((value % 0x100),self.EmitName('0x%02X' % value)));
-
-  def EmitVariable(self,fp,name):
-    if name not in self.symbols['list']:
-      raise asmDef.AsmException('Variable "%s" not recognized' % name);
-    ixName = self.symbols['list'].index(name);
-    body = self.symbols['body'][ixName];
-    fp.write('1%02X %s\n' % (body['start'],self.EmitName(name)));
-    ixMem = self.memories['list'].index(body['memory']);
-    return self.memories['bank'][ixMem];
+      raise Exception('Program Bug -- Unrecognized macro "%s"' % token['value']);
 
   def EmitProgram(self,fp):
-    """Emit the program code"""
+    """
+    Write the program to the metacode file.\n
+    The frist line for the program has the format
+      :program address_main address_interrupt
+    where
+      address_main      is the address of the .main function (this should be 0)
+      address_interrupt is either the address of the optional interrupt
+                        function if it was defined or the 2-character string
+                        '[]'\n
+    The subsequent lines are sequences of
+      - function_name   indicates the start of a new function body and the name
+                        of the function
+      instructions      is multiple lines, one for each instruction in the
+                        function\n
+    The formats of the instruction lines are as follows:
+      value string      value is the next instruction to store and string is an
+                        optional string describing the instruction
+                        Note:  "value" must be a 3-digit hex string
+                               representing a 9-bit value
+                        Note:  The only place string should be empty is when
+                               pushing the 8 lsb of an address onto the start
+                               prior to a call, callc, jump, or jumpc
+                               instruction
+      p name            the single 'p' means that the name of a parameter and
+                        its range are to be converted into an instruction
+    """
     # Write the program marker, address of .main, address or "[]" of .interrupt,
     # and the total program length.
     fp.write(':program');
@@ -965,7 +1098,7 @@ class asmDef_9x8:
           if token['value'] not in self.symbols['list']:
             raise Exception('Program Bug');
           ix = self.symbols['list'].index(token['value']);
-          self.EmitPush(fp,self.symbols['body'][ix]['address'],token['value'],tokenLoc=token['loc']);
+          self.EmitPush(fp,self.symbols['body'][ix],token['value'],tokenLoc=token['loc']);
         elif token['type'] == 'instruction':
           self.EmitOpcode(fp,self.InstructionOpcode(token['value']),token['value']);
         elif token['type'] == 'macro':
@@ -986,6 +1119,19 @@ class asmDef_9x8:
   ################################################################################
 
   def __init__(self):
+    """
+    Initialize the tables definining the following:
+      directly invokable instruction mnemonics and the associated opcodes
+      indirectly inivoked instruction mnemonics and the associated opcodes
+        Note:  These are accessed through macros since they require an argument
+               or are part of multi-instruction sequences.
+      directives (other than ".include")
+      macros with type restrictions for required arguments and defaults and
+        restrictions for optional arguments\n
+    Initialize lists and members to record memory attributes, stack lengths,
+    body of the .main function, body of the optional .interrupt function,
+    current memory for variable definitions, etc.
+    """
 
     #
     # Configure the instructions.
@@ -1128,7 +1274,7 @@ class asmDef_9x8:
     # macro, etc. definitions.
     #
 
-    self.interrupt = list();
-    self.main = list();
+    self.interrupt = None;
+    self.main = None;
     self.symbols = dict(list=list(), type=list(), body=list());
     self.currentMemory = None;

@@ -234,11 +234,11 @@ def genMemories(fp,config,programBody):
       memName = ('s_opcodeMemory_%%0%dX' % instructionNameIndexWidth) % ixBlock;
     thisPacked['memName'] = memName;
     if width == 9:
-      formatp = '  %s[\'h%%0%dX] = { 1\'b1, %%s };\n' % (memName,instructionAddrWidth,);
+      formatp = '  %s[\'h%%0%dX] = { 1\'b1, %%s };' % (memName,instructionAddrWidth,);
       formatn = '  %s[\'h%%0%dX] = 9\'h%%s; // %%s\n' % (memName,instructionAddrWidth,);
       formate = '  %s[\'h%%0%dX] = 9\'h000;\n' % (memName,instructionAddrWidth,);
     else:
-      formatp = '  %s[\'h%%0%dX] = { %d\'d0, 1\'b1, %%s };\n' % (memName,instructionAddrWidth,width-9,);
+      formatp = '  %s[\'h%%0%dX] = { %d\'d0, 1\'b1, %%s };' % (memName,instructionAddrWidth,width-9,);
       formatn = '  %s[\'h%%0%dX] = { %d\'d0, 9\'h%%s }; // %%s\n' % (memName,instructionAddrWidth,width-9,);
       formate = '  %s[\'h%%0%dX] = { %d\'d0, 9\'h000 };\n' % (memName,instructionAddrWidth,width-9,);
     for ixMem in range(instructionMemory['blockSize']):
@@ -248,7 +248,11 @@ def genMemories(fp,config,programBody):
             fp.write('  // %s\n' % programBody[ixRecordedBody][2:]);
           else:
             if programBody[ixRecordedBody][0] == 'p':
-              fp.write(formatp % (ixMem,programBody[ixRecordedBody][2:]));
+              (parameterString,parameterComment) = re.findall(r'(\S+)(.*)$',programBody[ixRecordedBody][2:])[0];
+              fp.write(formatp % (ixMem,parameterString,));
+              if len(parameterComment) > 0:
+                fp.write(' // %s' % parameterComment[1:]);
+              fp.write('\n');
             else:
               fp.write(formatn % (ixMem,programBody[ixRecordedBody][0:3],programBody[ixRecordedBody][4:]));
             break;
