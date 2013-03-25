@@ -9,7 +9,6 @@
     finish interrupt handling
     remove dead parameters and dead code
     rework design as required to make it more robust
-    use _doc_string_ comments throughout
     documentation
       top-level overview, point to implemented cores
       required:  ARCHITECTURE and sizes, ASSEMBLY, and HDL
@@ -17,7 +16,7 @@
       INPORT and OUTPORT
       PERIPHERAL
         finish doc/peripheral.html
-      all error messages
+*     all error messages
     generate Altera SOPC/Qsys TCL script
     add VHDL
 
@@ -48,6 +47,7 @@
         add symbol for current core -- is9x8 (?)
     peripherals
 *     UART -- single-byte serdes w/ and w/o FIFO
+      UART_RX -- with FIFO similar to PIR
       INTERRUPT
       timer
       UART_Rx -- single-byte deserializer w/ and w/o FIFO
