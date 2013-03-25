@@ -6,7 +6,7 @@
 
 for runname in `find -name run`; do
   cd  ${runname:0:${#runname}-4};
-  ./run || { echo "Tests aborted"; exit 1; }
+  ./run || { echo "Tests aborted at ${runname}"; exit 1; }
   cd ..
 done
 
