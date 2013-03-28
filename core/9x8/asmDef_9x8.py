@@ -41,11 +41,14 @@ class asmDef_9x8:
     Note:  Symbols include memory names, variables, constants, functions,
            parameters, inports, outports, ...
     """
-    if name in self.symbols['list']:
+    if self.IsSymbol(name):
       raise Exception('Program Bug -- name "%s" already exists is symbols' % name);
     self.symbols['list'].append(name);
     self.symbols['type'].append(stype);
     self.symbols['body'].append(body);
+
+  def IsSymbol(self,name):
+    return name in self.symbols['list'];
 
   def SymbolDict(self):
     """
@@ -209,7 +212,7 @@ class asmDef_9x8:
     """
     Indicate whether or not the named symbol is an inport.
     """
-    if name not in self.symbols['list']:
+    if not self.IsSymbol(name):
       return False;
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'inport';
@@ -218,7 +221,7 @@ class asmDef_9x8:
     """
     Indicate whether or not the named symbol is an outport.
     """
-    if name not in self.symbols['list']:
+    if not self.IsSymbol(name):
       return False;
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'outport';
@@ -227,7 +230,7 @@ class asmDef_9x8:
     """
     Indicate whether or not the named symbol is a parameter.
     """
-    if name not in self.symbols['list']:
+    if not self.IsSymbol(name):
       return False;
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'parameter';
@@ -255,8 +258,8 @@ class asmDef_9x8:
     Add the named inport to the list of recognized symbols and record its
     address as the body of the inport.
     """
-    if self.IsInport(name):
-      raise Exception('Program Bug');
+    if self.IsSymbol(name):
+      raise Exception('Program Bug -- repeated symbol name "%s"' % name);
     self.AddSymbol(name,'inport',address);
 
   def RegisterOutport(self,name,address):
@@ -264,8 +267,8 @@ class asmDef_9x8:
     Add the named outport to the list of recognized symbols and record its
     address as the body of the outport.
     """
-    if self.IsOutport(name):
-      raise Exception('Program Bug');
+    if self.IsSymbol(name):
+      raise Exception('Program Bug -- repeated symbol name "%s"' % name);
     self.AddSymbol(name,'outport',address);
 
   def RegisterParameterName(self,name):
@@ -273,8 +276,8 @@ class asmDef_9x8:
     Add the named parameter to the list of regognized symbols.\n
     Note:  Parameters do not have a body.
     """
-    if self.IsParameter(name):
-      raise Exception('Program Bug');
+    if self.IsSymbol(name):
+      raise Exception('Program Bug -- repeated symbol name "%s"' % name);
     self.AddSymbol(name,'parameter');
 
   def RegisterMemoryLength(self,name,length):
@@ -302,7 +305,7 @@ class asmDef_9x8:
     Syntax check for symbols, either by themselves or as a macro argument.\n
     Note:  This is used by CheckRawTokens.
     """
-    if name not in self.symbols['list']:
+    if not self.IsSymbol(name):
       raise asmDef.AsmException('Undefined symbol "%s" at %s' % (name,loc));
     ixName = self.symbols['list'].index(name);
     if self.symbols['type'][ixName] not in allowableTypes:
@@ -426,7 +429,7 @@ class asmDef_9x8:
            macros are expanded (this allows the macro-specific processing to
            identify labels vs. symbols).
     """
-    if token['value'] not in self.symbols['list']:
+    if not self.IsSymbol(token['value']):
       raise asmDef.AsmException('Symbol "%s" not in symbol list at %s' %(token['value'],token['loc'],));
     ix = self.symbols['list'].index(token['value']);
     symbolType = self.symbols['type'][ix];
@@ -522,17 +525,18 @@ class asmDef_9x8:
     """
     firstToken = rawTokens[0];
     secondToken = rawTokens[1];
-    if firstToken['value'] == '.constant':
+    # Perform syntax check common to several directives.
+    if firstToken['value'] in ('.constant','.function','.variable',):
       if secondToken['type'] != 'symbol':
-        raise asmDef.AsmException('Bad constant name at %s' % secondToken['loc']);
+        raise asmDef.AsmException('Expected symbol, not "%s", at %s' % (secondToken['value'],secondToken['loc'],));
+      if self.IsSymbol(secondToken['value']):
+        raise asmDef.AsmException('Symbol "%s" already defined at %s' % (secondToken['value'],secondToken['loc'],));
+    # Perform syntax-specific processing.
+    if firstToken['value'] == '.constant':
       byteList = self.ByteList(rawTokens[2:]);
-      self.AddSymbol(secondToken['value'], 'constant', body=byteList);
+      self.AddSymbol(secondToken['value'],'constant',body=byteList);
     # Process ".function" definition.
     elif firstToken['value'] == '.function':
-      if secondToken['type'] != 'symbol':
-        raise asmDef.AsmException('Expected symbol at %s' % secondToken['loc']);
-      if secondToken['value'] in self.symbols['list']:
-        raise asmDef.AsmException('Symbol %s already defined at %s' % (secondToken['value'],secondToken['loc']));
       self.AddSymbol(secondToken['value'],'function',self.ExpandTokens(rawTokens[2:]));
     # Process ".interrupt" definition.
     elif firstToken['value'] == '.interrupt':
@@ -553,7 +557,7 @@ class asmDef_9x8:
       thirdToken = rawTokens[2];
       if thirdToken['type'] != 'symbol':
         raise asmDef.AsmException('".memory" directive requires name for second argument at %s' % thirdToken['loc']);
-      if thirdToken['value'] in self.symbols['list']:
+      if self.IsSymbol(thirdToken['value']):
         ix = self.symbols['list'].index(thirdToken['value']);
         if self.symbols['type'] != secondToken['value']:
           raise asmDef.AsmException('Redefinition of ".memory %s %s" not allowed at %s' % (secondToken['value'],thirdToken['value'],firstToken['loc']));
@@ -564,8 +568,6 @@ class asmDef_9x8:
     elif firstToken['value'] == '.variable':
       if not self.currentMemory:
         raise asmDef.AsmException('".memory" directive required before ".variable" directive at %s' % firstToken['line']);
-      if secondToken['type'] != 'symbol':
-        raise asmDef.AsmException('Bad variable name at %s' % secondToken['loc']);
       ixMem = self.symbols['list'].index(self.currentMemory);
       currentMemoryBody = self.symbols['body'][ixMem];
       byteList = self.ByteList(rawTokens[2:],limit=True);
@@ -674,7 +676,7 @@ class asmDef_9x8:
         if (token['type'] == 'macro') and (token['value'] in ('.call','.callc',)):
           callName = token['argument'][0]['value'];
           if callName not in self.functionEvaluation['list']:
-            if callName not in self.symbols['list']:
+            if not self.IsSymbol(callName):
               raise asmDef.AsmException('Function "%s" not defined for function "%s"' % (callName,self.functionEvaluation['list'][ix],));
             ixName = self.symbols['list'].index(callName);
             if self.symbols['type'][ixName] != 'function':
@@ -777,7 +779,7 @@ class asmDef_9x8:
     name.\n
     Note:  This is used for the .fetchvector and .storevector macro generation.
     """
-    if name not in self.symbols['list']:
+    if not self.IsSymbol(name):
       raise asmDef.AsmException('"%s" is not a recognized symbol' % name);
     ixName = self.symbols['list'].index(name);
     if self.symbols['type'][ixName] != 'variable':
@@ -872,7 +874,7 @@ class asmDef_9x8:
     Use the EmitPush method to push the address of a variable onto the data
     stack.
     """
-    if name not in self.symbols['list']:
+    if not self.IsSymbol(name):
       raise asmDef.AsmException('Variable "%s" not recognized' % name);
     ixName = self.symbols['list'].index(name);
     if self.symbols['type'][ixName] != 'variable':
@@ -897,7 +899,7 @@ class asmDef_9x8:
       token = self.ExpandSymbol(token,singleValue=True);
     if token['type'] == 'constant':
       name = token['value'];
-      if name not in self.symbols['list']:
+      if not self.IsSymbol(name):
         raise Exception('Program Bug');
       ix = self.symbols['list'].index(name);
       if len(self.symbols['body'][ix]) != 1:
@@ -905,7 +907,7 @@ class asmDef_9x8:
       self.EmitPush(fp,self.symbols['body'][ix][0],self.Emit_String(name),tokenLoc=token['loc']);
     elif token['type'] in ('inport','outport'):
       name = token['value'];
-      if name not in self.symbols['list']:
+      if not self.IsSymbol(name):
         raise Exception('Program Bug -- unrecognized inport/outport name "%s"');
       ix = self.symbols['list'].index(name);
       self.EmitPush(fp,self.symbols['body'][ix],self.Emit_String(name));
@@ -1087,7 +1089,7 @@ class asmDef_9x8:
         elif token['type'] == 'label':
           self.Emit_AddLabel(token['value']);
         elif token['type'] == 'constant':
-          if token['value'] not in self.symbols['list']:
+          if not self.IsSymbol(token['value']):
             raise Exception('Program Bug');
           ix = self.symbols['list'].index(token['value']);
           body = self.symbols['body'][ix];
@@ -1095,7 +1097,7 @@ class asmDef_9x8:
           for v in body[-2::-1]:
             self.EmitPush(fp,v,tokenLoc=token['loc']);
         elif token['type'] in ('inport','outport',):
-          if token['value'] not in self.symbols['list']:
+          if not self.IsSymbol(token['value']):
             raise Exception('Program Bug');
           ix = self.symbols['list'].index(token['value']);
           self.EmitPush(fp,self.symbols['body'][ix],token['value'],tokenLoc=token['loc']);

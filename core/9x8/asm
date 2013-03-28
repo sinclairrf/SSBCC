@@ -64,6 +64,8 @@ try:
         a[1] = eval(a[1]);
       except:
         raise asmDef.AsmException('Cannot evaluate "%s"' % a[1]);
+      if ad.IsSymbol(a[0]):
+        raise asmDef.AsmException('Command line constant "%s" already defined' % a[0]);
       ad.AddSymbol(a[0], 'constant', body=[a[1]]);
 
   # Record the input names and values in the appropriate record type
@@ -72,25 +74,33 @@ try:
       a = re.findall(r'^([LG]_\w+)$',parameter);
       if not a:
         raise asmDef.AsmException('Malformed -G argument: "%s"' % parameter);
+      if ad.IsSymbol(a[0]):
+        raise asmDef.AsmException('Program Bug -- repeated symbol "%s"' % a[0]);
       ad.RegisterParameterName(a[0]);
   if argList.I:
     for inport in argList.I:
       a=re.findall(r'^(I_\w+)=(0|[1-9]\d*)$',inport);
       if not a:
         raise asmDef.AsmException('Malformed -I argument: "%s"' % inport);
-      ix = int(a[0][1]);
+      a = a[0];
+      if ad.IsSymbol(a[0]):
+        raise Exception('Program Bug -- repeated symbol "%s"' % a[0]);
+      ix = int(a[1]);
       if not (0 <= ix < 256):
         raise asmDef.AsmException('Out-of-range inport index:  "%s"' % inport);
-      ad.RegisterInport(a[0][0],ix);
+      ad.RegisterInport(a[0],ix);
   if argList.O:
     for outport in argList.O:
       a=re.findall(r'^(O_\w+)=(0|[1-9]\d*)$',outport);
       if not a:
         raise asmDef.AsmException('Malformed -O argument: "%s"' % outport);
-      ix = int(a[0][1]);
+      a = a[0];
+      if ad.IsSymbol(a[0]):
+        raise asmDef.AsmException('Program Bug -- repeated symbol "%s"' % a[0]);
+      ix = int(a[1]);
       if not (0 <= ix < 256):
         raise asmDef.AsmException('Out-of-range outport index:  "%s"' % outport);
-      ad.RegisterOutport(a[0][0],ix);
+      ad.RegisterOutport(a[0],ix);
   if argList.S:
     for memory in argList.S:
       a=re.findall(r'^(\w+)=(0|[1-9]\d*)$',memory);
