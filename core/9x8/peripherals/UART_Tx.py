@@ -15,16 +15,14 @@ class UART_Tx(SSBCCperipheral):
   Transmit side of a UART:
     1 start bit
     8 data bits
-    n stop bits
-
+    n stop bits\n
   Usage:
     PERIPHERAL UART_Tx outport=O_name \\
                        inport=I_name \\
                        outsignal=o_name \\
                        baudmethod={clk/rate|count} \\
                        [noFIFO|FIFO=n] \\
-                       [nStop={1|2}]
-
+                       [nStop={1|2}]\n
   Where:
     outport=O_name
       specifies the symbol used by the outport instruction to write a byte to
@@ -66,36 +64,28 @@ class UART_Tx(SSBCCperipheral):
       Note:  the peripheral does not accept 1.5 stop bits
     outsignal=o_name
       specifies the name of the output signal
-      Default:  o_UART_Tx
-
+      Default:  o_UART_Tx\n
   The following OUTPORT is provided by this peripheral:
     O_name
-      output the next 8-bit value to transmit or to queue for transmission
-
+      output the next 8-bit value to transmit or to queue for transmission\n
   The following INPORT is provided by this peripheral:
     I_name
       bit 0:  busy status
         this bit will be high when the peripheral cannot accept more data
         Note:  If there is no FIFO this means that the peripheral is still
                transmitting the last byte.  If there is a FIFO it means that the
-               FIFO cannot accept any more data.
-
+               FIFO cannot accept any more data.\n
   WARNING:  The peripheral is very simple and does not protect against writing a
             new value in the middle of a transmition or writing to a full FIFO.
             Adding such logic would be contrary to the design principle of
             keeping the HDL small and relying on the assembly code to provide
-            the protection.
-
+            the protection.\n
   Example:  Configure the UART for 115200 baud using a 100 MHz clock and
-            transmit the message "Hello World!"
-
-    Within the processor architecture file include the configuration command:
-
-    PERIPHERAL UART_Tx O_UART_TX I_UART_TX baudmethod=100_000_000/115200
-
+            transmit the message "Hello World!"\n
+    Within the processor architecture file include the configuration command:\n
+    PERIPHERAL UART_Tx O_UART_TX I_UART_TX baudmethod=100_000_000/115200\n
     Use the following assembly code to transmit the message "Hello World!".
-    This transmits the entire message whether or not the peripheral has a FIFO.
-
+    This transmits the entire message whether or not the peripheral has a FIFO.\n
     N"Hello World!\\r\\n"
       :loop .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop
   """
@@ -108,7 +98,7 @@ class UART_Tx(SSBCCperipheral):
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'baudmethod':
-        self.ProcessBaudMethod(config,param_arg,ixLine);
+        self.AddRateMethod(config,param,param_arg,ixLine);
       elif param == 'FIFO':
         self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
         self.FIFO = int(self.FIFO);
@@ -128,12 +118,9 @@ class UART_Tx(SSBCCperipheral):
       else:
         raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Ensure the required parameters are provided.
-    if not hasattr(self,'baudmethod'):
-      raise SSBCCException('Required parameter "baudmethod" is missing at line %d' % ixLine);
-    if not hasattr(self,'inport'):
-      raise SSBCCException('Required parameter "inport" is missing at line %d' % ixLine);
-    if not hasattr(self,'outport'):
-      raise SSBCCException('Required parameter "outport" is missing at line %d' % ixLine);
+    for paramname in ('baudmethod','inport','outport',):
+      if not hasattr(self,paramname):
+        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
     # Set optional parameters.
     if not hasattr(self,'nStop'):
       self.nStop = 1;
@@ -163,30 +150,6 @@ class UART_Tx(SSBCCperipheral):
                      ),ixLine);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
-
-  def ProcessBaudMethod(self,config,param_arg,ixLine):
-    if hasattr(self,'baudmethod'):
-      raise SSBCCException('baudmethod repeated at line %d' % ixLine);
-    if param_arg.find('/') < 0:
-      if self.IsInt(param_arg):
-        self.baudmethod = str(self.ParseInt(param_arg));
-      elif self.IsParameter(config,param_arg):
-        self.baudmethod = param_arg;
-      else:
-        raise SSBCCException('baudmethod with no "/" must be an integer or a previously declared parameter at line %d' % ixLine);
-    else:
-      baudarg = re.findall('([^/]+)',param_arg);
-      if len(baudarg) == 2:
-        if not self.IsInt(baudarg[0]) and not self.IsParameter(config,baudarg[0]):
-          raise SSBCCException('Numerator in baudmethod must be an integer or a previously declared parameter at line %d' % ixLine);
-        if not self.IsInt(baudarg[1]) and not self.IsParameter(config,baudarg[1]):
-          raise SSBCCException('Denominator in baudmethod must be an integer or a previously declared parameter at line %d' % ixLine);
-        for ix in range(2):
-          if self.IsInt(baudarg[ix]):
-            baudarg[ix] = str(self.ParseInt(baudarg[ix]));
-        self.baudmethod = '('+baudarg[0]+'+'+baudarg[1]+'/2)/'+baudarg[1];
-    if not hasattr(self,'baudmethod'):
-      raise SSBCCException('Bad baudmethod value at line %d:  "%s"' % (ixLine,param_arg,));
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');

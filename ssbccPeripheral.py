@@ -47,6 +47,38 @@ class SSBCCperipheral:
         raise SSBCCException('Inport symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
       setattr(self,name,value);
 
+  def AddRateMethod(self,config,name,param_arg,ixLine):
+    """
+    Add parameter or fraction for rates such as timer rates or baud rates:
+    config      ssbccConfig object for the procedssor core
+    name        attribute name
+    param       constant, parameter, or fraction of the two to specify the
+                clock counts between events
+    ixLine      line number for the peripheral for error messages
+    """
+    if hasattr(self,name):
+      raise SSBCCException('%s repeated at line %d' % (name,ixLine,));
+    if param_arg.find('/') < 0:
+      if self.IsInt(param_arg):
+        setattr(self,name,str(self.ParseInt(param_arg)));
+      elif self.IsParameter(config,param_arg):
+        set(self,name,param_arg);
+      else:
+        raise SSBCCException('%s with no "/" must be an integer or a previously declared parameter at line %d' % (name,ixLine,));
+    else:
+      ratearg = re.findall('([^/]+)',param_arg);
+      if len(ratearg) == 2:
+        if not self.IsInt(ratearg[0]) and not self.IsParameter(config,ratearg[0]):
+          raise SSBCCException('Numerator in %s must be an integer or a previously declared parameter at line %d' % (name,ixLine,));
+        if not self.IsInt(ratearg[1]) and not self.IsParameter(config,ratearg[1]):
+          raise SSBCCException('Denominator in %s must be an integer or a previously declared parameter at line %d' % (name,ixLine,));
+        for ix in range(2):
+          if self.IsInt(ratearg[ix]):
+            ratearg[ix] = str(self.ParseInt(ratearg[ix]));
+        setattr(self,name,'('+ratearg[0]+'+'+ratearg[1]+'/2)/'+ratearg[1]);
+    if not hasattr(self,name):
+      raise SSBCCException('Bad %s value at line %d:  "%s"' % (name,ixLine,param_arg,));
+
   def GenAssembly(self,config):
     """
     Used to generate any assembly modules associated with the peripheral.
