@@ -128,8 +128,7 @@ class PWM_8bit(SSBCCperipheral):
       elif param == 'noinvert':
         self.AddAttr(config,param,param_arg,None,ixLine);
       elif param == 'instances':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
-        self.instances = int(self.instances);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
       elif param == 'norunt':
         self.AddAttr(config,param,param_arg,None,ixLine);
       else:

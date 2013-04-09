@@ -24,7 +24,7 @@ class SSBCCperipheral:
     """
     pass;
 
-  def AddAttr(self,config,name,value,reformat,ixLine):
+  def AddAttr(self,config,name,value,reformat,ixLine,optFn=None):
     """
     Add attribute to the peripheral:
     config      ssbccConfig object for the procedssor core
@@ -33,6 +33,7 @@ class SSBCCperipheral:
     reformat    regular expression format for the attribute value
                 Note:  reformat=None means the attribute can only be set to True
     ixLine      line number for the peripheral for error messages
+    optFn       optional function to set stored type
     """
     if hasattr(self,name):
       raise SSBCCException('%s repeated at line %d' % (name,ixLine,));
@@ -45,6 +46,8 @@ class SSBCCperipheral:
         raise SSBCCException('%s missing value at line %d' % (name,ixLine,));
       if not re.match(reformat,value):
         raise SSBCCException('Inport symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
+      if optFn != None:
+        value = optFn(value);
       setattr(self,name,value);
 
   def AddRateMethod(self,config,name,param_arg,ixLine):
@@ -158,7 +161,10 @@ class SSBCCperipheral:
     Read the source HDL for the peripheral from the same directory as the python
     script.
     filename    name for the python peripheral (usually "__file__")
-    extension   the string such as ".v" or ".vhd" required by the HDL
+    extension   the string such as ".v" or ".vhd" required by the HDL\n
+    Note:  The '.' must be included in the extension.  For example, the UART
+           peripheral uses '_Rx.v' and '_Tx.v' or similar to invoke the UART_Tx
+           and UART_Rx HDL files.
     """
     hdlName = re.sub(r'\.py$',extension,filename);
     fp = open(hdlName,'r');

@@ -109,8 +109,7 @@ class latch(SSBCCperipheral):
       elif param == 'insignal':
         self.AddAttr(config,param,param_arg,r'i_\w+$',ixLine);
       elif param == 'width':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
-        self.width = int(self.width);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
       else:
         raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Ensure the required parameters are set.

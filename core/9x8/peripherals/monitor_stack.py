@@ -46,8 +46,7 @@ class monitor_stack(SSBCCperipheral):
       param_name = param_list[0];
       param_arg = param_list[1:];
       if param_name == 'history':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine);
-        self.history = int(self.history);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
       else:
         raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Set optional parameters.
