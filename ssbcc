@@ -119,6 +119,11 @@ try:
       cmd = re.findall(r'\s*DATA_STACK\s+([1-9]\d*)',line);
       if not cmd:
         raise SSBCCException('Malformed "DATA_STACK" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
+      x = int(cmd[0]);
+      if math.modf(math.log(x,2))[0] != 0:
+        raise SSBCCException('DATA_STACK must be set to a power of 2, not %d, on line %d' % (x,ixLine,));
+      if x < 8:
+        raise SSBCCException('DATA_STACK must be at least 8, not %d, on line %d' % (x,ixLine,));
       config.Set('data_stack',int(cmd[0]));
     # INPORT
     elif re.match(r'\s*INPORT\b',line):
