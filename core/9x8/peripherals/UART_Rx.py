@@ -17,16 +17,16 @@ class UART_Rx(SSBCCperipheral):
     8 data bits
     1 or 2 stop bits\n
   Usage:
-    PERIPHERAL UART inport=I_inport_name        \\
-                    inempty=I_inempty_name      \\
-                    inerror=I_inerror_name      \\
-                    baudmethod={clk/rate|count} \\
-                    [insignal=i_name]           \\
-                    [noSync|sync=n]             \\
-                    [noDeglitch|deglitch=n]     \\
-                    [noInFIFO|inFIFO=n]         \\
-                    [nStop={1|2}]               \\             
-                    [edgetol=x]                 \n
+    PERIPHERAL UART_Rx inport=I_inport_name        \\
+                       inempty=I_inempty_name      \\
+                       inerror=I_inerror_name      \\
+                       baudmethod={clk/rate|count} \\
+                       [insignal=i_name]           \\
+                       [noSync|sync=n]             \\
+                       [noDeglitch|deglitch=n]     \\
+                       [noInFIFO|inFIFO=n]         \\
+                       [nStop={1|2}]               \\
+                       [edgetol=x]                 \n
   Where:
     inport=I_inport_name
       specifies the symbol used by the inport instruction to read a received by
@@ -40,17 +40,6 @@ class UART_Rx(SSBCCperipheral):
       specified the symbol used by the inport instruction to get the error
       status of the input side of the peripheral
       Note:  The name must start with "I_".
-      Note:  The 3 bits in this value have the following meaning:
-             bit 0 -- a read was performed when no data was available or a new
-                      byte of data was received and the input buffer or FIFO was
-                      already full
-                      Note:  This bit indicates that an error has occured and
-                             one or more bytes is missing in the data stream.
-             bit 1 -- the received edge rate does not match the commanded edge
-                      rate, clock, and tolerance
-                      Note:  This error is cleared by an idle input stream.
-             bit 2 -- missing start bit or stop bit(s) in data stream
-                      Note:  This error is cleared by an idle input stream.
     baudmethod
       specifies the method to generate the desired bit rate:
       1st method:  clk/rate
@@ -109,7 +98,7 @@ class UART_Rx(SSBCCperipheral):
              micro controller clock to more closely match the nominal baud rate.\n
       Note:  The tolerance is limited to be between 0.1 and 5.5 and may be
              expressed as an integer or as a fraction with a single digit after
-             the decimal.
+             the decimal.\n
   The following ports are provided by this peripheral:
     I_inport_name
       input a recieved byte from the peripheral
@@ -117,8 +106,8 @@ class UART_Rx(SSBCCperipheral):
              If there is an input FIFO, then this is the next byte in the FIFO.
       Note:  If there is an input FIFO and the read would cause a FIFO
              underflow, this will repeat the last received byte.
-    I_inempty_name\n
-      input the status of the input side of the peripheral
+    I_inempty_name
+      input the empty status of the input side of the peripheral
       bit 0:  input empty
         this bit will be high when the input side of the peripheral has one or
         more bytes read to be read
@@ -128,6 +117,19 @@ class UART_Rx(SSBCCperipheral):
         Note:  "Empty" is used rather than "ready" to facilitate loops that
                respond when there is a new byte ready to be processed.  See the
                examples below.
+    I_inerror_name
+      input the error status of the input side of the peripheral
+      Note:  The 3 bits in this value have the following meaning:
+             bit 0 -- a read was performed when no data was available or a new
+                      byte of data was received and the input buffer or FIFO was
+                      already full
+                      Note:  This bit indicates that an error has occured and
+                             one or more bytes is missing in the data stream.
+             bit 1 -- the received edge rate does not match the commanded edge
+                      rate, clock, and tolerance
+                      Note:  This error is cleared by an idle input stream.
+             bit 2 -- missing start bit or stop bit(s) in data stream
+                      Note:  This error is cleared by an idle input stream.
   """
 
   def __init__(self,peripheralFile,config,param_list,ixLine):
@@ -140,7 +142,7 @@ class UART_Rx(SSBCCperipheral):
       for param_test in (
           ('deglitch',   r'[1-9]\d*$', int,   ),
           ('edgetol',    r'(0\.[1-9]|[1-4](\.\d)?|5(\.[0-5])?)$',
-                                       float, ),
+                                       lambda(x):int(10*float(x)+0.5), ),
           ('inempty',    r'I_\w+$',    None,  ),
           ('inerror',    r'I_\w+$',    None,  ),
           ('inport',     r'I_\w+$',    None,  ),
@@ -165,11 +167,20 @@ class UART_Rx(SSBCCperipheral):
         else:
           raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
     # Ensure the required parameters are provided.
-    for paramname in ('baudmethod','inempty','inerror','inport',):
+    for paramname in (
+        'baudmethod',
+        'inempty',
+        'inerror',
+        'inport',
+      ):
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
     # Set optional parameters.
-    for optionalpair in ( ('edgetol',2.5), ('nStop',1,), ('insignal','i_UART_Rx',), ):
+    for optionalpair in (
+        ('edgetol',   25,          ),
+        ('insignal',  'i_UART_Rx', ),
+        ('nStop',     1,           ),
+      ):
       if not hasattr(self,optionalpair[0]):
         setattr(self,optionalpair[0],optionalpair[1]);
     # Ensure exclusive pair configurations are set and consistent.
@@ -217,7 +228,7 @@ class UART_Rx(SSBCCperipheral):
                     (r'\bs__',          's__@NAME@__', ),
                     (r'@INPORT@',       self.insignal, ),
                     (r'@BAUDMETHOD@',   str(self.baudmethod), ),
-                    (r'@EDGETOL@',      str(int(10*self.edgetol)), ),
+                    (r'@EDGETOL@',      str(self.edgetol), ),
                     (r'@SYNC@',         str(self.sync), ),
                     (r'@DEGLITCH@',     str(self.deglitch), ),
                     (r'@INFIFO@',       str(self.inFIFO), ),
