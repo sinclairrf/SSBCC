@@ -46,11 +46,7 @@
         avoid full parsing of false branches (accommodate other cores?)
         add symbol for current core -- is9x8 (?)
     peripherals
-*     UART -- single-byte serdes w/ and w/o FIFO
-      UART_RX -- with FIFO similar to PIR
       INTERRUPT
-      timer
-      UART_Rx -- single-byte deserializer w/ and w/o FIFO
       interrupt enable/disable (through INTERRUPT command)
       multi-byte adder
       multiplier
