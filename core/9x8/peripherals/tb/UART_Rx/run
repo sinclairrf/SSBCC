@@ -52,7 +52,7 @@ done
 
 # Test -2.7% baud rate error against 3.0% tolerance.
 cp tb_UART_Rx.s-normal tb_UART_Rx.s;
-sed -e "s/115200/112320/" -e "s/G_BAUD$/G_BAUD edgetol=3/" tb_${NAME}.9x8-good > tb_${NAME}.9x8;
+sed -e "s/115200/112089/" -e "s/G_BAUD$/G_BAUD edgetol=3/" tb_${NAME}.9x8-good > tb_${NAME}.9x8;
 ../../../../../ssbcc -q -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
 iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
 ./tb > tb.out
