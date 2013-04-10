@@ -315,6 +315,19 @@ and sends the next-to-the-top of the data stack to the designated output port.
 
 Two examples of I2C device operation are included in the examples directory.
 
+The following peripherals are provided:
+  adder_16bit   16-bit adder/subtractor
+  latch         latch wide inputs for sampling
+  monitor_stack simulation peripheral to validate stack health
+  open_drain    for software-implemented I2C busses or similar
+  PWM_8bit      PWM generator with an 8-bit control
+  timer         generate timing for polled loops or similar
+  trace         simulation peripheral for processor/code diagnostics (see
+                below)
+  UART          bidirectional UART
+  UART_Rx       receive UART
+  UART_Tx       transmit UART
+
 
 PARAMETER and LOCALPARAM
 ================================================================================
