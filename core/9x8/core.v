@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright 2012, Sinclair R.F., Inc.
+ * Copyright 2012-2013, Sinclair R.F., Inc.
  *
  * SSBCC.9x8 -- Small Stack Based Computer Compiler, 9-bit opcode, 8-bit data.
  *
