@@ -318,25 +318,36 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
   # look for a repeated single-byte numeric value (N*M where M is the repeat count)
-  a = re.match(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|\$\{\S+\})$',raw);
+  matchString=r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|C_\w+|\$\{\S+\})$';
+  a = re.match(matchString,raw);
   if a:
     if 'multivalue' not in allowed:
       raise AsmException('Multi-byte value not allowed at %s' % flc_loc);
-    b = re.findall(r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|\$\{\S+\})$',a.group(0));
+    b = re.findall(matchString,a.group(0));
+    if not b:
+      raise Exception('Program Bug -- findall failed after match worked');
     b = b[0];
     try:
       tParseNumber = ParseNumber(b[0]);
     except:
       raise AsmException('Malformed multi-byte value at %s' % (fl_loc + ':' + str(col+1)));
     tValue = list();
+    fl_loc2 = fl_loc+':'+str(col+1+len(b[0])+1);
     if re.match(r'[1-9]',b[1]):
       repeatCount = int(b[1]);
+    elif re.match(r'C_',b[1]):
+      if not ad.IsConstant(b[1]):
+        raise AsmException('Unrecognized symbol "%s" at %s' % (b[1],fl_loc2,));
+      ix = ad.symbols['list'].index(b[1]);
+      if len(ad.symbols['body'][ix]) != 1:
+        raise asmDef.AsmException('constant can only be one byte at %s' % fl_loc2);
+      repeatCount = ad.symbols['body'][ix][0];
     elif re.match(r'\$',b[1]):
       repeatCount = eval(b[1][2:-1],ad.SymbolDict());
     else:
       raise Exception('Program Bug -- unrecognized repeat count');
     if repeatCount <= 0:
-      raise AsmException('Repeat count must be positive at %s' % (fl_loc + ':' + str(col+1+len(b[0])+1),));
+      raise AsmException('Repeat count must be positive at %s' % fl_loc2);
     for ix in range(repeatCount):
       tValue.append(tParseNumber);
     return dict(type='value', value=tValue, loc=flc_loc);

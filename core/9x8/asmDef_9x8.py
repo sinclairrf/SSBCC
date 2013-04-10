@@ -208,6 +208,15 @@ class asmDef_9x8:
   #
   ################################################################################
 
+  def IsConstant(self,name):
+    """
+    Indicate whether or not the named symbol is an inport.
+    """
+    if not self.IsSymbol(name):
+      return False;
+    ix = self.symbols['list'].index(name);
+    return self.symbols['type'][ix] == 'constant';
+
   def IsInport(self,name):
     """
     Indicate whether or not the named symbol is an inport.
