@@ -22,7 +22,7 @@
 // listed in useful dispay order
 reg            [C_PC_WIDTH-1:0] s_PC;           // program counter
 reg                       [8:0] s_opcode;       // current opcode
-wire       [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
+reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
 reg                       [7:0] s_T;            // top of the data stack
 reg                       [7:0] s_N;            // next-to-top on the data stack
 
@@ -123,11 +123,12 @@ endgenerate
  *
  * Instantiate the input port data selection.
  *
- * Note:  This creates and computes an 8-bit wire called "s_inport".
+ * Note:  This creates and computes an 8-bit wire called "s_T_inport".
  *
  ******************************************************************************/
 
 reg [7:0] s_T_inport = 8'h00;
+reg       s_inport   = 1'b0;
 //@SSBCC@ inports
 
 /*******************************************************************************
@@ -182,7 +183,6 @@ localparam C_STACK_INC          = 2'b01;        // add element to internal data 
 localparam C_STACK_DEC          = 2'b10;        // remove element from internal data stack
 reg [1:0] s_stack;
 
-reg s_inport                    = 1'b0;
 reg s_outport                   = 1'b0;
 
 always @ (*) begin
@@ -428,7 +428,7 @@ always @ (posedge i_clk)
   else
     s_Np_stack_ptr <= s_Np_stack_ptr_next;
 
-wire [7:0] s_Np_stack;
+reg [7:0] s_Np_stack;
 
 initial s_N = 8'h00;
 always @ (posedge i_clk)
