@@ -1,9 +1,9 @@
 //
 // PERIPHERAL timer:  @NAME@
 //
-generate
 localparam L__COUNT = @RATEMETHOD@-1;
 localparam L__COUNT_NBITS = $clog2(L__COUNT);
+generate
 reg [L__COUNT_NBITS-1:0] s__count = L__COUNT[0+:L__COUNT_NBITS];
 always @ (posedge i_clk)
   if (i_rst) begin

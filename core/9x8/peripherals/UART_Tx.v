@@ -1,6 +1,11 @@
 //
 // PERIPHERAL UART_Tx:  @NAME@
 //
+localparam L__OUTFIFO_NBITS = $clog2(@OUTFIFO@);
+localparam L__COUNT         = @BAUDMETHOD@-1;
+localparam L__COUNT_NBITS   = $clog2(L__COUNT+1);
+localparam L__NTX           = 1+8+@NSTOP@-1;
+localparam L__NTX_NBITS     = $clog2((L__NTX==0)?1:L__NTX);
 generate
 reg  [7:0] s__Tx_data;
 reg        s__Tx_go;
@@ -13,7 +18,6 @@ if (@OUTFIFO@ == 0) begin : gen__nooutfifo
   always @ (s__Tx_wr)
     s__Tx_go = s__Tx_wr;
 end else begin : gen__outfifo
-  localparam L__OUTFIFO_NBITS = $clog2(@OUTFIFO@);
   reg [7:0] s__Tx_fifo_mem[@OUTFIFO@-1:0];
   reg [L__OUTFIFO_NBITS:0] s__Tx_fifo_addr_in = {(L__OUTFIFO_NBITS+1){1'b0}};
   always @ (posedge i_clk)
@@ -61,8 +65,6 @@ end else begin : gen__outfifo
     s__Tx_busy = s__Tx_fifo_full;
 end
 // Count the clock cycles to decimate to the desired baud rate.
-localparam L__COUNT       = @BAUDMETHOD@-1;
-localparam L__COUNT_NBITS = $clog2(L__COUNT+1);
 reg [L__COUNT_NBITS-1:0] s__Tx_count = {(L__COUNT_NBITS){1'b0}};
 reg s__Tx_count_is_zero = 1'b0;
 always @ (posedge i_clk)
@@ -99,8 +101,6 @@ always @ (posedge i_clk)
   else
     @NAME@ <= @NAME@;
 // Count down the number of bits.
-localparam L__NTX       = 1+8+@NSTOP@-1;
-localparam L__NTX_NBITS = $clog2(L__NTX);
 reg [L__NTX_NBITS-1:0] s__Tx_n = {(L__NTX_NBITS){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)

@@ -11,11 +11,22 @@
 // - validate bit sequence and output bit sequence at end of last stop bit
 // - optional FIFO
 //
-generate
 localparam L__BAUDMETHOD = @BAUDMETHOD@;
 localparam L__BAUDMETHOD_NBITS = $clog2(L__BAUDMETHOD);
 // Either copy the input, register it, or put it through a synchronizer.
 localparam L__SYNC_LENGTH = @SYNC@;
+localparam L__DEGLITCH_LENGTH = @DEGLITCH@;
+localparam L__IDLE_LENGTH = (1+8+@NSTOP@)*L__BAUDMETHOD-1;
+localparam L__IDLE_LENGTH_NBITS = $clog2(L__IDLE_LENGTH+1);
+localparam L__EDGE_TOL          = @EDGETOL@;
+localparam L__EDGE_TIMER_SIZE   = ((1000+9*25)*L__BAUDMETHOD+500)/1000-1;
+localparam L__EDGE_TIMER_NBITS  = $clog2(L__EDGE_TIMER_SIZE+1);
+localparam L__EDGE_TIMER_START  = ((1000+L__EDGE_TOL)*L__BAUDMETHOD+500)/1000-1;
+localparam L__EDGE_TIMER_TOL    = (2*L__EDGE_TOL*L__BAUDMETHOD+500)/1000;
+localparam L__NRX = 1+8+@NSTOP@;
+localparam L__INFIFO = @INFIFO@;
+localparam L__INFIFO_NBITS = $clog2((L__INFIFO==0)?1:L__INFIFO);
+generate
 wire s__Rx_sync;
 if (L__SYNC_LENGTH == 0) begin : gen__no_sync
   assign s__Rx_sync = @INPORT@;
@@ -39,7 +50,6 @@ end
 // Either pass the received signal with no deglitching or apply deglitch
 // hysteresis that consists of not changing the reported state unless all of
 // the queued bits have changed state.
-localparam L__DEGLITCH_LENGTH = @DEGLITCH@;
 reg s__Rx_deglitched;
 if (L__DEGLITCH_LENGTH == 0) begin : gen__nodeglitch
   always @ (*)
@@ -54,8 +64,6 @@ end else begin : gen__deglitch
 end
 // Identify idle state for error recovery.  This consists of 1+8+nStop bits of
 // all ones.
-localparam L__IDLE_LENGTH = (1+8+@NSTOP@)*L__BAUDMETHOD-1;
-localparam L__IDLE_LENGTH_NBITS = $clog2(L__IDLE_LENGTH+1);
 reg [L__IDLE_LENGTH_NBITS-1:0] s__Rx_input_idle_count = L__IDLE_LENGTH[L__IDLE_LENGTH_NBITS-1:0];
 always @ (posedge i_clk)
   if (i_rst)
@@ -95,11 +103,6 @@ always @ (posedge i_clk)
 reg s__Rx_waiting;
 // Run a timer to (1) capture values at the center of bits and (2) ensure edges
 // are consistently timed to a +/-2.5% tolerance.
-localparam L__EDGE_TOL          = @EDGETOL@;
-localparam L__EDGE_TIMER_SIZE   = ((1000+9*25)*L__BAUDMETHOD+500)/1000-1;
-localparam L__EDGE_TIMER_NBITS  = $clog2(L__EDGE_TIMER_SIZE+1);
-localparam L__EDGE_TIMER_START  = ((1000+L__EDGE_TOL)*L__BAUDMETHOD+500)/1000-1;
-localparam L__EDGE_TIMER_TOL    = (2*L__EDGE_TOL*L__BAUDMETHOD+500)/1000;
 reg [L__EDGE_TIMER_NBITS-1:0] s__Rx_edge_timer = {(L__EDGE_TIMER_NBITS){1'b0}};
 reg [L__EDGE_TIMER_NBITS-1:0] s__Rx_edge_cumtol = L__EDGE_TIMER_TOL[0+:L__EDGE_TIMER_NBITS];
 reg s__Rx_edge_timer_zero = 1'b0;
@@ -141,7 +144,6 @@ always @ (posedge i_clk)
     s__Rx_edge_error <= s__Rx_edge_error;
 // Record the received bit stream after edges occur.
 // Note:  L__NRX is always 4 bits long since NSTOP is either 1 or 2.
-localparam L__NRX = 1+8+@NSTOP@;
 reg [L__NRX-1:0] s__Rx_s = {(L__NRX){1'b1}};
 always @ (posedge i_clk)
   if (i_rst)
@@ -195,7 +197,6 @@ always @ (posedge i_clk)
     s__Rx_error_p <= s__Rx_error_p;
 // Optional FIFO
 reg s__Rx_inbuf_error = 1'b0;
-localparam L__INFIFO = @INFIFO@;
 if (L__INFIFO == 0) begin : gen__nofifo
   initial s__Rx_empty = 1'b1;
   always @ (posedge i_clk)
@@ -225,7 +226,6 @@ if (L__INFIFO == 0) begin : gen__nofifo
     else
       s__Rx_inbuf_error <= (s__Rx_empty && s__Rx_rd) || (!s__Rx_empty && s__Rx_wr&& !s__Rx_rd );
 end else begin : gen__fifo
-  localparam L__INFIFO_NBITS = $clog2(L__INFIFO);
   reg [L__INFIFO_NBITS:0] s__Rx_fifo_addr_in;
   reg [L__INFIFO_NBITS:0] s__Rx_fifo_addr_out;
   wire s__Rx_shift;
