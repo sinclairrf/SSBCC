@@ -144,12 +144,12 @@ always @ (posedge i_clk)
     s__Rx_edge_error <= s__Rx_edge_error;
 // Record the received bit stream after edges occur.
 // Note:  L__NRX is always 4 bits long since NSTOP is either 1 or 2.
-reg [L__NRX-1:0] s__Rx_s = {(L__NRX){1'b1}};
+reg [L__NRX-1:1] s__Rx_s = {(L__NRX-1){1'b1}};
 always @ (posedge i_clk)
   if (i_rst)
-    s__Rx_s <= {(L__NRX){1'b1}};
+    s__Rx_s <= {(L__NRX-1){1'b1}};
   else if (s__Rx_edge_out)
-    s__Rx_s <= { s__Rx_edge_value, s__Rx_s[1+:L__NRX-1] };
+    s__Rx_s <= { s__Rx_edge_value, s__Rx_s[2+:L__NRX-2] };
 // State machine:  s__Rx_count == 0 (s__Rx_waiting == 1) means no edges have
 // been encountered.  Otherwise s__Rx_count is the number of edges encountered
 // (at the leading edges of the bits being recorded).  Wait until the first
@@ -198,7 +198,6 @@ always @ (posedge i_clk)
 // Optional FIFO
 reg s__Rx_inbuf_error = 1'b0;
 if (L__INFIFO == 0) begin : gen__nofifo
-  initial s__Rx_empty = 1'b1;
   always @ (posedge i_clk)
     if (i_rst) begin
       s__Rx_empty <= 1'b1;
@@ -235,7 +234,6 @@ end else begin : gen__fifo
       s__Rx_fifo_has_data <= 1'b0;
     else
       s__Rx_fifo_has_data <= (s__Rx_fifo_addr_out != s__Rx_fifo_addr_in) && !s__Rx_shift;
-  initial s__Rx_empty = 1'b1;
   always @ (posedge i_clk)
     if (i_rst) begin
       s__Rx_empty <= 1'b1;
