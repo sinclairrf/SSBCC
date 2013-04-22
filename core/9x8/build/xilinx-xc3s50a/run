@@ -8,6 +8,18 @@ TEST_BENCHES="uc_led"
 PWD="`pwd`";
 PWD="${PWD/*\/}";
 
+while getopts "t:v:" OPTNAME; do
+  case ${OPTNAME} in
+    ( h ) print "Usage:  run [-t uc_name] [-v ISE_version]" > /dev/stderr;
+          print "Where:" > /dev/stderr;
+          print "  uc_name is one of the .9x8 files in ../uc" > /dev/stderr;
+          print "  ISE_version is an ISE version number" > /dev/stderr;
+          ;;
+    ( t ) TEST_BENCHES="${OPTARG}";;
+    ( v ) TESTED="${OPTARG}";;
+  esac
+done
+
 let nTested=0;
 for VERSION in ${TESTED}; do
   TOOL_DIR="/opt/Xilinx/${VERSION}/ISE_DS";
