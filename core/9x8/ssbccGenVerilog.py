@@ -605,7 +605,7 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
       fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
     elif mode == 'read' and isLUT:
       fp.write('always @ (%s)\n' % thisAddr);
-      fp.write('%s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
+      fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
 
 def genMemories_init(fp,config,packing,memName,width=8):
   """
