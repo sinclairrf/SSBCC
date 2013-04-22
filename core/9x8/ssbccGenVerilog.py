@@ -123,7 +123,6 @@ def genInports(fp,config):
       signalName = signal[0];
       signalType = signal[2];
       if signalType == 'strobe':
-        fp.write('initial %s = 1\'b0;\n' % signalName);
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
         fp.write('    %s <= 1\'b0;\n' % signalName);
@@ -137,7 +136,6 @@ def genInports(fp,config):
     thisPort = config.inports[ix][1:];
     if thisPort[0][2] == 'set-reset':
       signalName = thisPort[0][0];
-      fp.write('initial s_SETRESET_%s = 1\'b0;\n' % signalName);
       fp.write('always @(posedge i_clk)\n');
       fp.write('  if (i_rst)\n');
       fp.write('    s_SETRESET_%s <= 1\'b0;\n' % signalName);
@@ -376,7 +374,8 @@ def genMemories(fp,config,programBody):
   if isLUT:
     genMemories_assign(fp,'read',thisPacked,thisPacking,'s_Np_stack_ptr','s_Np_stack');
   else:
-    fp.write('assign s_Np_stack = s_Np_stack_reg;\n');
+    fp.write('always @ (s_Np_stack_reg)\n');
+    fp.write('  s_Np_stack <= s_Np_stack_reg;\n');
   fp.write('\n');
   #
   # Generate the return_stack read and write logic.
@@ -403,6 +402,7 @@ def genMemories(fp,config,programBody):
   thisWidth = thisPacking['width'];                             # width of the data stack
   totalWidth = thisPacking['ratio'] * thisPacked['width'];      # width of the [multi-]word memory access
   # Generate the core.
+  fp.write('initial s_R = %d\'h0;\n' % thisWidth);
   if not isLUT:
     fp.write('reg [%d:0] s_R_reg = %d\'d0;\n' % (thisWidth-1,thisWidth,));
     if totalWidth == thisWidth+1:
@@ -423,7 +423,8 @@ def genMemories(fp,config,programBody):
   if isLUT:
     genMemories_assign(fp,'read',thisPacked,thisPacking,'s_R_stack_ptr','s_R');
   else:
-    fp.write('assign s_R = s_R_reg;\n');
+    fp.write('always @ (s_R_reg)\n');
+    fp.write('  s_R <= s_R_reg;\n');
   fp.write('\n');
   #
   # Coalesce the memory bank indices and the corresponding memory names, offsets, lengths, etc.
@@ -759,7 +760,6 @@ def genOutports(fp,config):
         bitWidth = bitWidth + signalWidth;
         bitName += signalName;
         bitInit += signalInit;
-        fp.write('initial %s = %s;\n' % (signalName,signalInit,));
     if bitWidth == 0:
       pass;
     else:
@@ -781,7 +781,6 @@ def genOutports(fp,config):
       if signalType == 'data':
         pass;
       elif signalType == 'strobe':
-        fp.write('initial %s = 1\'b0;\n' % signalName);
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
         fp.write('    %s <= 1\'b0;\n' % signalName);
