@@ -51,9 +51,4 @@ always @ (posedge s_clk)
   if (s_done)
     $finish;
 
-initial begin
-  $dumpfile("tb.vcd");
-  $dumpvars();
-end
-
 endmodule
