@@ -1,0 +1,12 @@
+# Copyright 2013, Sinclair R.F., Inc.
+# Test bench for synthesis tools:  simple LED flasher
+
+ARCHITECTURE core/9x8 Verilog
+
+INSTRUCTION     1024
+RETURN_STACK    16
+DATA_STACK      16
+
+OUTPORT 1-bit o_led O_LED
+
+ASSEMBLY        uc_led.s

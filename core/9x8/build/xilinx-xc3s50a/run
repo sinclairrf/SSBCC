@@ -1,0 +1,44 @@
+#!/bin/bash
+# Copyright 2013, Sinclair R.F., Inc.
+# Test against Xilinx Spartan 3A and ISE.
+
+TESTED="12.4";
+TEST_BENCHES="uc_led"
+
+PWD="`pwd`";
+PWD="${PWD/*\/}";
+
+let nTested=0;
+for VERSION in ${TESTED}; do
+  TOOL_DIR="/opt/Xilinx/${VERSION}/ISE_DS";
+  if [ ! -d ${TOOL_DIR} ]; then
+    echo "Xilinx ISE version ${VERSION} not found at ${PWD}" > /dev/stderr;
+    continue;
+  fi
+  for TB in ${TEST_BENCHES}; do
+    let nTested+=1;
+    if [ ! -z "`./make "${TOOL_DIR}" ${TB} 2>&1 | tee log-${TB} | sed -n '/ERROR/p'`" ]; then
+      grep ERROR log-${TB};
+      echo "BUILD TEST BENCH FAILED" > /dev/stderr;
+      echo "build directory:    ${PWD}" > /dev/stderr;
+      echo "TOOL:               ${TOOL_DIR}" > /dev/stderr;
+      echo "TEST:               ${TB}" > /dev/stderr;
+      exit 1;
+    fi
+  done
+  echo "Build results for ${PWD} ISE/${VERSION} ${TB}";
+  sed -n \
+      -e '/Minimum period/p' \
+      -e '/^ Number of Slices:/p' \
+      -e '/^ Number of 4 input LUTs:/p' \
+      -e '/^ Number of BRAMs:/p' \
+      -e '/TS_i_clk = PERIOD/,+1p' \
+      log-${TB} \
+      ;
+done
+
+if [ ${nTested} == "0" ]; then
+  echo "No tests performed in ${PWD/*\/}" > /dev/stderr;
+else
+  echo "${nTested} tool versions successfully tested in ${PWD/*\/}" > /dev/stderr;
+fi

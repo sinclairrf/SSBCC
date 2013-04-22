@@ -1,0 +1,133 @@
+#!/bin/bash
+# Copyright 2013, Sinclair R.F., Inc.
+# Make script for Spartan 3A, ISE 12.4
+
+TOOL_DIR="$1";
+NAME="$2";
+
+DEVICE=xc3s50a-4vq100;
+
+( cd ../uc; ../../../../ssbcc -q --define-clog2 ${NAME}.9x8; ) || exit 1;
+
+FILES="";
+FILES+=" ../uc/${NAME}.v";
+
+#
+# Configure and run the synthesis
+#
+
+source ${TOOL_DIR}/settings32.sh || { echo "ERROR:  settings32.sh failed" > /dev/stderr; exit 1; }
+
+for fname in ${FILES}; do
+  echo "verilog work \"${fname}\"";
+done > ${NAME}.prj;
+
+mkdir -p xst/projnav.tmp;
+
+cat <<EOF > ${NAME}.xst         
+set -tmpdir "xst/projnav.tmp"
+set -xsthdpdir "xst"
+run
+-ifn ${NAME}.prj
+-ifmt mixed     
+-ofn ${NAME}                    
+-ofmt NGC                       
+-p ${DEVICE}    
+-top ${NAME}                    
+-opt_mode Speed                 
+-opt_level 1
+-iuc NO
+-keep_hierarchy No
+-netlist_hierarchy As_Optimized 
+-rtlview Yes                    
+-glob_opt AllClockNets          
+-read_cores YES                 
+-write_timing_constraints NO    
+-cross_clock_analysis NO        
+-hierarchy_separator /          
+-bus_delimiter <>               
+-case Maintain                  
+-slice_utilization_ratio 100    
+-bram_utilization_ratio 100
+-fsm_extract YES -fsm_encoding Auto
+-safe_implementation No
+-fsm_style LUT
+-ram_extract Yes
+-ram_style Auto 
+-rom_extract Yes                
+-shreg_extract YES
+-rom_style Auto 
+-auto_bram_packing NO
+-resource_sharing YES
+-async_to_sync NO
+-iobuf YES
+-max_fanout 100000
+-bufg 16
+-register_duplication YES
+-register_balancing No
+-optimize_primitives NO
+-use_clock_enable Auto
+-use_sync_set Auto
+-use_sync_reset Auto
+-iob Auto
+-equivalent_register_removal YES
+-slice_utilization_ratio_maxmargin 5
+EOF
+
+xst \
+  -ifn "${NAME}.xst" \
+  -ofn "${NAME}.syr" \
+|| { echo "ERROR:  XST Failed!"; exit 1; }
+
+#
+# Run through PAR
+#
+
+ngdbuild \
+  -dd _ngo \
+  -nt timestamp \
+  -uc ${NAME}.ucf \
+  -p ${DEVICE} \
+  ${NAME}.ngc ${NAME}.ngd \
+|| { echo "ngdbuild Failed!"; exit 1; }
+
+map \
+  -p ${DEVICE} \
+  -w \
+  -logic_opt off \
+  -register_duplication off \
+  -r 4 \
+  -global_opt off \
+  -ir off \
+  -pr off \
+  -o ${NAME}.ncd \
+  ${NAME}.ngd ${NAME}.pcf \
+|| { echo "MAP Failed!"; exit 1; }
+
+par \
+  -w \
+  -ol high \
+  -mt off \
+  -filter "par.filter" \
+  ${NAME}.ncd ${NAME}.ncd ${NAME}.pcf \
+|| { echo "PAR Failed!"; exit 1; }
+
+#
+# Optionally perform timing analysis
+#
+
+if [ `false` ]; then
+  trce \
+    -v 3 \
+    -s 3 \
+    -n 3 \
+    -fastpaths \
+    -xml ${NAME}.twx \
+    ${NAME}.ncd \
+    -o ${NAME}.twr \
+    ${NAME}.pcf \
+    -ucf ${NAME}.ucf
+fi
+
+# Successful execution!
+exit 0;
