@@ -108,7 +108,6 @@ par \
   -w \
   -ol high \
   -mt off \
-  -filter "par.filter" \
   ${NAME}.ncd ${NAME}.ncd ${NAME}.pcf \
 || { echo "PAR Failed!"; exit 1; }
 
