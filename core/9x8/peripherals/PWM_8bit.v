@@ -1,10 +1,10 @@
 //
 // PERIPHERAL PWM_8bit:  @NAME@
 //
-generate
-// generate the ticks for the PWM
 localparam L__COUNT = @COUNT@-1;
 localparam L__COUNT_NBITS = $clog2(L__COUNT+1);
+generate
+// generate the ticks for the PWM
 reg [L__COUNT_NBITS-1:0] s__tick_counter = L__COUNT[0+:L__COUNT_NBITS];
 reg s__tick_counter_is_zero = 1'b0;
 always @ (posedge i_clk)
@@ -31,14 +31,15 @@ always @ (posedge i_clk)
   else
     s__pwm_counter <= s__pwm_counter;
 // Use a loop to instantiate each channel
-reg [@INSTANCES@-1:0] s__raw;
+reg [@INSTANCES@-1:0] s__raw = {(@INSTANCES@){@OFF@}};
 genvar ix;
 for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen__channel
   reg [7:0] s__threshold = 8'd0;
+  wire [7:0] s__ix = ix; // Xilinx ISE can't bit-slice a genvar
   always @ (posedge i_clk)
     if (i_rst)
       s__threshold <= 8'd0;
-    else if (s_outport && (s_T == 8'd@IX_OUTPORT_0@ + ix[0+:8]))
+    else if (s_outport && (s_T == (8'd@IX_OUTPORT_0@ + s__ix)))
       s__threshold <= s_N;
     else
       s__threshold <= s__threshold;
@@ -47,16 +48,15 @@ for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen__channel
     reg [7:0] s__threshold_use_tmp = 8'd0;
     always @ (posedge i_clk)
       if (i_rst)
-        s__threshold_use_tmp = 8'd0;
+        s__threshold_use_tmp <= 8'd0;
       else if (s__tick_counter_is_zero && (s__pwm_counter == 8'd255))
-        s__threshold_use_tmp = s__threshold;
+        s__threshold_use_tmp <= s__threshold;
       else
         s__threshold_use_tmp <= s__threshold_use_tmp;
     assign s__threshold_use = s__threshold_use_tmp;
   end else begin : gen__not_norunt
     assign s__threshold_use = s__threshold;
   end
-  initial s__raw[ix] = @OFF@;
   always @ (posedge i_clk)
     if (i_rst)
       s__raw[ix] <= @OFF@;
