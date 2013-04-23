@@ -50,6 +50,19 @@ The processor is being used on a commercial project and the examples have been
 run on hardware.
 
 
+SPEED AND RESOURCE UTILIZATION
+================================================================================
+These device speed and resource utilization results are copied from the build
+tests.  The full results are listed in core/9x8/build/uc/uc_led.9x8 which
+represents a minimal processor implementation (clock, reset, and one output).
+See the uc_peripherals.9x8 file for results for a more complicated
+implementation.
+
+VENDOR          DEVICE          BEST SPEED      RESOURCE UTILIZATION
+------          ------          ----------      --------------------
+Xilinx          Spartan-3A      148.3 MHz       141 slices, 268 4-input LUTS
+
+
 EXAMPLE:
 ================================================================================
 
