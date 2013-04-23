@@ -2,8 +2,10 @@
 # Copyright 2013, Sinclair R.F., Inc.
 # Test against Xilinx Spartan 3A and ISE.
 
-TESTED="12.4";
-TEST_BENCHES="uc_led"
+TESTED="12.4 14.4";
+TEST_BENCHES="";
+TEST_BENCHES+=" uc_led";
+TEST_BENCHES+=" uc_peripheral"
 
 PWD="`pwd`";
 PWD="${PWD/*\/}";
@@ -29,24 +31,25 @@ for VERSION in ${TESTED}; do
   fi
   for TB in ${TEST_BENCHES}; do
     let nTested+=1;
-    if [ ! -z "`./make "${TOOL_DIR}" ${TB} 2>&1 | tee log-${TB} | sed -n '/ERROR/p'`" ]; then
-      grep ERROR log-${TB};
+    LOGFILE="log-${VERSION}-${TB}";
+    if [ ! -z "`./make "${TOOL_DIR}" ${TB} 2>&1 | tee "${LOGFILE}" | sed -n '/ERROR/p'`" ]; then
+      grep ERROR "${LOGFILE}";
       echo "BUILD TEST BENCH FAILED" > /dev/stderr;
       echo "build directory:    ${PWD}" > /dev/stderr;
       echo "TOOL:               ${TOOL_DIR}" > /dev/stderr;
       echo "TEST:               ${TB}" > /dev/stderr;
       exit 1;
     fi
+    echo "Build results for ${PWD} ISE/${VERSION} ${TB}";
+    sed -n \
+        -e '/Minimum period/p' \
+        -e '/^ Number of Slices:/p' \
+        -e '/^ Number of 4 input LUTs:/p' \
+        -e '/^ Number of BRAMs:/p' \
+        -e '/TS_i_clk = PERIOD/,+1p' \
+        "${LOGFILE}" \
+        ;
   done
-  echo "Build results for ${PWD} ISE/${VERSION} ${TB}";
-  sed -n \
-      -e '/Minimum period/p' \
-      -e '/^ Number of Slices:/p' \
-      -e '/^ Number of 4 input LUTs:/p' \
-      -e '/^ Number of BRAMs:/p' \
-      -e '/TS_i_clk = PERIOD/,+1p' \
-      log-${TB} \
-      ;
 done
 
 if [ ${nTested} == "0" ]; then
