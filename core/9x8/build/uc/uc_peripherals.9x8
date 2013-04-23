@@ -1,5 +1,20 @@
 # Copyright 2013, Sinclair R.F., Inc.
 # Test bench for synthesis tools:  peripherals
+#
+# Performance
+#   Xilinx XC3S50A-4
+#     ISE-11.4  9.033 ns        110.7 MHz
+#     ISE-12.4  8.667 ns        115.4 MHz
+#     ISE-13.3  8.949 ns        111.7 MHz
+#     ISE-14.4  8.768 ns        114.1 MHz
+#   Xilinx XC3S50A-5
+#     ISE-11.4  6.994 ns        143.0 MHz       (required 7.00 ns period)
+#     ISE-12.4  7.085 ns        141.1 MHz       (required 6.95 ns period)
+#     ISE-13.3  7.090 ns        141.0 MHz       (required 6.90 ns period)
+#     ISE-14.4  7.068 ns        141.5 MHz       (required 6.90 ns period)
+#
+# Logic utilization
+#   Xilinx XC3S50A: 536 Slices, 885 4-input LUTS
 
 ARCHITECTURE core/9x8 Verilog
 
