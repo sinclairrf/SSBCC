@@ -16,14 +16,15 @@ localparam L__BAUDMETHOD_NBITS = $clog2(L__BAUDMETHOD);
 // Either copy the input, register it, or put it through a synchronizer.
 localparam L__SYNC_LENGTH = @SYNC@;
 localparam L__DEGLITCH_LENGTH = @DEGLITCH@;
-localparam L__IDLE_LENGTH = (1+8+@NSTOP@)*L__BAUDMETHOD-1;
+localparam L__NSTOP = @NSTOP@;
+localparam L__IDLE_LENGTH = (1+8+L__NSTOP)*L__BAUDMETHOD-1;
 localparam L__IDLE_LENGTH_NBITS = $clog2(L__IDLE_LENGTH+1);
 localparam L__EDGE_TOL          = @EDGETOL@;
 localparam L__EDGE_TIMER_SIZE   = ((1000+9*25)*L__BAUDMETHOD+500)/1000-1;
 localparam L__EDGE_TIMER_NBITS  = $clog2(L__EDGE_TIMER_SIZE+1);
 localparam L__EDGE_TIMER_START  = ((1000+L__EDGE_TOL)*L__BAUDMETHOD+500)/1000-1;
 localparam L__EDGE_TIMER_TOL    = (2*L__EDGE_TOL*L__BAUDMETHOD+500)/1000;
-localparam L__NRX = 1+8+@NSTOP@;
+localparam L__NRX = 1+8+L__NSTOP;
 localparam L__INFIFO = @INFIFO@;
 localparam L__INFIFO_NBITS = $clog2((L__INFIFO==0)?1:L__INFIFO);
 generate
@@ -185,13 +186,19 @@ always @ (posedge i_clk)
   end
 // Check for bad bit sequence.
 initial s__Rx_error_p = 1'b0;
-wire [L__NRX-1:0] s__Rx_p = { s__Rx_edge_value, s__Rx_s[1+:L__NRX-1] };
+wire s__Rx_start_p = s__Rx_s[1];
+wire [L__NSTOP-1:0] s__Rx_stop_p;
+if (L__NSTOP == 1) begin : gen__check_1stop
+  assign s__Rx_stop_p = s__Rx_edge_value;
+end else begin : gen__check_2stop
+  assign s__Rx_stop_p = { s__Rx_edge_value, s__Rx_s[L__NRX-1:10] };
+end
 always @ (posedge i_clk)
   if (i_rst)
     s__Rx_error_p <= 1'b0;
   else if (s__Rx_input_idle)
     s__Rx_error_p <= 1'b0;
-  else if ((s__Rx_count == L__NRX[0+:4]) && ((s__Rx_p[0] != 1'b0) || ~&s__Rx_p[L__NRX-1:9]))
+  else if ((s__Rx_count == L__NRX[0+:4]) && ((s__Rx_start_p != 1'b0) || ~&s__Rx_stop_p))
     s__Rx_error_p <= 1'b1;
   else
     s__Rx_error_p <= s__Rx_error_p;
