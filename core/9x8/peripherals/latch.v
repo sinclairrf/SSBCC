@@ -22,7 +22,6 @@ always @ (posedge i_clk)
     s__addr <= s__addr;
 // Run the mux.
 integer ix;
-initial s__select = 8'h00;
 always @ (posedge i_clk)
   if (i_rst)
     s__select <= 8'h00;
