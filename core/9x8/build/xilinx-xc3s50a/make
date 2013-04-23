@@ -5,12 +5,15 @@
 TOOL_DIR="$1";
 NAME="$2";
 
-DEVICE=xc3s50a-4vq100;
+DEVICE=xc3s50a-4vq100; # standard performance device
+#DEVICE=xc3s50a-5vq100; # high -performance device
 
 ( cd ../uc; ../../../../ssbcc -q --define-clog2 ${NAME}.9x8; ) || exit 1;
 
 FILES="";
 FILES+=" ../uc/${NAME}.v";
+
+VERSION="`echo ${TOOL_DIR} | sed -e 's/^[^0-9]\+//' -e 's/[^0-9]\+$//'`";
 
 #
 # Configure and run the synthesis
@@ -80,7 +83,7 @@ xst \
 || { echo "ERROR:  XST Failed!"; exit 1; }
 
 #
-# Run through PAR
+# Convert the ngc to an ngd.
 #
 
 ngdbuild \
@@ -91,23 +94,52 @@ ngdbuild \
   ${NAME}.ngc ${NAME}.ngd \
 || { echo "ngdbuild Failed!"; exit 1; }
 
-map \
-  -p ${DEVICE} \
-  -w \
-  -logic_opt off \
-  -register_duplication off \
-  -r 4 \
-  -global_opt off \
-  -ir off \
-  -pr off \
-  -o ${NAME}.ncd \
-  ${NAME}.ngd ${NAME}.pcf \
+#
+# Run map.
+#
+
+MAP_ARG="";
+
+# For area optimization, use the following:
+#MAP_ARG+=" -cm area";
+
+# For speed optimization, using the following:
+#MAP_ARG+=" -cm speed -logic_opt on -register_duplication on -timing -xe c";
+
+if [[ "${VERSION}" > "12.0" ]]; then
+  MAP_ARG+=" -r 4";
+fi
+
+if [ -z "`echo ${MAP_ARG} | sed -n '/logic_opt/p'`" ]; then
+  MAP_ARG+=" -logic_opt off";
+fi
+
+if [ -z "`echo ${MAP_ARG} | sed -n '/register_duplication/p'`" ]; then
+  MAP_ARG+=" -register_duplication off";
+fi
+
+map                             \
+  -p ${DEVICE}                  \
+  -o ${NAME}.ncd                \
+  -detail                       \
+  -ir off                       \
+  -ol high                      \
+  -power off                    \
+  -pr off                       \
+  -w                            \
+  ${MAP_ARG}                    \
+  ${NAME}.ngd ${NAME}.pcf       \
 || { echo "MAP Failed!"; exit 1; }
 
-par \
-  -w \
-  -ol high \
-  -mt off \
+#
+# Run par.
+#
+
+par             \
+  -pl high      \
+  -rl high      \
+  -w            \
+  -xe c         \
   ${NAME}.ncd ${NAME}.ncd ${NAME}.pcf \
 || { echo "PAR Failed!"; exit 1; }
 

@@ -2,10 +2,10 @@
 # Copyright 2013, Sinclair R.F., Inc.
 # Test against Xilinx Spartan 3A and ISE.
 
-TESTED="12.4 14.4";
+TESTED="11.4 12.4 13.3 14.4";
 TEST_BENCHES="";
 TEST_BENCHES+=" uc_led";
-TEST_BENCHES+=" uc_peripheral"
+TEST_BENCHES+=" uc_peripheral";
 
 PWD="`pwd`";
 PWD="${PWD/*\/}";
@@ -24,23 +24,27 @@ done
 
 let nTested=0;
 for VERSION in ${TESTED}; do
-  TOOL_DIR="/opt/Xilinx/${VERSION}/ISE_DS";
-  if [ ! -d ${TOOL_DIR} ]; then
-    echo "Xilinx ISE version ${VERSION} not found at ${PWD}" > /dev/stderr;
+  TOOL_DIR="/opt/Xilinx/${VERSION}";
+  if [ ! -e "${TOOL_DIR}" ]; then
+    echo "Xilinx ISE version ${VERSION} not found at ${TOOL_DIR}" > /dev/stderr;
     continue;
+  fi
+  if [ -d "${TOOL_DIR}/ISE_DS" ]; then
+    TOOL_DIR="${TOOL_DIR}/ISE_DS";
   fi
   for TB in ${TEST_BENCHES}; do
     let nTested+=1;
     LOGFILE="log-${VERSION}-${TB}";
     if [ ! -z "`./make "${TOOL_DIR}" ${TB} 2>&1 | tee "${LOGFILE}" | sed -n '/ERROR/p'`" ]; then
-      grep ERROR "${LOGFILE}";
-      echo "BUILD TEST BENCH FAILED" > /dev/stderr;
-      echo "build directory:    ${PWD}" > /dev/stderr;
-      echo "TOOL:               ${TOOL_DIR}" > /dev/stderr;
-      echo "TEST:               ${TB}" > /dev/stderr;
+      grep "ERROR" "${LOGFILE}"                 > /dev/stderr;
+      echo "BUILD TEST BENCH FAILED"            > /dev/stderr;
+      echo "build directory:    ${PWD}"         > /dev/stderr;
+      echo "TOOL:               ${TOOL_DIR}"    > /dev/stderr;
+      echo "TEST:               ${TB}"          > /dev/stderr;
+      echo "LOG FILE:           ${LOGFILE}"     > /dev/stderr;
       exit 1;
     fi
-    echo "Build results for ${PWD} ISE/${VERSION} ${TB}";
+    echo "Build results for ${PWD} Xilinx ISE/${VERSION} ${TB}";
     sed -n \
         -e '/Minimum period/p' \
         -e '/^ Number of Slices:/p' \

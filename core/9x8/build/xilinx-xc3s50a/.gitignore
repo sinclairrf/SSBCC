@@ -11,6 +11,7 @@
 *.par
 *.pcf
 *.prj
+*.psr
 *.ptwx
 *.syr
 *.unroutes
