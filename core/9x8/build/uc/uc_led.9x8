@@ -3,18 +3,34 @@
 #
 # Performance
 #   Xilinx XC3S50A-4
-#     ISE-11.4  8.305 ns        120.4 MHz
-#     ISE-12.4  8.049 ns        124.2 MHz
-#     ISE-13.3  8.274 ns        120.9 MHz
-#     ISE-14.4  8.203 ns        122.0 MHz
+#     ISE-11.4   8.305 ns       120.4 MHz
+#     ISE-12.4   8.049 ns       124.2 MHz
+#     ISE-13.3   8.274 ns       120.9 MHz
+#     ISE-14.4   8.203 ns       122.0 MHz
 #   Xilinx XC3S50A-5
-#     ISE-11.4  7.000 ns        142.9 MHz
-#     ISE-12.4  6.743 ns        148.3 MHz
-#     ISE-13.3  6.743 ns        148.3 MHz
-#     ISE-14.4  6.835 ns        146.3 MHz
+#     ISE-11.4   7.000 ns       142.9 MHz
+#     ISE-12.4   6.743 ns       148.3 MHz
+#     ISE-13.3   6.743 ns       148.3 MHz
+#     ISE-14.4   6.835 ns       146.3 MHz
+#   Xilinx XC6SLX4L
+#     ISE-11.4   9.518 ns       105.1 MHz       (used 8 ns constraint)
+#     ISE-12.4   9.789 ns       102.2 MHz       (used 8 ns constraint)
+#     ISE-13.3  10.196 ns        98.1 MHz       (used 9 ns constraint)
+#     ISE-14.4  10.196 ns        98.1 MHz       (used 9 ns constraint)
+#   Xilinx XC6SLX4-2
+#     ISE-11.4   8.172 ns       122.4 MHz       (used 6.5 ns constraint)
+#     ISE-12.4   7.792 ns       128.3 MHz       (used 6.3 ns constraint)
+#     ISE-13.3   5.940 ns       168.4 MHz       (used 6.3 ns constraint)
+#     ISE-14.4   5.940 ns       168.4 MHz       (used 6.3 ns constraint)
+#   Xilinx XC6SLX4-3
+#     ISE-11.4   6.201 ns       161.3 MHz       (used 5.0 ns constraint)
+#     ISE-12.4   5.160 ns       187.4 MHz       (used 4.8 ns constraint)
+#     ISE-13.3   5.323 ns       182.2 MHz       (used 4.9 ns constraint)
+#     ISE-14.4   5.323 ns       182.2 MHz       (used 4.9 ns constraint)
 #
 # Logic utilization
 #   Xilinx      XC3S50A         141 Slices, 268 4-input LUTS
+#   Xilinx      XC6SLX4         45 Slices, 134 Slice LUTs
 
 ARCHITECTURE core/9x8 Verilog
 

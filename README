@@ -39,9 +39,6 @@ HDL.  This provides an extensible peripheral set to the compiler.
 The computer compiler is documented in the doc directory.  The 9x8 core is
 documented in the core/9x8/doc directory.  Several examples are provided.
 
-The processor has placed and routed at 210 MHz in a Spartan 6 while consuming 43
-slices.
-
 This is a beta release.  While the computer compiler and assembler are fully
 functional and there are no known bugs, features and peripherals are still being
 added and the documentation is incomplete.  Also, the output HDL is currently
@@ -61,6 +58,7 @@ implementation.
 VENDOR          DEVICE          BEST SPEED      RESOURCE UTILIZATION
 ------          ------          ----------      --------------------
 Xilinx          Spartan-3A      148.3 MHz       141 slices, 268 4-input LUTS
+Xilinx          Spartan-6       187.4 MHz        45 slices, 134 Slice LUTs
 
 
 EXAMPLE:
