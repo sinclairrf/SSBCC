@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright 2013, Sinclair R.F., Inc.
-# Make script for Spartan 3A, ISE 12.4
+# Make script for Xilinx Spartan 3A
 
 TOOL_DIR="$1";
 NAME="$2";
@@ -27,39 +27,39 @@ done > ${NAME}.prj;
 
 mkdir -p xst/projnav.tmp;
 
-cat <<EOF > ${NAME}.xst         
+cat <<EOF > ${NAME}.xst
 set -tmpdir "xst/projnav.tmp"
 set -xsthdpdir "xst"
 run
 -ifn ${NAME}.prj
--ifmt mixed     
--ofn ${NAME}                    
--ofmt NGC                       
--p ${DEVICE}    
--top ${NAME}                    
--opt_mode Speed                 
+-ifmt mixed
+-ofn ${NAME}
+-ofmt NGC
+-p ${DEVICE}
+-top ${NAME}
+-opt_mode Speed
 -opt_level 1
 -iuc NO
 -keep_hierarchy No
--netlist_hierarchy As_Optimized 
--rtlview Yes                    
--glob_opt AllClockNets          
--read_cores YES                 
--write_timing_constraints NO    
--cross_clock_analysis NO        
--hierarchy_separator /          
--bus_delimiter <>               
--case Maintain                  
--slice_utilization_ratio 100    
+-netlist_hierarchy As_Optimized
+-rtlview Yes
+-glob_opt AllClockNets
+-read_cores YES
+-write_timing_constraints NO
+-cross_clock_analysis NO
+-hierarchy_separator /
+-bus_delimiter <>
+-case Maintain
+-slice_utilization_ratio 100
 -bram_utilization_ratio 100
 -fsm_extract YES -fsm_encoding Auto
 -safe_implementation No
 -fsm_style LUT
 -ram_extract Yes
--ram_style Auto 
--rom_extract Yes                
+-ram_style Auto
+-rom_extract Yes
 -shreg_extract YES
--rom_style Auto 
+-rom_style Auto
 -auto_bram_packing NO
 -resource_sharing YES
 -async_to_sync NO
