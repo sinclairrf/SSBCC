@@ -55,10 +55,10 @@ represents a minimal processor implementation (clock, reset, and one output).
 See the uc_peripherals.9x8 file for results for a more complicated
 implementation.
 
-VENDOR          DEVICE          BEST SPEED      RESOURCE UTILIZATION
-------          ------          ----------      --------------------
+VENDOR          DEVICE          BEST SPEED      SMALLEST RESOURCE UTILIZATION
+------          ------          ----------      ----------------------------
 Xilinx          Spartan-3A      148.3 MHz       141 slices, 268 4-input LUTS
-Xilinx          Spartan-6       187.4 MHz        45 slices, 134 Slice LUTs
+Xilinx          Spartan-6       200.0 MHz        36 slices, 120 Slice LUTs
 
 
 EXAMPLE:
