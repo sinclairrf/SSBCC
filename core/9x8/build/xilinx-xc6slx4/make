@@ -2,8 +2,14 @@
 # Copyright 2013, Sinclair R.F., Inc.
 # Make script for Xilinx Spartan 6
 
+XST_ARG="";
+MAP_ARG="";
+
 TOOL_DIR="$1";
 NAME="$2";
+if [ -n "$3" ]; then
+  MAP_ARG+=" $3";
+fi
 
 #DEVICE=xc6slx4l-tqg144;  # low power device
 DEVICE=xc6slx4-2tqg144;  # standard performance device
@@ -15,6 +21,18 @@ FILES="";
 FILES+=" ../uc/${NAME}.v";
 
 VERSION="`echo ${TOOL_DIR} | sed -e 's/^[^0-9]\+//' -e 's/[^0-9]\+$//'`";
+
+#
+# Optional configuration parameters.
+#
+
+# Configure tools for minimum area implementation.
+#XST_ARG+="-opt_mode area -fsm_encoding user ";
+#MAP_ARG+=" -global_opt area -lc area";
+
+# Configure tools for maximum speed.
+XST_ARG+="-opt_mode speed -resource_sharing no ";
+#MAP_ARG+=" -global_opt speed -lc auto -logic_opt on -register_duplication on -retiming on -timing -xe c";
 
 #
 # Configure and run the synthesis
@@ -36,52 +54,9 @@ run
 -ofn ${NAME}
 -p ${DEVICE}
 -top ${NAME}
--async_to_sync NO
--auto_bram_packing NO
--bram_utilization_ratio 100
--bufg 16
--bus_delimiter <>
--case Maintain
--cross_clock_analysis NO
--dsp_utilization_ratio 100
--equivalent_register_removal YES
--fsm_encoding Auto
--fsm_extract YES
--fsm_style LUT
--glob_opt AllClockNets
--hierarchy_separator /
--ifmt mixed
--iob Auto
--iobuf YES
--iuc NO
--keep_hierarchy No
--lc Auto
--max_fanout 100000
--netlist_hierarchy As_Optimized
--ofmt NGC
 -opt_level 1
--opt_mode Speed
--optimize_primitives NO
--power NO
--ram_extract Yes
--ram_style Auto
--read_cores YES
--reduce_control_sets Auto
--register_balancing No
--register_duplication YES
--resource_sharing YES
--rom_extract Yes
--rom_style Auto
--rtlview Yes
--safe_implementation No
--shreg_extract YES
--slice_utilization_ratio 100
+${XST_ARG}
 -slice_utilization_ratio_maxmargin 5
--use_clock_enable Auto
--use_dsp48 Auto
--use_sync_reset Auto
--use_sync_set Auto
--write_timing_constraints NO
 EOF
 
 xst \
@@ -104,14 +79,6 @@ ngdbuild \
 #
 # Run map.
 #
-
-MAP_ARG="";
-
-# For area optimization, use the following:
-#MAP_ARG+=" -lc area";
-
-# For speed optimization, using the following:
-#MAP_ARG+=" -lc auto -logic_opt on -register_duplication on -retiming on -timing -xe c";
 
 if [[ "${VERSION}" > "12.0" ]]; then
   MAP_ARG+=" -r 4";
@@ -136,7 +103,7 @@ map                             \
 
 par             \
   -w            \
-  -xe c         \
+  -xe n         \
   ${NAME}.ncd ${NAME}.ncd ${NAME}.pcf \
 || { echo "PAR Failed!"; exit 1; }
 
