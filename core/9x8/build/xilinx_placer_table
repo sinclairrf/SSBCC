@@ -9,15 +9,15 @@ TB="uc_led";
 TOOL_DIR="/opt/Xilinx/${VERSION}";
 if [ ! -e "${TOOL_DIR}" ]; then
   echo "Xilinx ISE version ${VERSION} not found at ${TOOL_DIR}" > /dev/stderr;
-  continue;
+  exit 1;
 fi
 if [ -d "${TOOL_DIR}/ISE_DS" ]; then
   TOOL_DIR="${TOOL_DIR}/ISE_DS";
 fi
 
 for (( ii=1; ii<=100; ++ii )); do
-  ./make "${TOOL_DIR}" "${TB}" "-timing -t ${ii}" 2>&1 > log__placer_cost_run;
-  echo "-timing -t ${ii} `grep "TS_i_clk = PERIOD" log__placer_cost_run`";
+  ./make "${TOOL_DIR}" "${TB}" "-timing -t ${ii}" 2>&1 > log-placer_cost_run;
+  echo "-timing -t ${ii} `grep "TS_i_clk = PERIOD" log-placer_cost_run`";
 done | gawk '
 BEGIN{best=999;}
 {
@@ -25,8 +25,10 @@ BEGIN{best=999;}
   nfvert = split($0,vertsplit,"|");
   if (nfvert < 4) next;
   test=1*vertsplit[4];
+  print $0;
   if (test < best) {
     best = test;
-    print $0;
+    print "******";
+#    print $0;
   }
 }'
