@@ -12,8 +12,8 @@ if [ -n "$3" ]; then
 fi
 
 #DEVICE=xc6slx4l-tqg144;  # low power device
-#DEVICE=xc6slx4-2tqg144;  # standard performance device
-DEVICE=xc6slx4-3tqg144;  # high performance device
+DEVICE=xc6slx4-2tqg144;  # standard performance device
+#DEVICE=xc6slx4-3tqg144;  # high performance device
 
 ( cd ../uc; ../../../../ssbcc -q --define-clog2 ${NAME}.9x8; ) || exit 1;
 
@@ -27,11 +27,11 @@ VERSION="`echo ${TOOL_DIR} | sed -e 's/^[^0-9]\+//' -e 's/[^0-9]\+$//'`";
 #
 
 # Configure tools for minimum area implementation.
-XST_ARG+="-opt_mode area -fsm_encoding user ";
-MAP_ARG+=" -global_opt area -lc area";
+#XST_ARG+="-opt_mode area -fsm_encoding user ";
+#MAP_ARG+=" -global_opt area -lc area";
 
 # Configure tools for maximum speed.
-#XST_ARG+="-opt_mode speed -resource_sharing no ";
+XST_ARG+="-opt_mode speed -resource_sharing no ";
 #MAP_ARG+=" -global_opt speed -lc auto -logic_opt on -register_duplication on -retiming on -timing -xe c";
 
 #
