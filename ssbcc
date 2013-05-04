@@ -42,6 +42,7 @@ try:
   argListParser.add_argument('-o', metavar='outCoreName', type=str, help='output core name');
   argListParser.add_argument('-q', action='store_true', help='quiet');
   argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
+  argListParser.add_argument('--display-opcode', action='store_true', help='add 3-letter decode of opcode (for trace viewer)');
   argListParser.add_argument('--verilator-tracing-on', action='store_true', help='show all signals in verilator waveform files');
   argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
   argList = argListParser.parse_args();
@@ -54,6 +55,9 @@ try:
 
   config.Set('define_clog2',argList.define_clog2);
   config.Set('verilator_tracing_on',argList.verilator_tracing_on);
+
+  if argList.display_opcode:
+    config.functions['display_opcode'] = True;
 
   if argList.o:
     config.Set('outCoreName',argList.o);

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-../../../../ssbcc -q core.9x8 \
+../../../../ssbcc -q --display-opcode core.9x8 \
 || exit 1;
 
 iverilog -o tb tb.v core.v \

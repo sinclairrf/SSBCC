@@ -45,8 +45,18 @@ def genFunctions(fp,config):
   Output the optional bodies for the following functions and tasks:
     clog2               when $clog2 isn't available by commanding "--define_clog2"
                         on the ssbcc command line
+    display_opcode      human-readable version of the opcode suitable for
+                        waveform viewers
     display_trace       when the trace or monitor_stack peripherals are included
   """
+  if 'display_opcode' in config.functions:
+    displayOpcodePath = os.path.join(config.Get('corepath'),'display_opcode.v');
+    fpDisplayOpcode = open(displayOpcodePath,'r');
+    if not fpDisplayOpcode:
+      raise Exception('Program Bug -- "%s" not found' % displayOpcodePath);
+    body = fpDisplayOpcode.read();
+    fpDisplayOpcode.close();
+    fp.write(body);
   if ('clog2' in config.functions) and config.Get('define_clog2'):
     fp.write("""
 // Use constant function instead of builtin $clog2.
