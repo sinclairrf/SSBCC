@@ -25,10 +25,8 @@ BEGIN{best=999;}
   nfvert = split($0,vertsplit,"|");
   if (nfvert < 4) next;
   test=1*vertsplit[4];
-  print $0;
   if (test < best) {
     best = test;
-    print "******";
-#    print $0;
+    print $0;
   }
 }'
