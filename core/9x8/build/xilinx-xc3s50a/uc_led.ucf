@@ -2,8 +2,7 @@
 # UCF for uc_led.v
 
 NET "i_clk" TNM_NET="i_clk";
-TIMESPEC TS_i_clk = PERIOD "i_clk" 8 ns HIGH 50%;       # -4 speed grade
-#TIMESPEC TS_i_clk = PERIOD "i_clk" 6.73 ns HIGH 50%;       # -5 speed grade
+TIMESPEC TS_i_clk = PERIOD "i_clk" 8 ns HIGH 50%;
 
 NET "i_clk"     LOC = "P83";
 NET "i_rst"     LOC = "P84";
