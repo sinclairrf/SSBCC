@@ -53,12 +53,25 @@ These device speed and resource utilization results are copied from the build
 tests.  The full results are listed in core/9x8/build/uc/uc_led.9x8 which
 represents a minimal processor implementation (clock, reset, and one output).
 See the uc_peripherals.9x8 file for results for a more complicated
-implementation.
+implementation.  Device-specific scripts state how these performance numbers
+were obtained.
 
 VENDOR          DEVICE          BEST SPEED      SMALLEST RESOURCE UTILIZATION
 ------          ------          ----------      ----------------------------
-Xilinx          Spartan-3A      148.3 MHz       141 slices, 268 4-input LUTS
+Xilinx          Spartan-3A      148.3 MHz       130 slices, 231 4-input LUTS
 Xilinx          Spartan-6       200.0 MHz        36 slices, 120 Slice LUTs
+
+Disclaimer:  Like other embedded processors, these are the maximum performance
+claims.  Realistic implementations will produce slower maximum clock rates,
+particularly with the constraint of existing with other components in the FPGA
+fabric.  What these performance numbers do provide is an estimate of the amount
+of slack available.  For example, you can't reallistically expect to get 110 MHz
+from a processor that, under ideal conditions, routes and places at 125 MHz.
+Lots of slack, such as a 100 MHz clock requirement for a Spartan-6
+implementation of this processor, means that it should never be a bottleneck for
+place and route.  One system I designed used the vendor's microprocessor and
+extensive rework was required as the design grew and the microprocessors maximum
+clock rate fell below what was required for the system.
 
 
 EXAMPLE:
