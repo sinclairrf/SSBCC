@@ -2,8 +2,14 @@
 # Copyright 2013, Sinclair R.F., Inc.
 # Make script for Xilinx Spartan 3A
 
+XST_ARG="";
+MAP_ARG="";
+
 TOOL_DIR="$1";
 NAME="$2";
+if [ -n "$3" ]; then
+  MAP_ARG+=" $3";
+fi
 
 DEVICE=xc3s50a-4vq100; # standard performance device
 #DEVICE=xc3s50a-5vq100; # high -performance device
@@ -14,6 +20,18 @@ FILES="";
 FILES+=" ../uc/${NAME}.v";
 
 VERSION="`echo ${TOOL_DIR} | sed -e 's/^[^0-9]\+//' -e 's/[^0-9]\+$//'`";
+
+#
+# Optional configuration parameters.
+#
+
+# Configure tools for minimum area implementation.
+#XST_ARG+="-opt_mode area -fsm_encoding user ";
+#MAP_ARG+=" -cm area";
+
+# Configure tools for maximum speed.
+XST_ARG+="-opt_mode speed -resource_sharing no ";
+#MAP_ARG+=" -logic_opt on -register_duplication on -retiming on -timing -xe c";
 
 #
 # Configure and run the synthesis
@@ -32,49 +50,10 @@ set -tmpdir "xst/projnav.tmp"
 set -xsthdpdir "xst"
 run
 -ifn ${NAME}.prj
--ifmt mixed
 -ofn ${NAME}
--ofmt NGC
 -p ${DEVICE}
 -top ${NAME}
--opt_mode Speed
--opt_level 1
--iuc NO
--keep_hierarchy No
--netlist_hierarchy As_Optimized
--rtlview Yes
--glob_opt AllClockNets
--read_cores YES
--write_timing_constraints NO
--cross_clock_analysis NO
--hierarchy_separator /
--bus_delimiter <>
--case Maintain
--slice_utilization_ratio 100
--bram_utilization_ratio 100
--fsm_extract YES -fsm_encoding Auto
--safe_implementation No
--fsm_style LUT
--ram_extract Yes
--ram_style Auto
--rom_extract Yes
--shreg_extract YES
--rom_style Auto
--auto_bram_packing NO
--resource_sharing YES
--async_to_sync NO
--iobuf YES
--max_fanout 100000
--bufg 16
--register_duplication YES
--register_balancing No
--optimize_primitives NO
--use_clock_enable Auto
--use_sync_set Auto
--use_sync_reset Auto
--iob Auto
--equivalent_register_removal YES
--slice_utilization_ratio_maxmargin 5
+${XST_ARG}
 EOF
 
 xst \
@@ -98,14 +77,6 @@ ngdbuild \
 # Run map.
 #
 
-MAP_ARG="";
-
-# For area optimization, use the following:
-#MAP_ARG+=" -cm area";
-
-# For speed optimization, using the following:
-#MAP_ARG+=" -cm speed -logic_opt on -register_duplication on -timing -xe c";
-
 if [[ "${VERSION}" > "12.0" ]]; then
   MAP_ARG+=" -r 4";
 fi
@@ -114,18 +85,10 @@ if [ -z "`echo ${MAP_ARG} | sed -n '/logic_opt/p'`" ]; then
   MAP_ARG+=" -logic_opt off";
 fi
 
-if [ -z "`echo ${MAP_ARG} | sed -n '/register_duplication/p'`" ]; then
-  MAP_ARG+=" -register_duplication off";
-fi
-
 map                             \
   -p ${DEVICE}                  \
   -o ${NAME}.ncd                \
   -detail                       \
-  -ir off                       \
-  -ol high                      \
-  -power off                    \
-  -pr off                       \
   -w                            \
   ${MAP_ARG}                    \
   ${NAME}.ngd ${NAME}.pcf       \
@@ -136,10 +99,8 @@ map                             \
 #
 
 par             \
-  -pl high      \
-  -rl high      \
   -w            \
-  -xe c         \
+  -xe n         \
   ${NAME}.ncd ${NAME}.ncd ${NAME}.pcf \
 || { echo "PAR Failed!"; exit 1; }
 
