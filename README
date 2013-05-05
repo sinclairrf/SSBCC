@@ -69,9 +69,7 @@ of slack available.  For example, you can't reallistically expect to get 110 MHz
 from a processor that, under ideal conditions, routes and places at 125 MHz.
 Lots of slack, such as a 100 MHz clock requirement for a Spartan-6
 implementation of this processor, means that it should never be a bottleneck for
-place and route.  One system I designed used the vendor's microprocessor and
-extensive rework was required as the design grew and the microprocessors maximum
-clock rate fell below what was required for the system.
+place and route.
 
 
 EXAMPLE:
@@ -397,6 +395,9 @@ modifying the micro controller architecture file.
 
 DIAGNOSTICS AND DEBUGGING
 ================================================================================
+
+A 3-character, human readable version of the opcode can be included in
+simulation waveform outputs by adding "--display-opcode" to the ssbcc command.
 
 The stack health can be monitored during simulation by including the
 "monitor_stack" peripheral through the command line.  For example, the LED
