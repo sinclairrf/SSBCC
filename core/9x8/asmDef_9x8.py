@@ -330,6 +330,11 @@ class asmDef_9x8:
     firstToken = rawTokens[0];
     if firstToken['type'] != 'directive':
       raise Exception('Program Bug triggered at %s' % firstToken['loc']);
+    # Ensure the directive bodies are not too short.
+    if (firstToken['value'] in ('.main','.interrupt',)) and not (len(rawTokens) > 1):
+      raise asmDef.AsmException('"%s" missing body at %s' % (firstToken['value'],firstToken['loc'],));
+    if (firstToken['value'] in ('.constant','.function','.memory','.variable',)) and not (len(rawTokens) >= 3):
+      raise asmDef.AsmException('body for "%s" directive too short at %s' % (firstToken['value'],firstToken['loc'],));
     # Ensure the main body ends in a ".jump".
     lastToken = rawTokens[-1];
     if firstToken['value'] == '.main':
