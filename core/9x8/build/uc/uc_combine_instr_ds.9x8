@@ -1,0 +1,12 @@
+# Copyright 2013, Sinclair R.F., Inc.
+# Test bench for synthesis tools:  combine INSTRUCTION and DATA_STACK
+
+ARCHITECTURE core/9x8 Verilog
+
+RETURN_STACK    16
+DATA_STACK      16
+COMBINE         INSTRUCTION,DATA_STACK  1024
+
+OUTPORT 1-bit o_led O_LED
+
+ASSEMBLY        uc_led.s

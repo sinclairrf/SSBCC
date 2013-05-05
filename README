@@ -514,6 +514,9 @@ M9Ks for the instruction ROM and the data stack.
   DATA_STACK 64
   COMBINE INSTRUCTION,DATA_STACK 1024*3
 
+WARNING:  Some devices, such as Xilinx' Spartan-3A devices do not support
+asynchronous reads, so the COMBINE configuration command does not work for them.
+
 
 SIMULATIONS
 ================================================================================
