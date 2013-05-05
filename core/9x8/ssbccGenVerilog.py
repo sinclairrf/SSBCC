@@ -463,7 +463,7 @@ def genMemories(fp,config,programBody):
       thisLclMemParam = lclMemParam[ixLclMem];
       thisLclMemParam['name'] = thisPacking['name'];
       thisLclMemParam['memName'] = thisPacked['memName'];
-      thisLclMemParam['memWidth'] = thisPacking['width'];
+      thisLclMemParam['memWidth'] = thisPacked['width'];
       thisLclMemParam['nMemAddrBits'] = CeilLog2(thisPacked['length']);
       thisLclMemParam['offset'] = thisPacking['offset'];
       thisLclMemParam['nAddrBits'] = CeilLog2(thisPacking['length']);
