@@ -19,7 +19,7 @@
 TESTED="11.4 12.4 13.3 14.4";
 TEST_BENCHES="";
 TEST_BENCHES+=" uc_led";
-TEST_BENCHES+=" uc_peripheral";
+TEST_BENCHES+=" uc_peripherals";
 
 PWD="`pwd`";
 PWD="${PWD/*\/}";
