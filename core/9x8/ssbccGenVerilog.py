@@ -476,12 +476,16 @@ def genMemories(fp,config,programBody):
         offset = thisLclMemParam['offset']/2**thisLclMemParam['nAddrBits'];
         addrString = ('{ %d\'h%%0%dX, %s }' % (nbits,(nbits+3)/4,addrString,)) % offset;
       thisLclMemParam['addrString'] = addrString;
-  # Generate the memory read logic.
-  fp.write('//\n');
-  fp.write('// memory read logic\n');
-  fp.write('//\n');
-  fp.write('\n');
-  if config.NMemories() > 0:
+  # Generate the memory read/write logic.
+  if config.NMemories() == 0:
+    fp.write('// no memories\n');
+    fp.write('\n');
+  else:
+    # Generate the memory read logic.
+    fp.write('//\n');
+    fp.write('// memory read logic\n');
+    fp.write('//\n');
+    fp.write('\n');
     fp.write('initial   s_memory = 8\'h00;\n');
     if maxMemWidth == 9:
       fp.write('reg       not_used_s_memory = 1\'b0;\n');
@@ -502,9 +506,8 @@ def genMemories(fp,config,programBody):
       fp.write('       2\'d%d : %s = %s; // memory "%s"\n' % (thisBank,memTarget,memSource,thisParam['name'],));
     fp.write('    default : %s = %d\'d0;\n' % (memTarget,maxMemWidth,));
     fp.write('  endcase\n');
-  fp.write('\n');
-  # Generate the memory write logic.
-  if config.NMemories() > 0:
+    fp.write('\n');
+    # Generate the memory write logic.
     fp.write('//\n');
     fp.write('// memory write logic\n');
     fp.write('//\n');
