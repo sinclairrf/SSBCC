@@ -4,6 +4,9 @@
  *
  * SSBCC.9x8 -- Small Stack Based Computer Compiler, 9-bit opcode, 8-bit data.
  *
+ * The repository for this open-source project is at
+ *   https://github.com/sinclairrf/SSBCC
+ *
  ******************************************************************************/
 
 //@SSBCC@ user_header
@@ -19,7 +22,7 @@
  *
  ******************************************************************************/
 
-// listed in useful dispay order
+// listed in useful display order
 reg            [C_PC_WIDTH-1:0] s_PC;           // program counter
 reg                       [8:0] s_opcode;       // current opcode
 reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
