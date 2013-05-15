@@ -19,14 +19,12 @@ class UART_Rx(SSBCCperipheral):
   Usage:
     PERIPHERAL UART_Rx inport=I_inport_name        \\
                        inempty=I_inempty_name      \\
-                       inerror=I_inerror_name      \\
                        baudmethod={clk/rate|count} \\
                        [insignal=i_name]           \\
                        [noSync|sync=n]             \\
                        [noDeglitch|deglitch=n]     \\
                        [noInFIFO|inFIFO=n]         \\
-                       [nStop={1|2}]               \\
-                       [edgetol=x]                 \n
+                       [nStop={1|2}]               \n
   Where:
     inport=I_inport_name
       specifies the symbol used by the inport instruction to read a received by
@@ -34,10 +32,6 @@ class UART_Rx(SSBCCperipheral):
       Note:  The name must start with "I_".
     inempty=I_inempty_name
       specifies the symbol used by the inport instruction to get the empty
-      status of the input side of the peripheral
-      Note:  The name must start with "I_".
-    inerror=I_inerror_name
-      specified the symbol used by the inport instruction to get the error
       status of the input side of the peripheral
       Note:  The name must start with "I_".
     baudmethod
@@ -86,19 +80,6 @@ class UART_Rx(SSBCCperipheral):
       default:  1 stop bit
       Note:  n must be 1 or 2
       Note:  the peripheral does not accept 1.5 stop bits
-    edgetol=x
-      optionally specify the tolerance for edge detection/generation for the
-      deserializer as x%
-      Note:  The default is 2.5%
-      Note:  The tolerance is cumulative as edges are missed, so a tolerance
-             that accumulates to 50% or more in 9 edges, i.e., about 5.5%, is
-             excessive.  A reasonable limit is about half of that, i.e., about
-             2.5%, so that is what is specified.  Smaller tolerances required
-             the recevied signal and the edge generating using the provided
-             micro controller clock to more closely match the nominal baud rate.\n
-      Note:  The tolerance is limited to be between 0.1 and 5.5 and may be
-             expressed as an integer or as a fraction with a single digit after
-             the decimal.\n
   The following ports are provided by this peripheral:
     I_inport_name
       input a recieved byte from the peripheral
@@ -117,19 +98,6 @@ class UART_Rx(SSBCCperipheral):
         Note:  "Empty" is used rather than "ready" to facilitate loops that
                respond when there is a new byte ready to be processed.  See the
                examples below.
-    I_inerror_name
-      input the error status of the input side of the peripheral
-      Note:  The 3 bits in this value have the following meaning:
-             bit 0 -- a read was performed when no data was available or a new
-                      byte of data was received and the input buffer or FIFO was
-                      already full
-                      Note:  This bit indicates that an error has occured and
-                             one or more bytes is missing in the data stream.
-             bit 1 -- the received edge rate does not match the commanded edge
-                      rate, clock, and tolerance
-                      Note:  This error is cleared by an idle input stream.
-             bit 2 -- missing start bit or stop bit(s) in data stream
-                      Note:  This error is cleared by an idle input stream.
   """
 
   def __init__(self,peripheralFile,config,param_list,ixLine):
@@ -141,10 +109,7 @@ class UART_Rx(SSBCCperipheral):
       param_arg = param_tuple[1];
       for param_test in (
           ('deglitch',   r'[1-9]\d*$', int,   ),
-          ('edgetol',    r'(0\.[1-9]|[1-4](\.\d)?|5(\.[0-5])?)$',
-                                       lambda(x):int(10*float(x)+0.5), ),
           ('inempty',    r'I_\w+$',    None,  ),
-          ('inerror',    r'I_\w+$',    None,  ),
           ('inport',     r'I_\w+$',    None,  ),
           ('insignal',   r'i_\w+$',    None,  ),
           ('noDeglitch', None,         None,  ),
@@ -170,14 +135,12 @@ class UART_Rx(SSBCCperipheral):
     for paramname in (
         'baudmethod',
         'inempty',
-        'inerror',
         'inport',
       ):
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
     # Set optional parameters.
     for optionalpair in (
-        ('edgetol',   25,          ),
         ('insignal',  'i_UART_Rx', ),
         ('nStop',     1,           ),
       ):
@@ -202,8 +165,6 @@ class UART_Rx(SSBCCperipheral):
     config.AddIO(self.insignal,1,'input',ixLine);
     config.AddSignal('s__%s__Rx'          % self.namestring,8,ixLine);
     config.AddSignal('s__%s__Rx_empty'    % self.namestring,1,ixLine);
-    config.AddSignal('s__%s__Rx_error'    % self.namestring,3,ixLine);
-    config.AddSignal('s__%s__Rx_error_rd' % self.namestring,1,ixLine);
     config.AddSignal('s__%s__Rx_rd'       % self.namestring,1,ixLine);
     config.AddInport((self.inport,
                     ('s__%s__Rx'          % self.namestring,8,'data',),
@@ -211,10 +172,6 @@ class UART_Rx(SSBCCperipheral):
                    ),ixLine);
     config.AddInport((self.inempty,
                    ('s__%s__Rx_empty'     % self.namestring,1,'data',),
-                  ),ixLine);
-    config.AddInport((self.inerror,
-                   ('s__%s__Rx_error'     % self.namestring,3,'data',),
-                   ('s__%s__Rx_error_rd'  % self.namestring,1,'strobe',),
                   ),ixLine);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
@@ -228,7 +185,6 @@ class UART_Rx(SSBCCperipheral):
                     (r'\bs__',          's__@NAME@__', ),
                     (r'@INPORT@',       self.insignal, ),
                     (r'@BAUDMETHOD@',   str(self.baudmethod), ),
-                    (r'@EDGETOL@',      str(self.edgetol), ),
                     (r'@SYNC@',         str(self.sync), ),
                     (r'@DEGLITCH@',     str(self.deglitch), ),
                     (r'@INFIFO@',       str(self.inFIFO), ),

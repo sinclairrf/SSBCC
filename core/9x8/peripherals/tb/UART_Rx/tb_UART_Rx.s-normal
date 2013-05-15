@@ -20,9 +20,6 @@
     .jumpc(loop)
   :end_loop r> drop drop
 
-  ; Display the error status before program termination.
-  .inport(I_UART_RX_ERROR) .outport(O_DATA)
-
   ; Signal program termination.
   1 .outport(O_DONE)
 

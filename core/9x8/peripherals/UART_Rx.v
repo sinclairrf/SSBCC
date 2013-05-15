@@ -5,29 +5,25 @@
 // - optionally synchronize the incoming signal
 // - optionally deglitch the incoming signal
 // - identify edges, align with value before the edge
-// - generate missing edges, error if non-aligned edges, align values
+// - generate missing edges, align values
 // - assemble received bit sequence
 // - run state machine counting number of received bits and waiting for delayed start bits
 // - validate bit sequence and output bit sequence at end of last stop bit
 // - optional FIFO
 //
-localparam L__BAUDMETHOD = @BAUDMETHOD@;
-localparam L__BAUDMETHOD_NBITS = $clog2(L__BAUDMETHOD);
-// Either copy the input, register it, or put it through a synchronizer.
+localparam L__BAUDMETHOD = ((@BAUDMETHOD@)+1)/2;
+localparam L__BAUDMETHOD_MINUS = L__BAUDMETHOD - 2;
+localparam L__BAUDMETHOD_NBITS = $clog2(L__BAUDMETHOD+1);
 localparam L__SYNC_LENGTH = @SYNC@;
 localparam L__DEGLITCH_LENGTH = @DEGLITCH@;
 localparam L__NSTOP = @NSTOP@;
-localparam L__IDLE_LENGTH = (1+8+L__NSTOP)*L__BAUDMETHOD-1;
-localparam L__IDLE_LENGTH_NBITS = $clog2(L__IDLE_LENGTH+1);
-localparam L__EDGE_TOL          = @EDGETOL@;
-localparam L__EDGE_TIMER_SIZE   = ((1000+9*25)*L__BAUDMETHOD+500)/1000-1;
-localparam L__EDGE_TIMER_NBITS  = $clog2(L__EDGE_TIMER_SIZE+1);
-localparam L__EDGE_TIMER_START  = ((1000+L__EDGE_TOL)*L__BAUDMETHOD+500)/1000-1;
-localparam L__EDGE_TIMER_TOL    = (2*L__EDGE_TOL*L__BAUDMETHOD+500)/1000;
 localparam L__NRX = 1+8+L__NSTOP;
+localparam L__EVENT_COUNT = 2*L__NRX-1;
+localparam L__EVENT_COUNT_NBITS = $clog2(L__EVENT_COUNT+1);
 localparam L__INFIFO = @INFIFO@;
 localparam L__INFIFO_NBITS = $clog2((L__INFIFO==0)?1:L__INFIFO);
 generate
+// Either copy the input, register it, or put it through a synchronizer.
 wire s__Rx_sync;
 if (L__SYNC_LENGTH == 0) begin : gen__no_sync
   assign s__Rx_sync = @INPORT@;
@@ -63,26 +59,6 @@ end else begin : gen__deglitch
     s__Rx_deglitch <= { s__Rx_deglitch[0+:L__DEGLITCH_LENGTH-1], @INPORT@ };
   end
 end
-// Identify idle state for error recovery.  This consists of 1+8+nStop bits of
-// all ones.
-reg [L__IDLE_LENGTH_NBITS-1:0] s__Rx_input_idle_count = L__IDLE_LENGTH[L__IDLE_LENGTH_NBITS-1:0];
-always @ (posedge i_clk)
-  if (i_rst)
-    s__Rx_input_idle_count <= L__IDLE_LENGTH[L__IDLE_LENGTH_NBITS-1:0];
-  else if (s__Rx_deglitched == 1'b0)
-    s__Rx_input_idle_count <= L__IDLE_LENGTH[L__IDLE_LENGTH_NBITS-1:0];
-  else
-    s__Rx_input_idle_count <= s__Rx_input_idle_count - { {(L__IDLE_LENGTH_NBITS-1){1'b0}}, 1'b1 };
-reg s__Rx_input_idle = 1'b1;
-always @ (posedge i_clk)
-  if (i_rst)
-    s__Rx_input_idle <= 1'b1;
-  else if (s__Rx_deglitched == 1'b0)
-    s__Rx_input_idle <= 1'b0;
-  else if (s__Rx_input_idle_count == {(L__IDLE_LENGTH_NBITS){1'b0}})
-    s__Rx_input_idle <= 1'b1;
-  else
-    s__Rx_input_idle <= s__Rx_input_idle;
 // Identify edges
 reg s__Rx_last = 1'b1;
 always @ (posedge i_clk)
@@ -91,119 +67,97 @@ always @ (posedge i_clk)
   else
     s__Rx_last <= s__Rx_deglitched;
 reg s__Rx_edge = 1'b0;
-reg s__Rx_edge_value = 1'b1;
 always @ (posedge i_clk)
-  if (i_rst) begin
+  if (i_rst)
     s__Rx_edge <= 1'b0;
-    s__Rx_edge_value <= 1'b1;
-  end else begin
+  else
     s__Rx_edge <= (s__Rx_deglitched != s__Rx_last);
-    s__Rx_edge_value <= s__Rx_last;
-  end
-// State machine signal -- waiting for first edge of start bit.
-reg s__Rx_waiting;
-// Run a timer to (1) capture values at the center of bits and (2) ensure edges
-// are consistently timed to a +/-2.5% tolerance.
-reg [L__EDGE_TIMER_NBITS-1:0] s__Rx_edge_timer = {(L__EDGE_TIMER_NBITS){1'b0}};
-reg [L__EDGE_TIMER_NBITS-1:0] s__Rx_edge_cumtol = L__EDGE_TIMER_TOL[0+:L__EDGE_TIMER_NBITS];
-reg s__Rx_edge_timer_zero = 1'b0;
+// Run a timer at twice the desired edge frequency rate.  Synchronize it to the
+// incoming edges.
+reg [L__BAUDMETHOD_NBITS-1:0] s__Rx_event_time = L__BAUDMETHOD_MINUS[L__BAUDMETHOD_NBITS-1:0];
+reg s__Rx_event_time_msb = L__BAUDMETHOD_MINUS[L__BAUDMETHOD_NBITS-1];
+wire s__Rx_event_time_expired = ({s__Rx_event_time_msb,s__Rx_event_time[L__BAUDMETHOD_NBITS-1]} == 2'b01);
 always @ (posedge i_clk)
   if (i_rst) begin
-    s__Rx_edge_timer <= {(L__EDGE_TIMER_NBITS){1'b0}};
-    s__Rx_edge_cumtol <= L__EDGE_TIMER_TOL[0+:L__EDGE_TIMER_NBITS];
-    s__Rx_edge_timer_zero <= 1'b0;
-  end else if (s__Rx_input_idle || (s__Rx_waiting && !s__Rx_edge)) begin
-    s__Rx_edge_timer <= {(L__EDGE_TIMER_NBITS){1'b0}};
-    s__Rx_edge_cumtol <= L__EDGE_TIMER_TOL[0+:L__EDGE_TIMER_NBITS];
-    s__Rx_edge_timer_zero <= 1'b0;
-  end else if (s__Rx_edge) begin
-    s__Rx_edge_timer <= L__EDGE_TIMER_START[0+:L__EDGE_TIMER_NBITS];
-    s__Rx_edge_cumtol <= L__EDGE_TIMER_TOL[0+:L__EDGE_TIMER_NBITS];
-    s__Rx_edge_timer_zero <= 1'b0;
-  end else if (s__Rx_edge_timer_zero) begin
-    s__Rx_edge_timer <= L__EDGE_TIMER_START[0+:L__EDGE_TIMER_NBITS];
-    s__Rx_edge_cumtol <= s__Rx_edge_cumtol + L__EDGE_TIMER_TOL[0+:L__EDGE_TIMER_NBITS];
-    s__Rx_edge_timer_zero <= 1'b0;
+    s__Rx_event_time <= L__BAUDMETHOD_MINUS[L__BAUDMETHOD_NBITS-1:0];
+    s__Rx_event_time_msb <= L__BAUDMETHOD_MINUS[L__BAUDMETHOD_NBITS-1];
+  end else if (s__Rx_edge || s__Rx_event_time_expired) begin
+    s__Rx_event_time <= L__BAUDMETHOD_MINUS[L__BAUDMETHOD_NBITS-1:0];
+    s__Rx_event_time_msb <= L__BAUDMETHOD_MINUS[L__BAUDMETHOD_NBITS-1];
   end else begin
-    s__Rx_edge_timer <= s__Rx_edge_timer - { {(L__EDGE_TIMER_NBITS-1){1'b0}}, 1'b1 };
-    s__Rx_edge_cumtol <= s__Rx_edge_cumtol;
-    s__Rx_edge_timer_zero <= (s__Rx_edge_timer == { {(L__EDGE_TIMER_NBITS-1){1'b0}}, 1'b1 });
+    s__Rx_event_time <= s__Rx_event_time - { {(L__BAUDMETHOD_NBITS-1){1'b0}}, 1'b1 };
+    s__Rx_event_time_msb <= s__Rx_event_time[L__BAUDMETHOD_NBITS-1];
   end
-reg s__Rx_edge_error = 1'b0;
-// Edge detector is a composite of incoming edges and fabricated edges.
-assign s__Rx_edge_out = s__Rx_edge || s__Rx_edge_timer_zero;
-// Detect poorly timed edges.  Clear the detection when the input has been idle
-// long enough for there to have been no transmitted data.
+// Fabricate composite event detection.
+reg s__Rx_idle;
+wire s__Rx_wait_edge;
+reg s__Rx_event = 1'b0;
 always @ (posedge i_clk)
   if (i_rst)
-    s__Rx_edge_error <= 1'b0;
-  else if (s__Rx_input_idle)
-    s__Rx_edge_error <= 1'b0;
-  else if (s__Rx_edge && (s__Rx_edge_timer > s__Rx_edge_cumtol))
-    s__Rx_edge_error <= 1'b1;
+    s__Rx_event <= 1'b0;
   else
-    s__Rx_edge_error <= s__Rx_edge_error;
-// Record the received bit stream after edges occur.
-// Note:  L__NRX is always 4 bits long since NSTOP is either 1 or 2.
-reg [L__NRX-1:1] s__Rx_s = {(L__NRX-1){1'b1}};
-always @ (posedge i_clk)
-  if (i_rst)
-    s__Rx_s <= {(L__NRX-1){1'b1}};
-  else if (s__Rx_edge_out)
-    s__Rx_s <= { s__Rx_edge_value, s__Rx_s[2+:L__NRX-2] };
-// State machine:  s__Rx_count == 0 (s__Rx_waiting == 1) means no edges have
-// been encountered.  Otherwise s__Rx_count is the number of edges encountered
-// (at the leading edges of the bits being recorded).  Wait until the first
-// real or fake edge following the last stop bit to record the data (to ensure
-// it isn't glitched in the middle).
-reg s__Rx_error_p;
-initial s__Rx_waiting = 1'b1;
-reg [3:0] s__Rx_count = 4'd0;
-reg s__Rx_wr = 1'b0;
+    s__Rx_event <= ~s__Rx_event && ((s__Rx_wait_edge && s__Rx_edge) || (~s__Rx_idle && s__Rx_event_time_expired));
+// State machine -- idle state and event (edge/fabricated-edge and midpoint) counter.
+initial s__Rx_idle = 1'b1;
+reg [L__EVENT_COUNT_NBITS-1:0] s__Rx_event_count = L__EVENT_COUNT[L__EVENT_COUNT_NBITS-1:0];
+reg s__Rx_event_count_zero = 1'b1;
 always @ (posedge i_clk)
   if (i_rst) begin
-    s__Rx_waiting <= 1'b1;
-    s__Rx_count <= 4'd0;
-    s__Rx_wr <= 1'b0;
+    s__Rx_event_count <= L__EVENT_COUNT[L__EVENT_COUNT_NBITS-1:0];
+    s__Rx_idle <= 1'b1;
+    s__Rx_event_count_zero <= 1'b1;
   end else begin
-    s__Rx_waiting <= s__Rx_waiting;
-    s__Rx_wr <= 1'b0;
-    if (s__Rx_edge_out)
-      if (s__Rx_count < L__NRX[0+:4]) begin
-        s__Rx_waiting <= 1'b0;
-        s__Rx_count <= s__Rx_count + 4'd1;
-      end else begin
-        if (s__Rx_deglitched == 1'b0) // immediate start bit
-          s__Rx_count <= 4'd1;
-        else begin
-          s__Rx_waiting <= 1'b1;
-          s__Rx_count <= 4'd0;
-        end
-        s__Rx_wr <= !s__Rx_error_p && !s__Rx_error;
-      end
+    if (s__Rx_idle && s__Rx_event)
+      s__Rx_idle <= 1'b0;
     else
-      s__Rx_count <= s__Rx_count;
+      s__Rx_idle <= (s__Rx_event_count_zero) ? 1'b1: s__Rx_idle;
+    if (s__Rx_idle) begin
+      s__Rx_event_count <= L__EVENT_COUNT[L__EVENT_COUNT_NBITS-1:0];
+      s__Rx_event_count_zero <= 1'b0;
+    end else if (s__Rx_event) begin
+      s__Rx_event_count <= s__Rx_event_count - { {(L__EVENT_COUNT_NBITS-1){1'b0}}, 1'b1 };
+      s__Rx_event_count_zero <= (s__Rx_event_count == { {(L__EVENT_COUNT_NBITS-1){1'b0}}, 1'b1 });
+    end else begin
+      s__Rx_event_count <= s__Rx_event_count;
+      s__Rx_event_count_zero <= 1'b0;
+    end
   end
-// Check for bad bit sequence.
-initial s__Rx_error_p = 1'b0;
-wire s__Rx_start_p = s__Rx_s[1];
-wire [L__NSTOP-1:0] s__Rx_stop_p;
-if (L__NSTOP == 1) begin : gen__check_1stop
-  assign s__Rx_stop_p = s__Rx_edge_value;
-end else begin : gen__check_2stop
-  assign s__Rx_stop_p = { s__Rx_edge_value, s__Rx_s[L__NRX-1:10] };
-end
+assign s__Rx_wait_edge = s__Rx_idle || (L__EVENT_COUNT[0] ^ s__Rx_event_count[0]);
+wire s__Rx_wait_sample = ~s__Rx_wait_edge;
+// Generate a strobe when a new bit is to be recorded.
+reg s__Rx_got_bit = 1'b0;
 always @ (posedge i_clk)
   if (i_rst)
-    s__Rx_error_p <= 1'b0;
-  else if (s__Rx_input_idle)
-    s__Rx_error_p <= 1'b0;
-  else if ((s__Rx_count == L__NRX[0+:4]) && ((s__Rx_start_p != 1'b0) || ~&s__Rx_stop_p))
-    s__Rx_error_p <= 1'b1;
+    s__Rx_got_bit <= 1'b0;
   else
-    s__Rx_error_p <= s__Rx_error_p;
+    s__Rx_got_bit <= (~s__Rx_idle && s__Rx_wait_sample && s__Rx_event);
+// Record the received bit stream after edges occur (start bit is always discarded)
+reg [L__NRX-1:2] s__Rx_s = {(L__NRX-2){1'b1}};
+always @ (posedge i_clk)
+  if (i_rst)
+    s__Rx_s <= {(L__NRX-2){1'b1}};
+  else if (s__Rx_got_bit)
+    s__Rx_s <= { s__Rx_last, s__Rx_s[3+:L__NRX-3] };
+  else
+    s__Rx_s <= s__Rx_s;
+// Generate strobe to write the received byte to the output buffer.
+reg s__Rx_wr = 1'b0;
+reg [3:0] s__Rx_count = L__NRX[0+:4] - 4'd1;
+always @ (posedge i_clk)
+  if (i_rst) begin
+    s__Rx_wr <= 1'b0;
+    s__Rx_count <= L__NRX[0+:4] - 4'd1;
+  end else if (s__Rx_idle) begin
+    s__Rx_wr <= 1'b0;
+    s__Rx_count <= L__NRX[0+:4] - 4'd1;
+  end else if (s__Rx_got_bit) begin
+    s__Rx_wr <= (s__Rx_count == 4'd1);
+    s__Rx_count <= s__Rx_count - 4'd1;
+  end else begin
+    s__Rx_wr <= 1'b0;
+    s__Rx_count <= s__Rx_count;
+  end
 // Optional FIFO
-reg s__Rx_inbuf_error = 1'b0;
 if (L__INFIFO == 0) begin : gen__nofifo
   always @ (posedge i_clk)
     if (i_rst) begin
@@ -211,7 +165,7 @@ if (L__INFIFO == 0) begin : gen__nofifo
       s__Rx <= 8'h00;
     end else begin
       if (s__Rx_wr)
-        s__Rx <= s__Rx_s[1+:8];
+        s__Rx <= s__Rx_s[2+:8];
       else
         s__Rx <= s__Rx;
       if (s__Rx_wr) begin
@@ -226,11 +180,6 @@ if (L__INFIFO == 0) begin : gen__nofifo
           s__Rx_empty <= s__Rx_empty;
       end
     end
-  always @ (posedge i_clk)
-    if (i_rst)
-      s__Rx_inbuf_error <= 1'b0;
-    else
-      s__Rx_inbuf_error <= (s__Rx_empty && s__Rx_rd) || (!s__Rx_empty && s__Rx_wr&& !s__Rx_rd );
 end else begin : gen__fifo
   reg [L__INFIFO_NBITS:0] s__Rx_fifo_addr_in;
   reg [L__INFIFO_NBITS:0] s__Rx_fifo_addr_out;
@@ -270,7 +219,7 @@ end else begin : gen__fifo
       s__Rx_fifo_addr_in <= {(L__INFIFO_NBITS+1){1'b0}};
     else if (s__Rx_wr && (!s__Rx_full || s__Rx_shift)) begin
       s__Rx_fifo_addr_in <= s__Rx_fifo_addr_in + { {(L__INFIFO_NBITS){1'b0}}, 1'b1 };
-      s__Rx_fifo_mem[s__Rx_fifo_addr_in[0+:L__INFIFO_NBITS]] <= s__Rx_s[1+:8];
+      s__Rx_fifo_mem[s__Rx_fifo_addr_in[0+:L__INFIFO_NBITS]] <= s__Rx_s[2+:8];
     end else
       s__Rx_fifo_addr_in <= s__Rx_fifo_addr_in;
   initial s__Rx_fifo_addr_out = {(L__INFIFO_NBITS+1){1'b0}};
@@ -283,38 +232,7 @@ end else begin : gen__fifo
       s__Rx <= s__Rx_fifo_mem[s__Rx_fifo_addr_out[0+:L__INFIFO_NBITS]];
     end else begin
       s__Rx_fifo_addr_out <= s__Rx_fifo_addr_out;
+      s__Rx <= s__Rx;
     end
-  always @ (posedge i_clk)
-    if (i_rst)
-      s__Rx_inbuf_error <= 1'b0;
-    else
-      s__Rx_inbuf_error <= (s__Rx_empty && s__Rx_rd) || (s__Rx_full && s__Rx_wr && !s__Rx_shift);
 end
-// Global error state.
-always @ (posedge i_clk)
-  if (i_rst)
-    s__Rx_error <= 3'h0;
-  else begin
-    // read error
-    if (s__Rx_inbuf_error)
-      s__Rx_error[0] <= 1'b1;
-    else if (s__Rx_error_rd)
-      s__Rx_error[0] <= 1'b0;
-    else
-      s__Rx_error[0] <= s__Rx_error[0];
-    // edge rate error
-    if (s__Rx_edge_error)
-      s__Rx_error[1] <= 1'b1;
-    else if (s__Rx_error_rd)
-      s__Rx_error[1] <= 1'b0;
-    else
-      s__Rx_error[1] <= s__Rx_error[1];
-    // missing start or stop bit(s)
-    if (s__Rx_edge_out && (s__Rx_count == L__NRX[0+:4]) && s__Rx_error_p)
-      s__Rx_error[2] <= 1'b1;
-    else if (s__Rx_error_rd)
-      s__Rx_error[2] <= 1'b0;
-    else
-      s__Rx_error[2] <= s__Rx_error[2];
-  end
 endgenerate

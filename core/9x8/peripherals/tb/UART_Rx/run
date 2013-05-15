@@ -3,14 +3,6 @@
 
 NAME=UART_Rx
 
-cat <<EOF > bad-112089
-02
-EOF
-
-cat <<EOF > bad-118310
-06
-EOF
-
 cat <<EOF > good
 48
 65
@@ -27,39 +19,20 @@ cat <<EOF > good
 0d
 0a
 00
-00
 EOF
 
-# Test +/-2.7% +/-2.3% and 0% baud rate errors against defalt 2.5% tolerance.
+# Test +/-2.7% and 0% baud rates.
 cp tb_UART_Rx.s-normal tb_UART_Rx.s;
-for baud in 112089 112550 115200 117850 118310; do
+for baud in 112089 115200 118310; do
   sed -e "s/115200/${baud}/" tb_${NAME}.9x8-good > tb_${NAME}.9x8;
   ../../../../../ssbcc -q -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
   iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
-  if [ ${baud} -lt 112320 ]; then
-    tbcompare="bad-112089";
-  elif [ 118079 -lt ${baud} ]; then
-    tbcompare="bad-118310";
-  else
-    tbcompare="good";
-  fi
   ./tb > tb.out;
-  if ! cmp -s tb.out ${tbcompare}; then
-    echo "${NAME} failed testing ${tbcompare} baud rate:  ${baud}" > /dev/stderr;
+  if ! cmp -s tb.out good; then
+    echo "${NAME} failed testing baud rate:  ${baud}" > /dev/stderr;
     exit 1;
   fi
 done
-
-# Test -2.7% baud rate error against 3.0% tolerance.
-cp tb_UART_Rx.s-normal tb_UART_Rx.s;
-sed -e "s/115200/112089/" -e "s/G_BAUD$/G_BAUD edgetol=3/" tb_${NAME}.9x8-good > tb_${NAME}.9x8;
-../../../../../ssbcc -q -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
-iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
-./tb > tb.out
-if ! cmp tb.out good; then
-  echo "${NAME} failed testing 112320 baud rate against 3% tolerance" > /dev/stderr;
-  exit 1;
-fi
 
 # Partial test for input FIFO.
 cp tb_UART_Rx.s-fifo tb_UART_Rx.s;

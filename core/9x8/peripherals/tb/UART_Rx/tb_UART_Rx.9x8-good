@@ -11,7 +11,6 @@ PARAMETER       G_BAUD          115200
 
 PERIPHERAL      UART_Rx         inport=I_UART_RX \
                                 inempty=I_UART_RX_EMPTY \
-                                inerror=I_UART_RX_ERROR \
                                 insignal=i_uart \
                                 baudmethod=G_CLK_FREQ_HZ/G_BAUD
 
