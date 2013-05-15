@@ -13,7 +13,6 @@ PORTCOMMENT UART1
 PERIPHERAL      UART    inport=I_UART1_Rx \
                         outport=O_UART1_Tx \
                         inempty=I_UART1_RX_EMPTY \
-                        inerror=I_UART1_RX_ERROR \
                         outstatus=I_UART1_TX_BUSY \
                         baudmethod=G_CLK_FREQ_HZ/G_BAUD \
                         insignal=i_uart1_rx \
@@ -25,7 +24,6 @@ PORTCOMMENT UART2
 PERIPHERAL      UART    inport=I_UART2_Rx \
                         outport=O_UART2_Tx \
                         inempty=I_UART2_RX_EMPTY \
-                        inerror=I_UART2_RX_ERROR \
                         outstatus=I_UART2_TX_BUSY \
                         baudmethod=G_CLK_FREQ_HZ/230400 \
                         insignal=i_uart2_rx \
