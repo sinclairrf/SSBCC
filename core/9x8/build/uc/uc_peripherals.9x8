@@ -61,14 +61,12 @@ PERIPHERAL      timer           inport=I_TIMER \
 PERIPHERAL      UART            inport=I_UART1_RX \
                                 outport=O_UART1_TX \
                                 inempty=I_UART1_INEMPTY \
-                                inerror=I_UART1_INERROR \
                                 outstatus=I_UART1_OUTSTATUS \
                                 baudmethod=G_CLK_FREQ_HZ/115200
 
 PERIPHERAL      UART            inport=I_UART2_RX \
                                 outport=O_UART2_TX \
                                 inempty=I_UART2_INEMPTY \
-                                inerror=I_UART2_INERROR \
                                 outstatus=I_UART2_OUTSTATUS \
                                 baudmethod=G_CLK_FREQ_HZ/115200 \
                                 insignal=i_uart2_rx \
