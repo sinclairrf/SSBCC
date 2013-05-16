@@ -13,8 +13,13 @@
 #     ISE-13.3  7.090 ns        141.0 MHz       (required 6.90 ns period)
 #     ISE-14.4  7.068 ns        141.5 MHz       (required 6.90 ns period)
 #
-# Logic utilization
-#   Xilinx XC3S50A: 536 Slices, 885 4-input LUTS
+# Logic utilization (minimum resources)
+#   Xilinx      XC3S50A         ISE 11.4        392 Slices, 713 4-input LUTs, 3 BRAMS
+#                               ISE 12.4, 13.3, and 14.4 produce the same utilization
+#   Xilinx      XC6SLX4         ISE 11.4        212 Slices, 508 Slice LUTs, 3 RAMB8BERs
+#                               ISE 12.4        158 Slices, 463 Slice LUTs, 5 RAMB8BERs
+#                               ISE 13.3        157 Slices, 432 Slice LUTs, 5 RAMB8BERs
+#                               ISE 14.4        169 Slices, 413 Slice LUTs, 5 RAMB8BERs
 
 ARCHITECTURE core/9x8 Verilog
 
