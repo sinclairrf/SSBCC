@@ -3,4 +3,13 @@
 
 .main
 
-  0x01 :forever O_LED outport 0xFF :outer 0xFF :inner .jumpc(inner,1-) drop .jumpc(outer) drop 0x01 ^ .jump(forever)
+  0x01
+  :forever
+
+    ; toggle the LED
+    0x01 ^ O_LED outport
+
+    ; pause for 256*256*3 or so clock cycles
+    0xFF :outer 0xFF :inner .jumpc(inner,1-) drop .jumpc(outer,1-) drop
+
+  .jump(forever)
