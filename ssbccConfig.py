@@ -337,7 +337,7 @@ class SSBCCconfig():
     """
     Indicate whether or not the specified symbol is  the name of a parameter.
     """
-    if re.match(r'G_\w+',name) and name in self.symbols:
+    if re.match(r'[GL]_\w+',name) and name in self.symbols:
       return True;
     else:
       return False;
