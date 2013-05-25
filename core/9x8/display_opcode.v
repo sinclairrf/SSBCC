@@ -1,6 +1,6 @@
 // short, human-readable versions of s_opcode suitable for waveform viewers
 reg [3*8-1:0] s_opcode_name = "nop";
-always @ (s_opcode)
+always @ (posedge i_clk)
   casez (s_opcode)
     9'b00_0000_000 : s_opcode_name = "nop";
     9'b00_0000_001 : s_opcode_name = "<<0";
