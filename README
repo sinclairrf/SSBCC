@@ -339,6 +339,10 @@ Two examples of I2C device operation are included in the examples directory.
 
 The following peripherals are provided:
   adder_16bit   16-bit adder/subtractor
+  AXI4_Lite_Slave_DualPortRAM
+                dual-port-ram interface for the micro controller to act as an
+                AXI4 Lite slave
+                Note:  This has not been tested on hardware yet.
   latch         latch wide inputs for sampling
   monitor_stack simulation peripheral to validate stack health
   open_drain    for software-implemented I2C busses or similar
