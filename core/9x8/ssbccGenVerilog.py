@@ -384,7 +384,7 @@ def genMemories(fp,config,programBody):
   if isLUT:
     genMemories_assign(fp,'read',thisPacked,thisPacking,'s_Np_stack_ptr','s_Np_stack');
   else:
-    fp.write('always @ (s_Np_stack_reg)\n');
+    fp.write('always @ (*)\n');
     fp.write('  s_Np_stack <= s_Np_stack_reg;\n');
   fp.write('\n');
   #
@@ -495,7 +495,7 @@ def genMemories(fp,config,programBody):
       memTarget = 's_memory';
     else:
       memTarget = '{ not_used_s_memory, s_memory }';
-    fp.write('always @ (s_opcode,s_T)\n');
+    fp.write('always @ (*)\n');
     fp.write('  case (s_opcode[0+:2])\n');
     for ixMem in range(len(lclMemParam)):
       thisParam = lclMemParam[ixMem];
@@ -618,7 +618,7 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
     elif mode == 'read' and not isLUT:
       fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
     elif mode == 'read' and isLUT:
-      fp.write('always @ (%s)\n' % thisAddr);
+      fp.write('always @ (*)\n');
       fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
 
 def genMemories_init(fp,config,packing,memName,width=8):
