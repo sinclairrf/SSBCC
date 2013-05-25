@@ -77,13 +77,18 @@ always @ (s__axi_got_wdata)
 initial o_rvalid = 1'b0;
 always @ (s__axi_got_raddr)
   o_rvalid <= s__axi_got_raddr;
+wire [3:0] s__wstrb;
+genvar ix__wstrb;
+for (ix__wstrb=0; ix__wstrb<4; ix__wstrb=ix__wstrb+1) begin : gen__wstrb
+  assign s__wstrb[ix__wstrb] = s__axi_got_waddr && i_wvalid && i_wstrb[ix__wstrb];
+end
 genvar ix__mem;
 for (ix__mem=0; ix__mem<4; ix__mem=ix__mem+1) begin : gen__wr
-  wire [1:0] s__ix_mem = ix__mem;
+  localparam [1:0] L__ix_mem = ix__mem;
   always @ (posedge i_aclk) begin
-    if (s__axi_got_waddr && i_wvalid && i_wstrb[ix__mem])
-      s__mem[{ s__axi_addr, s__ix_mem }] = i_wdata[8*ix__mem+:8];
-    o_rdata[8*ix__mem+:8] <= s__mem[{ s__axi_addr, s__ix_mem }];
+    if (s__wstrb[ix__mem])
+      s__mem[{ s__axi_addr, L__ix_mem }] = i_wdata[8*ix__mem+:8];
+    o_rdata[8*ix__mem+:8] <= s__mem[{ s__axi_addr, L__ix_mem }];
   end
 end
 // Micro controller side of the dual-port memory.
