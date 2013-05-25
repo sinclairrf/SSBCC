@@ -377,7 +377,7 @@ class asmDef_9x8:
           raise asmDef.AsmException('Symbol "%s is not an input port at %s' % (token['argument'][0]['value'],token['loc']));
       if (token['type'] == 'macro') and (token['value'] == '.outport'):
         if not self.IsOutport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Symbol "%s" is not an output port "%s" at %s' % (token['argument'][0]['value'],token['loc']));
+          raise asmDef.AsmException('Symbol "%s" is not an output port at %s' % (token['argument'][0]['value'],token['loc']));
     # Ensure referenced symbols are already defined (other than labels and
     # function names for call and jump macros).
     checkBody = False;
