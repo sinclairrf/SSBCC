@@ -9,7 +9,7 @@ generate
 reg s__PC_error = 1'b0;
 localparam L__INSTRUCTION_MAX = @NINSTRUCTIONS@-1;
 always @ (posedge i_clk)
-  if (s_PC > L__INSTRUCTION_MAX[0+:C_PC_WIDTH]) begin
+  if (~&L__INSTRUCTION_MAX[0+:C_PC_WIDTH] && (s_PC > L__INSTRUCTION_MAX[0+:C_PC_WIDTH])) begin
     $display("%12d : PC passed instruction space", $time);
     s__PC_error <= 1'b1;
   end

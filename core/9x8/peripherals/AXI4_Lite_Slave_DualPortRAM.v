@@ -72,11 +72,11 @@ always @ (posedge i_aclk)
     end
   end
 initial o_bvalid = 1'b0;
-always @ (s__axi_got_wdata)
-  o_bvalid <= s__axi_got_wdata;
+always @ (*)
+  o_bvalid = s__axi_got_wdata;
 initial o_rvalid = 1'b0;
 always @ (s__axi_got_raddr)
-  o_rvalid <= s__axi_got_raddr;
+  o_rvalid = s__axi_got_raddr;
 wire [3:0] s__wstrb;
 genvar ix__wstrb;
 for (ix__wstrb=0; ix__wstrb<4; ix__wstrb=ix__wstrb+1) begin : gen__wstrb
@@ -84,11 +84,11 @@ for (ix__wstrb=0; ix__wstrb<4; ix__wstrb=ix__wstrb+1) begin : gen__wstrb
 end
 genvar ix__mem;
 for (ix__mem=0; ix__mem<4; ix__mem=ix__mem+1) begin : gen__wr
-  localparam [1:0] L__ix_mem = ix__mem;
+  localparam L__ix_mem = ix__mem;
   always @ (posedge i_aclk) begin
     if (s__wstrb[ix__mem])
-      s__mem[{ s__axi_addr, L__ix_mem }] = i_wdata[8*ix__mem+:8];
-    o_rdata[8*ix__mem+:8] <= s__mem[{ s__axi_addr, L__ix_mem }];
+      s__mem[{ s__axi_addr, L__ix_mem[0+:2] }] = i_wdata[8*ix__mem+:8];
+    o_rdata[8*ix__mem+:8] <= s__mem[{ s__axi_addr, L__ix_mem[0+:2] }];
   end
 end
 // Micro controller side of the dual-port memory.
@@ -97,5 +97,5 @@ always @ (posedge i_clk) begin
     s__mem[s__mc_addr] = s__mc_wdata;
 end
 always @ (*)
-  s__mc_rdata <= s__mem[s__mc_addr];
+  s__mc_rdata = s__mem[s__mc_addr];
 endgenerate

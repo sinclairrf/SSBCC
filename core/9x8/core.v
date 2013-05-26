@@ -383,9 +383,9 @@ always @ (posedge i_clk)
 initial s_R_stack_ptr_next = {(C_RETURN_PTR_WIDTH){1'b1}};
 always @ (*)
   case (s_return)
-    C_RETURN_INC: s_R_stack_ptr_next <= s_R_stack_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-    C_RETURN_DEC: s_R_stack_ptr_next <= s_R_stack_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
-         default: s_R_stack_ptr_next <= s_R_stack_ptr;
+    C_RETURN_INC: s_R_stack_ptr_next = s_R_stack_ptr + { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+    C_RETURN_DEC: s_R_stack_ptr_next = s_R_stack_ptr - { {(C_RETURN_PTR_WIDTH-1){1'b0}}, 1'b1 };
+         default: s_R_stack_ptr_next = s_R_stack_ptr;
   endcase
 
 /*
@@ -419,9 +419,9 @@ reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr;
 reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_next;
 always @ (*)
   case (s_stack)
-    C_STACK_INC: s_Np_stack_ptr_next <= s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-    C_STACK_DEC: s_Np_stack_ptr_next <= s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
-        default: s_Np_stack_ptr_next <= s_Np_stack_ptr;
+    C_STACK_INC: s_Np_stack_ptr_next = s_Np_stack_ptr + { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+    C_STACK_DEC: s_Np_stack_ptr_next = s_Np_stack_ptr - { {(C_DATA_PTR_WIDTH-1){1'b0}}, 1'b1 };
+        default: s_Np_stack_ptr_next = s_Np_stack_ptr;
   endcase
 
 initial s_Np_stack_ptr = { {(C_DATA_PTR_WIDTH-2){1'b1}}, 2'b01 };

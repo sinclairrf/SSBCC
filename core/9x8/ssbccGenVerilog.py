@@ -385,7 +385,7 @@ def genMemories(fp,config,programBody):
     genMemories_assign(fp,'read',thisPacked,thisPacking,'s_Np_stack_ptr','s_Np_stack');
   else:
     fp.write('always @ (*)\n');
-    fp.write('  s_Np_stack <= s_Np_stack_reg;\n');
+    fp.write('  s_Np_stack = s_Np_stack_reg;\n');
   fp.write('\n');
   #
   # Generate the return_stack read and write logic.
@@ -619,7 +619,7 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
       fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
     elif mode == 'read' and isLUT:
       fp.write('always @ (*)\n');
-      fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
+      fp.write('  %s = %s[%s];\n' % (thisSignal,memName,thisAddr,));
 
 def genMemories_init(fp,config,packing,memName,width=8):
   """
