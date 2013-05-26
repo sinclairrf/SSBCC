@@ -45,7 +45,7 @@ class SSBCCperipheral:
       if value == None:
         raise SSBCCException('%s missing value at line %d' % (name,ixLine,));
       if not re.match(reformat,value):
-        raise SSBCCException('Inport symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
+        raise SSBCCException('I/O symbol at line %d does not match required format "%s":  "%s"' % (ixLine,reformat,value,));
       if optFn != None:
         value = optFn(value);
       setattr(self,name,value);
