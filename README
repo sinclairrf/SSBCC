@@ -58,6 +58,8 @@ were obtained.
 
 VENDOR          DEVICE          BEST SPEED      SMALLEST RESOURCE UTILIZATION
 ------          ------          ----------      ----------------------------
+Lattice         LCMXO2-640ZE-3   98.4 MHz       206 LUTs (preliminary)
+Lattice         LFE2-6E-7       157.9 MHz       203 LUTs (preliminary)
 Xilinx          Spartan-3A      148.3 MHz       130 slices, 231 4-input LUTS
 Xilinx          Spartan-6       200.0 MHz        36 slices, 120 Slice LUTs
 
