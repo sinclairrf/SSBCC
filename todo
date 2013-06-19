@@ -1,6 +1,7 @@
   BUGS:
 
   ssbcc
+*   accommodate Lattice Diamond synthesis and memory initialization
 *   write COMBINE MEMORY tests
     add "share memory" feature?
       for dual-port memories in slave peripherals (i.e., registers readable by the bus master)
