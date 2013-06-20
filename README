@@ -433,7 +433,7 @@ A "trace" peripheral is also provided that dumps the entire execution history.
 This was used to validate the processor core.
 
 
-RESOURCE ALLOCATION
+MEMORY ALLOCATION
 ================================================================================
 
 The DATA_STACK, RETURN_STACK, INSTRUCTION, and MEMORY configuration commands
@@ -523,6 +523,117 @@ M9Ks for the instruction ROM and the data stack.
 
 WARNING:  Some devices, such as Xilinx' Spartan-3A devices do not support
 asynchronous reads, so the COMBINE configuration command does not work for them.
+
+The MEMORY configuration command is used as follows to allocate a 128-byte RAM
+named "myram" and to allocate a 32-byte ROM named "myrom".  Zero to four
+memories can be allocated, each with up to 256 bytes.
+
+  MEMORY RAM myram 128
+  MEMORY ROM myrom  32
+
+The assembly code to lay out the memory uses the ".memory" directive to identify
+the memory and the ".variable" directive to identify the symbol and its content.
+Single or multiple values can be listed and "*N" can be used to identify a
+repeat count.
+
+  .memory RAM myram
+  .variable a 0
+  .variable b 0
+  .variable c 0 0 0 0
+  .variable d 0*4
+
+  .memory ROM myrom
+  .variable coeff_table 0x04
+                        0x08
+                        0x10
+                        0x20
+  .variable hello_world N"Hello World!\r\n"
+
+Single values are fetched from or store to memory using the following assembly:
+
+  .fetchvalue(a)
+  0.12 .storevalue(b)
+
+Multi-byte values are fetched or stored as follows, which copies the four values
+from coeff_table, which is store in a ROM, to d:
+
+  .fetchvector(coeff_table,4) .storevector(d,4)
+
+The memory size is available to the assembly code using the "size" dictionary.
+for example, the code to clear "myram" above is:
+
+  ${size[myram]-1} :loop 0 over .store(myram) drop .jumpc(loop,1-) drop
+
+The available single-cycle memory operation macros are:
+  .fetch(mem_name)      replaces T with the value at the address T in the memory
+                        mem_name
+  .fetch+(mem_name)     pushes the value at address T in the memory mem_name
+                        into the data stack below T and increments T
+                        Note:  This is useful for fetching successive values
+                               from memory into the data stack.
+  .fetch-(mem_name)     similar to .fetch+ but decrements T
+  .store(ram_name)      stores N at address T in the RAM ram_name, also drops
+                        the top of the data stack
+  .store+(ram_name)     stores N at address T in the RAM ram_name, also drops N
+                        from the data stack and increments T
+  .store-(ram_name)     similar to .store+ but decrements T
+
+The following multi-cycle macros provide more generalized access to the
+memories:
+  .fetchvalue(var_name) fetches the single-byte value of var_name
+                        Note:  This is equivalent to "var_name .fetch(mem_name)"
+                               where mem_name is the memory in which var_name is
+                               stored.
+                        Using this macro helps prevent using the wrong memory.
+  .fetchindexed(var_name)
+                        uses the top of the data stack as an index into var_name
+                        Note:  This is equivalent to the 3 instruction sequence
+                               "var_name + .fetch(mem_name)"
+  .fetchvector(var_name,N)
+                        fetches N values starting at var_name into the data
+                        stack with the value at var_name at the top and the
+                        value at var_name+N-1 deep in the stack.
+                        Note:  This is equivalent N+1 operation sequence
+                               "${var_name+N-1} .fetch-(mem_name) ...
+                               .fetch-(mem_name) .fetch(mem_name)"
+                               where ".fetch-(mem_name)" is repeated N-1 times.
+  .storevalue(var_name) stores the single-byte value at the top of the data
+                        stack at var_name
+                        Note:  This is equivalent to
+                               "var_name .store(mem_name) drop"
+                        Note:  The default "drop" instruction can be replaced by
+                               providing the optional second argument.  For
+                               example, the following instruction will store and
+                               then decrement the value at the top of the data
+                               stack:
+                                 .storevalue(var_name,1-)
+  .storeindexed(var_name)
+                        uses the top of the data stack as an index into var_name
+                        into which to store the next-to-top of the data stack.
+                        Note:  This is equivalent to the 4 instruction sequence
+                               "var_name + .store(mem_name) drop".
+                        Note:  The default "drop" instruction can be overriden
+                               by providing the optional second argument
+                               similarly to the .storevalue macro.
+  .storevector(var_name,N)
+                        Does the reverse of the .fetchvector macro.
+                        Note:  This is equivalent to the N+2 operation sequence
+                               "var_name .store+(mem_name) ... .store+(mem_name)
+                               .store(mem_name) drop"
+                               where ".store+(mem_name)" is repeated N-1 times.
+
+The .fetchvector and .storevector macros are intended to work with values stored
+MSB first in memory and the MSB toward the top of the data stack, similarly to
+the Forth language with multi-word values.  To demonstrate how this works,
+consider the examples of decrementing or incrementing a two-byte value:
+
+  ; ( u_LSB u_MSB - u_LSB' u_MSB' )
+  .function decrement_2byte
+  >r 1- dup -1= r> .return(+)
+
+  ; ( u_LSB u_MSB - u_LSB' u_MSB' )
+  .function increment_2byte
+  >r 1+ dup 0= r> .return(-)
 
 
 SIMULATIONS
