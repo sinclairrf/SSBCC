@@ -549,13 +549,13 @@ repeat count.
                         0x20
   .variable hello_world N"Hello World!\r\n"
 
-Single values are fetched from or store to memory using the following assembly:
+Single values are fetched from or stored to memory using the following assembly:
 
   .fetchvalue(a)
-  0.12 .storevalue(b)
+  0x12 .storevalue(b)
 
-Multi-byte values are fetched or stored as follows, which copies the four values
-from coeff_table, which is store in a ROM, to d:
+Multi-byte values are fetched or stored as follows.  This copies the four values
+from coeff_table, which is store in a ROM, to d.
 
   .fetchvector(coeff_table,4) .storevector(d,4)
 
