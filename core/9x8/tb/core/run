@@ -1,7 +1,10 @@
 #!/bin/bash
 
-../../../../ssbcc -q --display-opcode core.9x8 \
-|| exit 1;
+rm -f ssbcc;
+ln -s ../../../../ssbcc;
+
+./ssbcc -q --display-opcode core.9x8 \
+|| { echo "ssbcc failed on core.9x8" > /dev/stderr; exit 1; }
 
 verilator --lint-only core.v
 

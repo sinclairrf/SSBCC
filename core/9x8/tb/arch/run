@@ -2,18 +2,22 @@
 
 NAME="arch";
 
+rm -f ssbcc;
+ln -s ../../../../ssbcc;
+
 # Test moving data into and out of the data stack and the return stack.
 for MODE in nomem; do
   for ARCH in arch-${MODE}-*.9x8; do
+    TEST="${NAME}/${ARCH}";
     cp ${ARCH} arch.9x8
-    ../../../../ssbcc -q arch.9x8 || exit 1;
+    ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
     verilator --lint-only arch.v;
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - tb-${MODE}.good 2>&1`" ]; then
-      echo "${NAME}/${ARCH} failed" > /dev/stderr;
+      echo "${TEST} failed" > /dev/stderr;
       exit 1;
     fi
-    echo "Tested:  ${ARCH}";
+    echo "Tested:  ${TEST}";
   done
 done
 
@@ -22,6 +26,7 @@ done
 for ARCH in arch-calls-*.9x8; do
   SIZE="`echo ${ARCH} | sed -e 's/arch-calls-//' -e 's/[.-].*//'`";
   for (( ixcombine=0; ixcombine<3; ++ixcombine )); do
+    TEST="${NAME}/${ARCH}@${ixcombine}";
     case ${ixcombine} in
       ( 0 ) sed -e "s/@COMBINE@/INSTRUCTION ${SIZE}/" ${ARCH} > arch.9x8;;
       ( 1 ) sed -e "s/@COMBINE@/COMBINE INSTRUCTION,RETURN_STACK ${SIZE}/" ${ARCH} > arch.9x8;;
@@ -29,14 +34,14 @@ for ARCH in arch-calls-*.9x8; do
       ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
             exit 1;;
     esac
-    ../../../../ssbcc -q arch.9x8 || exit 1;
+    ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
     verilator --lint-only arch.v;
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - "arch-calls-${SIZE}.good" 2>&1`" ]; then
-      echo "${NAME}/${ARCH}@${ixcombine} failed" > /dev/stderr;
+      echo "${TEST} failed" > /dev/stderr;
       exit 1;
     fi
-    echo "Tested:  ${ARCH}@${ixcombine}";
+    echo "Tested:  ${TEST}";
   done
 done
 
@@ -45,6 +50,7 @@ done
 ARCH="arch-1mem";
 for SIZE in 16 32 64 128 256; do
   for (( ixcombine=0; ixcombine<4; ++ixcombine )); do
+    TEST="${NAME}/${ARCH}@${SIZE}.${ixcombine}";
     case ${ixcombine} in
       ( 0 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nINSTRUCTION 2048/" arch-1mem.9x8 > arch.9x8;;
       ( 1 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nCOMBINE INSTRUCTION,MEMORY 2048/" arch-1mem.9x8 > arch.9x8;;
@@ -53,19 +59,19 @@ for SIZE in 16 32 64 128 256; do
       ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
             exit 1;;
     esac
-    ../../../../ssbcc -q arch.9x8 || exit 1;
+    ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
     verilator --lint-only arch.v;
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - "${ARCH}-${SIZE}.good" 2>&1`" ]; then
-      echo "${NAME}/${ARCH}@${SIZE}.${ixcombine} failed" > /dev/stderr;
+      echo "${TEST} failed" > /dev/stderr;
       exit 1;
     fi
-    echo "Tested:  ${ARCH}@${SIZE}.${ixcombine}";
+    echo "Tested:  ${TEST}";
   done
 done
 
-# Remove the garbage files.
-rm -f arch.9x8 arch.9x8-meta arch.v tb;
+# Remove the temporary output files.
+rm -f arch.9x8 arch.9x8-meta arch.v ssbcc tb;
 
 # Print success message and return success indication.
 echo "Passed:  ${NAME}";
