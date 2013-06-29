@@ -433,16 +433,34 @@ A "trace" peripheral is also provided that dumps the entire execution history.
 This was used to validate the processor core.
 
 
-MEMORY ALLOCATION
+MEMORY ARCHITECTURE
 ================================================================================
 
 The DATA_STACK, RETURN_STACK, INSTRUCTION, and MEMORY configuration commands
-allocate memory for the data stack, instruction ROM, memory RAM and ROM, and the
-return stack respectively.  The COMBINE configuration command is used to
-coalesce the allocated memories, thereby reducing the FPGA resources required to
-implement the processor or make it more usable on architectures that do not have
-distributed memory.  The SRAM_WIDTH configuration command is use to specify FPGA
-architectures with block memories more than 9 bits wide.
+allocate memory for the data stack, return stack, instruction ROM, and memory
+RAM and ROM respectively.  The data stack, return stack, and memories are
+normally instantiated as dual-port LUT-based memories with asynchronous reads
+while the instruction memory is always instantiated with a synchronous read
+architecture.
+
+The COMBINE configuration command is used to coalesce memories and to convert
+LUT-based memories to synchronous SRAM-based memories.  For example, the large
+SRAMs in modern FPGAs are ideal for storing the instruction opcodes and their
+dual-ported access allows either the data stack or the return stack to be
+stored in a relatively small region at the end of the large instruction memory.
+Memories, which required dual-ported operation, can also be instantiated in
+large RAMs either individually or in combination with each other.  Conversion
+to SRAM-based memories is also useful for FPGA architectures that do not have
+efficient LUT-based memories.
+
+The INSTRUCTION configuration allocates memory for the processor instruction
+space.  It has the form "INSTRUCTION N" or "INSTRUCTION N*M" where N must be a
+power of 2.  The first form is used if the desired instruction memory size is a
+power of 2.  The second form is used to allocate M memory blocks of size N
+where M is not a power of 2.  For example, on an Altera Cyclone III, the
+configuration command "INSTRUCTION 1024*3" allocates three M9Ks for the
+instruction space, saving one M9K as compared to the configuration command
+"INSTRUCTION 4096".
 
 The DATA_STACK configuration command allocates memory for the data stack.  It
 has the form "DATA_STACK N" where N is the commanded size of the data stack.
@@ -451,58 +469,44 @@ N must be a power of 2.
 The RETURN_STACK configuration command allocates memory for the return stack and
 has the same format as the DATA_STACK configuration command.
 
-The INSTRUCTION configuration allocates memory for the processor instruction
-space.  It has the form "INSTRUCTION N" or "INSTRUCTION N*M" where N must be a
-power of 2.  The first form is used if the desired instruction memory size is a
-power of 2.  The second form is used to allocate M memory blocks of size N.  For
-example, on an Altera Cyclone III, the configuration command
-"INSTRUCTION 1024*3" allocates three M9Ks for the instruction space, saving one
-M9K as compared to the configuration command "INSTRUCTION 4096".
-
 The MEMORY configuration command is used to define one to four memories, either
-RAM or ROM, with up to 256 bytes.  If no MEMORY configuration command is issued,
-then no memories are allocated for the processor.  The MEMORY configuration
-command has the format "MEMORY {RAM|ROM} name N" where "{RAM|ROM}" specifies
-either a RAM or a ROM, name is the name of the memory and must start with an
-alphabetic character, and the size of the memory, N, must be a power of 2.  For
-example, "MEMORY RAM myram 64" allocates 64 bytes of memory to form a RAM named
-myram.  Similarly, "MEMORY ROM lut 256" defines a 256 byte ROM named lut.
+RAM or ROM, with up to 256 bytes each.  If no MEMORY configuration command is
+issued, then no memories are allocated for the processor.  The MEMORY
+configuration command has the format "MEMORY {RAM|ROM} name N" where
+"{RAM|ROM}" specifies either a RAM or a ROM, name is the name of the memory and
+must start with an alphabetic character, and the size of the memory, N, must be
+a power of 2.  For example, "MEMORY RAM myram 64" allocates 64 bytes of memory
+to form a RAM named myram.  Similarly, "MEMORY ROM lut 256" defines a 256 byte
+ROM named lut.  More details on using memories is provided in the next section.
 
 The COMBINE configuration command can be used to combine the various memories
 for more efficient processor implementation as follows:
 
-The configuration command "COMBINE MEMORY" will combine all of the memories,
-irrespective of whether they are RAMs or ROMs and irrespective of their size
-into the smallest single-port memory resource possible.  If a list of memories
-is provided, for example "COMBINE MEMORY(ram_a,ram_b,rom_c)," then the stated
-memories will be combined instead of all of the memories.
+  COMBINE INSTRUCTION,DATA_STACK
+  COMBINE INSTRUCTION,RETURN_STACK
+  COMBINE DATA_STACK,RETURN_STACK
+  COMBINE DATA_STACK
+  COMBINE RETURN_STACK
+  COMBINE <memlist>
 
-The configuration command "COMBINE INSTRUCTION,mem_type {N|N*M}" is used to
-place the stated memory type at the end of the INSTRUCTION memory space.
-mem_type can be MEMORY, MEMORY(list), DATA_STACK, or RETURN_STACK.  If this
-command is used then it replaces the INSTRUCTION configuration command.  If the
-return stack is combined with the instruction memory space, then it may use two
-instruction addresses for each return stack entry.  For example, the
-configuration command "COMBINE INSTRUCTION,RETURN_STACK 1024" requires 10 bits
-for each return stack entry.  Since this doesn't fit in the presumed 9-bit
-memory width, two instruction addresses are required for each return stack
-entry.
-
-The COMBINE configuration command can be used to combine any two of the
-following: MEMORY or MEMORY(list), DATA_STACK, or RETURN_STACK.  For example,
-"COMBINE MEMORY,DATA_STACK" will place all of the memories and the data stack in
-the same dual-port memory.  The same applies if a list of memory names is
-provided as an argument to MEMORY.
+The first two configuration commands place either the data stack or the return
+stack at the end of the instruction memory.  The third command uses a single
+dual-port memory for the data stack and the return stack. The fourth and fifth
+commands convert the data stack or the return stack from LUT-based memories to
+SRAM-based memories.  The sixth command converts the specified memories
+declared using the MEMORY configuration command from LUT-based memories to a
+single SRAM-based memory.
 
 The SRAM_WIDTH configuration command is used to make the memory allocations more
-efficient when the memory block width is more than 9 bits.  For example,
+efficient when the SRAM block width is more than 9 bits.  For example,
 Altera's Cyclone V family has 10-bit wide memory blocks and the configuration
-command "SRAM_WIDTH 10" is appropriate.  For example, the configuration command
+command "SRAM_WIDTH 10" is appropriate.  The configuration command
 sequence
 
+  INSTRUCTION     1024
   RETURN_STACK    32
   SRAM_WIDTH      10
-  COMBINE         INSTRUCTION,RETURN_STACK 1024
+  COMBINE         INSTRUCTION,RETURN_STACK
 
 will use a single 10-bit memory entry for each element of the return stack
 instead of packing the 10-bit values into two memory entries of a 9-bit wide
@@ -512,17 +516,29 @@ The following illustrates a possible configuration for a Spartan-6 with a
 2048-long SRAM and relatively large 64-deep data stack.  The data stack will be in
 the last 64 elements of the instruction memory.
 
-  DATA_STACK 64
-  COMBINE    INSTRUCTION,DATA_STACK 2048
+  INSTRUCTION   2048
+  DATA_STACK    64
+  COMBINE       INSTRUCTION,DATA_STACK
 
 The following illustrates a possible configuration for a Cyclone-III with three
 M9Ks for the instruction ROM and the data stack.
 
-  DATA_STACK 64
-  COMBINE INSTRUCTION,DATA_STACK 1024*3
+  INSTRUCTION   1024*3
+  DATA_STACK    64
+  COMBINE       INSTRUCTION,DATA_STACK
 
-WARNING:  Some devices, such as Xilinx' Spartan-3A devices do not support
+WARNING:  Some devices, such as Xilinx' Spartan-3A devices, do not support
 asynchronous reads, so the COMBINE configuration command does not work for them.
+
+WARNING:  Xilinx XST does not correctly infer a Block RAM when the
+"COMBINE INSTRUCTION,RETURN_STACK" configuration command is used and the
+instruction space is 1024 instructions or larger.  Xilinx is supposed to fix
+this in a future release of Vivado so the fix will only apply to 7-series or
+later FPGAs.
+
+
+MEMORY EXAMPLES
+================================================================================
 
 The MEMORY configuration command is used as follows to allocate a 128-byte RAM
 named "myram" and to allocate a 32-byte ROM named "myrom".  Zero to four

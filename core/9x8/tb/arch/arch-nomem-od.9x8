@@ -7,9 +7,11 @@
 ################################################################################
 
 ARCHITECTURE core/9x8 Verilog
+
+INSTRUCTION     2048
 RETURN_STACK    32
 DATA_STACK      32
-COMBINE         INSTRUCTION,DATA_STACK  2048
+COMBINE         INSTRUCTION,DATA_STACK
 
 PORTCOMMENT simulation completed strobe
 OUTPORT         strobe  o_done_strobe   O_DONE_STROBE

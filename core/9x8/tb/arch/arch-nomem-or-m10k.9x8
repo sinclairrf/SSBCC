@@ -7,10 +7,12 @@
 ################################################################################
 
 ARCHITECTURE core/9x8 Verilog
+
+INSTRUCTION     1024
 RETURN_STACK    32
 DATA_STACK      32
 SRAM_WIDTH      10
-COMBINE         INSTRUCTION,RETURN_STACK        1024
+COMBINE         INSTRUCTION,RETURN_STACK
 
 PORTCOMMENT simulation completed strobe
 OUTPORT         strobe  o_done_strobe   O_DONE_STROBE

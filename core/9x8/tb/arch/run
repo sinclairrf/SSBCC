@@ -25,12 +25,13 @@ done
 # "COMBINE" configuration commands.
 for ARCH in arch-calls-*.9x8; do
   SIZE="`echo ${ARCH} | sed -e 's/arch-calls-//' -e 's/[.-].*//'`";
-  for (( ixcombine=0; ixcombine<3; ++ixcombine )); do
+  for (( ixcombine=0; ixcombine<4; ++ixcombine )); do
     TEST="${NAME}/${ARCH}@${ixcombine}";
     case ${ixcombine} in
-      ( 0 ) sed -e "s/@COMBINE@/INSTRUCTION ${SIZE}/" ${ARCH} > arch.9x8;;
-      ( 1 ) sed -e "s/@COMBINE@/COMBINE INSTRUCTION,RETURN_STACK ${SIZE}/" ${ARCH} > arch.9x8;;
-      ( 2 ) sed -e "s/@COMBINE@/INSTRUCTION ${SIZE}\nCOMBINE RETURN_STACK,DATA_STACK/" ${ARCH} > arch.9x8;;
+      ( 0 ) sed -e "/@COMBINE@/d" ${ARCH} > arch.9x8;;
+      ( 1 ) sed -e "s/@COMBINE@/COMBINE INSTRUCTION,DATA_STACK/" ${ARCH} > arch.9x8;;
+      ( 2 ) sed -e "s/@COMBINE@/COMBINE INSTRUCTION,RETURN_STACK/" ${ARCH} > arch.9x8;;
+      ( 3 ) sed -e "s/@COMBINE@/COMBINE RETURN_STACK,DATA_STACK/" ${ARCH} > arch.9x8;;
       ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
             exit 1;;
     esac
@@ -45,17 +46,15 @@ for ARCH in arch-calls-*.9x8; do
   done
 done
 
-# Test memory writes and reads when there is only one memory for several memory
-# sizes and "COMBINE" configuration commands.
+# Test memory writes and reads when there is one memory for several memory sizes
+# and "COMBINE" configuration commands.
 ARCH="arch-1mem";
 for SIZE in 16 32 64 128 256; do
-  for (( ixcombine=0; ixcombine<4; ++ixcombine )); do
+  for (( ixcombine=0; ixcombine<2; ++ixcombine )); do
     TEST="${NAME}/${ARCH}@${SIZE}.${ixcombine}";
     case ${ixcombine} in
-      ( 0 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nINSTRUCTION 2048/" arch-1mem.9x8 > arch.9x8;;
-      ( 1 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nCOMBINE INSTRUCTION,MEMORY 2048/" arch-1mem.9x8 > arch.9x8;;
-      ( 2 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nINSTRUCTION 2048\nCOMBINE DATA_STACK,MEMORY/" arch-1mem.9x8 > arch.9x8;;
-      ( 3 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nINSTRUCTION 2048\nCOMBINE RETURN_STACK,MEMORY/" arch-1mem.9x8 > arch.9x8;;
+      ( 0 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}/" ${ARCH}.9x8 > arch.9x8;;
+      ( 1 ) sed -e "s/@CONFIG@/MEMORY RAM ram_a ${SIZE}\nCOMBINE ram_a/" ${ARCH}.9x8 > arch.9x8;;
       ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
             exit 1;;
     esac

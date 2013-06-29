@@ -61,13 +61,13 @@ always @ (s_T,s_opcode)
 
 // opcode = 000001_0xx
 // T pre-multiplexer for pushing repeated values onto the data stack
-reg [7:0] s_T_pre;
+reg [7:0] s_T_stack;
 always @ (*)
   case (s_opcode[0+:2])
-      2'b00 : s_T_pre = s_T;                    // dup
-      2'b01 : s_T_pre = s_R[0+:8];              // r@
-      2'b10 : s_T_pre = s_N;                    // over
-    default : s_T_pre = s_T;
+      2'b00 : s_T_stack = s_T;                  // dup
+      2'b01 : s_T_stack = s_R[0+:8];            // r@
+      2'b10 : s_T_stack = s_N;                  // over
+    default : s_T_stack = s_T;
   endcase
 
 //  opcode = 000011_x00 (adder) and 001xxx_x.. (incrementers)
@@ -392,22 +392,27 @@ always @ (*)
  * Operate the top of the data stack.
  */
 
+reg [7:0] s_T_pre = 8'd0;
+always @ (*)
+  case (s_bus_t)
+    C_BUS_T_MATH_ROTATE:        s_T_pre = s_math_rotate;
+    C_BUS_T_OPCODE:             s_T_pre = s_opcode[0+:8];  // push 8-bit value
+    C_BUS_T_N:                  s_T_pre = s_N;
+    C_BUS_T_PRE:                s_T_pre = s_T_stack;
+    C_BUS_T_ADDER:              s_T_pre = s_T_adder;
+    C_BUS_T_COMPARE:            s_T_pre = {(8){s_T_compare}};
+    C_BUS_T_INPORT:             s_T_pre = s_T_inport;
+    C_BUS_T_LOGIC:              s_T_pre = s_T_logic;
+    C_BUS_T_MEM:                s_T_pre = s_memory;
+    default:                    s_T_pre = s_T;
+  endcase
+
 initial s_T = 8'h00;
 always @ (posedge i_clk)
   if (i_rst)
     s_T <= 8'h00;
-  else case (s_bus_t)
-    C_BUS_T_MATH_ROTATE:        s_T <= s_math_rotate;
-    C_BUS_T_OPCODE:             s_T <= s_opcode[0+:8];  // push 8-bit value
-    C_BUS_T_N:                  s_T <= s_N;
-    C_BUS_T_PRE:                s_T <= s_T_pre;
-    C_BUS_T_ADDER:              s_T <= s_T_adder;
-    C_BUS_T_COMPARE:            s_T <= {(8){s_T_compare}};
-    C_BUS_T_INPORT:             s_T <= s_T_inport;
-    C_BUS_T_LOGIC:              s_T <= s_T_logic;
-    C_BUS_T_MEM:                s_T <= s_memory;
-    default:                    s_T <= s_T;
-  endcase
+  else
+    s_T <= s_T_pre;
 
 /*
  * Operate the next-to-top of the data stack.
@@ -431,7 +436,7 @@ always @ (posedge i_clk)
   else
     s_Np_stack_ptr <= s_Np_stack_ptr_next;
 
-reg [7:0] s_Np_stack;
+reg [7:0] s_Np;
 
 initial s_N = 8'h00;
 always @ (posedge i_clk)
@@ -439,7 +444,7 @@ always @ (posedge i_clk)
     s_N <= 8'h00;
   else case (s_bus_n)
     C_BUS_N_N:          s_N <= s_N;
-    C_BUS_N_STACK:      s_N <= s_Np_stack;
+    C_BUS_N_STACK:      s_N <= s_Np;
     C_BUS_N_T:          s_N <= s_T;
     C_BUS_N_MEM:        s_N <= s_memory;
     default:            s_N <= s_N;

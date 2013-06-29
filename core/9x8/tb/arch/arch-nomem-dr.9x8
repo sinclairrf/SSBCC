@@ -7,6 +7,7 @@
 ################################################################################
 
 ARCHITECTURE core/9x8 Verilog
+
 INSTRUCTION     2048
 RETURN_STACK    32
 DATA_STACK      32
