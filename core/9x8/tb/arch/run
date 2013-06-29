@@ -11,7 +11,7 @@ for MODE in nomem; do
     TEST="${NAME}/${ARCH}";
     cp ${ARCH} arch.9x8
     ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
-    verilator --lint-only arch.v;
+    verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - tb-${MODE}.good 2>&1`" ]; then
       echo "${TEST} failed" > /dev/stderr;
@@ -35,7 +35,7 @@ for ARCH in arch-calls-*.9x8; do
             exit 1;;
     esac
     ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
-    verilator --lint-only arch.v;
+    verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - "arch-calls-${SIZE}.good" 2>&1`" ]; then
       echo "${TEST} failed" > /dev/stderr;
@@ -60,7 +60,7 @@ for SIZE in 16 32 64 128 256; do
             exit 1;;
     esac
     ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
-    verilator --lint-only arch.v;
+    verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - "${ARCH}-${SIZE}.good" 2>&1`" ]; then
       echo "${TEST} failed" > /dev/stderr;
