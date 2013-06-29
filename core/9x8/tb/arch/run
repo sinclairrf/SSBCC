@@ -69,6 +69,127 @@ for SIZE in 16 32 64 128 256; do
   done
 done
 
+# Test memory writes and reads when there are two memories for several memory
+# sizes and "COMBINE" configuration commands.
+ARCH="arch-2mem";
+for SIZE_A in 32 128 256; do
+  SED_A="-e 's/@MEM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
+  for SIZE_B in 16 128 256; do
+    SED_B="${SED_A} -e 's/@MEM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
+    for (( ixcombine=0; ixcombine<4; ++ixcombine )); do
+      TEST="${NAME}/${ARCH}@${SIZE_A}.${SIZE_B}.${ixcombine}";
+      case ${ixcombine} in
+        ( 0 ) SED="${SED_B} -e '/@COMBINE@/d'";;
+        ( 1 ) SED="${SED_B} -e 's/@COMBINE@/COMBINE ram_a/'";;
+        ( 2 ) SED="${SED_B} -e 's/@COMBINE@/COMBINE ram_b/'";;
+        ( 3 ) SED="${SED_B} -e 's/@COMBINE@/COMBINE ram_a,ram_b/'";;
+        ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
+              exit 1;;
+      esac
+      eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+      ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+      verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+      iverilog -o tb tb.v arch.v || exit 1;
+      if [ -n "`./tb | cmp - "${ARCH}-${SIZE_A}-${SIZE_B}.good" 2>&1`" ]; then
+        echo "${TEST} failed" > /dev/stderr;
+        exit 1;
+      fi
+      echo "Tested:  ${TEST}";
+    done
+  done
+done
+
+# Test memory writes and reads when there are three memories for several memory
+# sizes and "COMBINE" configuration commands.
+ARCH="arch-3mem";
+for SIZE in " 32  32  32" \
+            "128 256 256" \
+            "256 128 256" \
+            "256 256 128" \
+            "256 256 256" \
+; do
+  SIZE=(${SIZE});
+  SIZE_A=${SIZE[0]};
+  SIZE_B=${SIZE[1]};
+  SIZE_C=${SIZE[2]};
+  SED="-e 's/@MEM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
+  SED+=" -e 's/@MEM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
+  SED+=" -e 's/@MEM_C@/MEMORY RAM ram_c ${SIZE_C}/'";
+  for (( ixcombine=0; ixcombine<8; ++ixcombine )); do
+    TEST="${NAME}/${ARCH}@${SIZE_A}.${SIZE_B}.${SIZE_C}.${ixcombine}";
+    case ${ixcombine} in
+      ( 0 ) SED+=" -e '/@COMBINE@/d'";;
+      ( 1 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a/'";;
+      ( 2 ) SED+=" -e 's/@COMBINE@/COMBINE ram_b/'";;
+      ( 3 ) SED+=" -e 's/@COMBINE@/COMBINE ram_c/'";;
+      ( 4 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_b/'";;
+      ( 5 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_c/'";;
+      ( 6 ) SED+=" -e 's/@COMBINE@/COMBINE ram_b,ram_c/'";;
+      ( 7 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_b,ram_c/'";;
+      ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
+            exit 1;;
+    esac
+    eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+    ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+    verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+    iverilog -o tb tb.v arch.v || exit 1;
+    if [ -n "`./tb | grep fetch | cmp - "${ARCH}-${SIZE_A}-${SIZE_B}-${SIZE_C}.good" 2>&1`" ]; then
+      echo "${TEST} failed" > /dev/stderr;
+      exit 1;
+    fi
+    echo "Tested:  ${TEST}";
+  done
+done
+
+# Test memory writes and reads when there are three memories for several memory
+# sizes and "COMBINE" configuration commands.
+ARCH="arch-4mem";
+for SIZE in "128 128 128 128" \
+            "256 256 256 256" \
+; do
+  SIZE=(${SIZE});
+  SIZE_A=${SIZE[0]};
+  SIZE_B=${SIZE[1]};
+  SIZE_C=${SIZE[2]};
+  SIZE_D=${SIZE[3]};
+  SED="-e 's/@MEM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
+  SED+=" -e 's/@MEM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
+  SED+=" -e 's/@MEM_C@/MEMORY RAM ram_c ${SIZE_C}/'";
+  SED+=" -e 's/@MEM_D@/MEMORY RAM ram_d ${SIZE_D}/'";
+  for (( ixcombine=0; ixcombine<16; ++ixcombine )); do
+    TEST="${NAME}/${ARCH}@${SIZE_A}.${SIZE_B}.${SIZE_C}.${SIZE_D}.${ixcombine}";
+    case ${ixcombine} in
+      (  0 ) SED+=" -e '/@COMBINE@/d'";;
+      (  1 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a/'";;
+      (  2 ) SED+=" -e 's/@COMBINE@/COMBINE ram_b/'";;
+      (  3 ) SED+=" -e 's/@COMBINE@/COMBINE ram_c/'";;
+      (  4 ) SED+=" -e 's/@COMBINE@/COMBINE ram_d/'";;
+      (  5 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_b/'";;
+      (  6 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_c/'";;
+      (  7 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_d/'";;
+      (  8 ) SED+=" -e 's/@COMBINE@/COMBINE ram_b,ram_c/'";;
+      (  9 ) SED+=" -e 's/@COMBINE@/COMBINE ram_b,ram_d/'";;
+      ( 10 ) SED+=" -e 's/@COMBINE@/COMBINE ram_c,ram_d/'";;
+      ( 11 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_b,ram_c/'";;
+      ( 12 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_b,ram_d/'";;
+      ( 13 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_c,ram_d/'";;
+      ( 14 ) SED+=" -e 's/@COMBINE@/COMBINE ram_b,ram_c,ram_d/'";;
+      ( 15 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a,ram_b,ram_c,ram_d/'";;
+      ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
+            exit 1;;
+    esac
+    eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+    ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+    verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+    iverilog -o tb tb.v arch.v || exit 1;
+    if [ -n "`./tb | grep fetch | cmp - "${ARCH}-${SIZE_A}-${SIZE_B}-${SIZE_C}-${SIZE_D}.good" 2>&1`" ]; then
+      echo "${TEST} failed" > /dev/stderr;
+      exit 1;
+    fi
+    echo "Tested:  ${TEST}";
+  done
+done
+
 # Remove the temporary output files.
 rm -f arch.9x8 arch.9x8-meta arch.v ssbcc tb;
 
