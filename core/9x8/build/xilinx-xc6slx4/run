@@ -29,13 +29,13 @@ TEST_BENCHES+=" uc_peripherals";
 PWD="`pwd`";
 PWD="${PWD/*\/}";
 
-while getopts "t:v:" OPTNAME; do
+while getopts "ht:v:" OPTNAME; do
   case ${OPTNAME} in
-    ( h ) print "Usage:  run [-t uc_name] [-v ISE_version]" > /dev/stderr;
-          print "Where:" > /dev/stderr;
-          print "  uc_name is one of the .9x8 files in ../uc" > /dev/stderr;
-          print "  ISE_version is an ISE version number" > /dev/stderr;
-          ;;
+    ( h ) echo "Usage:  run [-t uc_name] [-v ISE_version]" > /dev/stderr;
+          echo "Where:" > /dev/stderr;
+          echo "  uc_name is one of the .9x8 files in ../uc" > /dev/stderr;
+          echo "  ISE_version is an ISE version number" > /dev/stderr;
+          exit 0;;
     ( t ) TEST_BENCHES="${OPTARG}";;
     ( v ) TESTED="${OPTARG}";;
   esac
