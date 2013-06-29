@@ -7,6 +7,7 @@ for MODE in nomem; do
   for ARCH in arch-${MODE}-*.9x8; do
     cp ${ARCH} arch.9x8
     ../../../../ssbcc -q arch.9x8 || exit 1;
+    verilator --lint-only arch.v;
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - tb-${MODE}.good 2>&1`" ]; then
       echo "${NAME}/${ARCH} failed" > /dev/stderr;
@@ -29,6 +30,7 @@ for ARCH in arch-calls-*.9x8; do
             exit 1;;
     esac
     ../../../../ssbcc -q arch.9x8 || exit 1;
+    verilator --lint-only arch.v;
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - "arch-calls-${SIZE}.good" 2>&1`" ]; then
       echo "${NAME}/${ARCH}@${ixcombine} failed" > /dev/stderr;
@@ -52,6 +54,7 @@ for SIZE in 16 32 64 128 256; do
             exit 1;;
     esac
     ../../../../ssbcc -q arch.9x8 || exit 1;
+    verilator --lint-only arch.v;
     iverilog -o tb tb.v arch.v || exit 1;
     if [ -n "`./tb | cmp - "${ARCH}-${SIZE}.good" 2>&1`" ]; then
       echo "${NAME}/${ARCH}@${SIZE}.${ixcombine} failed" > /dev/stderr;

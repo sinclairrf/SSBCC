@@ -3,6 +3,8 @@
 ../../../../ssbcc -q --display-opcode core.9x8 \
 || exit 1;
 
+verilator --lint-only core.v
+
 iverilog -o tb tb.v core.v \
 || exit 1;
 

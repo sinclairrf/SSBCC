@@ -434,7 +434,7 @@ def genMemories(fp,config,programBody):
     genMemories_assign(fp,'read',thisPacked,thisPacking,'s_R_stack_ptr','s_R');
   else:
     fp.write('always @ (s_R_reg)\n');
-    fp.write('  s_R <= s_R_reg;\n');
+    fp.write('  s_R = s_R_reg;\n');
   fp.write('\n');
   #
   # Coalesce the memory bank indices and the corresponding memory names, offsets, lengths, etc.
