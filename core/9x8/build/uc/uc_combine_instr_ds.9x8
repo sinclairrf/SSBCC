@@ -1,5 +1,9 @@
 # Copyright 2013, Sinclair R.F., Inc.
 # Test bench for synthesis tools:  combine INSTRUCTION and DATA_STACK
+#
+# Minimum Logic utilization
+#   Xilinx      XC3S50A         N/A -- Spartan 3A doesn't support asynchronous reads
+#   Xilinx      XC6SLX4         33 Slices, 111 Slice LUTs
 
 ARCHITECTURE core/9x8 Verilog
 
