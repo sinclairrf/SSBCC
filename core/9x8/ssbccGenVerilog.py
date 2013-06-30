@@ -447,7 +447,7 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
   nbitsRatio = CeilLog2(ratio);
   notUsedWidth = ratio*memWidth - sigWidth;
   isLUT = (thisPacked['memArch'] == 'LUT');
-  if not isLUT:
+  if not isLUT and thisPacking['length'] != thisPacked['length']:
     memAddrWidth = CeilLog2(thisPacked['length']);
     thisAddrWidth = CeilLog2(thisPacking['length']);
     nbitsOffset = memAddrWidth - thisAddrWidth;
