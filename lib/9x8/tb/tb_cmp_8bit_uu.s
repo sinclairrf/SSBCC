@@ -3,37 +3,47 @@
 
 .include cmp_8bit_uu.s
 
-.constant C_LARGER 8
-.constant C_SMALLR 4
-
 .main
 
-  C_LARGER C_SMALLR .call(cmp_8bit_uu_eq) .outport(O_VALUE) ;  0
-  C_SMALLR C_LARGER .call(cmp_8bit_uu_eq) .outport(O_VALUE) ;  0
-  C_LARGER C_LARGER .call(cmp_8bit_uu_eq) .outport(O_VALUE) ; -1
-
-  C_LARGER C_SMALLR .call(cmp_8bit_uu_ne) .outport(O_VALUE) ; -1
-  C_SMALLR C_LARGER .call(cmp_8bit_uu_ne) .outport(O_VALUE) ; -1
-  C_LARGER C_LARGER .call(cmp_8bit_uu_ne) .outport(O_VALUE) ;  0
-
-  C_LARGER C_SMALLR .call(cmp_8bit_uu_lt) .outport(O_VALUE) ;  0
-  C_SMALLR C_LARGER .call(cmp_8bit_uu_lt) .outport(O_VALUE) ; -1
-  C_LARGER C_LARGER .call(cmp_8bit_uu_lt) .outport(O_VALUE) ;  0
-
-  C_LARGER C_SMALLR .call(cmp_8bit_uu_ge) .outport(O_VALUE) ; -1
-  C_SMALLR C_LARGER .call(cmp_8bit_uu_ge) .outport(O_VALUE) ;  0
-  C_LARGER C_LARGER .call(cmp_8bit_uu_ge) .outport(O_VALUE) ; -1
-
-  C_LARGER C_SMALLR .call(cmp_8bit_uu_le) .outport(O_VALUE) ;  0
-  C_SMALLR C_LARGER .call(cmp_8bit_uu_le) .outport(O_VALUE) ; -1
-  C_LARGER C_LARGER .call(cmp_8bit_uu_le) .outport(O_VALUE) ; -1
-
-  C_LARGER C_SMALLR .call(cmp_8bit_uu_gt) .outport(O_VALUE) ; -1
-  C_SMALLR C_LARGER .call(cmp_8bit_uu_gt) .outport(O_VALUE) ;  0
-  C_LARGER C_LARGER .call(cmp_8bit_uu_gt) .outport(O_VALUE) ;  0
+  ; Test all combinations of msbs where the second argument is smaller than the
+  ; first argument.
+  0x08 0x04 .call(test)
+  0x88 0x04 .call(test)
+  0x88 0x84 .call(test)
 
   ; signal termination of the test
   O_TERMINATE outport
 
   ; wait forever
   :infinite .jump(infinite)
+
+; Test all combinations of the 8-bit comparison operations against the two
+; provided values.
+; ( u_larger u_smaller - )
+.function test
+
+  over over      .call(cmp_8bit_uu_eq) .outport(O_VALUE) ;  0
+  over over swap .call(cmp_8bit_uu_eq) .outport(O_VALUE) ;  0
+  over dup       .call(cmp_8bit_uu_eq) .outport(O_VALUE) ; -1
+
+  over over      .call(cmp_8bit_uu_ne) .outport(O_VALUE) ; -1
+  over over swap .call(cmp_8bit_uu_ne) .outport(O_VALUE) ; -1
+  over dup       .call(cmp_8bit_uu_ne) .outport(O_VALUE) ;  0
+
+  over over      .call(cmp_8bit_uu_lt) .outport(O_VALUE) ;  0
+  over over swap .call(cmp_8bit_uu_lt) .outport(O_VALUE) ; -1
+  over dup       .call(cmp_8bit_uu_lt) .outport(O_VALUE) ;  0
+
+  over over      .call(cmp_8bit_uu_ge) .outport(O_VALUE) ; -1
+  over over swap .call(cmp_8bit_uu_ge) .outport(O_VALUE) ;  0
+  over dup       .call(cmp_8bit_uu_ge) .outport(O_VALUE) ; -1
+
+  over over      .call(cmp_8bit_uu_le) .outport(O_VALUE) ;  0
+  over over swap .call(cmp_8bit_uu_le) .outport(O_VALUE) ; -1
+  over dup       .call(cmp_8bit_uu_le) .outport(O_VALUE) ; -1
+
+  over over      .call(cmp_8bit_uu_gt) .outport(O_VALUE) ; -1
+  over over swap .call(cmp_8bit_uu_gt) .outport(O_VALUE) ;  0
+  over dup       .call(cmp_8bit_uu_gt) .outport(O_VALUE) ;  0
+
+  drop .return(drop)

@@ -13,25 +13,29 @@
   - .return(0<>)
 
 ; Return true if the unsigned value u1 is less than the unsigned value u2.
+; Method:  If the msb of u1 and u2 are the same, then then msb of the difference
+;          indicates which one is larger.  Otherwise the msb of u1 indicates
+;          which one is larger.
 ; ( u1 u2 - f"u1 < u2" )
 .function cmp_8bit_uu_lt
-  - 0x80 & .return(0<>)
+  over over ^ 0x80 & .jumpc(different)
+    - 0x80 & .return(0<>)
+  :different
+    drop 0x80 & .return(0=)
 
 ; Return true if the unsigned value u1 is greater than or equal to the unsigned
 ; value u2.
 ; ( u1 u2 - f"u1 >= u2" )
 .function cmp_8bit_uu_ge
-  - 0x80 & .return(0=)
+  .call(cmp_8bit_uu_lt) .return(0=)
 
 ; Return true if the unsigned value u1 is less than or equal to the unsigned
 ; value u2.
-; Note:  Calling this function is equivalent to .call(cmp_8bit_uu_ge,swap)
 ; ( u1 u2 - f"u1 <= u2" )
 .function cmp_8bit_uu_le
-  swap - 0x80 & .return(0=)
+  .call(cmp_8bit_uu_lt,swap) .return(0=)
 
 ; Return true if the unsigned value u1 is greater than the unsigned value u2.
-; Note:  Calling this function is equivalent to .call(cmp_8bit_uu_lt,swap)
 ; ( u1 u2 - f"u1 > u2" )
 .function cmp_8bit_uu_gt
-  swap - 0x80 & .return(0<>)
+  .call(cmp_8bit_uu_lt,swap) .return
