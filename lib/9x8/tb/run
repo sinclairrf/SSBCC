@@ -1,0 +1,21 @@
+#!/bin/bash
+# Copyright 2013, Sinclair R.F., Inc.
+# Run the test benches for the libraries.
+
+rm --force ssbcc;
+ln -s ../../../ssbcc;
+
+for TB in               \
+  cmp_8bit_uu           \
+; do
+  sed -e "s/@ASSEMBLY@/ASSEMBLY tb_${TB}.s/" uc.9x8-template > uc.9x8;
+  ./ssbcc -q uc.9x8 || { echo "FATAL ERROR testing ${TB}" > /dev/stderr; exit 1; }
+  iverilog -o tb tb.v uc.v || exit 1;
+  if [ -n "`./tb | cmp - "${TB}.good" 2>&1`" ]; then
+    echo "${TB} failed" > /dev/stderr;
+    exit 1;
+  fi
+  echo "Passed:  ${TB}";
+done
+
+rm --force ssbcc uc.9x8 uc.9x8-meta uc.v tb;
