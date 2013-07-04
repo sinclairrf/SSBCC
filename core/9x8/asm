@@ -36,6 +36,12 @@ try:
   # Construct the command-line argument list parser
   #
 
+  def validateFile(filename):
+    try:
+      return file(filename,'r');
+    except:
+      raise asmDef.AsmException('Error opening "%s"' % filename);
+
   argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
   argListParser.add_argument('-C', metavar='CONSTANT=value', action='append', help='Constant definition');
   argListParser.add_argument('-G', metavar='parametername', action='append', help='parameter names');
@@ -46,7 +52,7 @@ try:
   argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
   argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
   argListParser.add_argument('-s', metavar='STACK_NAME=length', action='append', help='Stack length');
-  argListParser.add_argument('filename', metavar='filename', nargs='+', type=file, help='required list of files');
+  argListParser.add_argument('filename', metavar='filename', nargs='+', type=validateFile, help='required list of files');
   argList = argListParser.parse_args();
 
   # Construct the keyword parser

@@ -35,6 +35,12 @@ try:
   # Construct the command-line argument list parser
   #
 
+  def validateFile(filename):
+    try:
+      return file(filename,'r');
+    except:
+      raise SSBCCException('Error opening "%s"' % filename);
+
   import argparse
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
   argListParser.add_argument('-G', metavar='parameter_name=value', type=str, action='append', help='Override parameter value');
@@ -45,7 +51,7 @@ try:
   argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
   argListParser.add_argument('--display-opcode', action='store_true', help='add 3-letter decode of opcode (for trace viewer)');
   argListParser.add_argument('--verilator-tracing-on', action='store_true', help='show all signals in verilator waveform files');
-  argListParser.add_argument('filename', metavar='filename', type=file, help='SSBCC configuration file');
+  argListParser.add_argument('filename', metavar='filename', type=validateFile, help='SSBCC configuration file');
   argList = argListParser.parse_args();
 
   #
