@@ -35,7 +35,9 @@ reg [@INSTANCES@-1:0] s__raw = {(@INSTANCES@){@OFF@}};
 genvar ix;
 for (ix=0; ix<@INSTANCES@; ix=ix+1) begin : gen__channel
   reg [7:0] s__threshold = 8'd0;
+  /* verilator lint_off WIDTH */
   wire [7:0] s__ix = ix; // Xilinx ISE can't bit-slice a genvar
+  /* verilator lint_on WIDTH */
   always @ (posedge i_clk)
     if (i_rst)
       s__threshold <= 8'd0;
