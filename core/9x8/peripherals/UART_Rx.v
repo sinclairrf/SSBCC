@@ -50,7 +50,7 @@ end
 reg s__Rx_deglitched;
 if (L__DEGLITCH_LENGTH == 0) begin : gen__nodeglitch
   always @ (*)
-    s__Rx_deglitched <= s__Rx_sync;
+    s__Rx_deglitched = s__Rx_sync;
 end else begin : gen__deglitch
   initial s__Rx_deglitched = 1'b1;
   reg [L__DEGLITCH_LENGTH-1:0] s__Rx_deglitch = {(L__DEGLITCH_LENGTH){1'b1}};
