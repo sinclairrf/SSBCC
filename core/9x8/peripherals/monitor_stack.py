@@ -12,26 +12,23 @@ from ssbccUtil import SSBCCException;
 
 class monitor_stack(SSBCCperipheral):
   """
-  Simulation-specific peripheral to flag invalid stack operations.
-
+  Simulation-specific peripheral to flag invalid stack operations and display
+  the execution history immediately before the invalid operation.\n
   Invalid data stack operations are:
     pushing onto a full data stack
     dropping from an empty data stack
-    nipping from an almost empty data stack
-
+    nipping from an almost empty data stack\n
   Invalid return stack operations are:
     pushing onto a full return stack
     dropping values from an empty return stack
     returns from a data entry on the return stack
-    non-return  operations from an address entry on the return stack
-
+    non-return  operations from an address entry on the return stack\n
   Invalid data operations are:
     swap on an empty or almost empty data stack
-    in-place operations on an empty or almost empty data stack
-
+    in-place operations on an empty or almost empty data stack\n
   Usage:
     PERIPHERAL monitor_stack \\
-               [history==n]
+               [history==n]\n
   Where:
     history=n
       display the n most recent operations when a stack error is encountered
@@ -81,6 +78,7 @@ class monitor_stack(SSBCCperipheral):
     for subs in (
                   (r'\\bix__',                  'ix__monitor_stack__',),
                   (r'\\bs__',                   's__monitor_stack__',),
+                  (r'@CORENAME@',               config.Get('outCoreName'),),
                   (r'@HISTORY@',                str(self.history),),
                   (r'@LAST_INPORT@',            '9\'h%03X' % config.NInports(),),
                   (r'@LAST_OUTPORT@',           '9\'h%03X' % config.NOutports(),),
