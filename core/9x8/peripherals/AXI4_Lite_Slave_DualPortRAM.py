@@ -56,7 +56,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
           raise SSBCCException('"size=%s" is not a parameter at line %d' % (x,ixLine,));
         ix = [param[0] for param in config.parameters].index(x);
         y = config.parameters[ix][1];
-        if not re.match(r'[1-]\d*$', y):
+        if not re.match(r'[1-9]\d*$', y):
           raise SSBCCException('localparam must be a numeric constant, not "%s", to be used in "size=%s" at line %d' % (y,x,ixLine,));
         y = int(y);
       elif re.match(r'[1-9]\d*$',x):
