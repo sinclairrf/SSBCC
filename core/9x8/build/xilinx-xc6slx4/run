@@ -19,7 +19,7 @@
 #   -3  13.3 5.0 ns "-timing -t  12" ==> 5.000 ns (200.0 MHz)
 #   -3  14.4 5.0 ns "-timing -t  12" ==> 5.000 ns (200.0 MHz)
 
-TESTED="11.4 12.4 13.3 14.4";
+TESTED="11.4 12.4 13.3 14.4 14.5";
 
 TEST_BENCHES="";
 TEST_BENCHES+=" uc_combine_instr_ds";
