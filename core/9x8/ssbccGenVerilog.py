@@ -383,6 +383,7 @@ def genMemories(fp,config,programBody):
       if thisPacked['memArch'] == 'sync':
         fp.write(',%s_reg' % thisPacked['memName']);
       else:
+        fp.write(',%s[s_T[%d:0]]' % (thisPacked['memName'],thisLclMemParam['nMemAddrBits']-1,));
         include_s_T = True;
     if include_s_T:
       fp.write(',s_T');
@@ -483,7 +484,7 @@ def genMemories_assign(fp,mode,thisPacked,thisPacking,addr,sigName):
     elif mode == 'read' and not isLUT:
       fp.write('  %s <= %s[%s];\n' % (thisSignal,memName,thisAddr,));
     elif mode == 'read' and isLUT:
-      fp.write('always @ (%s)\n' % addr);
+      fp.write('always @ (%s[%s],%s)\n' % (memName,thisAddr,thisAddr,));
       fp.write('  %s = %s[%s];\n' % (thisSignal,memName,thisAddr,));
 
 def genMemories_stack(fp,packed,packing,inSignalName,outSignalName,muxTest):
