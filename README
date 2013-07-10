@@ -372,7 +372,8 @@ command-line invokation of the computer compiler.  For example,
 
   ssbcc -G "G_CLK_FREQ_HZ=100_000_000" myprogram.9x8
 
-specifies a frequency of 100 MHz instead of the default frequency of 97 MHz.
+specifies that a frequency of 100 MHz be used instead of the default frequency
+of 97 MHz.
 
 The LOCALPARAM configuration command can be used to specify parameters that
 should not be changed by the surrounding HDL.  For example,
@@ -571,7 +572,7 @@ Single values are fetched from or stored to memory using the following assembly:
   0x12 .storevalue(b)
 
 Multi-byte values are fetched or stored as follows.  This copies the four values
-from coeff_table, which is store in a ROM, to d.
+from coeff_table, which is stored in a ROM, to d.
 
   .fetchvector(coeff_table,4) .storevector(d,4)
 
@@ -641,15 +642,27 @@ memories:
 The .fetchvector and .storevector macros are intended to work with values stored
 MSB first in memory and the MSB toward the top of the data stack, similarly to
 the Forth language with multi-word values.  To demonstrate how this works,
-consider the examples of decrementing or incrementing a two-byte value:
+consider the examples of decrementing and incrementing a two-byte value on the
+data stack:
 
+  ; Decrement a 2-byte value
+  ;   swap 1- swap      - decrement the LSB
+  ;   over -1=          - puts -1 on the top of the data stack if the LSB rolled
+  ;                       over from 0 to -1, puts 0 on the top otherwise
+  ;   +                 - decrements the MSB if the LSB rolled over
   ; ( u_LSB u_MSB - u_LSB' u_MSB' )
   .function decrement_2byte
-  >r 1- dup -1= r> .return(+)
+  swap 1- swap over -1= .return(+)
 
+  ; Increment a 2-byte value
+  ;   swap 1+ swap      - increment the LSB
+  ;   over 0=           - puts -1 on the top of the data stack if the LSB rolled
+  ;                       over from 0xFF to 0, puts 0 on the top otherwise
+  ;   -                 - increments the MSB if the LSB rolled over (by
+  ;                       subtracting -1)
   ; ( u_LSB u_MSB - u_LSB' u_MSB' )
   .function increment_2byte
-  >r 1+ dup 0= r> .return(-)
+  swap 1+ swap over 0= .return(-)
 
 
 SIMULATIONS
@@ -659,4 +672,4 @@ Simulations have been performed with Icarus Verilog, Verilator, and Xilinx'
 ISIM.  Icarus Verilog is good for short, simple simulations, Verilator for long
 simulations of large, complex systems, and ISIM when Xilinx-specific cores are
 used.  Verilator is over an order of magnitude faster than the other simulators
-I've used.
+I've used.  Verilator is also used for lint checking in the core test benches.
