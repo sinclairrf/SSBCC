@@ -1,10 +1,5 @@
 #!/bin/bash
 
-NAME="arch";
-
-rm -f ssbcc;
-ln -s ../../../../ssbcc;
-
 # Test moving data into and out of the data stack and the return stack.
 function test_nomem() {
   for ARCH in arch-nomem-*.9x8; do
@@ -149,7 +144,7 @@ function test_3mem() {
   done
 }
 
-# Test memory writes and reads when there are three memories for several memory
+# Test memory writes and reads when there are four memories for several memory
 # sizes and "COMBINE" configuration commands.
 function test_4mem() {
   ARCH="arch-4mem";
@@ -199,6 +194,17 @@ function test_4mem() {
     done
   done
 }
+
+################################################################################
+#
+# Either run the specified test(s) or run all of the tests.
+#
+################################################################################
+
+NAME="arch";
+
+rm -f ssbcc;
+ln -s ../../../../ssbcc;
 
 if [ $# -eq 0 ]; then
   TESTS="nomem calls 1mem 2mem 3mem 4mem";
