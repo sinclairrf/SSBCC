@@ -483,20 +483,15 @@ ROM named lut.  More details on using memories is provided in the next section.
 The COMBINE configuration command can be used to combine the various memories
 for more efficient processor implementation as follows:
 
-  COMBINE INSTRUCTION,DATA_STACK
-  COMBINE INSTRUCTION,RETURN_STACK
-  COMBINE DATA_STACK,RETURN_STACK
-  COMBINE DATA_STACK
-  COMBINE RETURN_STACK
-  COMBINE <memlist>
+  COMBINE INSTRUCTION,<single-port-memory>
+  COMBINE <single-port-memory>
+  COMBINE <single-port-memory>,<single-port-memory>
+  COMBINE <ramlist>
 
-The first two configuration commands place either the data stack or the return
-stack at the end of the instruction memory.  The third command uses a single
-dual-port memory for the data stack and the return stack. The fourth and fifth
-commands convert the data stack or the return stack from LUT-based memories to
-SRAM-based memories.  The sixth command converts the specified memories
-declared using the MEMORY configuration command from LUT-based memories to a
-single SRAM-based memory.
+where <single-port-memory> is one of DATA_STACK, RETURN_STACK, or a list of one
+or more ROMs and <ramlist> is a list of one or more RAMs and/or ROMs.  The first
+configuration command reserves space at the end of the instruction memory for
+the DATA_STACK, RETURN_STACK, or listed ROMs.
 
 The SRAM_WIDTH configuration command is used to make the memory allocations more
 efficient when the SRAM block width is more than 9 bits.  For example,
@@ -515,7 +510,8 @@ memory.
 
 The following illustrates a possible configuration for a Spartan-6 with a
 2048-long SRAM and relatively large 64-deep data stack.  The data stack will be in
-the last 64 elements of the instruction memory.
+the last 64 elements of the instruction memory and the instruction space will be
+reduced to 1984 words.
 
   INSTRUCTION   2048
   DATA_STACK    64
