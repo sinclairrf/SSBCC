@@ -38,6 +38,9 @@ class SSBCCconfig():
     # list of memories
     self.memories = dict(name=list(), type=list(), maxLength=list());
 
+    # list of how the memories will be instantiated
+    self.config['combine'] = list();
+
     # initial search paths for peripherals
     self.peripheralpaths= list();
     self.peripheralpaths.append('.');
@@ -153,38 +156,49 @@ class SSBCCconfig():
   def CompleteCombines(self):
     """
     Ensure all memories are assigned addresses.\n
-    The return value is a list of dictionaries, each of which defines a single
-    isolated or combined memory.  Each dictionary has the following entries:\n
-      packing   a list of the combined memories as per PackCombinedMemory
-      width     bit width of the memory
-      ixMemory  if a MEMORY is included in the packing, this optional parameter
-                is a unique integer used to generate the name of the memory.
+    This modifies config['combine'] to include singleton entries for any
+    memories not subject to the COMBINE configuration command.  It then computes
+    how the memories will be packed together as well as properites for the
+    packed memories.  These properties are:
+      packing   how the memories will be packed as per PackCombinedMemory
+      memName   HDL name of the memory
+      memLength number of words in the memory
+      memWidth  bit width of the memory words
     """
     # Create singleton entries for memory types and memories that aren't already listed in 'combine'.
-    if not self.Exists('combine'):
-      self.config['combine'] = dict(mems=[], memArch=[]);
     if not self.IsCombined('INSTRUCTION'):
-      self.config['combine']['mems'].append(['INSTRUCTION']);
-      self.config['combine']['memArch'].append('sync');
+      self.config['combine'].append({'mems':['INSTRUCTION',], 'memArch':'sync'});
     for memType in ('DATA_STACK','RETURN_STACK',):
       if not self.IsCombined(memType):
-        self.config['combine']['mems'].append([memType]);
-        self.config['combine']['memArch'].append('LUT');
+        self.config['combine'].append({'mems':[memType,], 'memArch':'LUT'});
     for memName in self.memories['name']:
       if not self.IsCombined(memName):
-        self.config['combine']['mems'].append([memName]);
-        self.config['combine']['memArch'].append('LUT');
-    # Create the addresses for all combined memories.
-    self.config['combine']['packed'] = list();
-    ixMemory = 0;
-    for ixCombine in range(len(self.config['combine']['mems'])):
-      thisMemList = self.config['combine']['mems'][ixCombine];
-      thisPacked = self.PackCombinedMemory(thisMemList);
-      if thisPacked['packing'][0]['name'] in self.memories['name']:
-        thisPacked['ixMemory'] = ixMemory;
-        ixMemory = ixMemory + 1;
-      thisPacked['memArch'] = self.config['combine']['memArch'][ixCombine];
-      self.config['combine']['packed'].append(thisPacked);
+        self.config['combine'].append({'mems':[memName,], 'memArch':'LUT'});
+    # Determine the HDL names for the memories.
+    nRAMROMs = 0;
+    for combined in self.config['combine']:
+      if combined['mems'][0] == 'INSTRUCTION':
+        combined['memName'] = 's_opcodeMemory';
+      elif combined['mems'][0] == 'DATA_STACK':
+        combined['memName'] = 's_data_stack';
+      elif combined['mems'][0] == 'RETURN_STACK':
+        combined['memName'] = 's_R_stack';
+      else:
+        nRAMROMs += 1;
+    if nRAMROMs > 0:
+      memNameFormat = 's_mem_%%0%dx' % ((CeilLog2(nRAMROMs)+3)/4);
+    ixRAMROM = 0;
+    for combined in self.config['combine']:
+      if 'memName' in combined:
+        continue;
+      if nRAMROMs == 1:
+        combined['memName'] = 's_mem';
+      else:
+        combined['memName'] = memNameFormat % ixRAMROM;
+        ixRAMROM += 1;
+    # Perform packing for all memories.
+    for combined in self.config['combine']:
+      self.PackCombinedMemory(combined);
 
   def Exists(self,name):
     """
@@ -244,20 +258,19 @@ class SSBCCconfig():
       outvalue[field] = self.memories[field][ix];
     return outvalue;
 
-  def GetPackedAndPacking(self,name):
+  def GetPacking(self,name):
     """
     Get the memory packing for the provided memory.
     """
-    mems = self.config['combine']['mems'];
-    ixCombine = [ix for ix in range(len(mems)) if name in mems[ix]];
-    if len(ixCombine) == 0:
+    for combined in self.config['combine']:
+      if name not in combined['mems']:
+        continue;
+      for port in combined['port']:
+        for packing in port['packing']:
+          if packing['name'] == name:
+            return (combined,port,packing,);
+    else:
       raise Exception('Program Bug -- %s not found in combined memories' % name);
-    if len(ixCombine) > 1:
-      raise Exception('Program Bug == %s occurs too many times in combined memories' % name);
-    ixCombine = ixCombine[0];
-    ix = mems[ixCombine].index(name);
-    thisPacked = self.config['combine']['packed'][ixCombine];
-    return (thisPacked,thisPacked['packing'][ix],);
 
   def InsertPeripheralPath(self,path):
     """
@@ -274,13 +287,11 @@ class SSBCCconfig():
     DATA_STACK, INSTRUCTION, or RETURN_STACK.\n
     name        name of the specified memory type\n
     """
-    if not self.Exists('combine'):
-      return False;
-    mems = self.config['combine']['mems'];
-    for ix in range(len(mems)):
-      if name in mems[ix]:
+    for combined in self.config['combine']:
+      if name in combined['mems']:
         return True;
-    return False;
+    else:
+      return False;
 
   def IsMemory(self,name):
     """
@@ -290,12 +301,30 @@ class SSBCCconfig():
 
   def IsParameter(self,name):
     """
-    Indicate whether or not the specified symbol is  the name of a parameter.
+    Indicate whether or not the specified symbol is the name of a parameter.
     """
     if re.match(r'[GL]_\w+',name) and name in self.symbols:
       return True;
     else:
       return False;
+
+  def IsRAM(self,name):
+    """
+    Indicate whether or not the specified symbol is the name of a RAM.
+    """
+    if name not in self.memories['name']:
+      return False;
+    ix = self.memories['name'].index(name);
+    return self.memories['type'][ix] == 'RAM';
+
+  def IsROM(self,name):
+    """
+    Indicate whether or not the specified symbol is the name of a RAM.
+    """
+    if name not in self.memories['name']:
+      return False;
+    ix = self.memories['name'].index(name);
+    return self.memories['type'][ix] == 'ROM';
 
   def IsSymbol(self,name):
     """
@@ -345,100 +374,160 @@ class SSBCCconfig():
       raise SSBCCException('Command-line parameter or localparam "%s" not specified in the architecture file' % name);
     self.parameters[ix] = (name,value,);
 
-  def PackCombinedMemory(self,memlist):
+  def PackCombinedMemory(self,combined):
     """
     Utility function for CompleteCombines.\n
-    Pack the memories being combined in as little address space as possible.
-    This is done by recursively combining the two smallest memories or smallest
-    combinations of memories until everything is combined.  This tree of memory
-    lengths is then divided into leaves with the following parameters:\n
-      lane      start bit (for when memories are packed in parallel)
+    Determine packing strategy and resulting memory addresses and sizes.  This
+    list has everything ssbccGenVerilog needs to construct the memory.\n
+    The dual port memories can be used to do the following:
+      1.  pack a single memory, either single-port or dual-port
+      2.  pack two single-port memories sequentially, i.e., one at the start of
+          the RAM and one toward the end of the RAM
+      3.  pack one single-port memory at the start of the RAM and pack several
+          compatible single-port memories in parallel toward the end of the RAM.
+          Note:  Compatible means that they have the same address.
+      4.  pack several compatible dual-port memories in parallel.\n
+    These single-port or dual-port single or parallel packed memories are
+    described in the 'port' list in combined.  Each entry in the port list has
+    several parameters described below and a 'packing' list that describes the
+    single or multiple memories attached to that port.\n
+    The parameters for each of port is as follows:
+      offset    start address of the memory in the packing
+      nWords    number of RAM words reserved for the memory
+                Note:  This can be larger than the aggregate number of words
+                       required by the memory in order to align the memories to
+                       power-of-2 address alignments.
+      ratio     number of base memory entries for the memory
+                Note:  This must be a power of 2.\n
+    The contents of each entry in the packing are as follows:
+      -- the following are from the memory declaration
+      name      memory name
       length    number of elements in the memory based on the declared memory
                 size
                 Note:  This is based on the number of addresses required for
                        each memory entry (see ratio).
-      name      memory name
-      offset    start address of the memory in the packing
-      occupy    number of memory addresses allocated for the memory based on
+      nbits     width of the memory type
+      -- the following are derived for the packing
+      lane      start bit
+                Note:  This is required in particular when memories are stacked
+                       in parallel.
+      nWords    number of memory addresses allocated for the memory based on
                 the packing
                 Note:  This will be larger than length when a small memory is
-                       in the same branch as a larger memory.
-      nbits     width of the memory type
-      ratio     number of base memory entries required to extract the number of
-                bits required for the memory type
-                Note:  This allows instruction addresses to occupy more than 1
+                       packed in parallel with a larger memory.  I.e., when
+                       ratio is not one.
+      ratio     number of base memory entries required to extract a single word
+                for the memory type
+                Note:  This allows return stack entries to occupy more than one
                        memory address when the return stack is combined with
-                       other memory addresses.\n
-      width     base width of the containing memory
+                       other memory addresses.
+                Note:  This must be a power of 2.\n
+    The following entries are also added to "combined":
+      nWords    number of words in the memory
+      memWidth  bit width of the memory words\n
     Note:  If memories are being combined with the instructions space, they are
            always packed at the end of the instruction space, so the
            instruction space allocation is not included in the packing.
     """
-    # Create a list of the memories being combined.
-    entries = [];
+    # Count how many memories of each type are being combined.
     nSinglePort = 0;
-    nDualPort = 0;
-    for memName in memlist:
-      if memName == 'INSTRUCTION':
-        entries.append(dict(length=self.Get('nInstructions')['length'], name=memName, nbits=9, ratio=1, width=9));
+    nRAMs = 0;
+    nROMs = 0;
+    for memName in combined['mems']:
+      if memName in ('INSTRUCTION','DATA_STACK','RETURN_STACK',):
         nSinglePort += 1;
-      elif memName == 'DATA_STACK':
-        entries.append(dict(length=self.Get('data_stack'), name=memName, nbits=self.Get('data_width'), ratio=1, width=self.Get('data_width')));
-        nSinglePort += 1;
-      elif memName == 'RETURN_STACK':
-        # Return stack must hold data as well as addresses and each entry may
-        # need to cross multiple addresses.
-        # Note:  Combines with the return stack should only occur on block
-        #        RAMs, not with distributed RAMs.
-        nbits = max(self.Get('data_width'),self.Get('nInstructions')['nbits']);
-        if len(memlist) == 1:
-          ratio = 1;
-          width=nbits;
+      elif self.IsROM(memName):
+        nROMs += 1;
+      else:
+        nRAMs += 1;
+    if nRAMs > 0:
+      nRAMs += nROMs;
+      nROMs = 0;
+    # Ensure the COMBINE configuration command is implementable in a dual-port RAM.
+    if nSinglePort > 0 and nRAMs > 0:
+      raise SSBCCException('Cannot combine RAMs with other memory types in COMBINE configuration command at line %d' % combined['ixLine']);
+    if nSinglePort > 2 or (nSinglePort > 1 and nROMs > 0):
+      raise SSBCCException('Too many memory types in COMBINE configuration command at line %d' % combined['ixLine']);
+    # Start splitting the listed memories into the one or two output lists and ensure that single-port memories are listed in the correct order.
+    mems = combined['mems'];
+    ixMem = 0;
+    split = list();
+    if 'INSTRUCTION' in mems:
+      if mems[0] != 'INSTRUCTION':
+        raise SSBCCException('INSTRUCTION must be the first memory listed in the COMBINE configuration command at line %d' % combined['ixLine']);
+      split.append(['INSTRUCTION']);
+      ixMem += 1;
+    while len(mems[ixMem:]) > 0 and mems[ixMem] in ('DATA_STACK','RETURN_STACK',):
+      split.append([mems[ixMem]]);
+      ixMem += 1;
+    for memName in ('DATA_STACK','RETURN_STACK',):
+      if memName in mems[ixMem:]:
+        raise SSBCCException('Single-port memory %s must be listed before ROMs in COMBINE configuration command at line %d' % combined['ixLine']);
+    if mems[ixMem:]:
+      split.append(mems[ixMem:]);
+    if not (1 <= len(split) <= 2):
+      raise Exception('Program Bug -- bad COMBINE configuration command not caught');
+    # Create the detailed packing information.
+    combined['port'] = list();
+    for thisSplit in split:
+      packing = list();
+      for memName in thisSplit:
+        if memName == 'INSTRUCTION':
+          packing.append({'name':memName, 'length':self.Get('nInstructions')['length'], 'nbits':9});
+        elif memName == 'DATA_STACK':
+          packing.append({'name':memName, 'length':self.Get('data_stack'), 'nbits':self.Get('data_width')});
+        elif memName == 'RETURN_STACK':
+          nbits = max(self.Get('data_width'),self.Get('nInstructions')['nbits']);
+          packing.append({'name':memName, 'length':self.Get('return_stack'), 'nbits':nbits});
         else:
-          width = self.Get('sram_width');
-          ratio = CeilPow2((nbits+width-1)/width);
-        entries.append(dict(length=ratio*self.Get('return_stack'), name=memName, nbits=nbits, ratio=ratio, width=width));
-        nSinglePort += 1;
-      else:
-        thisMemory = self.GetMemoryParameters(memName);
-        entries.append(dict(length=CeilPow2(thisMemory['maxLength']), name=memName, nbits=self.Get('data_width'), ratio=1, width=self.Get('data_width')));
-        nDualPort += 1;
-    if ('INSTRUCTION' in memlist) and (len(memlist)>1):
-      entries[0]['length'] -= sum(e['length'] for e in entries[1:]);
-      if entries[0]['length'] <= 0:
-        raise SSBCCException('INSTRUCTION length too small for "COMBINE INSTRUCTION,%s"' % entries[1]['name']);
-    # Pack the single-port memories sequentially and the dual-port memories in parallel.
-    if nSinglePort and nDualPort:
-      raise Exception('Program Bug -- should have precluded mixed memory types earlier');
-    if nSinglePort != 0:
-      packingMode = 'sequential';
-      width = max(e['width'] for e in entries);
-      if 'INSTRUCTION' in memlist:
-        for e in entries:
-          e['occupy'] = e['length'];
-      else:
-        occupy = max(e['length'] for e in entries);
-        for e in entries:
-          e['occupy'] = occupy;
-      offset = 0;
-      for e in entries:
-        e['lane'] = 0;
-        e['offset'] = offset;
-        offset += e['occupy'];
-      length = sum(e['occupy'] for e in entries);
-    else:
-      packingMode = 'parallel';
-      length = max(e['length'] for e in entries);
-      width = sum(e['width'] for e in entries);
+          thisMemory = self.GetMemoryParameters(memName);
+          packing.append({'name':memName, 'length':CeilPow2(thisMemory['maxLength']), 'nbits':self.Get('data_width')});
+      combined['port'].append({ 'packing':packing });
+    # Calculate the width of the base memory.
+    # Note:  This accommodates RETURN_STACK being an isolated memory.
+    memWidth = combined['port'][0]['packing'][0]['nbits'] if len(combined['port']) == 1 else None;
+    for port in combined['port']:
+      for packing in port['packing']:
+        tempMemWidth = packing['nbits'];
+        if tempMemWidth > self.Get('sram_width'):
+          tempMemWidth = self.Get('sram_width');
+        if not memWidth:
+          memWidth = tempMemWidth;
+        elif tempMemWidth > memWidth:
+          memWidth = tempMemWidth;
+    combined['memWidth'] = memWidth;
+    # Determine how the memories are packed.
+    # Note:  "ratio" should be non-unity only for RETURN_STACK.
+    for port in combined['port']:
       lane = 0;
-      for e in entries:
-        e['occupy'] = length;
-        e['lane'] = lane;
-        lane += self.Get('data_width');
-        e['offset'] = 0;
-    # Construct the return container.
-    retval = dict(length=length, width=width, packing=entries, packingMode=packingMode);
-    return retval;
+      for packing in port['packing']:
+        packing['lane'] = lane;
+        ratio = CeilPow2((packing['nbits']+memWidth-1)/memWidth);
+        packing['ratio'] = ratio;
+        packing['nWords'] = ratio * packing['length'];
+        lane += ratio;
+    # Aggregate parameters each memory port.
+    for port in combined['port']:
+      ratio = CeilPow2(sum(packing['ratio'] for packing in port['packing']));
+      maxLength = max(packing['length'] for packing in port['packing']);
+      port['ratio'] = ratio;
+      port['nWords'] = ratio * maxLength;
+    combined['port'][0]['offset'] = 0;
+    if len(combined['port']) > 1:
+      if combined['mems'][0] == 'INSTRUCTION':
+        nWordsTail = combined['port'][1]['nWords'];
+        port0 = combined['port'][0];
+        if port0['nWords'] <= nWordsTail:
+          raise SSBCCException('INSTRUCTION length too small for "COMBINE INSTRUCTION,..." at line %d' % combined['ixLine']);
+        port0['nWords'] -= nWordsTail;
+        port0['packing'][0]['nWords'] -= nWordsTail;
+        port0['packing'][0]['length'] -= nWordsTail;
+      else:
+        maxNWords = max(port['nWords'] for port in combined['port']);
+        for port in combined['port']:
+          port['nWords'] = maxNWords;
+      combined['port'][1]['offset'] = combined['port'][0]['nWords'];
+    combined['nWords'] = sum(port['nWords'] for port in combined['port']);
 
   def ProcessCombine(self,ixLine,line):
     """
@@ -447,12 +536,14 @@ class SSBCCconfig():
     the list of combined memories and the associated arguments to "combine"
     property.\n
     The argument consists of one of the following:
-      INSTRUCTION,DATA_STACK
-      INSTRUCTION,RETURN_STACK
-      DATA_STACK,RETURN_STACK
+      INSTRUCTION,{DATA_STACK,RETURN_STACK,rom_list}
       DATA_STACK
+      DATA_STACK,{RETURN_STACK,rom_list}
       RETURN_STACK
-      mem_name[,mem_name]*
+      RETURN_STACK,{DATA_STACK,rom_list}
+      mem_list
+    where rom_list is a comma separated list of one or more ROMs and mem_list is
+    a list of one or more RAMs or ROMs.
     """
     # Perform some syntax checking and get the list of memories to combine.
     cmd = re.findall(r'\s*COMBINE\s+(\S+)\s*$',line);
@@ -475,16 +566,18 @@ class SSBCCconfig():
       raise SSBCCException('"%s" repeated in COMBINE configuration command on line %d' % (repeated[0],ixLine,));
     # Count the number of the different memory types being combined and validate the combination.
     nSinglePort = sum([thisMemName in ('INSTRUCTION','DATA_STACK','RETURN_STACK',) for thisMemName in mems]);
-    nDualPort = len(mems) - nSinglePort;
-    if nSinglePort and nDualPort:
-      raise SSBCCException('Prohibited combination of memory types in COMBINE configuration command at line %d' % ixLine);
-    if nSinglePort > 2:
-      raise SSBCCException('Too many single-port memory types in COMBINE configuration command at line %d' % ixLine);
+    nROM = len([thisMemName for thisMemName in mems if self.IsROM(thisMemName)]);
+    nRAM = len([thisMemName for thisMemName in mems if self.IsRAM(thisMemName)]);
+    if nRAM > 0:
+      nRAM += nROM;
+      nROM = 0;
+    if nROM > 0:
+      nSinglePort += 1;
+    nDualPort = 1 if nRAM > 0 else 0;
+    if nSinglePort + 2*nDualPort > 2:
+      raise SSBCCException('Too many ports required for COMBINE configuration command at line %d' % ixLine);
     # Append the listed memory types to the list of combined memories.
-    if not self.Exists('combine'):
-      self.config['combine'] = dict(mems=[], memArch=[]);
-    self.config['combine']['mems'].append(mems);
-    self.config['combine']['memArch'].append('sync');
+    self.config['combine'].append({'mems':mems, 'memArch':'sync', 'ixLine':ixLine});
 
   def ProcessInport(self,ixLine,line):
     """

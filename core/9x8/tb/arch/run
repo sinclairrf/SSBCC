@@ -114,11 +114,11 @@ function test_3mem() {
     SIZE_A=${SIZE[0]};
     SIZE_B=${SIZE[1]};
     SIZE_C=${SIZE[2]};
-    SED="-e 's/@MEM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
-    SED+=" -e 's/@MEM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
-    SED+=" -e 's/@MEM_C@/MEMORY RAM ram_c ${SIZE_C}/'";
     for (( ixcombine=0; ixcombine<8; ++ixcombine )); do
       TEST="${NAME}/${ARCH}@${SIZE_A}.${SIZE_B}.${SIZE_C}.${ixcombine}";
+      SED="-e 's/@MEM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
+      SED+=" -e 's/@MEM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
+      SED+=" -e 's/@MEM_C@/MEMORY RAM ram_c ${SIZE_C}/'";
       case ${ixcombine} in
         ( 0 ) SED+=" -e '/@COMBINE@/d'";;
         ( 1 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a/'";;
@@ -156,12 +156,12 @@ function test_4mem() {
     SIZE_B=${SIZE[1]};
     SIZE_C=${SIZE[2]};
     SIZE_D=${SIZE[3]};
-    SED="-e 's/@MEM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
-    SED+=" -e 's/@MEM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
-    SED+=" -e 's/@MEM_C@/MEMORY RAM ram_c ${SIZE_C}/'";
-    SED+=" -e 's/@MEM_D@/MEMORY RAM ram_d ${SIZE_D}/'";
     for (( ixcombine=0; ixcombine<16; ++ixcombine )); do
       TEST="${NAME}/${ARCH}@${SIZE_A}.${SIZE_B}.${SIZE_C}.${SIZE_D}.${ixcombine}";
+      SED="-e 's/@MEM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
+      SED+=" -e 's/@MEM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
+      SED+=" -e 's/@MEM_C@/MEMORY RAM ram_c ${SIZE_C}/'";
+      SED+=" -e 's/@MEM_D@/MEMORY RAM ram_d ${SIZE_D}/'";
       case ${ixcombine} in
         (  0 ) SED+=" -e '/@COMBINE@/d'";;
         (  1 ) SED+=" -e 's/@COMBINE@/COMBINE ram_a/'";;
@@ -195,6 +195,223 @@ function test_4mem() {
   done
 }
 
+# Test memory reads when there is a single ROM for several memory sizes and
+# "COMBINE" configuration commands.
+function test_1rom() {
+  ARCH="arch-1rom";
+  for SIZE_Z in 16 32 64 128 256; do
+    for (( ixcombine=0; ixcombine<5; ++ixcombine )); do
+      TEST="${NAME}/${ARCH}@${SIZE_Z}.${ixcombine}";
+      SED="-e 's/@ROM_Z@/MEMORY ROM rom_z ${SIZE_Z}/'";
+      case ${ixcombine} in
+        ( 0 ) SED+=" -e '/@COMBINE@/d'";;
+        ( 1 ) SED+=" -e 's/@COMBINE@/COMBINE rom_z/'";;
+        ( 2 ) SED+=" -e 's/@COMBINE@/COMBINE INSTRUCTION,rom_z/'";;
+        ( 3 ) SED+=" -e 's/@COMBINE@/COMBINE DATA_STACK,rom_z/'";;
+        ( 4 ) SED+=" -e 's/@COMBINE@/COMBINE RETURN_STACK,rom_z/'";;
+        ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
+              exit 1;;
+      esac
+      eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+      gawk --assign SIZE=${SIZE_Z} -f init-1rom.awk > init.s;
+      ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+      verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+      iverilog -o tb tb.v arch.v || exit 1;
+      if [ -n "`./tb | gawk -f test-rom3.awk 2>&1`" ]; then
+        echo "${TEST} failed" > /dev/stderr;
+        exit 1;
+      fi
+      echo "Tested:  ${TEST}";
+    done
+  done
+}
+
+# Test memory reads when there is a single ROM for several memory sizes and
+# "COMBINE" configuration commands.
+function test_2rom() {
+  ARCH="arch-2rom";
+  for SIZE_Z in 16 128 256; do
+    for SIZE_Y in 16 128 256; do
+      for (( ixcombine=0; ixcombine<13; ++ixcombine )); do
+        TEST="${NAME}/${ARCH}@${SIZE_Z}.${SIZE_Y}.${ixcombine}";
+        SED="-e 's/@ROM_Z@/MEMORY ROM rom_z ${SIZE_Z}/'";
+        SED+=" -e 's/@ROM_Y@/MEMORY ROM rom_y ${SIZE_Y}/'";
+        case ${ixcombine} in
+          (  0 ) SED+=" -e '/@COMBINE@/d'";;
+          (  1 ) SED+=" -e 's/@COMBINE@/COMBINE rom_z/'";;
+          (  2 ) SED+=" -e 's/@COMBINE@/COMBINE rom_y/'";;
+          (  3 ) SED+=" -e 's/@COMBINE@/COMBINE rom_z,rom_y/'";;
+          (  4 ) SED+=" -e 's/@COMBINE@/COMBINE INSTRUCTION,rom_z/'";;
+          (  5 ) SED+=" -e 's/@COMBINE@/COMBINE INSTRUCTION,rom_y/'";;
+          (  6 ) SED+=" -e 's/@COMBINE@/COMBINE INSTRUCTION,rom_z,rom_y/'";;
+          (  7 ) SED+=" -e 's/@COMBINE@/COMBINE DATA_STACK,rom_z/'";;
+          (  8 ) SED+=" -e 's/@COMBINE@/COMBINE DATA_STACK,rom_y/'";;
+          (  9 ) SED+=" -e 's/@COMBINE@/COMBINE DATA_STACK,rom_z,rom_y/'";;
+          ( 10 ) SED+=" -e 's/@COMBINE@/COMBINE RETURN_STACK,rom_z/'";;
+          ( 11 ) SED+=" -e 's/@COMBINE@/COMBINE RETURN_STACK,rom_y/'";;
+          ( 12 ) SED+=" -e 's/@COMBINE@/COMBINE RETURN_STACK,rom_z,rom_y/'";;
+          ( * ) echo "Invalid value of ixcombine = ${ixcombine}" > /dev/stderr;
+                exit 1;;
+        esac
+        eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+        gawk --assign SIZE_Z=${SIZE_Z} --assign SIZE_Y=${SIZE_Y} -f init-2rom.awk > init.s;
+        ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+        verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+        iverilog -o tb tb.v arch.v || exit 1;
+        if [ -n "`./tb | gawk -f test-rom3.awk -f test-rom2.awk 2>&1`" ]; then
+          echo "${TEST} failed" > /dev/stderr;
+          exit 1;
+        fi
+        echo "Tested:  ${TEST}";
+      done
+    done
+  done
+}
+
+# Test memory reads when there is a single ROM for several memory sizes and
+# "COMBINE" configuration commands.
+function test_3rom() {
+  ARCH="arch-3rom";
+  for SIZE in " 32  32  32" \
+              "128 256 256" \
+              "256 128 256" \
+              "256 256 128" \
+              "256 256 256" \
+  ; do
+    SIZE=(${SIZE});
+    SIZE_Z=${SIZE[0]};
+    SIZE_Y=${SIZE[1]};
+    SIZE_X=${SIZE[2]};
+    COMBINES=(
+      ""
+      "COMBINE rom_z"
+      "COMBINE rom_y"
+      "COMBINE rom_x"
+      "COMBINE rom_z,rom_y"
+      "COMBINE rom_z,rom_x"
+      "COMBINE rom_y,rom_x"
+      "COMBINE rom_z,rom_y,rom_x"
+      "COMBINE rom_z,rom_y\nCOMBINE rom_x"
+      "COMBINE INSTRUCTION,rom_z"
+      "COMBINE INSTRUCTION,rom_z,rom_y"
+      "COMBINE INSTRUCTION,rom_z,rom_y,rom_x"
+      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE rom_x"
+      "COMBINE DATA_STACK,rom_z"
+      "COMBINE DATA_STACK,rom_z,rom_y"
+      "COMBINE DATA_STACK,rom_z,rom_y,rom_x"
+      "COMBINE DATA_STACK,rom_z,rom_y\nCOMBINE rom_x"
+      "COMBINE RETURN_STACK,rom_z"
+      "COMBINE RETURN_STACK,rom_z,rom_y"
+      "COMBINE RETURN_STACK,rom_z,rom_y,rom_x"
+      "COMBINE RETURN_STACK,rom_z,rom_y\nCOMBINE rom_x"
+      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE DATA_STACK,rom_x"
+      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE RETURN_STACK,rom_x"
+      "COMBINE INSTRUCTION,rom_z\nCOMBINE DATA_STACK,rom_y\nCOMBINE RETURN_STACK,rom_x"
+      "COMBINE DATA_STACK,rom_z,rom_y\nCOMBINE RETURN_STACK,rom_x"
+    );
+    for (( ixcombine=0; ixcombine<${#COMBINES[*]}; ++ixcombine )); do
+      TEST="${NAME}/${ARCH}@${SIZE_Z}.${SIZE_Y}.${SIZE_X}.${ixcombine}";
+      SED="-e 's/@ROM_Z@/MEMORY ROM rom_z ${SIZE_Z}/'";
+      SED+=" -e 's/@ROM_Y@/MEMORY ROM rom_y ${SIZE_Y}/'";
+      SED+=" -e 's/@ROM_X@/MEMORY ROM rom_x ${SIZE_X}/'";
+      SED+=" -e 's/@COMBINE@/${COMBINES[$ixcombine]}/'";
+      eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+      gawk --assign SIZE_Z=${SIZE_Z} --assign SIZE_Y=${SIZE_Y} --assign SIZE_X=${SIZE_X} -f init-3rom.awk > init.s;
+      ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+      verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+      iverilog -o tb tb.v arch.v || exit 1;
+      if [ -n "`./tb | gawk -f test-rom3.awk -f test-rom2.awk -f test-rom1.awk 2>&1`" ]; then
+        echo "${TEST} failed" > /dev/stderr;
+        exit 1;
+      fi
+      echo "Tested:  ${TEST}";
+    done
+  done
+}
+
+# Test memory reads when there is a single ROM for several memory sizes and
+# "COMBINE" configuration commands.
+function test_4rom() {
+  ARCH="arch-4rom";
+  for SIZE in " 32  32  32 32" \
+              "128 256 256 256" \
+              "256 128 256 256" \
+              "256 256 128 256" \
+              "256 256 256 128" \
+              "256 256 256 256" \
+  ; do
+    SIZE=(${SIZE});
+    SIZE_Z=${SIZE[0]};
+    SIZE_Y=${SIZE[1]};
+    SIZE_X=${SIZE[2]};
+    SIZE_W=${SIZE[3]};
+    COMBINES=(
+      ""
+      "COMBINE rom_z"
+      "COMBINE rom_y"
+      "COMBINE rom_x"
+      "COMBINE rom_w"
+      "COMBINE rom_z,rom_y"
+      "COMBINE rom_z,rom_x"
+      "COMBINE rom_z,rom_w"
+      "COMBINE rom_y,rom_x"
+      "COMBINE rom_y,rom_w"
+      "COMBINE rom_x,rom_w"
+      "COMBINE rom_z,rom_y,rom_x"
+      "COMBINE rom_z,rom_y,rom_w"
+      "COMBINE rom_z,rom_x,rom_w"
+      "COMBINE rom_y,rom_x,rom_w"
+      "COMBINE rom_z,rom_y,rom_x,rom_w"
+      "COMBINE rom_z,rom_y\nCOMBINE rom_x"
+      "COMBINE rom_z,rom_y\nCOMBINE rom_w"
+      "COMBINE rom_z,rom_y\nCOMBINE rom_x,rom_w"
+      "COMBINE rom_z,rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
+      "COMBINE rom_z\nCOMBINE rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
+    );
+    for X in INSTRUCTION DATA_STACK RETURN_STACK; do
+      COMBINES+=(
+        "COMBINE ${X},rom_z"
+        "COMBINE ${X},rom_z,rom_y"
+        "COMBINE ${X},rom_z,rom_y,rom_x"
+        "COMBINE ${X},rom_z,rom_y,rom_x,rom_w"
+        "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_x"
+        "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_w"
+        "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
+      );
+    done
+    for X in "INSTRUCTION DATA_STACK" "INSTRUCTION RETURN_STACK" "DATA_STACK RETURN_STACK"; do
+      XX=(${X});
+      COMBINES+=(
+        "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x"
+        "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x,rom_w"
+        "COMBINE ${XX[0]},rom_z,rom_y,rom_x\nCOMBINE ${XX[1]},rom_w"
+        "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x\nCOMBINE rom_w"
+      );
+    done
+    COMBINES+=(
+      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE DATA_STACK,rom_x\nCOMBINE RETURN_STACK,rom_w"
+    );
+    for (( ixcombine=0; ixcombine<${#COMBINES[*]}; ++ixcombine )); do
+      TEST="${NAME}/${ARCH}@${SIZE_Z}.${SIZE_Y}.${SIZE_X}.${SIZE_W}.${ixcombine}";
+      SED="-e 's/@ROM_Z@/MEMORY ROM rom_z ${SIZE_Z}/'";
+      SED+=" -e 's/@ROM_Y@/MEMORY ROM rom_y ${SIZE_Y}/'";
+      SED+=" -e 's/@ROM_X@/MEMORY ROM rom_x ${SIZE_X}/'";
+      SED+=" -e 's/@ROM_W@/MEMORY ROM rom_w ${SIZE_W}/'";
+      SED+=" -e 's/@COMBINE@/${COMBINES[$ixcombine]}/'";
+      eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+      gawk --assign SIZE_Z=${SIZE_Z} --assign SIZE_Y=${SIZE_Y} --assign SIZE_X=${SIZE_X} --assign SIZE_W=${SIZE_W} -f init-4rom.awk > init.s;
+      ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+      verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+      iverilog -o tb tb.v arch.v || exit 1;
+      if [ -n "`./tb | gawk -f test-rom3.awk -f test-rom2.awk -f test-rom1.awk -f test-rom0.awk 2>&1`" ]; then
+        echo "${TEST} failed" > /dev/stderr;
+        exit 1;
+      fi
+      echo "Tested:  ${TEST}";
+    done
+  done
+}
+
 ################################################################################
 #
 # Either run the specified test(s) or run all of the tests.
@@ -207,7 +424,7 @@ rm -f ssbcc;
 ln -s ../../../../ssbcc;
 
 if [ $# -eq 0 ]; then
-  TESTS="nomem calls 1mem 2mem 3mem 4mem";
+  TESTS="nomem calls 1mem 2mem 3mem 4mem 1rom 2rom 3rom 4rom";
 else
   TESTS="$*";
 fi
@@ -220,12 +437,16 @@ for CURTEST in ${TESTS}; do
     ( 2mem  ) test_2mem;;
     ( 3mem  ) test_3mem;;
     ( 4mem  ) test_4mem;;
+    ( 1rom  ) test_1rom;;
+    ( 2rom  ) test_2rom;;
+    ( 3rom  ) test_3rom;;
+    ( 4rom  ) test_4rom;;
     ( *     ) echo "Unrecognized test:  ${TEST}" > /dev/stderr; exit 1;;
   esac
 done
 
 # Remove the temporary output files.
-rm -f arch.9x8 arch.9x8-meta arch.v ssbcc tb;
+rm -f arch.9x8 arch.9x8-meta init.s arch.v ssbcc tb;
 
 # Print success message and return success indication.
 echo "Passed:  ${NAME}";
