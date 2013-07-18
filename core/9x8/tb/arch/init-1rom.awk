@@ -5,7 +5,7 @@
 BEGIN {
   print ".memory ROM rom_z";
   print ".variable z";
-  for (i=0; i<SIZE; ++i) {
+  for (i=0; i<SIZE_Z; ++i) {
     printf("  0x%02X\n",xor(i,i/2));
   }
 }
