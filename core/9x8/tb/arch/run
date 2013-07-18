@@ -440,7 +440,6 @@ function test_1r2m() {
               "256 128 256" \
               "256 256 128" \
               "256 256 256" \
-              "256 256 256" \
   ; do
     SIZE=(${SIZE});
     SIZE_A=${SIZE[0]};
@@ -466,6 +465,70 @@ function test_1r2m() {
   done
 }
 
+# Test memory reads when there are two ROMs and two RAMs for several memory
+# sizes and "COMBINE" configuration commands.
+function test_2r2m() {
+  ARCH="arch-2r2m";
+  COMBINES=(
+    ""
+    "COMBINE ram_a"
+    "COMBINE ram_b"
+    "COMBINE rom_y"
+    "COMBINE rom_z"
+    "COMBINE ram_a,ram_b"
+    "COMBINE ram_a,rom_z"
+    "COMBINE ram_a,rom_y"
+    "COMBINE ram_b,rom_z"
+    "COMBINE ram_b,rom_y"
+    "COMBINE rom_y,rom_z"
+    "COMBINE ram_a,ram_b,rom_z"
+    "COMBINE ram_a,ram_b,rom_y,rom_z"
+    "COMBINE ram_a,rom_y,ram_b,rom_z"
+    "COMBINE ram_a,ram_b\nCOMBINE rom_z,rom_y"
+    "COMBINE ram_a\nCOMBINE ram_b,rom_z"
+    "COMBINE ram_b\nCOMBINE ram_a,rom_z"
+  );
+  for X in INSTRUCTION DATA_STACK RETURN_STACK; do
+    COMBINES+=(
+      "COMBINE ${X},rom_z"
+      "COMBINE ${X},rom_z,rom_y"
+      "COMBINE ${X},rom_z\nCOMBINE ram_a,ram_b"
+      "COMBINE ${X},rom_z,rom_y\nCOMBINE ram_a,ram_b"
+    );
+  done
+  for SIZE in " 32  32  32  32" \
+              "128 256 256 256" \
+              "256 128 256 256" \
+              "256 256 128 256" \
+              "256 256 256 128" \
+              "256 256 256 256" \
+  ; do
+    SIZE=(${SIZE});
+    SIZE_A=${SIZE[0]};
+    SIZE_B=${SIZE[1]};
+    SIZE_Z=${SIZE[2]};
+    SIZE_Y=${SIZE[3]};
+    for (( ixcombine=0; ixcombine<${#COMBINES[*]}; ++ixcombine )); do
+      TEST="${NAME}/${ARCH}@${SIZE_A}.${SIZE_B}.${SIZE_Z}.${SIZE_Y}.${ixcombine}";
+      SED="-e 's/@RAM_A@/MEMORY RAM ram_a ${SIZE_A}/'";
+      SED+=" -e 's/@RAM_B@/MEMORY RAM ram_b ${SIZE_B}/'";
+      SED+=" -e 's/@ROM_Z@/MEMORY ROM rom_z ${SIZE_Z}/'";
+      SED+=" -e 's/@ROM_Y@/MEMORY ROM rom_y ${SIZE_Y}/'";
+      SED+=" -e 's/@COMBINE@/${COMBINES[$ixcombine]}/'";
+      eval sed ${SED} ${ARCH}.9x8 > arch.9x8;
+      gawk --assign SIZE_Z=${SIZE_Z} --assign SIZE_Y=${SIZE_Y} -f init-2rom.awk > init.s;
+      ./ssbcc -q arch.9x8 || { echo "ssbcc failed on ${TEST}"; exit 1; }
+      verilator --lint-only arch.v || { echo "lint failed on ${TEST}"; exit 1;}
+      iverilog -o tb tb.v arch.v || exit 1;
+      if [ -n "`./tb | gawk -f test-rom3.awk -f test-rom2.awk -f test-ram1.awk -f test-ram0.awk 2>&1`" ]; then
+        echo "${TEST} failed" > /dev/stderr;
+        exit 1;
+      fi
+      echo "Tested:  ${TEST}";
+    done
+  done
+}
+
 ################################################################################
 #
 # Either run the specified test(s) or run all of the tests.
@@ -478,7 +541,7 @@ rm -f ssbcc;
 ln -s ../../../../ssbcc;
 
 if [ $# -eq 0 ]; then
-  TESTS="nomem calls 1mem 2mem 3mem 4mem 1rom 2rom 3rom 4rom 1r2m";
+  TESTS="nomem calls 1mem 2mem 3mem 4mem 1rom 2rom 3rom 4rom 1r2m 2r2m";
 else
   TESTS="$*";
 fi
@@ -496,6 +559,7 @@ for CURTEST in ${TESTS}; do
     ( 3rom  ) test_3rom;;
     ( 4rom  ) test_4rom;;
     ( 1r2m  ) test_1r2m;;
+    ( 2r2m  ) test_2r2m;;
     ( *     ) echo "Unrecognized test:  ${TEST}" > /dev/stderr; exit 1;;
   esac
 done
