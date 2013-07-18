@@ -272,6 +272,33 @@ function test_2rom() {
 # "COMBINE" configuration commands.
 function test_3rom() {
   ARCH="arch-3rom";
+  COMBINES=(
+    ""
+    "COMBINE rom_z"
+    "COMBINE rom_y"
+    "COMBINE rom_x"
+    "COMBINE rom_z,rom_y"
+    "COMBINE rom_z,rom_x"
+    "COMBINE rom_y,rom_x"
+    "COMBINE rom_z,rom_y,rom_x"
+    "COMBINE rom_z,rom_y\nCOMBINE rom_x"
+    "COMBINE INSTRUCTION,rom_z"
+    "COMBINE INSTRUCTION,rom_z,rom_y"
+    "COMBINE INSTRUCTION,rom_z,rom_y,rom_x"
+    "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE rom_x"
+    "COMBINE DATA_STACK,rom_z"
+    "COMBINE DATA_STACK,rom_z,rom_y"
+    "COMBINE DATA_STACK,rom_z,rom_y,rom_x"
+    "COMBINE DATA_STACK,rom_z,rom_y\nCOMBINE rom_x"
+    "COMBINE RETURN_STACK,rom_z"
+    "COMBINE RETURN_STACK,rom_z,rom_y"
+    "COMBINE RETURN_STACK,rom_z,rom_y,rom_x"
+    "COMBINE RETURN_STACK,rom_z,rom_y\nCOMBINE rom_x"
+    "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE DATA_STACK,rom_x"
+    "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE RETURN_STACK,rom_x"
+    "COMBINE INSTRUCTION,rom_z\nCOMBINE DATA_STACK,rom_y\nCOMBINE RETURN_STACK,rom_x"
+    "COMBINE DATA_STACK,rom_z,rom_y\nCOMBINE RETURN_STACK,rom_x"
+  );
   for SIZE in " 32  32  32" \
               "128 256 256" \
               "256 128 256" \
@@ -282,33 +309,6 @@ function test_3rom() {
     SIZE_Z=${SIZE[0]};
     SIZE_Y=${SIZE[1]};
     SIZE_X=${SIZE[2]};
-    COMBINES=(
-      ""
-      "COMBINE rom_z"
-      "COMBINE rom_y"
-      "COMBINE rom_x"
-      "COMBINE rom_z,rom_y"
-      "COMBINE rom_z,rom_x"
-      "COMBINE rom_y,rom_x"
-      "COMBINE rom_z,rom_y,rom_x"
-      "COMBINE rom_z,rom_y\nCOMBINE rom_x"
-      "COMBINE INSTRUCTION,rom_z"
-      "COMBINE INSTRUCTION,rom_z,rom_y"
-      "COMBINE INSTRUCTION,rom_z,rom_y,rom_x"
-      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE rom_x"
-      "COMBINE DATA_STACK,rom_z"
-      "COMBINE DATA_STACK,rom_z,rom_y"
-      "COMBINE DATA_STACK,rom_z,rom_y,rom_x"
-      "COMBINE DATA_STACK,rom_z,rom_y\nCOMBINE rom_x"
-      "COMBINE RETURN_STACK,rom_z"
-      "COMBINE RETURN_STACK,rom_z,rom_y"
-      "COMBINE RETURN_STACK,rom_z,rom_y,rom_x"
-      "COMBINE RETURN_STACK,rom_z,rom_y\nCOMBINE rom_x"
-      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE DATA_STACK,rom_x"
-      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE RETURN_STACK,rom_x"
-      "COMBINE INSTRUCTION,rom_z\nCOMBINE DATA_STACK,rom_y\nCOMBINE RETURN_STACK,rom_x"
-      "COMBINE DATA_STACK,rom_z,rom_y\nCOMBINE RETURN_STACK,rom_x"
-    );
     for (( ixcombine=0; ixcombine<${#COMBINES[*]}; ++ixcombine )); do
       TEST="${NAME}/${ARCH}@${SIZE_Z}.${SIZE_Y}.${SIZE_X}.${ixcombine}";
       SED="-e 's/@ROM_Z@/MEMORY ROM rom_z ${SIZE_Z}/'";
@@ -333,6 +333,52 @@ function test_3rom() {
 # "COMBINE" configuration commands.
 function test_4rom() {
   ARCH="arch-4rom";
+  COMBINES=(
+    ""
+    "COMBINE rom_z"
+    "COMBINE rom_y"
+    "COMBINE rom_x"
+    "COMBINE rom_w"
+    "COMBINE rom_z,rom_y"
+    "COMBINE rom_z,rom_x"
+    "COMBINE rom_z,rom_w"
+    "COMBINE rom_y,rom_x"
+    "COMBINE rom_y,rom_w"
+    "COMBINE rom_x,rom_w"
+    "COMBINE rom_z,rom_y,rom_x"
+    "COMBINE rom_z,rom_y,rom_w"
+    "COMBINE rom_z,rom_x,rom_w"
+    "COMBINE rom_y,rom_x,rom_w"
+    "COMBINE rom_z,rom_y,rom_x,rom_w"
+    "COMBINE rom_z,rom_y\nCOMBINE rom_x"
+    "COMBINE rom_z,rom_y\nCOMBINE rom_w"
+    "COMBINE rom_z,rom_y\nCOMBINE rom_x,rom_w"
+    "COMBINE rom_z,rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
+    "COMBINE rom_z\nCOMBINE rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
+  );
+  for X in INSTRUCTION DATA_STACK RETURN_STACK; do
+    COMBINES+=(
+      "COMBINE ${X},rom_z"
+      "COMBINE ${X},rom_z,rom_y"
+      "COMBINE ${X},rom_z,rom_y,rom_x"
+      "COMBINE ${X},rom_z,rom_y,rom_x,rom_w"
+      "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_x"
+      "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_w"
+      "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
+    );
+  done
+  for X in "INSTRUCTION DATA_STACK" "INSTRUCTION RETURN_STACK" "DATA_STACK RETURN_STACK"; do
+    XX=(${X});
+    COMBINES+=(
+      "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x"
+      "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x,rom_w"
+      "COMBINE ${XX[0]},rom_z,rom_y,rom_x\nCOMBINE ${XX[1]},rom_w"
+      "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x\nCOMBINE rom_w"
+    );
+  done
+  COMBINES+=(
+    "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE DATA_STACK,rom_x\nCOMBINE RETURN_STACK,rom_w"
+  );
   for SIZE in " 32  32  32 32" \
               "128 256 256 256" \
               "256 128 256 256" \
@@ -345,52 +391,6 @@ function test_4rom() {
     SIZE_Y=${SIZE[1]};
     SIZE_X=${SIZE[2]};
     SIZE_W=${SIZE[3]};
-    COMBINES=(
-      ""
-      "COMBINE rom_z"
-      "COMBINE rom_y"
-      "COMBINE rom_x"
-      "COMBINE rom_w"
-      "COMBINE rom_z,rom_y"
-      "COMBINE rom_z,rom_x"
-      "COMBINE rom_z,rom_w"
-      "COMBINE rom_y,rom_x"
-      "COMBINE rom_y,rom_w"
-      "COMBINE rom_x,rom_w"
-      "COMBINE rom_z,rom_y,rom_x"
-      "COMBINE rom_z,rom_y,rom_w"
-      "COMBINE rom_z,rom_x,rom_w"
-      "COMBINE rom_y,rom_x,rom_w"
-      "COMBINE rom_z,rom_y,rom_x,rom_w"
-      "COMBINE rom_z,rom_y\nCOMBINE rom_x"
-      "COMBINE rom_z,rom_y\nCOMBINE rom_w"
-      "COMBINE rom_z,rom_y\nCOMBINE rom_x,rom_w"
-      "COMBINE rom_z,rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
-      "COMBINE rom_z\nCOMBINE rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
-    );
-    for X in INSTRUCTION DATA_STACK RETURN_STACK; do
-      COMBINES+=(
-        "COMBINE ${X},rom_z"
-        "COMBINE ${X},rom_z,rom_y"
-        "COMBINE ${X},rom_z,rom_y,rom_x"
-        "COMBINE ${X},rom_z,rom_y,rom_x,rom_w"
-        "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_x"
-        "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_w"
-        "COMBINE ${X},rom_z,rom_y\nCOMBINE rom_x\nCOMBINE rom_w"
-      );
-    done
-    for X in "INSTRUCTION DATA_STACK" "INSTRUCTION RETURN_STACK" "DATA_STACK RETURN_STACK"; do
-      XX=(${X});
-      COMBINES+=(
-        "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x"
-        "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x,rom_w"
-        "COMBINE ${XX[0]},rom_z,rom_y,rom_x\nCOMBINE ${XX[1]},rom_w"
-        "COMBINE ${XX[0]},rom_z,rom_y\nCOMBINE ${XX[1]},rom_x\nCOMBINE rom_w"
-      );
-    done
-    COMBINES+=(
-      "COMBINE INSTRUCTION,rom_z,rom_y\nCOMBINE DATA_STACK,rom_x\nCOMBINE RETURN_STACK,rom_w"
-    );
     for (( ixcombine=0; ixcombine<${#COMBINES[*]}; ++ixcombine )); do
       TEST="${NAME}/${ARCH}@${SIZE_Z}.${SIZE_Y}.${SIZE_X}.${SIZE_W}.${ixcombine}";
       SED="-e 's/@ROM_Z@/MEMORY ROM rom_z ${SIZE_Z}/'";
