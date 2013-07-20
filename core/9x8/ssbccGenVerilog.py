@@ -365,7 +365,8 @@ def genMemories(fp,config,programBody):
           continue;
         addrString = port['addrString'];
         totalWidth = memWidth * port['ratio'];
-        fp.write('reg [%d:0] %s_reg = %d\'h0;\n' % (totalWidth-1,memName,totalWidth,));
+        if combined['memArch'] == 'sync':
+          fp.write('reg [%d:0] %s_reg = %d\'h0;\n' % (totalWidth-1,memName,totalWidth,));
         if port['ratio'] == 1:
           fp.write('always @ (%s[%s])\n' % (memName,addrString,));
           fp.write('  %s_reg = %s[%s];\n' % (memName,memName,addrString,));
@@ -597,7 +598,8 @@ def genMemories_stack(fp,combined,port,packing,inSignalName,outSignalName,muxTes
   nbits = packing['nbits'];                             # number of bits in the signal
   totalWidth = packing['ratio'] * combined['memWidth']; # width of the [multi-]word memory access
   # Generate the core.
-  fp.write('reg [%d:0] %s_reg = %d\'d0;\n' % (nbits-1,outSignalName,nbits,));
+  if combined['memArch'] == 'sync':
+    fp.write('reg [%d:0] %s_reg = %d\'d0;\n' % (nbits-1,outSignalName,nbits,));
   if totalWidth == nbits+1:
     fp.write('reg not_used_%s_reg = 1\'b0;\n' % outSignalName);
   elif totalWidth > nbits+1:
