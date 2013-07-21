@@ -382,7 +382,7 @@ def genMemories(fp,config,programBody):
           fp.write('end\n');
     fp.write('initial s_memory = 8\'h00;\n');
     include_s_T = False;
-    fp.write('always @ (s_opcode[0+:2]');
+    fp.write('always @ (s_opcode[1:0]');
     for combined in combines:
       for port in combined['port']:
         if port['packing'][0]['name'] in ('INSTRUCTION','DATA_STACK','RETURN_STACK',):
