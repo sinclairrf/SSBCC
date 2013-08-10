@@ -451,6 +451,7 @@ def RawTokens(ad,filename,startLineNumber,lines):
               'string',
               'symbol'
             ];
+  ifstack = list();
   tokens = list();
   lineNumber = startLineNumber - 1;
   for line in lines:
@@ -485,6 +486,38 @@ def RawTokens(ad,filename,startLineNumber,lines):
       else:
         # Everything else is a white-space delimited token.
         a = re.match(r'\S+',line[col:]);
+      # Get the candidate token.
+      candToken = a.group(0);
+      # Catch conditional code inclusion constructs before parsing the token
+      if candToken == '.else':
+        if not ifstack:
+          raise AsmException('Unmatched ".else" at %s' % flc_loc);
+        ifstack[-1] = not ifstack[-1];
+        col += 5;
+        continue;
+      if candToken == '.endif':
+        if not ifstack:
+          raise AsmException('Unmatched ".endif" at %s' % flc_loc);
+        ifstack.pop();
+        col += 6;
+        continue;
+      elif re.match(r'\.ifdef\(',candToken):
+        a = re.findall(r'\.ifdef\((\w+)\)$',candToken);
+        if not a:
+          raise AsmException('Malformed ".ifdef" at %s' % flc_loc);
+        ifstack.append(ad.IsSymbol(a[0]));
+        col += 8+len(a[0]);
+        continue;
+      elif re.match(r'\.ifndef\(',candToken):
+        a = re.findall(r'\.ifndef\((\w+)\)$',candToken);
+        if not a:
+          raise AsmException('Malformed ".ifndef" at %s' % flc_loc);
+        ifstack.append(not ad.IsSymbol(a[0]));
+        col += 9+len(a[0]);
+        continue;
+      if ifstack and not ifstack[-1]:
+        col += len(candToken);
+        continue;
       # Determine which kinds of tokens are allowed at this location in the
       # directive body.
       if not tokens:
@@ -492,6 +525,8 @@ def RawTokens(ad,filename,startLineNumber,lines):
       else:
         selAllowed = allowed;
       # Append the parsed token to the list of tokens.
-      tokens.append(ParseToken(ad,fl_loc,col,a.group(0),selAllowed));
-      col = col + len(a.group(0));
+      tokens.append(ParseToken(ad,fl_loc,col,candToken,selAllowed));
+      col += len(candToken);
+  if ifstack:
+    raise AsmException('%d unmatched conditionals at line %d' % (len(ifstack),lineNumber,));
   return tokens;

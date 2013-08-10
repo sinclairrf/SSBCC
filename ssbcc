@@ -43,6 +43,7 @@ try:
 
   import argparse
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
+  argListParser.add_argument('-D', metavar='symbol', type=str, action='append', help='Define symbol');
   argListParser.add_argument('-G', metavar='parameter_name=value', type=str, action='append', help='Override parameter value');
   argListParser.add_argument('-I', metavar='include_dir=value', type=str, action='append', help='Add search directory for included files and peripherals');
   argListParser.add_argument('-P', metavar='peripheral_name[="parameters"]', type=str, action='append', help='Add peripheral');
@@ -66,6 +67,10 @@ try:
   if argList.display_opcode:
     config.functions['display_opcode'] = True;
 
+  if argList.D:
+    for symbol in argList.D:
+      config.AddSymbol(symbol);
+
   if argList.o:
     config.Set('outCoreName',argList.o);
   else:
@@ -78,6 +83,7 @@ try:
   ixLine = 0;
   bufLine = "";
   compiler = [];
+  ifstack = list();
   user_header = list();
   for tmpLine in argList.filename:
     ixLine = ixLine + 1;
@@ -90,6 +96,32 @@ try:
     bufLine = "";
     # Reject blank and comment lines
     if re.match(r'\s*(#.*)?$',line):
+      pass;
+    # .ELSE
+    elif re.match(r'\s*\.ELSE\b',line):
+      if not ifstack:
+        raise SSBCCException('unmatched ".ELSE" at line %d' % ixLine);
+      ifstack[-1] = not ifstack[-1];
+    # .ENDIF
+    elif re.match(r'\s*\.ENDIF\b',line):
+      if not ifstack:
+        raise SSBCCException('unmatched ".ENDIF" at line %d' % ixLine);
+      ifstack.pop();
+    # .IFDEF conditional
+    elif re.match(r'\s*\.IFDEF\b',line):
+      cmd = re.findall(r'\s*\.IFDEF\s+(\w+)\s*$',line);
+      if not cmd:
+        raise SSBCCException('Malformed ".IFDEF" configuration command on line %d' % ixLine);
+      ifstack.append(config.IsSymbol(cmd[0]));
+    # .IFNDEF conditional
+    elif re.match(r'\s*\.IFNDEF\b',line):
+      cmd = re.findall(r'\s*\.IFNDEF\s+\(\w+\)\s*$',line);
+      if not cmd:
+        raise SSBCCException('Malformed ".IFNDEF" configuration command on line %d' % ixLine);
+      cmd = cmd[0];
+      ifstack.append(not config.IsSymbol(cmd[0]));
+    # Consume configuration commands disabled by conditionals
+    elif ifstack and not ifstack[-1]:
       pass;
     # ARCHITECTURE
     elif re.match(r'\s*ARCHITECTURE\b',line):
@@ -471,6 +503,9 @@ try:
     # error
     else:
       print 'WARNING:  Unimplemented command ' + fillCommand;
+
+  if ifstack:
+    raise SSBCCException('%d unmatched conditional(s) at end of configuration file' % len(ifstack));
 
 ################################################################################
 #
