@@ -55,12 +55,10 @@ class SSBCCconfig():
     value       value of the constant
     ixLine      line number in the architecture file for error messages
     """
+    self.AddSymbol(name,ixLine);
     if name in self.constants:
       raise SSBCCException('CONSTANT "%s" already declared at line %d' % (name,ixLine,));
-    if name in self.symbols:
-      raise SSBCCException('Symbol "%s" already defined' % name);
     self.constants[name] = value;
-    self.symbols.append(name);
 
   def AddIO(self,name,nBits,iotype,ixLine):
     """
@@ -69,10 +67,8 @@ class SSBCCconfig():
     nBits       number of bits in the I/O signal
     iotype      signal direction:  "input", "output", or "inout"
     """
-    if name in self.symbols:
-      raise SSBCCException('Symbol "%s" already defined at line %d' % (name,ixLine,));
+    self.AddSymbol(name,ixLine);
     self.ios.append((name,nBits,iotype,));
-    self.symbols.append(name);
 
   def AddInport(self,port,ixLine):
     """
@@ -81,10 +77,8 @@ class SSBCCconfig():
     ixLine      line number in the architecture file for error messages
     """
     name = port[0];
-    if name in self.symbols:
-      raise SSBCCException('Symbol "%s" already defined before line %d' % (name,ixLine,));
+    self.AddSymbol(name,ixLine);
     self.inports.append(port);
-    self.symbols.append(name);
 
   def AddMemory(self,cmd,ixLine):
     """
@@ -109,10 +103,8 @@ class SSBCCconfig():
     ixLine      line number in the architecture file for error messages
     """
     name = port[0];
-    if name in self.symbols:
-      raise SSBCCException('Symbol "%s" already defined before line %d' % (name,ixLine,));
+    self.AddSymbol(name,ixLine);
     self.outports.append(port);
-    self.symbols.append(name);
 
   def AddParameter(self,name,value,ixLine):
     """
@@ -123,10 +115,8 @@ class SSBCCconfig():
     """
     if not re.match(r'[LG]_\w+$',name):
       raise Exception('Program Bug -- bad parameter name at line %d' % ixLine);
-    if name in self.symbols:
-      raise SSBCCException('Symbol "%s" already defined before line %d' % (name,ixLine,));
+    self.AddSymbol(name,ixLine);
     self.parameters.append((name,value,));
-    self.symbols.append(name);
 
   def AddSignal(self,name,nBits,ixLine):
     """
@@ -135,10 +125,8 @@ class SSBCCconfig():
     nBits       number of bits in the signal
     ixLine      line number in the architecture file for error messages
     """
-    if name in self.symbols:
-      raise SSBCCException('Symbol "%s" already defined before line %d' % (name,ixLine,));
+    self.AddSymbol(name,ixLine);
     self.signals.append((name,nBits,));
-    self.symbols.append(name);
 
   def AddSignalWithInit(self,name,nBits,init,ixLine):
     """
@@ -148,9 +136,20 @@ class SSBCCconfig():
     init        initial/reset value of the signal
     ixLine      line number in the architecture file for error messages
     """
-    if name in self.symbols:
-      raise SSBCCException('Symbol "%s" already defined before line %d' % (name,ixLine,));
+    self.AddSymbol(name,ixLine);
     self.signals.append((name,nBits,init,));
+
+  def AddSymbol(self,name,ixLine=None):
+    """
+    Add the specified name to the list of symbols.\n
+    Note:  This symbol has no associated functionality and is only used for
+           ".ifdef" conditionals.
+    """
+    if name in self.symbols:
+      if ixLine == None:
+        raise SSBCCException('Symbol "%s" already defined, no line number provided');
+      else:
+        raise SSBCCException('Symbol "%s" already defined before line %d' % (name,ixLine,));
     self.symbols.append(name);
 
   def CompleteCombines(self):
