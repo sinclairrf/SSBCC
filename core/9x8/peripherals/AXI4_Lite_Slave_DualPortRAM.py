@@ -41,9 +41,46 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       Note:  N=256, i.e., the largest memory possible, is the default.
       Note:  Using a localparam for the memory size provides a convenient way
              to use the size of the dual port RAM in the micro controller code.\n
+  Example:  The code fragments
+              <addr> .outport(O_address) .inport(I_read)
+            and
+              <addr> .outport(O_address) <value> .outport(O_write)
+            will read from and write to the dual-port RAM.\n
+  Example:  Function to read the byte at the specified address:
+              ; ( u_addr - u_value)
+              .function als_read
+                .outport(O_address) .inport(I_read) .return
+            or
+              ; ( u_addr - u_value)
+              .function als_read
+                .outport(O_address) I_read .return(inport)
+            To invoke the function:
+              <addr> .call(als_read)
+            or
+              .call(als_read,<addr>)\n
+  Example:  Function to write the byte at the specified address:
+              ; ( u_value u_addr - )
+              .function als_write
+                .outport(O_address) O_write outport .return(drop)
+            To invoke the function:
+              <value> <addr> .call(als_write)
+            or
+              <value> .call(als_write,<addr>)\n
+  Example:  Spin on an address, waiting for the host processor to write to the
+            address, do something when the address is written to, and then
+            clear its contents.
+              0x00 .outport(O_address)
+              :loop .inport(I_read) 0= .jumpc(loop)
+              ; Avoid race conditions between the processor writes and the micro
+              ; controller read.
+              .inport(I_read)
+              ...
+              ; clear the value and start waiting again
+              0x00 O_address outport O_write outport .jump(loop,drop)\n
   LEGAL NOTICE:  ARM has restrictions on what kinds of applications can use
-  interfaces based on the AXI protocol.  Ensure your application is in
-  compliance with their legal restrictions before using this peripheral.
+  interfaces based on their AXI protocol.  Ensure your application is in
+  compliance with their restrictions before using this peripheral for an AXI
+  interface.
   """
 
   def __init__(self,peripheralFile,config,param_list,ixLine):
