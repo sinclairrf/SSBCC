@@ -29,9 +29,9 @@ reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
 reg                       [7:0] s_T;            // top of the data stack
 reg                       [7:0] s_N;            // next-to-top on the data stack
 
-//@SSBCC@ verilator_tracing
-
 //@SSBCC@ functions
+
+//@SSBCC@ verilator_tracing
 
 //@SSBCC@ signals
 
