@@ -659,6 +659,52 @@ data stack:
   .function increment_2byte
   swap 1+ swap over 0= .return(-)
 
+CONDITIONAL COMPILATION
+================================================================================
+The computer compiler and assembler recognize conditional compilation as
+follows:  .IFDEF, .IFNDEF, .ELSE, and .ENDIF can be used in the architecture
+file and they can be used to conditionally include functions, files, etc within
+the assembly code; .ifdef, .ifndef, .else, and .endif can be used in function
+bodies, variable bodies, etc. to conditionally include assembly code.
+Conditionals cannot cross file boundaries.
+
+The computer compiler examines the list of defined symbols such as I/O ports,
+I/O signals, etc. to evaluate the true/false condition associated with the
+.IFDEF and .IFNDEF commands.  The "-D" option to the computer compiler is
+provided to define symbols for enabling conditionally compiled configuration
+commands.  Similarly, the assembler examines the list of I/O ports, I/O signals,
+parameters, constants, etc. to evaluate the .IFDEF, .IFNDEF, .ifdef, and .ifndef
+contitionals.
+
+For example, a diagnostic UART can be conditionally included using the
+configuration commands:
+
+  .IFDEF ENABLE_UART
+  PORTCOMMENT Diagnostic UART
+  PERIPHERAL UART_Tx outport=O_UART_TX ...
+  .ENDIF
+
+And the assembly code can include conditional code fragments such the following,
+where the existence of the output port is used to determine whether or not to
+send a character to that output port:
+
+  .ifdef(O_UART_TX) 'A' .outport(O_UART_TX) .endif
+
+Invoking the computer compiler with "-D ENABLE_UART" will generate a module with
+the UART and will enable the conditional code sending the 'A' character to the
+UART port.
+
+The following code can be used to preclude multiple attempted inclusions of an
+assembly library file.
+
+  ; put these two lines near the top of the file
+  .IFNDEF C_FILENAME_INCLUDED
+  .constant C_FILENAME_INCLUDED 1
+  ; put the library body here
+  ...
+  ; put this line at the bottom of the file
+  .ENDIF ; .IFNDEF C_FILENAME_INCLUDED
+
 
 SIMULATIONS
 ================================================================================
