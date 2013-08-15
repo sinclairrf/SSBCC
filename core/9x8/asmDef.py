@@ -81,13 +81,22 @@ class FileBodyIterator:
     self.pending = list();
     # Loop until all of the files have been processed
     while self.fpStack or self.fpPending or self.pendingInclude:
+      # Indicate when a new file is started.
+      if 'started' not in self.fpStack[-1]:
+        if  not self.current:
+          self.fpStack[-1]['started'] = True;
+          self.current.append(self.fpStack[-1]['fp'].name);
+          self.current.append(0);
+        return self.current;
       # Ensure the bodies in closed files are all emitted before continuing to
       # the next/enclosing file.
       if 'closed' in self.fpStack[-1]:
-        if self.current:
-          return self.current;
-        self.fpStack.pop();
-        continue;
+        # Provide end-of-file indication if there is not a pending body fragment.
+        if not self.current:
+          self.current.append(self.fpStack[-1]['fp'].name);
+          self.current.append(-1);
+          self.fpStack.pop();
+        return self.current;
       # Handle a queued ".include" directive.
       if self.pendingInclude:
         # Don't open the include file until all previous content has been emitted.
@@ -106,23 +115,24 @@ class FileBodyIterator:
           raise AsmException('%s not found' % self.pendingInclude);
         self.fpStack.append(dict(fp=fp_pending, line=0));
         self.pendingInclude = None;
+        # Provide start-of-file indication.
+        self.fpStack[-1]['started'] = True;
+        self.current.append(fp_pending.name);
+        self.current.append(0);
+        return self.current;
       # Get the next file to process if fpStack is empty.
       if not self.fpStack:
-        self.fpStack.append(dict(fp=self.fpPending.pop(0),line=0));
+        self.fpStack.append(dict(fp=self.fpPending.pop(0), line=0));
       # Process/continue processing the top file.
       fp = self.fpStack[-1];
       for line in fp['fp']:
-        fp['line'] = fp['line'] + 1;
-        # Handle '.include' directives.
-        if re.match(r'\s*\.include\s', line):
-          a = re.findall(r'\s*\.include\s+(\S+)(\s*|\s*;.*)$', line);
-          if not a:
-            raise AsmException('Malformed .include directive at %s:%d' % (fp['fp'].name, fp['line']));
+        fp['line'] += 1;
+        # Handle single-line directives.
+        if re.match(r'\s*\.(IFDEF|IFNDEF|ELSE|ENDIF|include)\b',line):
           if not self.pending:
             self.pending.append(fp['fp'].name);
             self.pending.append(fp['line']);
           self.pending.append(line);
-          self.pendingInclude = a[0][0];
           if not self.current:
             self.current = self.pending;
             self.pending = list();
@@ -167,6 +177,9 @@ class FileBodyIterator:
     files.
     """
     self.searchPaths.append(path);
+
+  def Include(self,filename):
+    self.pendingInclude = filename;
 
 ################################################################################
 #

@@ -112,14 +112,15 @@ try:
       cmd = re.findall(r'\s*\.IFDEF\s+(\w+)\s*$',line);
       if not cmd:
         raise SSBCCException('Malformed ".IFDEF" configuration command on line %d' % ixLine);
-      ifstack.append(config.IsSymbol(cmd[0]));
+      cmd = cmd[0];
+      ifstack.append(config.IsSymbol(cmd));
     # .IFNDEF conditional
     elif re.match(r'\s*\.IFNDEF\b',line):
-      cmd = re.findall(r'\s*\.IFNDEF\s+\(\w+\)\s*$',line);
+      cmd = re.findall(r'\s*\.IFNDEF\s+(\w+)\s*$',line);
       if not cmd:
         raise SSBCCException('Malformed ".IFNDEF" configuration command on line %d' % ixLine);
       cmd = cmd[0];
-      ifstack.append(not config.IsSymbol(cmd[0]));
+      ifstack.append(not config.IsSymbol(cmd));
     # Consume configuration commands disabled by conditionals
     elif ifstack and not ifstack[-1]:
       pass;
@@ -251,6 +252,9 @@ try:
     else:
       raise SSBCCException('Unrecognized configuration command on line %d: "%s"' % (ixLine,line[:-1],));
   argList.filename.close();
+
+  if ifstack:
+    raise SSBCCException('%d unmatched conditional(s) at end of configuration file' % len(ifstack));
 
   #
   # Incorporate command-line specified parameter and localparam values.
@@ -503,9 +507,6 @@ try:
     # error
     else:
       print 'WARNING:  Unimplemented command ' + fillCommand;
-
-  if ifstack:
-    raise SSBCCException('%d unmatched conditional(s) at end of configuration file' % len(ifstack));
 
 ################################################################################
 #

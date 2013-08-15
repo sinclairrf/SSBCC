@@ -154,13 +154,57 @@ try:
   # files).
   #
 
+  ifstackStack = list();
+  ifstack = None;
   for bl in fbi:
     filename = bl[0];
     startLine = bl[1];
     body = bl[2:];
-    # ".include" directives don't have an associated body
-    if re.match(r'\s*\.include\s',body[-1]):
+    flc_loc = filename + ' at line ' + str(startLine+len(body)-1);
+    # Start-of-file processing.
+    if startLine == 0:
+      if ifstack != None:
+        ifstackStack.append(ifstack);
+      ifstack = list();
+    # End-of-file processing.
+    elif startLine == -1:
+      if len(ifstack) != 0:
+        raise asmDef.AsmException('%d unmatched .IFDEF/.IFNDEF(s) at the end of %s' % (len(ifstack),filename,));
+      if ifstackStack:
+        ifstack = ifstackStack.pop();
+      else:
+        ifstack = None;
+    # Handle conditional compilation directives.
+    elif re.match(r'\s*\.ELSE\b',body[-1]):
+      if not re.match(r'\s*\.ELSE\s*(;.*)?$',body[-1]):
+        raise asmDef.AsmException('Malformed ".ELSE" in %s' % flc_loc);
+      if not ifstack:
+        raise asmDef.AsmException('Unmatched ".ELSE" in %s' % flc_loc);
+      ifstack[-1] ^= True;
+    elif re.match(r'\s*\.ENDIF\b',body[-1]):
+      if not re.match(r'\s*\.ENDIF\s*(;.*)?$',body[-1]):
+        raise asmDef.AsmException('Malformed ".ENDIF" in %s' % flc_loc);
+      if not ifstack:
+        raise asmDef.AsmException('Unmatched ".ENDIF" in %s' % flc_loc);
+      ifstack.pop();
+    elif re.match(r'\s*\.IFN?DEF\b',body[-1]):
+      a = re.findall(r'\s*(\.IFN?DEF)\s*(\S+)\b\s*(;.*)?$',body[-1]);
+      if not a:
+        raise asmDef.AsmException('Malformed .IFDEF or .IFNDEF in %s' % flc_loc);
+      a = a[0];
+      ifstack.append(ad.IsSymbol(a[1]));
+      if a[0] == '.IFNDEF':
+        ifstack[-1] ^= True;
+    # Ignore bodies rejected by conditional compilation.
+    elif ifstack and not ifstack[-1]:
       pass;
+    # ".include" directives don't have an associated body
+    elif re.match(r'\s*\.include\s',body[-1]):
+      a = re.findall(r'\s*\.include\s+(\S+)(\s*|\s*;.*)$', line);
+      if not a:
+        raise asmDef.AsmException('Malformed .include directive in %s' % flc_loc);
+      a = a[0];
+      fbi.Include(a[0]);
     # Parse the body of all other directives and ensure that only one ".main"
     # and one ".interrupt" are defined.
     else:
