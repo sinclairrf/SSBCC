@@ -200,7 +200,7 @@ try:
       pass;
     # ".include" directives don't have an associated body
     elif re.match(r'\s*\.include\s',body[-1]):
-      a = re.findall(r'\s*\.include\s+(\S+)(\s*|\s*;.*)$', line);
+      a = re.findall(r'\s*\.include\s+(\S+)(\s*|\s*;.*)$',body[-1]);
       if not a:
         raise asmDef.AsmException('Malformed .include directive in %s' % flc_loc);
       a = a[0];
