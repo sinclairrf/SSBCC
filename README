@@ -57,11 +57,15 @@ implementation.  Device-specific scripts state how these performance numbers
 were obtained.
 
 VENDOR          DEVICE          BEST SPEED      SMALLEST RESOURCE UTILIZATION
-------          ------          ----------      ----------------------------
-Lattice         LCMXO2-640ZE-3   98.4 MHz       206 LUTs (preliminary)
-Lattice         LFE2-6E-7       157.9 MHz       203 LUTs (preliminary)
+------          ------          ----------      -------------------------------
+Altera          Cyclone-III     190.6 MHz       282 LEs           (preliminary)
+Altera          Cyclone-IV      192.1 MHz       281 LEs           (preliminary)
+Altera          Stratix-V       372.9 MHz       198 ALUTs         (preliminary)
+Lattice         LCMXO2-640ZE-3   98.4 MHz       206 LUTs          (preliminary)
+Lattice         LFE2-6E-7       157.9 MHz       203 LUTs          (preliminary)
 Xilinx          Spartan-3A      148.3 MHz       130 slices, 231 4-input LUTS
 Xilinx          Spartan-6       200.0 MHz        36 slices, 120 Slice LUTs
+Xilinx          Virtex-6        275.7 MHz        38 slices, 122 Slice LUTs (preliminary)
 
 Disclaimer:  Like other embedded processors, these are the maximum performance
 claims.  Realistic implementations will produce slower maximum clock rates,
