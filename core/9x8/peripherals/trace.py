@@ -13,11 +13,9 @@ class trace(SSBCCperipheral):
   """
   Generate a human readable printout of the processor execution.  The program
   counter and opcode are delayed so that they are aligned with the results of
-  the opcode.
-
+  the opcode.\n
   Usage:
-    PERIPHERAL trace
-
+    PERIPHERAL trace\n
   The following values are displayed in this order during the execution:
     program counter
     numeric opcode
@@ -28,8 +26,7 @@ class trace(SSBCCperipheral):
     top of the data stack
     ':'
     top of the return stack
-    return stack pointer
-
+    return stack pointer\n
   Example:  See core/9x8/tb/core which is used to validate correct operation of
             the core.
   """

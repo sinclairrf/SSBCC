@@ -10,14 +10,12 @@ from ssbccUtil import SSBCCException;
 class open_drain(SSBCCperipheral):
   """
   Implement an open-drain I/O suitable for direct connection to a pin.  This
-  can, for example, be used as an I/O port for an I2C device.
-
+  can, for example, be used as an I/O port for an I2C device.\n
   Usage:
     PERIPHERAL open_drain inport=I_name \\
                           outport=O_name \\
                           iosignal=io_name \\
-                          [width=n]
-
+                          [width=n]\n
   Where:
     inport=I_name
       is the inport symbol to read the pin
@@ -30,34 +28,26 @@ class open_drain(SSBCCperipheral):
       Note:  The initial value of the pin is "open."
     width=n
       is the optional width of the port
-      Note:  The default is one bit
-
+      Note:  The default is one bit\n
   The following OUTPORTs are provided by this peripheral:
     O_name
-      this is the new output for the open drain I/O
-
+      this is the new output for the open drain I/O\n
   The following INPORTs are provided by this peripheral:
     I_name
-      this reads the current value of the open drain I/O
-
-  Example:  Configure two 1-bit ports implementing an I2C bus:
-
-    Add the following to the architecture file:
-
+      this reads the current value of the open drain I/O\n
+  Example:  Configure two 1-bit ports implementing an I2C bus:\n
+    Add the following to the architecture file:\n
     PORTCOMMENT I2C bus
     PERIPHERAL open_drain inport=I_SCL outport=O_SCL iosignal=io_scl
-    PERIPHERAL open_drain inport=I_SDA outport=O_SDA iosignal=io_sda
-
+    PERIPHERAL open_drain inport=I_SDA outport=O_SDA iosignal=io_sda\n
     The following assembly will transmit the start condition for an I2C bus by
-    pulling SDA low and then pulling SCL low.
-
+    pulling SDA low and then pulling SCL low.\n
     ; Set SDA low
     0 .outport(O_SDA)
     ; delay one fourth of a 400 kHz cycle (based on a 100 MHz clock)
     ${int(100.e6/400.e3/3)-1} :delay .jumpc(delay,1-) drop
     ; Set SCL low
-    0 .outport(O_SCL)
-
+    0 .outport(O_SCL)\n
     See the I2C examples for a complete demonstration of using the open_drain
     peripheral.
   """

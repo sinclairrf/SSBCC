@@ -7,36 +7,27 @@
 from ssbccPeripheral import SSBCCperipheral
 
 class adder_16bit(SSBCCperipheral):
-  """The "adder_16bit" peripheral adds or subtracts two 16 bit values.
-
+  """The "adder_16bit" peripheral adds or subtracts two 16 bit values.\n
 Usage:
-  PERIPHERAL adder_16bit
-
+  PERIPHERAL adder_16bit\n
 The following OUTPORTs are provided by the peripheral:
   port                description
   O_ADDER_16BIT_MSB1  MSB of first argument
   O_ADDER_16BIT_LSB1  LSB of first argument
   O_ADDER_16BIT_MSB2  MSB of second argument
   O_ADDER_16BIT_LSB2  LSB of second argument
-  O_ADDER_16BIT_OP    0 ==> add, 1 ==> subtract
-
+  O_ADDER_16BIT_OP    0 ==> add, 1 ==> subtract\n
 The following INPORTs are provided by the peripheral:
   port                description
   I_ADDER_16BIT_MSB   MSB of the sum/difference
-  I_ADDER_16BIT_LSB   LSB of the sum/difference
-
-Example:  Incorporate the peripheral:
-
-Example:  Add an 8-bit value and a 16-bit value from the stack:
-
-  Within the processor architecture file include the configuration command:
-
-  PERIPHERAL adder_16bit
-
+  I_ADDER_16BIT_LSB   LSB of the sum/difference\n
+Example:  Incorporate the peripheral:\n
+Example:  Add an 8-bit value and a 16-bit value from the stack:\n
+  Within the processor architecture file include the configuration command:\n
+  PERIPHERAL adder_16bit\n
   Use the following assembly code to perform the addition to implement a
   function that adds an 8-bit value at the top of the data stack to the 16-bit
-  value immediately below it:
-
+  value immediately below it:\n
   ; ( u2_LSB u2_MSB u1 - (u1+u2)_LSB (u1+u2)_MSB
   .function add_u8_u16__u16
     ; write the 8-bit value to the peripheral (after converting it to a 16 bit

@@ -14,9 +14,9 @@ class big_outport(SSBCCperipheral):
   Shift two or more writes to a single OUTPORT to construct a wide output
   signal.\n
   Usage:
-    PERIPHERAL big_outport                      \
-                        outport=O_name          \
-                        outsignal=o_name        \
+    PERIPHERAL big_outport                      \\
+                        outport=O_name          \\
+                        outsignal=o_name        \\
                         width=<N>\n
   Where:
     outport=O_name
@@ -28,9 +28,9 @@ class big_outport(SSBCCperipheral):
   Example:  Create a 26-bit output signal for output of 26-bit or 18-bit values
   from the processor to external IP.\n
     PORTCOMMENT 26-bit output for use by other modules
-    PERIPHERAL big_outport                             \
-                        output=O_26BIT_SIGNAL          \
-                        outsignal=o_26bit_signal       \
+    PERIPHERAL big_outport                             \\
+                        output=O_26BIT_SIGNAL          \\
+                        outsignal=o_26bit_signal       \\
                         width=26
     OUTPORT     strobe  o_wr_26bit      O_WR_26BIT
     OUTPORT     strobe  o_wr_18bit      O_WR_18BIT\n
