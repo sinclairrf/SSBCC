@@ -639,10 +639,10 @@ memories:
                                where ".store+(mem_name)" is repeated N-1 times.
 
 The .fetchvector and .storevector macros are intended to work with values stored
-MSB first in memory and the MSB toward the top of the data stack, similarly to
-the Forth language with multi-word values.  To demonstrate how this works,
-consider the examples of decrementing and incrementing a two-byte value on the
-data stack:
+MSB first in memory and with the MSB toward the top of the data stack,
+similarly to the Forth language with multi-word values.  To demonstrate how
+this data structure works, consider the examples of decrementing and
+incrementing a two-byte value on the data stack:
 
   ; Decrement a 2-byte value
   ;   swap 1- swap      - decrement the LSB
@@ -669,8 +669,8 @@ The computer compiler and assembler recognize conditional compilation as
 follows:  .IFDEF, .IFNDEF, .ELSE, and .ENDIF can be used in the architecture
 file and they can be used to conditionally include functions, files, etc within
 the assembly code; .ifdef, .ifndef, .else, and .endif can be used in function
-bodies, variable bodies, etc. to conditionally include assembly code.
-Conditionals cannot cross file boundaries.
+bodies, variable bodies, etc. to conditionally include assembly code, symbols,
+or data.  Conditionals cannot cross file boundaries.
 
 The computer compiler examines the list of defined symbols such as I/O ports,
 I/O signals, etc. to evaluate the true/false condition associated with the
