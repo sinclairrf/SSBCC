@@ -700,7 +700,10 @@ def genModule(fp,config):
 
 def genOutports(fp,config):
   """
-  Generate the logic for the output signals.
+  Generate the logic for the output signals.\n
+  Note:  Empty bodies are allowed for inport and outports (see for example
+         big_outport generates the composite output signal instead of using the
+         code that would have been auto-generated here).
   """
   if not config.outports:
     fp.write('// no output ports\n');

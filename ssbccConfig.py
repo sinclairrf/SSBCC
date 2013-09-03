@@ -330,6 +330,8 @@ class SSBCCconfig():
     Indicate whether or not the specified outport symbol only has strobes
     associated with it (i.e., it has no data signals).
     """
+    if not outport[1:]:
+      return False;
     for thisPort in outport[1:]:
       if thisPort[2] != 'strobe':
         return False;
