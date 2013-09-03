@@ -27,7 +27,7 @@
   .call(testfn,3) drop
 
   ; terminate the simulation
-  O_DONE_STROBE outport
+  .outport(O_DONE_STROBE,nop)
 
   :infinite .jump(infinite)
 

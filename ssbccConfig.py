@@ -325,6 +325,16 @@ class SSBCCconfig():
     ix = self.memories['name'].index(name);
     return self.memories['type'][ix] == 'ROM';
 
+  def IsStrobeOnlyOutport(self,outport):
+    """
+    Indicate whether or not the specified outport symbol only has strobes
+    associated with it (i.e., it has no data signals).
+    """
+    for thisPort in outport[1:]:
+      if thisPort[2] != 'strobe':
+        return False;
+    return True;
+
   def IsSymbol(self,name):
     """
     Indicate whether or not the specified name is a symbol.

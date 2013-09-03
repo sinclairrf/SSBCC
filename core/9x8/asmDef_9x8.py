@@ -235,6 +235,15 @@ class asmDef_9x8:
     ix = self.symbols['list'].index(name);
     return self.symbols['type'][ix] == 'outport';
 
+  def IsOutstrobe(self,name):
+    """
+    Indicate whether or not the named symbol is a strobe-only outport.
+    """
+    if not self.IsSymbol(name):
+      return False;
+    ix = self.symbols['list'].index(name);
+    return self.symbols['type'][ix] == 'outstrobe';
+
   def IsParameter(self,name):
     """
     Indicate whether or not the named symbol is a parameter.
@@ -257,7 +266,7 @@ class asmDef_9x8:
     """
     Return the address of the named outport.
     """
-    if not self.IsOutport(name):
+    if not self.IsOutport(name) and not self.IsOutstrobe(name):
       raise Exception('Program Bug -- "%s" is not an outport' % name);
     ix = self.symbols['list'].index(name);
     return self.symbols['body'][ix];
@@ -279,6 +288,15 @@ class asmDef_9x8:
     if self.IsSymbol(name):
       raise Exception('Program Bug -- repeated symbol name "%s"' % name);
     self.AddSymbol(name,'outport',address);
+
+  def RegisterOutstrobe(self,name,address):
+    """
+    Add the named outport to the list of recognized symbols and record its
+    address as the body of the strobe-only outports.
+    """
+    if self.IsSymbol(name):
+      raise Exception('Program Bug -- repeated symbol name "%s"' % name);
+    self.AddSymbol(name,'outstrobe',address);
 
   def RegisterParameterName(self,name):
     """
@@ -318,7 +336,7 @@ class asmDef_9x8:
       raise asmDef.AsmException('Undefined symbol "%s" at %s' % (name,loc));
     ixName = self.symbols['list'].index(name);
     if self.symbols['type'][ixName] not in allowableTypes:
-      raise asmDef.AsmException('Illegal symbol at %s' % token['loc']);
+      raise asmDef.AsmException('Illegal symbol at %s' % loc);
 
   def CheckRawTokens(self,rawTokens):
     """
@@ -370,14 +388,17 @@ class asmDef_9x8:
     labelsUnused = set(labelDefs) - set(labelsUsed);
     if labelsUnused:
       raise asmDef.AsmException('Unused label(s) %s in body %s' % (labelsUnused,firstToken['loc']));
-    # Ensure symbols referenced by ".input" and ".outport" are defined.
+    # Ensure symbols referenced by ".input", ".outport", and ".outstrobe" are defined.
     for token in rawTokens:
       if (token['type'] == 'macro') and (token['value'] == '.inport'):
         if not self.IsInport(token['argument'][0]['value']):
           raise asmDef.AsmException('Symbol "%s is not an input port at %s' % (token['argument'][0]['value'],token['loc']));
       if (token['type'] == 'macro') and (token['value'] == '.outport'):
         if not self.IsOutport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Symbol "%s" is not an output port at %s' % (token['argument'][0]['value'],token['loc']));
+          raise asmDef.AsmException('Symbol "%s" is either not an output port or is a strobe-only outport at %s' % (token['argument'][0]['value'],token['loc']));
+      if (token['type'] == 'macro') and (token['value'] == '.outstrobe'):
+        if not self.IsOutstrobe(token['argument'][0]['value']):
+          raise asmDef.AsmException('Symbol "%s" is not a strobe-only output port at %s' % (token['argument'][0]['value'],token['loc']));
     # Ensure referenced symbols are already defined (other than labels and
     # function names for call and jump macros).
     checkBody = False;
@@ -386,10 +407,10 @@ class asmDef_9x8:
     if checkBody:
       for token in rawTokens[2:]:
         if token['type'] == 'symbol':
-          allowableTypes = ('constant','inport','macro','outport','parameter','variable',);
+          allowableTypes = ('constant','inport','macro','outport','outstrobe','parameter','variable',);
           self.CheckSymbolToken(token['value'],allowableTypes,token['loc']);
         elif token['type'] == 'macro':
-          allowableTypes = ('RAM','ROM','constant','inport','outport','parameter','variable',);
+          allowableTypes = ('RAM','ROM','constant','inport','outport','outstrobe','parameter','variable',);
           ixFirst = 1 if token['value'] in self.MacrosWithSpecialFirstSymbol else 0;
           for arg in  token['argument'][ixFirst:]:
             if arg['type'] == 'symbol':
@@ -1010,6 +1031,11 @@ class asmDef_9x8:
       self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
       self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport');
       self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+    # .outstrobe
+    elif token['value'] == '.outstrobe':
+      name = token['argument'][0]['value'];
+      self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
+      self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport');
     # .return
     elif token['value'] == '.return':
       self.EmitOpcode(fp,self.specialInstructions['return'],'return');
@@ -1255,6 +1281,7 @@ class asmDef_9x8:
                                              ['','symbol'],
                                              ['drop','instruction','singlemacro','singlevalue','symbol']
                                            ]);
+    self.AddMacro('.outstrobe',         2, [ ['','symbol'] ]);
     self.AddMacro('.return',            2, [ ['nop','instruction','singlevalue','symbol'] ]);
     self.AddMacro('.store',             1, [ ['','symbol'] ]);
     self.AddMacro('.store+',            1, [ ['','symbol'] ]);

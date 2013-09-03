@@ -13,7 +13,7 @@
   .call(upper_function)
 
   ; terminate the simulation
-  O_DONE_STROBE outport
+  .outstrobe(O_DONE_STROBE)
 
   :infinite .jump(infinite)
 

@@ -29,7 +29,7 @@
   ${size['rom_y']-1} :loop_read_y dup .fetch(rom_y) drop .jumpc(loop_read_y,1-)  drop
 
   ; Terminate the simulation.
-  O_DONE_STROBE outport
+  .outstrobe(O_DONE_STROBE)
 
   ; Sit in an infinite loop.
   :infinite .jump(infinite)

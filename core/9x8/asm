@@ -48,6 +48,7 @@ try:
   argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
   argListParser.add_argument('-L', metavar='librarypath', action='append', help='Library search path');
   argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
+  argListParser.add_argument('-R', metavar='PORT=index', action='append', help='Strobe-only output port names');
   argListParser.add_argument('-S', metavar='MEMORY=length', action='append', help='Memory length');
   argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
   argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
@@ -107,6 +108,18 @@ try:
       if not (0 <= ix < 256):
         raise asmDef.AsmException('Out-of-range outport index:  "%s"' % outport);
       ad.RegisterOutport(a[0],ix);
+  if argList.R:
+    for outstrobe in argList.R:
+      a=re.findall(r'^(O_\w+)=(0|[1-9]\d*)$',outstrobe);
+      if not a:
+        raise asmDef.AsmException('Malformed -R argument: "%s"' % outstrobe);
+      a = a[0];
+      if ad.IsSymbol(a[0]):
+        raise asmDef.AsmException('Program Bug -- repeated symbol "%s"' % a[0]);
+      ix = int(a[1]);
+      if not (0 <= ix < 256):
+        raise asmDef.AsmException('Out-of-range strobe-only outport index:  "%s"' % outstrobe);
+      ad.RegisterOutstrobe(a[0],ix);
   if argList.S:
     for memory in argList.S:
       a=re.findall(r'^(\w+)=(0|[1-9]\d*)$',memory);

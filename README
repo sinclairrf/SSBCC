@@ -284,9 +284,11 @@ An isolated output strobe can also be created using:
 
   OUTPORT strobe o_strobe O_STROBE
 
-The associated assembly does not require an output value for the port so that
-the strobe can be generated with the two instruction sequence "O_STROBE
-outport".
+The assembly ".outstrobe(O_STROBE)" which is equivalent to "O_STROBE outport"
+is used to generate the strobe.  Since "O_STROBE" is a strobe-only outport, the
+".outport" macro cannot be used with it.  Similary, attempting to use the
+".outstrobe" macro will generate an error if it is invoked with an outport
+that does have data.
 
 A single-bit "set-reset" input port type is also included.  This sets a register
 when an external strobe is received and clears the register when the port is

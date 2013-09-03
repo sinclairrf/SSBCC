@@ -38,7 +38,7 @@
   ${size['ram_d']/2} :loop_read_d dup .fetch(ram_d) drop .jumpc(loop_read_d,0>>) drop
 
   ; Terminate the simulation.
-  O_DONE_STROBE outport
+  .outstrobe(O_DONE_STROBE)
 
   ; Sit in an infinite loop.
   :infinite .jump(infinite)

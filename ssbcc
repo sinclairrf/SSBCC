@@ -332,7 +332,10 @@ try:
   for ix in range(config.NInports()):
     cmd += (' -I %s=%d' % (config.inports[ix][0],ix));
   for ix in range(config.NOutports()):
-    cmd += (' -O %s=%d' % (config.outports[ix][0],ix));
+    if config.IsStrobeOnlyOutport(config.outports[ix]):
+      cmd += (' -R %s=%d' % (config.outports[ix][0],ix));
+    else:
+      cmd += (' -O %s=%d' % (config.outports[ix][0],ix));
   for memNameLength in config.MemoryNameLengthList():
     cmd += (' -S %s=%d' % memNameLength);
   cmd += ' -o ' + assemblerOutput;
