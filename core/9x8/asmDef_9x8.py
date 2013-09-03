@@ -1030,7 +1030,7 @@ class asmDef_9x8:
       name = token['argument'][0]['value'];
       self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
       self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport');
-      self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+      self.EmitOptArg(fp,token['argument'][1]);
     # .outstrobe
     elif token['value'] == '.outstrobe':
       name = token['argument'][0]['value'];
