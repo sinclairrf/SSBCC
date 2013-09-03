@@ -350,6 +350,7 @@ The following peripherals are provided:
   AXI4_Lite_Slave_DualPortRAM
                 dual-port-RAM interface for the micro controller to act as an
                 AXI4 Lite slave
+  big_outport   shift writes to a single OUTPORT to construct a wide output
   latch         latch wide inputs for sampling
   monitor_stack simulation peripheral to validate stack health
   open_drain    for software-implemented I2C busses or similar
