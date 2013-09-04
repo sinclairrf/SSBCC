@@ -2,7 +2,7 @@
  *
  * Copyright 2013, Sinclair R.F., Inc.
  *
- * Test bench for the AXI4-List slave dual-port-ram peripheral.
+ * Test bench for the AXI4-Lite slave dual-port-ram peripheral.
  *
  ******************************************************************************/
 
