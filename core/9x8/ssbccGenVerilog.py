@@ -120,7 +120,7 @@ def genInports(fp,config):
     elif nbits == 8:
       fp.write('      8\'h%02X : s_T_inport = %s;\n' % (ix,bitString));
     else:
-      raise Exception('Program Bug -- this condition should have been caught elsewhere');
+      fp.write('      8\'h%02X : s_T_inport = %s[0+:8];\n' % (ix,bitString));
   if haveBitInportSignals:
     fp.write('    default : s_T_inport = 8\'h00;\n');
     fp.write('  endcase\n');
