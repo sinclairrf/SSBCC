@@ -347,9 +347,12 @@ Two examples of I2C device operation are included in the examples directory.
 
 The following peripherals are provided:
   adder_16bit   16-bit adder/subtractor
+  AXI4_Lite_Master
+                32-bit read/write AXI4-Lite Master
+                Note:  This is a preliminary release.
   AXI4_Lite_Slave_DualPortRAM
                 dual-port-RAM interface for the micro controller to act as an
-                AXI4 Lite slave
+                AXI4-Lite slave
   big_outport   shift writes to a single OUTPORT to construct a wide output
   latch         latch wide inputs for sampling
   monitor_stack simulation peripheral to validate stack health
@@ -362,13 +365,13 @@ The following peripherals are provided:
   UART_Rx       receive UART
   UART_Tx       transmit UART
 
-
 The help message for a peripheral can be displayed by using the command
 
   ssbcc -P "<peripheral> help" <name>.9x8
 
 where "<peripheral>" is the name of the peripheral and "<name>.9x8" is an
 existing architecture file.
+
 
 PARAMETER and LOCALPARAM
 ================================================================================
