@@ -485,6 +485,8 @@ class asmDef_9x8:
       return dict(type='inport', value=token['value'], loc=token['loc']);
     elif symbolType == 'outport':
       return dict(type='outport', value=token['value'], loc=token['loc']);
+    elif symbolType == 'outstrobe':
+      return dict(type='outstrobe', value=token['value'], loc=token['loc']);
     elif symbolType == 'parameter':
       if 'range' in token:
         trange = token['range'];
@@ -940,7 +942,7 @@ class asmDef_9x8:
       if len(self.symbols['body'][ix]) != 1:
         raise asmDef.AsmException('Optional constant can only be one byte at %s' % token['loc']);
       self.EmitPush(fp,self.symbols['body'][ix][0],self.Emit_String(name),tokenLoc=token['loc']);
-    elif token['type'] in ('inport','outport'):
+    elif token['type'] in ('inport','outport','outstrobe'):
       name = token['value'];
       if not self.IsSymbol(name):
         raise Exception('Program Bug -- unrecognized inport/outport name "%s"');
@@ -1136,7 +1138,7 @@ class asmDef_9x8:
           self.EmitPush(fp,body[-1],token['value'],tokenLoc=token['loc']);
           for v in body[-2::-1]:
             self.EmitPush(fp,v,tokenLoc=token['loc']);
-        elif token['type'] in ('inport','outport',):
+        elif token['type'] in ('inport','outport','outstrobe',):
           if not self.IsSymbol(token['value']):
             raise Exception('Program Bug');
           ix = self.symbols['list'].index(token['value']);
