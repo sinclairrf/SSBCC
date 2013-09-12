@@ -380,30 +380,19 @@ def genMemories(fp,config,programBody):
           for ratio in range(port['ratio']):
             fp.write('  %s_reg[%d+:%d] = %s[%s];\n' % (memName,ratio*memWidth,memWidth,memName,(addrString % ratio),));
           fp.write('end\n');
-    fp.write('initial s_memory = 8\'h00;\n');
-    include_s_T = False;
-    fp.write('always @ (s_opcode[1:0]');
-    for combined in combines:
-      for port in combined['port']:
-        if port['packing'][0]['name'] in ('INSTRUCTION','DATA_STACK','RETURN_STACK',):
-          continue;
-        if combined['memArch'] == 'sync':
-          fp.write(',%s_reg' % combined['memName']);
-        else:
-          fp.write(',%s[%s]' % (combined['memName'],port['addrString'],));
-        break;
-    fp.write(')\n');
-    fp.write('  case (s_opcode[0+:2])\n');
-    for thisLclMemParam in lclMemParam:
+    for ixLclMemParam in range(len(lclMemParam)):
+      thisLclMemParam = lclMemParam[ixLclMemParam];
       combined = thisLclMemParam['combined'];
-      fp.write('       2\'d%d : s_memory = ' % thisLclMemParam['bank']);
-      if combined['memArch'] == 'LUT':
-        fp.write('%s[%s];' % (combined['memName'],thisLclMemParam['port']['addrString'],));
+      if ixLclMemParam == 0:
+        fp.write('assign s_memory = ');
       else:
-        fp.write('%s_reg[%d+:8];' % (combined['memName'],combined['memWidth']*thisLclMemParam['packing']['lane'],));
-      fp.write(' // memory %s\n' % thisLclMemParam['packing']['name']);
-    fp.write('    default : s_memory = 8\'d0;\n');
-    fp.write('  endcase\n');
+        fp.write('                : ');
+      fp.write('(s_opcode[0+:2] == 2\'d%d) ? ' % thisLclMemParam['bank']);
+      if combined['memArch'] == 'LUT':
+        fp.write('%s[%s]\n' % (combined['memName'],thisLclMemParam['port']['addrString'],));
+      else:
+        fp.write('%s_reg[%d+:8]\n' % (combined['memName'],combined['memWidth']*thisLclMemParam['packing']['lane'],));
+    fp.write('                : 8\'d0;\n');
     fp.write('\n');
     # Generate the memory write logic.
     fp.write('//\n// memory write logic\n//\n\n');

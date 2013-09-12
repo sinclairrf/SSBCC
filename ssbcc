@@ -494,7 +494,7 @@ try:
       if config.NMemories() == 0:
         fpOutCore.write('wire [7:0] s_memory = 8\'h00;\n');
       else:
-        fpOutCore.write('reg [7:0] s_memory;\n');
+        fpOutCore.write('wire [7:0] s_memory;\n');
     # additional signals
     elif fillCommand == 'signals':
       genSignals(fpOutCore,config);
