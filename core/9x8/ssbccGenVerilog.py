@@ -659,21 +659,21 @@ def genModule(fp,config):
       elif signalType == 'input':
         if signalWidth == 1:
           fp.write('  input  wire           %s' % signalName);
-        elif signalWidth < 10:
+        elif signalWidth <= 10:
           fp.write('  input  wire     [%d:0] %s' % (signalWidth-1,signalName));
         else:
           fp.write('  input  wire    [%2d:0] %s' % (signalWidth-1,signalName));
       elif signalType == 'output':
         if signalWidth == 1:
           fp.write('  output reg            %s' % signalName);
-        elif signalWidth < 10:
+        elif signalWidth <= 10:
           fp.write('  output reg      [%d:0] %s' % (signalWidth-1,signalName));
         else:
           fp.write('  output reg     [%2d:0] %s' % (signalWidth-1,signalName));
       elif signalType == 'inout':
         if signalWidth == 1:
           fp.write('  inout  wire           %s' % signalName);
-        elif signalWidth < 10:
+        elif signalWidth <= 10:
           fp.write('  inout  wire     [%d:0] %s' % (signalWidth-1,signalName));
         else:
           fp.write('  inout  wire    [%2d:0] %s' % (signalWidth-1,signalName));
@@ -781,7 +781,7 @@ def genSignals(fp,config):
     outString = 'reg ';
     if signalWidth == 1:
       outString += '       ';
-    elif signalWidth < 10:
+    elif signalWidth <= 10:
       outString += (' [%d:0] ' % (signalWidth-1));
     else:
       outString += ('[%2d:0] ' % (signalWidth-1));
