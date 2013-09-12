@@ -111,28 +111,6 @@ end else begin : gen__async_rd
   assign s__rd_aclk = s__rd_aclk_out;
 end
 
-// Read side of the bus.
-reg [1:0] s__pending_rd = 2'h0;
-always @ (posedge i_aclk)
-  if (~i_aresetn) begin
-    o_arvalid <= 1'b0;
-    s__pending_rd <= 2'd0;
-  end else begin
-    o_arvalid <= o_arvalid;
-    s__pending_rd <= s__pending_rd;
-    if (s__rd_aclk) begin
-      o_arvalid <= 1'b1;
-      s__pending_rd <= 2'b11;
-    end else begin
-      if (i_arready) begin
-        o_arvalid <= 1'b0;
-        s__pending_rd[0] <= 1'b0;
-      end
-      if (i_rvalid && o_rready)
-        s__pending_rd[1] <= 1'b0;
-    end
-  end
-
 // Generate the read address valid signal and record the address acknowledgement
 // pending status.
 reg s__pending_rd_aclk = 1'b0;
@@ -150,32 +128,6 @@ always @ (posedge i_aclk)
     o_arvalid <= o_arvalid;
     s__pending_rd_aclk <= s__pending_rd_aclk;
   end
-
-// Generate a strobe when the read operation finishes.
-reg s__pending_rd_s = 1'b0;
-always @ (posedge i_aclk)
-  s__pending_rd_s <= |s__pending_rd;
-reg s__pending_rd_done_raw = 1'b0;
-always @ (posedge i_aclk)
-  s__pending_rd_done_raw <= ({ s__pending_rd_s, |s__pending_rd } == 2'b10);
-wire s__pending_rd_done;
-if (L__ISSYNC) begin : gen__sync_read_done
-  assign s__pending_rd_done = s__pending_rd_done_raw;
-end else begin : gen__async_read_done
-  reg s__pending_rd_done_toggle = 1'b0;
-  always @ (posedge i_aclk)
-    if (~i_aresetn)
-      s__pending_rd_done_toggle <= 1'b0;
-    else
-      s__pending_rd_done_toggle <= s__pending_rd_done_raw ^ s__pending_rd_done_toggle;
-  reg [3:0] s__pending_rd_done_toggle_s = 4'd0;
-  always @ (posedge i_clk)
-    s__pending_rd_done_toggle_s <= { s__pending_rd_done_toggle_s[0+:3], s__pending_rd_done_toggle };
-  reg s__pending_rd_done_p = 1'b0;
-  always @ (posedge i_clk)
-    s__pending_rd_done_p <= ^s__pending_rd_done_toggle_s[2+:2];
-  assign s__pending_rd_done = s__pending_rd_done_p;
-end
 
 // Generate a strobe from the i_aclk domain to the i_clk domain to latch the
 // incoming read data and then generate a strobe in the reverse direction to
