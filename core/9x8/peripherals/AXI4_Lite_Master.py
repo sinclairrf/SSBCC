@@ -25,6 +25,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
                                 command_read=<O_command_read>   \\
                                 command_write=<O_command_write> \\
                                 busy=<I_busy>                   \\
+                                error=<I_error>                 \\
                                 read=<I_read>                   \\
                                 address_width=<N>               \\
                                 synchronous={True|False}
@@ -57,6 +58,12 @@ class AXI4_Lite_Master(SSBCCperipheral):
     busy=<I_busy>
       specifies the symbol used to read the busy/not-busy status of the core
       Note:  A non-zero value means the core is busy.
+    error=<I_error>
+      specified the symbol used to read the error status of the last write or
+      read transaction on the core
+      Note:  A non-zero value means an error was encountered.  Errors can be
+             reset by reseting the DMA interface or by re-attempting the
+             write or read operation.
     read=<I_read>
       specifies the symbol used to read successive bytes of the received 32-bit
       value starting with the LSB
@@ -76,6 +83,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
                         command_read=O_myAxiDmaDevice_cmd_read          \
                         command_write=O_myAxiDmaDevice_cmd_write        \
                         busy=I_myAxiDmaDevice_busy                      \
+                        error=I_myAxiDmaDevice_error                    \
                         read=I_myAxiDmaDevice_read                      \
                         address_width=7                                 \
                         synchronous=True\n
@@ -157,6 +165,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ('data',          r'O_\w+$',              None,           ),
       ('read',          r'I_\w+$',              None,           ),
       ('busy',          r'I_\w+$',              None,           ),
+      ('error',         r'I_\w+$',              None,           ),
       ('synchronous',   r'(True|False)$',       bool,           ),
       ('write_enable',  r'O_\w+$',              None,           ),
     );
@@ -203,6 +212,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
     config.AddSignal('s__%s__rd' % self.basePortName, 1, ixLine);
     config.AddSignal('s__%s__wr' % self.basePortName, 1, ixLine);
     config.AddSignal('s__%s__busy' % self.basePortName, 5, ixLine);
+    config.AddSignal('s__%s__error' % self.basePortName, 2, ixLine);
     config.AddSignal('s__%s__read' % self.basePortName, 32, ixLine);
     self.ix_address = config.NOutports();
     config.AddOutport((self.address,
@@ -223,6 +233,9 @@ class AXI4_Lite_Master(SSBCCperipheral):
                       ),ixLine);
     config.AddInport((self.busy,
                      ('s__%s__busy' % self.basePortName, 5, 'data', ),
+                     ),ixLine);
+    config.AddInport((self.error,
+                     ('s__%s__error' % self.basePortName, 2, 'data', ),
                      ),ixLine);
     self.ix_read = config.NInports();
     config.AddInport((self.read,

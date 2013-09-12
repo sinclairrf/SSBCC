@@ -2,8 +2,9 @@
 // PERIPHERAL:  AXI4-Lite Master
 //
 generate
-localparam L__ISSYNC = @ISSYNC@;
 localparam L__ADDRESS_WIDTH = @ADDRESS_WIDTH@;
+localparam L__ISSYNC = @ISSYNC@;
+localparam L__RESP_OKAY = 2'b00;
 // Shift 8-bit values into the output 32-bit word.
 initial o_wdata = 32'd0;
 always @ (posedge i_clk)
@@ -208,5 +209,14 @@ always @ (posedge i_clk)
 // transaction).
 always @ (posedge i_clk)
   s__busy <= { s__pending_rd_clk, s__pending_rd_aclk, s__pending_wr };
+
+// Monitor the bresp and rresp 2-bit signals for non-OK indication
+always @ (posedge i_aclk)
+  if (~i_aresetn)
+    s__error <= 2'd0;
+  else begin
+    if (i_bvalid && o_bready) s__error[0] <= (i_bresp != L__RESP_OKAY);
+    if (i_rvalid && o_rready) s__error[1] <= (i_rresp != L__RESP_OKAY);
+  end
 
 endgenerate
