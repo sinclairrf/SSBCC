@@ -1253,7 +1253,7 @@ class asmDef_9x8:
     self.macros = dict(list=list(), length=list(), args=list(), nArgs=list());
     self.AddMacro('.call',              3, [
                                              ['','symbol'],
-                                             ['nop','instruction','singlevalue','symbol']
+                                             ['nop','instruction','singlemacro','singlevalue','symbol']
                                            ]);
     self.AddMacro('.callc',             3, [
                                              ['','symbol'],
