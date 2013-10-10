@@ -36,6 +36,8 @@ try:
   #
 
   def validateFile(filename):
+    if filename == '-':
+      filename = '/dev/stdin';
     try:
       return file(filename,'r');
     except:
