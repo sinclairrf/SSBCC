@@ -39,7 +39,7 @@ class FileBodyIterator:
     """
     # Do sanity check on arguments.
     if ad.IsDirective(".include"):
-      raise Exception('".include" directive defined by FileBodyIterator');
+      raise Exception('Program Bug:  The ".include" directive is defined by FileBodyIterator');
     # Initialize the raw processing states
     self.ixConstants = 0;
     self.fpPending = list(fps);
@@ -79,6 +79,9 @@ class FileBodyIterator:
     # Discard the body emitted by the previous call.
     self.current = self.pending;
     self.pending = list();
+    # If the current body is an include directive, then process it immediately.
+    if self.current and re.match(r'\s*\.include\b',self.current[-1]):
+      return self.current;
     # Loop until all of the files have been processed
     while self.fpStack or self.fpPending or self.pendingInclude:
       # Indicate when a new file is started.
