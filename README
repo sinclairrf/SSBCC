@@ -1,29 +1,51 @@
-SSBCC is a Small Stack-Based Computer Compiler with a 9-bit opcode, 8-bit data
-core.  It is intended to provide an FPGA-vendor independent micro-controller
-suitable for external communications and FPGA fabric control using relatively
-few FPGA resources.  It can, for example, receive commands from an external SPI
-master, operate the associated FPGA cores as commanded, and perform error
-detection and reporting.
+SSBCC.9x8 is a free Small Stack-Based Computer Compiler with a 9-bit opcode,
+8-bit data core.  It creates vendor-independent high-speed, low fabric
+utilization micro controllers for FPGAs.  It has been used in Spartan-3A,
+Spartan-6, and Artex-7 FPGAs and has been built for other Altera, Lattice, and
+Xilinx devices.  It is consistently smaller and faster than the vendor provided
+processors.
+
+The compiler takes an architecture file that prescribes the micro controller
+memory spaces, inputs and outputs, and peripherals and which specifies the HDL
+language and source assembly.  It generates a single HDL module implementing
+the entire micro controller.
+
+It has been used for the following projects:
+- operate two UART interfaces and multiple PWM controlled 2-lead bi-color LEDs
+- operate a media translator from a parallel camera interface to an OMAP GPMC
+  interface, detect and report bus errors and hardware errors, and act as an
+  SPI slave to the OMAP
+- operate and monitor the Artix-7 fabric in a Zynq system using AXI4-Lite
+  master and slave buses
+
+
+DESCRIPTION
+================================================================================
 
 The computer compiler uses an architectural description of the processor stating
 the sizes of the instruction memory, data stack, and return stack; the input and
-output ports; memory types and sizes; and peripherals.  It outputs a single
-module implementing the entire micro controller.
+output ports; RAM and ROM types and sizes; and peripherals.
 
-The 9x8 instructions are all single-cycle.  The instructions include pushing an
-8-bit value onto the data stack;  arithmetic operations:  addition, subtraction,
-increment, and decrement;  bit-wise logical operations:  and, or, and exclusive
-or; rotations;  logical operations:  0=, 0<>, -1=, -1<>; data and return stack
-operations:  dup, over, swap, drop, nip, >r, r>, and r@; input and output port
-operations;  memory read and write with optional address increment and
-decrement;  jumps and conditional jumps;  calls and conditional calls;  and
-function return.
+The 9x8 instructions are all single-cycle.  The instructions include
+- pushing an 8-bit value onto the data stack
+- arithmetic operations:  addition, subtraction, increment, and decrement
+- bit-wise logical operations:  and, or, and exclusive or
+- rotations
+- logical operations:  0=, 0<>, -1=, -1<>
+- Forth-like data stack operations:  dup, over, swap, drop, nip
+- Forth-like return stack operations:  >r, r>, and r@
+- input and output port operations
+- memory read and write with optional address increment and decrement
+- jumps and conditional jumps
+- calls and conditional calls
+- function return.
 
 The 9x8 address space is up to 8K.  This is achieved by pushing the 8 lsb of the
 target address onto the data stack immediately before a jump or call instruction
 and by encoding the 5 msb of the address within the jump or call instruction.
 The instruction immediately following a jump, call, or return is executed before
-the instruction sequence at the target address or return address is executed.
+the instruction sequence at the target address or return address is executed
+(this is illustrated later).
 
 Up to four banks of memory, either RAM or ROM, are available.  Each of these can
 be up to 256 bytes, providing a total of up to 1 kB of memory.
@@ -39,12 +61,11 @@ HDL.  This provides an extensible peripheral set to the compiler.
 The computer compiler is documented in the doc directory.  The 9x8 core is
 documented in the core/9x8/doc directory.  Several examples are provided.
 
-This is a beta release.  While the computer compiler and assembler are fully
-functional and there are no known bugs, features and peripherals are still being
-added and the documentation is incomplete.  Also, the output HDL is currently
-restricted to Verilog.  VHDL will be added when everything else is complete.
-The processor is being used on a commercial project and the examples have been
-run on hardware.
+The computer compiler and assembler are fully functional and there are no known
+bugs.
+
+Features and peripherals are still being added and the documentation is
+incomplete.  The output HDL is currently restricted to Verilog.
 
 
 SPEED AND RESOURCE UTILIZATION
@@ -65,17 +86,16 @@ Lattice         LCMXO2-640ZE-3   98.4 MHz       206 LUTs          (preliminary)
 Lattice         LFE2-6E-7       157.9 MHz       203 LUTs          (preliminary)
 Xilinx          Spartan-3A      148.3 MHz       130 slices, 231 4-input LUTS
 Xilinx          Spartan-6       200.0 MHz        36 slices, 120 Slice LUTs
-Xilinx          Virtex-6        275.7 MHz        38 slices, 122 Slice LUTs (preliminary)
+Xilinx          Virtex-6        275.7 MHz        38 slices, 122 Slice LUTs (p.)
 
 Disclaimer:  Like other embedded processors, these are the maximum performance
 claims.  Realistic implementations will produce slower maximum clock rates,
-particularly with the constraint of existing with other components in the FPGA
-fabric.  What these performance numbers do provide is an estimate of the amount
-of slack available.  For example, you can't reallistically expect to get 110 MHz
-from a processor that, under ideal conditions, routes and places at 125 MHz.
-Lots of slack, such as a 100 MHz clock requirement for a Spartan-6
-implementation of this processor, means that it should never be a bottleneck for
-place and route.
+particularly with lots of I/O ports and peripherals and with the constraint of
+existing with other subsystems in the FPGA fabric.  What these performance
+numbers do provide is an estimate of the amount of slack available.  For
+example, you can't reallistically expect to get 110 MHz from a processor that,
+under ideal conditions, routes and places at 125 MHz, but you can with a
+processor that synthesizes over 160 MHz and can place and route at 150 MHz.
 
 
 EXAMPLE:
@@ -349,10 +369,11 @@ The following peripherals are provided:
   adder_16bit   16-bit adder/subtractor
   AXI4_Lite_Master
                 32-bit read/write AXI4-Lite Master
-                Note:  This is a preliminary release.
+                Note:  The synchronous version has been tested on hardware.
   AXI4_Lite_Slave_DualPortRAM
                 dual-port-RAM interface for the micro controller to act as an
                 AXI4-Lite slave
+  big_inport    shift reads from a single INPORT to construct a wide input
   big_outport   shift writes to a single OUTPORT to construct a wide output
   latch         latch wide inputs for sampling
   monitor_stack simulation peripheral to validate stack health
@@ -365,12 +386,10 @@ The following peripherals are provided:
   UART_Rx       receive UART
   UART_Tx       transmit UART
 
-The help message for a peripheral can be displayed by using the command
+The following command illustrates how to display the help message for
+peripherals:
 
-  ssbcc -P "<peripheral> help" <name>.9x8
-
-where "<peripheral>" is the name of the peripheral and "<name>.9x8" is an
-existing architecture file.
+  echo "ARCHITECTURE core/9x8 Verilog" | ssbcc -P "big_inport help" - | less
 
 
 PARAMETER and LOCALPARAM
@@ -550,7 +569,7 @@ this in a future release of Vivado so the fix will only apply to 7-series or
 later FPGAs.
 
 
-MEMORY EXAMPLES
+MEMORY
 ================================================================================
 
 The MEMORY configuration command is used as follows to allocate a 128-byte RAM
@@ -676,6 +695,7 @@ incrementing a two-byte value on the data stack:
   .function increment_2byte
   swap 1+ swap over 0= .return(-)
 
+
 CONDITIONAL COMPILATION
 ================================================================================
 The computer compiler and assembler recognize conditional compilation as
@@ -708,8 +728,8 @@ send a character to that output port:
   .ifdef(O_UART_TX) 'A' .outport(O_UART_TX) .endif
 
 Invoking the computer compiler with "-D ENABLE_UART" will generate a module with
-the UART and will enable the conditional code sending the 'A' character to the
-UART port.
+the UART peripheral and will enable the conditional code sending the 'A'
+character to the UART port.
 
 The following code can be used to preclude multiple attempted inclusions of an
 assembly library file.
@@ -727,20 +747,21 @@ SIMULATIONS
 ================================================================================
 
 Simulations have been performed with Icarus Verilog, Verilator, and Xilinx'
-ISIM.  Icarus Verilog is good for short, simple simulations, Verilator for long
-simulations of large, complex systems, and ISIM when Xilinx-specific cores are
-used.  Verilator is over an order of magnitude faster than the other simulators
-I've used.  Verilator is also used for lint checking in the core test benches.
+ISIM.  Icarus Verilog is good for short, simple simulations and is used for the
+core and peripheral test benches; Verilator for long simulations of large,
+complex systems; and ISIM when Xilinx-specific cores are used.  Verilator is
+the fastest simulators I've encountered.  Verilator is also used for lint
+checking in the core test benches.
 
 
 MEM INITIALIZATION FILE
 ================================================================================
 
-A memory initialization file is also produced during compilation.  This file
-can be used with tools such as Xilinx' data2mem to modify the SRAM contents
-without having to rebuild the entire system.  It is restricted to the opcode
-memory initialization.  The file must be processed before it can be used by
-specific tools, see doc/MemoryInitialization.html.
+A memory initialization file is produced during compilation.  This file can be
+used with tools such as Xilinx' data2mem to modify the SRAM contents without
+having to rebuild the entire system.  It is restricted to the opcode memory
+initialization.  The file must be processed before it can be used by specific
+tools, see doc/MemoryInitialization.html.
 
 WARNING:  The values of parameters used in the assembly code must match the
 instantiated design.
