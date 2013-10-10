@@ -271,6 +271,22 @@ class SSBCCconfig():
     else:
       raise Exception('Program Bug -- %s not found in combined memories' % name);
 
+  def GetParameterValue(self,name):
+    """
+    Get the value associated with the named parameter.
+    """
+    if name.find('[') != -1:
+      ix = name.index('[');
+      thisSlice = name[ix:];
+      name = name[:ix];
+    else:
+      thisSlice = '[0+:8]';
+    for ix in range(len(self.parameters)):
+      if self.parameters[ix][0] == name:
+        return ExtractBits(int(self.parameters[ix][1]),thisSlice);
+    else:
+      raise Exception('Program Bug:  Parameter "%s" not found' % name);
+
   def InsertPeripheralPath(self,path):
     """
     Add the specified path to the beginning of the paths to search for
