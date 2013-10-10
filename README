@@ -731,3 +731,16 @@ ISIM.  Icarus Verilog is good for short, simple simulations, Verilator for long
 simulations of large, complex systems, and ISIM when Xilinx-specific cores are
 used.  Verilator is over an order of magnitude faster than the other simulators
 I've used.  Verilator is also used for lint checking in the core test benches.
+
+
+MEM INITIALIZATION FILE
+================================================================================
+
+A memory initialization file is also produced during compilation.  This file
+can be used with tools such as Xilinx' data2mem to modify the SRAM contents
+without having to rebuild the entire system.  It is restricted to the opcode
+memory initialization.  The file must be processed before it can be used by
+specific tools, see doc/MemoryInitialization.html.
+
+WARNING:  The values of parameters used in the assembly code must match the
+instantiated design.

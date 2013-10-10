@@ -565,7 +565,7 @@ for CURTEST in ${TESTS}; do
 done
 
 # Remove the temporary output files.
-rm -f arch.9x8 arch.9x8-meta init.s arch.v ssbcc tb;
+rm -f arch.9x8 arch.9x8-meta arch.mem arch.v init.s ssbcc tb;
 
 # Print success message and return success indication.
 echo "Passed:  ${NAME}";

@@ -448,7 +448,10 @@ try:
   fpRawCore = open(rawCoreName,'r');
 
   outName = genOutName(config.Get('outCoreName'));
-  fpOutCore = open(outName,'w');
+  fpOutCore = open(outName,'wt');
+
+  memFileName = re.sub(r'\.v.*','.mem',outName);
+  fpMemFile = open(memFileName,'wt');
 
   #
   # Loop through the core, copying or filling in the file as required.
@@ -474,7 +477,7 @@ try:
       genLocalParam(fpOutCore,config);
     # memories
     elif fillCommand == 'memories':
-      genMemories(fpOutCore,config,programBody);
+      genMemories(fpOutCore,fpMemFile,config,programBody);
     # module
     elif fillCommand == 'module':
       genModule(fpOutCore,config);
