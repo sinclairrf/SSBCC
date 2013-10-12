@@ -293,7 +293,7 @@ def genMemories(fp,fpMemFile,config,programBody):
     fp.write('  end else\n');
     fp.write('    %s <= s_opcodeMemory[s_PC];\n' % instructionReadTarget);
   else:
-    fp.write('  else case (s_PC[%d+:%d])\n' % (instructionMemory['nbits_blockSize'],instructionMemory['nbits_nBlocks'],));
+    fp.write('  end else case (s_PC[%d+:%d])\n' % (instructionMemory['nbits_blockSize'],instructionMemory['nbits_nBlocks'],));
     for ixBlock in range(instructionMemory['nBlocks']):
       memName = instructionMemNameFormat % ixBlock;
       thisLine = '%d\'h%X : %s <= %s[s_PC[0+:%d]];\n' % (instructionMemory['nbits_nBlocks'],ixBlock,instructionReadTarget,memName,instructionMemory['nbits_blockSize'],);
