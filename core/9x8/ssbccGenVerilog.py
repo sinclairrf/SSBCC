@@ -231,18 +231,18 @@ def genMemories(fp,fpMemFile,config,programBody):
             if programBody[ixRecordedBody][0] == 'p':
               (parameterString,parameterComment) = re.findall(r'(\S+)(.*)$',programBody[ixRecordedBody][2:])[0];
               fp.write(formatp % (ixMem,parameterString,));
-              fpMemFile.write('%04X %03X\n' % (memAddr,0x100 + config.GetParameterValue(parameterString)));
+              fpMemFile.write('@%04X %03X\n' % (memAddr,0x100 + config.GetParameterValue(parameterString)));
               if len(parameterComment) > 0:
                 fp.write(' // %s' % parameterComment[1:]);
               fp.write('\n');
             else:
               fp.write(formatn % (ixMem,programBody[ixRecordedBody][0:3],programBody[ixRecordedBody][4:]));
-              fpMemFile.write('%04X %s\n' % (memAddr,programBody[ixRecordedBody][0:3],));
+              fpMemFile.write('@%04X %s\n' % (memAddr,programBody[ixRecordedBody][0:3],));
             break;
         ixRecordedBody = ixRecordedBody + 1;
       elif ixInstruction < instructionBodyLength:
         fp.write(formate % ixMem);
-        fpMemFile.write('%04X 0\n' % memAddr);
+        fpMemFile.write('@%04X 000\n' % memAddr);
       else:
         break;
       ixInstruction = ixInstruction + 1;
@@ -609,7 +609,7 @@ def genMemories_init(fp,config,combined,fpMemFile=None,memName=None,memLength=No
       addr = port['offset'];
       for ixFill in range(lens[0]):
         for ixCol in range(len(lens)):
-          fpMemFile.write('%04X %s\n' % (addr,values[ixCol][ixFill],));
+          fpMemFile.write('@%04X %03X\n' % (addr,values[ixCol][ixFill],));
           addr += 1;
 
 def genMemories_stack(fp,combined,port,packing,inSignalName,outSignalName,muxTest):
