@@ -53,7 +53,8 @@ class asmDef_9x8:
   def SymbolDict(self):
     """
     Return a dict object usable by the eval function with the currently defines
-    symbols for constants, variables, memory lengths, and stack lengths.
+    symbols for constants, variables, memory lengths, stack lengths, and signal
+    lengths.
     """
     t = dict();
     for ixSymbol in range(len(self.symbols['list'])):

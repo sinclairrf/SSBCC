@@ -815,3 +815,14 @@ class SSBCCconfig():
         for ix in range(len(self.memories['name'])):
           self.memories[field].append(None);
       self.memories[field][index] = values[field];
+
+  def SignalLengthList(self):
+    """
+    Generate a list of the I/O signals and their lengths.
+    """
+    outlist = list();
+    for io in self.ios:
+      if io[2] == 'comment':
+        continue;
+      outlist.append((io[0],io[1],));
+    return outlist;

@@ -340,6 +340,8 @@ try:
       cmd += (' -O %s=%d' % (config.outports[ix][0],ix));
   for memNameLength in config.MemoryNameLengthList():
     cmd += (' -S %s=%d' % memNameLength);
+  for signalNameLength in config.SignalLengthList():
+    cmd += (' -S %s=%d' % signalNameLength);
   cmd += ' -o ' + assemblerOutput;
   for stack_name in ('data_stack','return_stack',):
     cmd += ' -s %s=%d' % (stack_name,config.config[stack_name],);
