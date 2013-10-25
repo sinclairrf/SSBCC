@@ -1,22 +1,23 @@
 SSBCC.9x8 is a free Small Stack-Based Computer Compiler with a 9-bit opcode,
-8-bit data core.  It creates vendor-independent high-speed, low fabric
+8-bit data core.  It creates vendor-independent, high-speed, low fabric
 utilization micro controllers for FPGAs.  It has been used in Spartan-3A,
 Spartan-6, and Artex-7 FPGAs and has been built for other Altera, Lattice, and
-Xilinx devices.  It is consistently smaller and faster than the vendor provided
+Xilinx devices.  It is consistently smaller and faster than vendor provided
 processors.
 
-The compiler takes an architecture file that prescribes the micro controller
+The compiler takes an architecture file that describes the micro controller
 memory spaces, inputs and outputs, and peripherals and which specifies the HDL
 language and source assembly.  It generates a single HDL module implementing
-the entire micro controller.
+the entire micro controller.  No user-written HDL is required to instaniate
+I/Os, program memory, etc.
 
-It has been used for the following projects:
-- operate two UART interfaces and multiple PWM controlled 2-lead bi-color LEDs
+SSBCC has been used for the following projects:
 - operate a media translator from a parallel camera interface to an OMAP GPMC
   interface, detect and report bus errors and hardware errors, and act as an
   SPI slave to the OMAP
+- operate two UART interfaces and multiple PWM controlled 2-lead bi-color LEDs
 - operate and monitor the Artix-7 fabric in a Zynq system using AXI4-Lite
-  master and slave buses
+  master and slave buses, I2C busses for timing-critical voltage measurements
 
 
 DESCRIPTION
@@ -26,29 +27,29 @@ The computer compiler uses an architectural description of the processor stating
 the sizes of the instruction memory, data stack, and return stack; the input and
 output ports; RAM and ROM types and sizes; and peripherals.
 
-The 9x8 instructions are all single-cycle.  The instructions include
+The instructions are all single-cycle.  The instructions include
 - pushing an 8-bit value onto the data stack
 - arithmetic operations:  addition, subtraction, increment, and decrement
 - bit-wise logical operations:  and, or, and exclusive or
 - rotations
 - logical operations:  0=, 0<>, -1=, -1<>
 - Forth-like data stack operations:  dup, over, swap, drop, nip
-- Forth-like return stack operations:  >r, r>, and r@
+- Forth-like return stack operations:  >r, r>, r@
 - input and output port operations
-- memory read and write with optional address increment and decrement
+- memory read and write with optional address post increment and post decrement
 - jumps and conditional jumps
 - calls and conditional calls
 - function return.
 
 The 9x8 address space is up to 8K.  This is achieved by pushing the 8 lsb of the
-target address onto the data stack immediately before a jump or call instruction
-and by encoding the 5 msb of the address within the jump or call instruction.
-The instruction immediately following a jump, call, or return is executed before
-the instruction sequence at the target address or return address is executed
+target address onto the data stack immediately before the jump or call
+instruction and by encoding the 5 msb of the address within the jump or call
+instruction.  The instruction immediately following a jump, call, or return is
+executed before the instruction sequence at the destination address is executed
 (this is illustrated later).
 
 Up to four banks of memory, either RAM or ROM, are available.  Each of these can
-be up to 256 bytes, providing a total of up to 1 kB of memory.
+be up to 256 bytes long, providing a total of up to 1 kB of memory.
 
 The assembly language is Forth-like.  Macros are used to encode the jump and
 call instructions and to encode the 2-bit memory bank index in memory store and
@@ -56,7 +57,7 @@ fetch instructions.
 
 The computer compiler and assembler are written in Python 2.7.  Peripherals are
 implemented by Python modules which generate the I/O ports and the peripheral
-HDL.  This provides an extensible peripheral set to the compiler.
+HDL.
 
 The computer compiler is documented in the doc directory.  The 9x8 core is
 documented in the core/9x8/doc directory.  Several examples are provided.
@@ -95,7 +96,7 @@ existing with other subsystems in the FPGA fabric.  What these performance
 numbers do provide is an estimate of the amount of slack available.  For
 example, you can't reallistically expect to get 110 MHz from a processor that,
 under ideal conditions, routes and places at 125 MHz, but you can with a
-processor that synthesizes over 160 MHz and can place and route at 150 MHz.
+processor that synthesizes at more than 150 MHz.
 
 
 EXAMPLE:
@@ -392,6 +393,9 @@ peripherals:
 
   echo "ARCHITECTURE core/9x8 Verilog" | ssbcc -P "big_inport help" - | less
 
+User defined peripherals can be in the same directory as the architecture file
+or a subdirectory named "peripherals".
+
 
 PARAMETER and LOCALPARAM
 ================================================================================
@@ -545,9 +549,9 @@ instead of packing the 10-bit values into two memory entries of a 9-bit wide
 memory.
 
 The following illustrates a possible configuration for a Spartan-6 with a
-2048-long SRAM and relatively large 64-deep data stack.  The data stack will be in
-the last 64 elements of the instruction memory and the instruction space will be
-reduced to 1984 words.
+2048-long SRAM and relatively large 64-deep data stack.  The data stack will be
+in the last 64 elements of the instruction memory and the instruction space will
+be reduced to 1984 words.
 
   INSTRUCTION   2048
   DATA_STACK    64
@@ -698,8 +702,8 @@ incrementing a two-byte value on the data stack:
 COMPUTED VALUES
 ================================================================================
 
-Computed values can be pushed on the stack using the a "${...}" where the "..."
-is evaluated in Python and cannot have any spaces.
+Computed values can be pushed on the stack using a "${...}" where the "..." is
+evaluated in Python and cannot have any spaces.
 
 For example, a loop that should be run 5 times can be coded as:
 
@@ -717,21 +721,20 @@ and the block of reserved memory can be cleared using the following loop:
 
   ${C_RESERVE-1} :loop 0 over .storeindexed(reserved) .jumpc(loop,1-) drop
 
-The offsets of variables in their memory is can also be accessed through a
-computed value.  The above loop could also be written as:
+The offsets of variables in their memory can also be accessed through a computed
+value.  The memory could also be cleared as follows:
 
   ${reserved-1} ${C_RESERVE-1} :loop >r
     0 swap .store-(myram)
   r> .jumpc(loop,-1) drop drop
 
 This body of this version of the loop is the same length as the first version.
-In general, it is better to use the memory macros as they ensure the correct
-memory is accessed.
+In general, it is better to use the memory macros to access variables as they
+ensure the correct memory is accessed.
 
-The sizes of memories and the lengths of I/O signals can also be accessed using
-computed values.  If myram is a RAM, then "${size['myram']}" will push the size
-of "myram" on the stack.  As an example, the following code will clear an entire
-RAM named "myram:"
+The sizes of memories can also be accessed using computed values.  If "myram" is
+a RAM, then "${size['myram']}" will push the size of "myram" on the stack.  As
+an example, the following code will clear the entire RAM:
 
   ${size['myram']-1} :loop 0 swap .jumpc(loop,.store-(myram)) drop
 
