@@ -264,7 +264,8 @@ sequence:
 
   .inport(I_FIFO_STATUS) C_FIFO_STATUS__FULL &
 
-Multiple bits can be masked using a computed value as follows:
+Multiple bits can be masked using a computed value as follows (see below for
+more details):
 
   .inport(I_FIFO_STATUS) ${C_FIFO_STATUS__FULL|C_FIFO_STATUS__EMPTY} &
 
@@ -607,10 +608,8 @@ from coeff_table, which is stored in a ROM, to d.
 
   .fetchvector(coeff_table,4) .storevector(d,4)
 
-The memory size is available to the assembly code using the "size" dictionary.
-for example, the code to clear "myram" above is:
-
-  ${size[myram]-1} :loop 0 over .store(myram) drop .jumpc(loop,1-) drop
+The memory size is available using computed values (see below) and can be used
+to clear the entire memory, etc.
 
 The available single-cycle memory operation macros are:
   .fetch(mem_name)      replaces T with the value at the address T in the memory
@@ -695,6 +694,59 @@ incrementing a two-byte value on the data stack:
   .function increment_2byte
   swap 1+ swap over 0= .return(-)
 
+
+COMPUTED VALUES
+================================================================================
+
+Computed values can be pushed on the stack using the a "${...}" where the "..."
+is evaluated in Python and cannot have any spaces.
+
+For example, a loop that should be run 5 times can be coded as:
+
+  ${5-1} :loop ... .jumpc(loop,1-) drop
+
+Constants can be accessed in the computation.  For example, a block of memory
+can be allocated as follows:
+
+  .constant C_RESERVE
+  .memory RAM myram
+  ...
+  .variable reserved 0*${C_RESERVE}
+
+and the block of reserved memory can be cleared using the following loop:
+
+  ${C_RESERVE-1} :loop 0 over .storeindexed(reserved) .jumpc(loop,1-) drop
+
+The offsets of variables in their memory is can also be accessed through a
+computed value.  The above loop could also be written as:
+
+  ${reserved-1} ${C_RESERVE-1} :loop >r
+    0 swap .store-(myram)
+  r> .jumpc(loop,-1) drop drop
+
+This body of this version of the loop is the same length as the first version.
+In general, it is better to use the memory macros as they ensure the correct
+memory is accessed.
+
+The sizes of memories and the lengths of I/O signals can also be accessed using
+computed values.  If myram is a RAM, then "${size['myram']}" will push the size
+of "myram" on the stack.  As an example, the following code will clear an entire
+RAM named "myram:"
+
+  ${size['myram']-1} :loop 0 swap .jumpc(loop,.store-(myram)) drop
+
+The lengths of I/O signals can also be accessed using computed values.  If
+"o_mask" is a mask, then "${size['o_mask']}" will push the size of the mask on
+the stack and "${2**size['o_mask']-1}" will push a value that sets all the bits
+of the mask.  The I/O signals include I/O signals instantiated by peripherals.
+For example, for the configuration command
+
+  PERIPHERAL big_outport outport=O_BIG outsignal=o_big width=47
+
+the width of the output signal is accessible using "${size['o_big']}".  You can
+set the wide signal to all zeroes using:
+
+  ${(size['o_big']+7)/8-1} :loop 0 .outport(O_BIG) .jumpc(loop,1-) drop
 
 CONDITIONAL COMPILATION
 ================================================================================
