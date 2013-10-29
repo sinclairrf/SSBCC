@@ -1,8 +1,8 @@
 SSBCC.9x8 is a free Small Stack-Based Computer Compiler with a 9-bit opcode,
 8-bit data core.  It creates vendor-independent, high-speed, low fabric
 utilization micro controllers for FPGAs.  It has been used in Spartan-3A,
-Spartan-6, and Artex-7 FPGAs and has been built for other Altera, Lattice, and
-Xilinx devices.  It is consistently smaller and faster than vendor provided
+Spartan-6, and Artex-7 FPGAs and has been built for Altera, Lattice, and other
+Xilinx devices.  It is faster and usually smaller than vendor provided
 processors.
 
 The compiler takes an architecture file that describes the micro controller
@@ -225,6 +225,201 @@ library functions are not included in the generated instruction list.
     ...
     s_opcodeMemory['h7FF] = 9'h000;
   end
+
+
+DATA and STRINGS
+================================================================================
+
+Values are pushed onto the data stack by stating the value.  For example,
+
+  0x10 0x20 'x'
+
+will sucessively push the values 0x10, 0x20, and the character 'x' onto the data
+stack.  The character 'x' will be at the top of the data stack after these 3
+instructions.
+
+See the COMPUTED VALUES section for using computing values in the assembler.
+
+There are four ways to specify strings in the assembler.  Simply stating the
+string
+
+  "Hello World!"
+
+puts the characters in the string onto the data stack with the letter 'H' at the
+top of the data stack.  I.e., the individual push operations are
+
+  '!' 'd' 'l' ... 'e' 'H'
+
+Prepending a 'N' before the double quote, like
+
+  N"Hello World!"
+
+puts a null-terminated string onto the data stack.  I.e., the value under the
+'!' will be a 0x00 and the instruction sequence would be
+
+  0x0 '!' 'd' 'l' ... 'e' 'H'
+
+Forth uses counted strings, which are specified here as
+
+  C"Hello World!"
+
+In this case the number of characters, 12 in this example, in the string is
+pushed onto the data stack after the 'H', i.e., the instruction sequence would
+be
+
+  '!' 'd' 'l' ... 'e' 'H' 12
+
+Finally, a lesser-counted string specified like
+
+  c"Hello World!"
+
+is similar to the Forth-like counted string except that the value pushed onto
+the data stack is one less than the number of characters in the string.  Here
+the value pushed onto the data stack after the 'H' would be 11 instead of 12.
+
+Simple strings are useful for constructing more complex strings in conjunction
+with other string functions.   For example, to transmit the hex values of the
+top 2 values in the data stack, do something like:
+
+  ; move the top 2 values to the return stack
+  >r >r
+  ; push the tail of the message onto the data stack
+  N"\n\r"
+  ; convert the 2 values to 2-digit hex values, LSB deepest in the stack
+  r> .call(string_byte_to_hex)
+  r> .call(string_byte_to_hex)
+  ; pre-pend the identification message
+  "Message:  "
+  ; transmit the string, using the null terminator to terminate the loop
+  :loop_transmit .outport(O_UART_TX) .jumpc(loop_transmit,nop) drop
+
+A lesser-counted string would be used like:
+
+  c"Status Message\r\n"
+  :loop_msg swap .outport(O_UART_TX) .jumpc(loop_msg,1-) drop
+
+These four string formats can also be used for variable definitions.  For
+example 3 variables could be allocated and initialized as follows:
+
+  .memory ROM myrom
+  .variable fred N"fred"
+  .variable joe  c"joe"
+  .variable moe  "moe"
+
+These are equivalent to
+
+  .variable fred 'f' 'r' 'e' 'd'  0
+  .variable joe   2  'j' 'o' 'e'
+  .variable moe  'm' 'o' 'e'
+
+with 5 bytes allocated for the variable fred, 4 bytes for joe, and 3 bytes for
+moe.
+
+The following escaped characters are recognized:
+
+  '\0'     null character
+  '\a'     bell
+  '\b'     backspace
+  '\f'     form feed
+  '\n'     line feed
+  '\r'     carriage return
+  '\t'     horizontal tab
+  "\0ooo"  3-digit octal value
+  "\xXX"   2-digit hex value where X is one of 0-9, a-f, or A-F
+  "\Xxx"   alternate form for 2-digit hex value
+  "\\"     backslash character
+
+Unrecognized escaped characters are simple treated as that character.  For
+example, '\m' is treated as the single characer 'm' and '\'' is treated as the
+single quote character.
+
+
+INSTRUCTIONS
+================================================================================
+
+The 41 instructions are as follows (see core/9x8/doc/opcodes.html for detailed
+descriptions).  Here, T is the top of the data stack, N is the next-to-top of
+the data stack, and R is the top of the return stack.  All of these are the
+values at the start of the instruction.
+
+The nop instruction does nothing:
+
+  nop           no operation
+
+Mathematical operations drop one value from the data stack and replace the new
+top with the state value:
+
+  &             bitwise and of N and T
+  +             N + T
+  -             N - T
+  ^             bitwise exclusive or of N and T
+  or            bitwise or of N and T
+
+Increment and decrement replace the top of the data stack with the stated
+result.
+
+  1+            replace T with T+1
+  1-            replace T with T-1
+
+Comparison operations replace the top of the data stack with the results of the
+comparison:
+
+  -1<>          replace T with -1 if T != -1, otherwise set T to 0
+  -1=           replace T with 0 if T != -1, otherwise leave T as -1
+  0<>           replace T with -1 if T != 0, otherwise leave T as 0
+  0=            replace T with -1 if T == 0, otherwise set T to 0
+
+Shift/rotate operations replace the top of the data with with the result of the
+specified shift/rotate.
+
+  0>>           shift T right one bit and set the msb to 0
+  1>>           shift T right 1 bit and set the msb to 1
+  <<0           shift T left 1 bit and set the lsb to 0
+  <<1           shift T left 1 bit and set the lsb to 1
+  <<msb         rotate T left 1 bit
+  lsb>>         rotate T right 1 bit
+  msb>>         shift T right 1 bit and set the msb to the old msb
+
+Note:  There is no "<<lsb" shift/rotate instruction.
+
+Stack manipulation instructions are as follows:
+
+  >r            pushd T onto the return stack and drop T from the data stack
+  drop          drop T from the data stack
+  dup           push T onto the data stack
+  nip           drop N from the data stack
+  over          push N onto the data stack
+  push          push a single byte onto the data stack, see the preceding DATA
+                and STRINGS section
+  r>            push R onto the data stack and drop R from the return stack
+  r@            push R onto the data stack
+  swap          swap N and T
+
+Jump and call and their conditional variants are as follows and must use the
+associated macro:
+
+  call          call instruction -- use the .call macro
+  callc         conditional call instruction -- use the .callc macro
+  jump          jump instruction -- use the .jump macro
+  jumpc         conditional jump instruction -- use the .jumpc macro
+  return        return instruction -- use the .return macro
+
+See the MEMORY section for details for these memory operations.  T is the
+address for the instructions, N is the value stored.  Chained fetches insert the
+value below T.  Chained stores drop N.
+
+  fetch         memory fetch, replace T with the value fetched
+  fetch+        chained memory fetch, retain and increment the address
+  fetch-        chained memory fetch, retain and decrement the address
+  store         memory store, drop T (N is the next value of T)
+  store+        chained memory store, retain and increment the address
+  store-        chained memory store, retain and decrement the address
+
+See the INPORT and OUTPORT section for details for the input and output port
+operations:
+
+  inport        input port operation
+  outport       output port operation
 
 
 INPORT and OUTPORT
@@ -709,6 +904,11 @@ For example, a loop that should be run 5 times can be coded as:
 
   ${5-1} :loop ... .jumpc(loop,1-) drop
 
+which is a clearer indication that the loop is to be run 5 times than is the
+instruction sequence
+
+  4 :loop ...
+
 Constants can be accessed in the computation.  For example, a block of memory
 can be allocated as follows:
 
@@ -722,7 +922,7 @@ and the block of reserved memory can be cleared using the following loop:
   ${C_RESERVE-1} :loop 0 over .storeindexed(reserved) .jumpc(loop,1-) drop
 
 The offsets of variables in their memory can also be accessed through a computed
-value.  The memory could also be cleared as follows:
+value.  The value of reserved could also be cleared as follows:
 
   ${reserved-1} ${C_RESERVE-1} :loop >r
     0 swap .store-(myram)
