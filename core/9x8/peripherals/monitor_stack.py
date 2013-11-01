@@ -57,18 +57,17 @@ class monitor_stack(SSBCCperipheral):
     outport_pure_strobe = '';
     for ix in range(config.NOutports()):
       thisPort = config.outports[ix][1:];
-      thisOnlyStrobe = True;
-      thisIsStrobe = False;
+      thisIsStrobe = True;
       for jx in range(len(thisPort)):
         signal = thisPort[jx];
         signalType = signal[2];
         if signalType == 'data':
-          thisOnlyStrobe = False;
+          thisIsStrobe = False;
         elif signalType == 'strobe':
-          thisIsStrobe = True;
+          pass;
         else:
           raise Exception('Program Bug:  Unrecognized outport signal type "%s"' % signalType);
-      if thisOnlyStrobe and thisIsStrobe:
+      if thisIsStrobe:
         if len(outport_pure_strobe) > 0:
           outport_pure_strobe += ' || ';
         outport_pure_strobe += ('(s_T == 8\'h%02X)' % ix);
