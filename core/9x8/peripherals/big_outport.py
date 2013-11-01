@@ -24,7 +24,7 @@ class big_outport(SSBCCperipheral):
     outsignal=o_name
       specifies the name of the signal output from the module
     width=<N>
-      specifies the width of the shift register\n
+      specifies the width of the I/O\n
   Example:  Create a 26-bit output signal for output of 26-bit or 18-bit values
   from the processor to external IP.\n
     PORTCOMMENT 26-bit output for use by other modules
@@ -44,7 +44,7 @@ class big_outport(SSBCCperipheral):
     .outstrobe(O_WR_26BIT)\n
   Writing an 18-bit value requires 3 successive outports to O_26BIT_SIGNAL
   starting with the MSB as illustrated by the following function:\n
-    ; Read the 18-bit value from memory and then write it to the YYY peripheral.
+    ; Read the 18-bit value from memory and then write it to a peripheral.
     ; Note:  The multi-byte value is stored MSB first in memory.
     ; ( u_addr - )
     .function write_18bit_from_memory
@@ -88,7 +88,6 @@ class big_outport(SSBCCperipheral):
     body = """//
 // PERIPHERAL big_outport:  @NAME@
 //
-generate
 initial @NAME@ = @WIDTH@'d0;
 always @ (posedge i_clk)
   if (i_rst)
@@ -97,7 +96,6 @@ always @ (posedge i_clk)
     @NAME@ <= { @NAME@[@WIDTH-9:0@], s_N };
   else
     @NAME@ <= @NAME@;
-endgenerate
 """
     for subpair in (
       (r'@IX_OUTPORT@', "8'd%d" % self.ix_outport,                              ),
