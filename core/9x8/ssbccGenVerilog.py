@@ -728,6 +728,8 @@ def genOutports(fp,config):
     return;
   for ix in range(config.NOutports()):
     thisPort = config.outports[ix][2:];
+    if not thisPort:
+      continue;
     bitWidth = 0;
     bitName = '';
     bitInit = '';
@@ -744,9 +746,7 @@ def genOutports(fp,config):
         bitWidth = bitWidth + signalWidth;
         bitName += signalName;
         bitInit += signalInit;
-    if bitWidth == 0:
-      pass;
-    else:
+    if bitWidth > 0:
       if ',' in bitName:
         bitName = '{ ' + bitName + ' }';
         bitInit = '{ ' + bitInit + ' }';
