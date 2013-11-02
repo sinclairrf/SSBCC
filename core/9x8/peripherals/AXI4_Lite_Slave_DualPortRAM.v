@@ -77,10 +77,11 @@ always @ (*)
 initial o_rvalid = 1'b0;
 always @ (s__axi_got_raddr)
   o_rvalid = s__axi_got_raddr;
-wire [3:0] s__wstrb;
+reg [3:0] s__wstrb = 4'd0;
 genvar ix__wstrb;
 for (ix__wstrb=0; ix__wstrb<4; ix__wstrb=ix__wstrb+1) begin : gen__wstrb
-  assign s__wstrb[ix__wstrb] = s__axi_got_waddr && i_wvalid && i_wstrb[ix__wstrb];
+  always @ (posedge i_aclk)
+    s__wstrb[ix__wstrb] <= s__axi_got_waddr && i_wvalid && i_wstrb[ix__wstrb];
 end
 reg [L__NBITS_SIZE-1:2] s__axi_addr_s = {(L__NBITS_SIZE-2){1'b0}};
 always @ (posedge i_aclk)
