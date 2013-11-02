@@ -597,12 +597,11 @@ The following peripherals are provided:
   big_inport    shift reads from a single INPORT to construct a wide input
   big_outport   shift writes to a single OUTPORT to construct a wide output
   latch         latch wide inputs for sampling
-  monitor_stack simulation peripheral to validate stack health
+  monitor_stack simulation diagnostic (see below)
   open_drain    for software-implemented I2C busses or similar
   PWM_8bit      PWM generator with an 8-bit control
   timer         generate timing for polled loops or similar
-  trace         simulation peripheral for processor/code diagnostics (see
-                below)
+  trace         simulation diagnostic (see below)
   UART          bidirectional UART
   UART_Rx       receive UART
   UART_Tx       transmit UART
@@ -680,11 +679,11 @@ operations on return addresses).  Other errors include out-of-range for memory,
 inport, and outport operations.
 
 When stack errors are detected the last 50 instructions are dumped to the
-console and the simulation terminates.  This facilitates diagnosing coding
-errors.  The dump includes the PC, numeric opcode, textual representation of the
-opcode, data stack pointer, next-to-top of the data stack, top of the data
-stack, top of the return stack, and the return stack pointer.  Invalid stack
-values are displayed as "XX".  The length of the history dumped is configurable.
+console and the simulation terminates.  The dump includes the PC, numeric
+opcode, textual representation of the opcode, data stack pointer, next-to-top of
+the data stack, top of the data stack, top of the return stack, and the return
+stack pointer.  Invalid stack values are displayed as "XX".  The length of the
+history dumped is configurable.
 
 Out-of-range PC checks are also performed if the instruction space is not a
 power of 2.
