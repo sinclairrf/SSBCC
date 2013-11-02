@@ -61,19 +61,19 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:\n
                      ('s__adder_16bit_out_LSB',8,'data',),
                     ),ixLine);
     # List the output ports from the peripheral.
-    config.AddOutport(('O_ADDER_16BIT_MSB1',
+    config.AddOutport(('O_ADDER_16BIT_MSB1',False,
                        ('s__adder_16bit_in_MSB1',8,'data',),
                      ),ixLine);
-    config.AddOutport(('O_ADDER_16BIT_LSB1',
+    config.AddOutport(('O_ADDER_16BIT_LSB1',False,
                       ('s__adder_16bit_in_LSB1',8,'data',),
                      ),ixLine);
-    config.AddOutport(('O_ADDER_16BIT_MSB2',
+    config.AddOutport(('O_ADDER_16BIT_MSB2',False,
                       ('s__adder_16bit_in_MSB2',8,'data',),
                      ),ixLine);
-    config.AddOutport(('O_ADDER_16BIT_LSB2',
+    config.AddOutport(('O_ADDER_16BIT_LSB2',False,
                       ('s__adder_16bit_in_LSB2',8,'data',),
                      ),ixLine);
-    config.AddOutport(('O_ADDER_16BIT_OP',
+    config.AddOutport(('O_ADDER_16BIT_OP',False,
                       ('s__adder_16bit_in_op',1,'data',),
                      ),ixLine);
 

@@ -155,7 +155,7 @@ class UART_Tx(SSBCCperipheral):
     config.AddSignal('s__%s__Tx'          % self.namestring,8,ixLine);
     config.AddSignal('s__%s__Tx_busy'     % self.namestring,1,ixLine);
     config.AddSignal('s__%s__Tx_wr'       % self.namestring,1,ixLine);
-    config.AddOutport((self.outport,
+    config.AddOutport((self.outport,False,
                    ('s__%s__Tx'           % self.namestring,8,'data',),
                    ('s__%s__Tx_wr'        % self.namestring,1,'strobe',),
                   ),ixLine);

@@ -93,7 +93,7 @@ class open_drain(SSBCCperipheral):
                      (self.iosignal,self.width,'data',),
                     ),
                     ixLine);
-    config.AddOutport((self.outport,
+    config.AddOutport((self.outport,False,
                       (self.sname,self.width,'data',sname_init,),
                      ),
                      ixLine);

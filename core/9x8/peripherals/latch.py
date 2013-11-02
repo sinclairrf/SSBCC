@@ -115,9 +115,9 @@ class latch(SSBCCperipheral):
                      ('s__%s__select' % self.insignal,8,'data',),
                     ),ixLine);
     self.ix__o_latch = config.NOutports();
-    config.AddOutport((self.outport_latch,),ixLine);
+    config.AddOutport((self.outport_latch,True,),ixLine);
     self.ix__o_addr = config.NOutports();
-    config.AddOutport((self.outport_addr,),ixLine);
+    config.AddOutport((self.outport_addr,False,),ixLine);
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');

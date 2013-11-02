@@ -234,7 +234,7 @@ class UART(SSBCCperipheral):
     config.AddInport((self.inempty,
                    ('s__%s__Rx_empty'     % self.namestring,1,'data',),
                   ),ixLine);
-    config.AddOutport((self.outport,
+    config.AddOutport((self.outport,False,
                    ('s__%s__Tx'           % self.namestring,8,'data',),
                    ('s__%s__Tx_wr'        % self.namestring,1,'strobe',),
                   ),ixLine);

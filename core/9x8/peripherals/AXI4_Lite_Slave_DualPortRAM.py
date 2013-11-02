@@ -164,13 +164,13 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     config.AddSignal('s__%s__mc_rdata' % self.namestring, 8, ixLine);
     config.AddSignal('s__%s__mc_wdata' % self.namestring, 8, ixLine);
     config.AddSignal('s__%s__mc_wr'    % self.namestring, 1, ixLine);
-    config.AddOutport((self.address,
+    config.AddOutport((self.address,False,
                       ('s__%s__mc_addr' % self.namestring, int(math.log(self.size,2)), 'data', ),
                       ),ixLine);
     config.AddInport((self.read,
                       ('s__%s__mc_rdata' % self.namestring, 8, 'data', ),
                       ),ixLine);
-    config.AddOutport((self.write,
+    config.AddOutport((self.write,False,
                       ('s__%s__mc_wdata' % self.namestring, 8, 'data', ),
                       ('s__%s__mc_wr'    % self.namestring, 1, 'strobe', ),
                       ),ixLine);

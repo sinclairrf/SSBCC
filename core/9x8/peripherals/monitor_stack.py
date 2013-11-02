@@ -56,7 +56,7 @@ class monitor_stack(SSBCCperipheral):
     body = self.LoadCore(self.peripheralFile,'.v');
     outport_pure_strobe = '';
     for ix in range(config.NOutports()):
-      thisPort = config.outports[ix][1:];
+      thisPort = config.outports[ix][2:];
       thisIsStrobe = True;
       for jx in range(len(thisPort)):
         signal = thisPort[jx];

@@ -79,8 +79,8 @@ class big_outport(SSBCCperipheral):
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.outsignal,self.width,'output',ixLine);
     self.ix_outport = config.NOutports();
-    config.AddOutport((self.outport,
-                      # empty list -- disable normal output port signal generation
+    config.AddOutport((self.outport,False,
+                      # empty list
                       ),
                       ixLine);
 

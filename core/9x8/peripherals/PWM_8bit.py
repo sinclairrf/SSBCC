@@ -136,11 +136,11 @@ class PWM_8bit(SSBCCperipheral):
     self.ix_outport_0 = config.NOutports();
     if self.instances == 1:
       tmpOutport = self.outport;
-      config.AddOutport((tmpOutport,),ixLine);
+      config.AddOutport((tmpOutport,False,),ixLine);
     else:
       for ixOutPort in range(self.instances):
         tmpOutport = '%s_%d' % (self.outport,ixOutPort,);
-        config.AddOutport((tmpOutport,),ixLine);
+        config.AddOutport((tmpOutport,False,),ixLine);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 

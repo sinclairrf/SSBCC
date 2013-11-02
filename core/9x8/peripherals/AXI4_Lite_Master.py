@@ -62,8 +62,8 @@ class AXI4_Lite_Master(SSBCCperipheral):
       specified the symbol used to read the error status of the last write or
       read transaction on the core
       Note:  A non-zero value means an error was encountered.  Errors can be
-             reset by reseting the DMA interface or by re-attempting the
-             write or read operation.
+             reset by resetting the interface or by re-attempting the write or
+             read operation.
     read=<I_read>
       specifies the symbol used to read successive bytes of the received 32-bit
       value starting with the LSB
@@ -215,20 +215,20 @@ class AXI4_Lite_Master(SSBCCperipheral):
     config.AddSignal('s__%s__error' % self.basePortName, 2, ixLine);
     config.AddSignal('s__%s__read' % self.basePortName, 32, ixLine);
     self.ix_address = config.NOutports();
-    config.AddOutport((self.address,
+    config.AddOutport((self.address,False,
                       # empty list -- disable normal output port signal generation
                       ),ixLine);
     self.ix_data = config.NOutports();
-    config.AddOutport((self.data,
+    config.AddOutport((self.data,False,
                       # empty list -- disable normal output port signal generation
                       ),ixLine);
-    config.AddOutport((self.write_enable,
+    config.AddOutport((self.write_enable,False,
                       ('o_%s_wstrb' % self.basePortName, 4, 'data', ),
                       ),ixLine);
-    config.AddOutport((self.command_read,
+    config.AddOutport((self.command_read,True,
                       ('s__%s__rd' % self.basePortName, 1, 'strobe', ),
                       ),ixLine);
-    config.AddOutport((self.command_write,
+    config.AddOutport((self.command_write,True,
                       ('s__%s__wr' % self.basePortName, 1, 'strobe', ),
                       ),ixLine);
     config.AddInport((self.busy,

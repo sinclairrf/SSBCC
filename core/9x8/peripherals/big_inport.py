@@ -73,8 +73,8 @@ class big_inport(SSBCCperipheral):
     config.AddIO(self.insignal,self.width,'input',ixLine);
     config.AddSignal('s__%s__inport' % self.insignal, self.width, ixLine);
     self.ix_latch = config.NOutports();
-    config.AddOutport((self.outlatch,
-                      # empty list -- will be interpreted as a strobe-only outport
+    config.AddOutport((self.outlatch,True,
+                      # empty list
                       ),ixLine);
     self.ix_inport = config.NInports();
     config.AddInport((self.inport,

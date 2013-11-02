@@ -727,7 +727,7 @@ def genOutports(fp,config):
     fp.write('// no output ports\n');
     return;
   for ix in range(config.NOutports()):
-    thisPort = config.outports[ix][1:];
+    thisPort = config.outports[ix][2:];
     bitWidth = 0;
     bitName = '';
     bitInit = '';
