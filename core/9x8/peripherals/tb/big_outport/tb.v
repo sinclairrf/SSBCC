@@ -2,7 +2,7 @@
  *
  * Copyright 2013, Sinclair R.F., Inc.
  *
- * Test bench for big_output peripheral.
+ * Test bench for big_outport peripheral.
  *
  ******************************************************************************/
 
