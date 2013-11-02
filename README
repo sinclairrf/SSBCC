@@ -421,6 +421,30 @@ operations:
   inport        input port operation
   outport       output port operation
 
+The .call, .callc, .jump, and .jumpc macros encode the 3 instructions required
+to perform a call or jump along with the subsequent instructions.  The default
+third instructions is "nop" for .call and .jump and it is "drop" for .callc and
+.jumpc.  The default can be changed by specifying the optional second arguement.
+The .call and .callc macros must specify a function identified by the .function
+directive and the .jump and .jumpc macros must specify a label.
+
+The .function directive takes the name of the function and the function body.
+Function bodies must end with a .return or a .jump macro.  The .main directive
+defines the body of the main function, i.e., the function at which the processor
+starts.
+
+The .include directive is used to read additional assembly code.  You can, for
+example, put the main function in uc.s, define constants and such in consts.s,
+define the memories and variables in ram.s, and include UART utilities in
+uart.s.  These files could be included in uc.s through the following lines:
+
+  .include consts.s
+  .include myram.s
+  .include uart.s
+
+The assembler only includes functions that can be reached from the main
+function.  Unused functions will not consume instrution space.
+
 
 INPORT and OUTPORT
 ================================================================================
