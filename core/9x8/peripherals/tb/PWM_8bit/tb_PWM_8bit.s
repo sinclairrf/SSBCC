@@ -28,7 +28,7 @@
   ; Let the system run for 3 PWM cycles
   .call(wait,${3-1})
 
-  ; Send the termination signal and the enter an infinite loop.
+  ; Send the termination signal and then enter an infinite loop.
   1 .outport(O_DONE)
   :infinite .jump(infinite)
 
