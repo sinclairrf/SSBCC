@@ -18,6 +18,7 @@ PERIPHERAL AXI4_Lite_Master                             \
                         command_read=O_ALM_CMD_READ     \
                         command_write=O_ALM_CMD_WRITE   \
                         busy=I_ALM_BUSY                 \
+                        error=I_ALM_ERROR               \
                         read=I_ALM_READ_BYTE            \
                         address_width=7                 \
                         synchronous=True
