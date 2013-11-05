@@ -326,6 +326,8 @@ try:
   assemblerOutput = os.path.splitext(argList.filename.name)[0]+'.9x8-meta'
 
   # Compute the command to invoke the compiler.
+  if not compiler:
+    raise SSBCCException('ASSEMBLY configuration command is missing');
   cmd = os.path.join(config.Get('corepath'), compiler[0]);
   for name in config.constants:
     cmd += (' -C %s=%s' % (name,config.constants[name],));
