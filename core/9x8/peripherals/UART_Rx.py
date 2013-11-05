@@ -64,7 +64,7 @@ class UART_Rx(SSBCCperipheral):
       Note:  sync=3 is the default.
     noDeglitch
       optionally state that no deglitching is performed on the input signal.
-      Note:  This is the defalt.
+      Note:  This is the default.
     deglitching=n
       optionally state that an n-bit deglitcher is performed on the input signal
       Note:  Deglitching consists of changing the output state when n
