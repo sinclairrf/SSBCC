@@ -253,6 +253,8 @@ try:
     # error
     else:
       raise SSBCCException('Unrecognized configuration command on line %d: "%s"' % (ixLine,line[:-1],));
+  if bufLine:
+    raise SSBCCException('Malformed last line(s): "%s"' % bufLine);
   argList.filename.close();
 
   if ifstack:
