@@ -213,6 +213,39 @@ def ParseNumber(inString):
   # Everything else is an error
   return None;
 
+def ParseChar(inchar):
+  """
+  Parse single characters including escaped characters.  Return the character
+  value and the number of characters in the input string matched.
+  """
+  if re.match(r'\\[0-7]{3}',inchar):
+    return (int(inchar[1:4],8),4,);
+  elif re.match(r'\\[0-7]{2}',inchar):
+    return (int(inchar[1:3],8),3,);
+  elif re.match(r'\\[0-7]{1}',inchar):
+    return (int(inchar[1],8),2,);
+  elif re.match(r'\\[xX][0-9A-Fa-f]{2}',inchar):
+    return (int(inchar[2:4],16),4,);
+  elif re.match(r'\\[xX][0-9A-Fa-f]{1}',inchar):
+    return (int(inchar[2],16),3,);
+  elif re.match(r'\\.',inchar):
+    if inchar[1] == 'a':        # bell ==> control-G
+      return (7,2,);
+    elif inchar[1] == 'b':      # backspace ==> control-H
+      return (8,2,);
+    elif inchar[1] == 'f':      # form feed ==> control-L
+      return (12,2,);
+    elif inchar[1] == 'n':      # line feed ==> control-J
+      return (10,2,);
+    elif inchar[1] == 'r':      # carriage return ==> control-M
+      return (13,2,);
+    elif inchar[1] == 't':      # horizontal tab ==> control-I
+      return (9,2,);
+    else:                       # unrecognized escaped character ==> return that character
+      return (ord(inchar[1]),2,);
+  else:
+    return (ord(inchar[0]),1,);
+
 def ParseString(inString):
   """
   Parse strings recognized by the assembler.\n
@@ -228,64 +261,15 @@ def ParseString(inString):
   ix = 1 if inString[0] in 'CNc' else 0;
   # Ensure the required start double quote is preset.
   if inString[ix] != '"' or inString[-1] != '"':
-    raise Exception('Program Bug -- missing one or more double quotes around argument');
+    raise Exception('Program Bug -- missing one or more double quotes around string');
   ix = ix + 1;
   # Convert the characters and escape sequences in the string to a list of their
   # integer values.
   outString = list();
   while ix < len(inString)-1:
-    # Process escape sequences.
-    if inString[ix] == '\\':
-      # Escape sequences cannot start at the end of the string body.
-      if ix == len(inString)-1:
-        return ix;
-      ix = ix + 1;
-      if inString[ix] in ('\\', '\'', '"',):
-        outString.append(ord(inString[ix]));
-        ix = ix + 1;
-      elif inString[ix] == '0': # null terminator
-        outString.append(0);
-        ix = ix + 1;
-      elif inString[ix] == 'a': # bell
-        outString.append(7); # control-G
-        ix = ix + 1;
-      elif inString[ix] == 'b': # backspace
-        outString.append(8); # control-H
-        ix = ix + 1;
-      elif inString[ix] == 'f': # form-feed
-        outString.append(12); # control-L
-        ix = ix + 1;
-      elif inString[ix] == 'n': # line feed
-        outString.append(10); # control-J
-        ix = ix + 1;
-      elif inString[ix] == 'r': # carriage-return
-        outString.append(13); # control-M
-        ix = ix + 1;
-      elif inString[ix] == 't': # horizontal tab
-        outString.append(9); # control-I
-        ix = ix + 1;
-      elif re.match(r'[0-7]',inString[ix]): # 3-digit octal value
-        if ix >= len(inString)-3:
-          return ix;
-        if not re.match(r'[0-7]{3}',inString[ix:ix+3]):
-          return ix;
-        outString.append(int(inString[ix:ix+3],8));
-        ix = ix + 3;
-      elif inString[ix] in ('X','x',): # 2-digit hex character
-        if ix >= len(inString)-3:
-          return ix;
-        if not re.match(r'[0-9A-Fa-f]{2}',inString[ix+1:ix+3]):
-          return ix;
-        outString.append(int(inString[ix+1:ix+3],16));
-        ix = ix + 3;
-      # Unrecognized escape sequences are treated as ordinary characters.
-      else:
-        outString.append(ord(inString[ix]));
-        ix = ix + 1;
-    # Ordinary character.
-    else:
-      outString.append(ord(inString[ix]));
-      ix = ix + 1;
+    (thisChar,thisLen,) = ParseChar(inString[ix:-1]);
+    outString.append(thisChar);
+    ix += thisLen;
   # Insert the optional character count or append the optional nul terminating
   # character.
   if inString[0] == 'C':
@@ -389,10 +373,10 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
   if raw[0] == "'":
     if 'singlevalue' not in allowed:
       raise AsmException('Character not allowed at %s' % flc_loc);
-    a = re.match(r'\'.\'$',raw);
-    if not a:
+    (thisChar,thisLen,) = ParseChar(raw[1:-1]);
+    if len(raw) != thisLen+2:
       raise AsmException('Malformed \'.\' in %s' % flc_loc);
-    return dict(type='value', value=ord(a.group(0)[1]), loc=flc_loc);
+    return dict(type='value', value=thisChar, loc=flc_loc);
   # look for directives
   if ad.IsDirective(raw):
     if 'directive' not in allowed:
@@ -496,7 +480,7 @@ def RawTokens(ad,filename,startLineNumber,lines):
           raise AsmException('Malformed string at %s' % flc_loc);
       # Catch single-quoted characters
       elif re.match(r'\'',line[col:]):
-        a = re.match(r'\'.\'',line[col:]);
+        a = re.match(r'\'(.|\\.|\\[xX][0-9A-Fa-f]{1,2}|\\[0-7]{1,3})\'',line[col:]);
         if not a:
           raise AsmException('Malformed \'.\' at %s' % flc_loc);
       else:
