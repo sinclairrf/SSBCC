@@ -14,8 +14,12 @@
     drop
 
   ; Read and output the first 20 memory addresses starting with address 0.
+  ; Note:  The micro controller address requires one clock cycle between the
+  ;        "outport" and the ".inport" for the address to fully register in the
+  ;        dual-port memory.  Removing the "nop" will cause this test bench to
+  ;        fail.
   0 ${20-1} :read_16 >r
-    O_DP_ADDRESS outport O_DIAG_ADDR outport .inport(I_DP_READ) .outport(O_DIAG_DATA)
+    O_DIAG_ADDR outport O_DP_ADDRESS outport nop .inport(I_DP_READ) .outport(O_DIAG_DATA)
     1+ r> .jumpc(read_16,1-) drop
 
   ; Terminate the program.
