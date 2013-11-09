@@ -22,7 +22,8 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
                                 address=<O_address>     \\
                                 read=<I_read>           \\
                                 write=<O_write>         \\
-                                [size=<N>]\n
+                                [size=<N>]              \\
+                                [ram8|ram32]\n
   Where:
     basePortName=<name>
       specifies the name used to construct the multiple AXI4-Lite signals
@@ -41,6 +42,12 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       Note:  N=256, i.e., the largest memory possible, is the default.
       Note:  Using a localparam for the memory size provides a convenient way
              to use the size of the dual port RAM in the micro controller code.\n
+    ram8
+      optionally specifies using an 8-bit RAM for the dual-port memory instantiation
+      Note:  This is the default
+    ram32
+      optionally specifies using a 32-bit RAM for the dual-port memrory instantiation
+      Note:  This is required for Vivado 2013.3.
   Example:  The code fragments
               <addr> .outport(O_address) .inport(I_read)
             and
@@ -108,6 +115,8 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     allowables = (
       ('address',       r'O_\w+$',      None,           ),
       ('basePortName',  r'\w+$',        None,           ),
+      ('ram8',          None,           None,           ),
+      ('ram32',         None,           None,           ),
       ('read',          r'I_\w+$',      None,           ),
       ('size',          r'\S+$',        validateSize,   ),
       ('write',         r'O_\w+$',      None,           ),
@@ -134,6 +143,14 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       ):
       if not hasattr(self,optionalpair[0]):
         setattr(self,optionalpair[0],optionalpair[1]);
+    # Ensure exclusive pair configurations are set and consistent.
+    for exclusivepair in (
+        ('ram8','ram32','ram8',True,),
+      ):
+      if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
+        raise SSBCCException('Only one of "%s" and "%s" can be specified at line %d' % (exclusivepair[0],exclusivepair[1],ixLine,));
+      if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]):
+        setattr(self,exclusivepair[2],exclusivepair[3]);
     # Set the string used to identify signals associated with this peripheral.
     self.namestring = self.basePortName;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
@@ -162,17 +179,15 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       config.AddIO(thisName,signal[1],signal[2],ixLine);
     config.AddSignal('s__%s__mc_addr'  % self.namestring, int(math.log(self.size,2)), ixLine);
     config.AddSignal('s__%s__mc_rdata' % self.namestring, 8, ixLine);
-    config.AddSignal('s__%s__mc_wdata' % self.namestring, 8, ixLine);
-    config.AddSignal('s__%s__mc_wr'    % self.namestring, 1, ixLine);
     config.AddOutport((self.address,False,
                       ('s__%s__mc_addr' % self.namestring, int(math.log(self.size,2)), 'data', ),
                       ),ixLine);
     config.AddInport((self.read,
                       ('s__%s__mc_rdata' % self.namestring, 8, 'data', ),
                       ),ixLine);
+    self.ix_write = config.NOutports();
     config.AddOutport((self.write,False,
-                      ('s__%s__mc_wdata' % self.namestring, 8, 'data', ),
-                      ('s__%s__mc_wr'    % self.namestring, 1, 'strobe', ),
+                      # empty list
                       ),ixLine);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
@@ -180,17 +195,19 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
     for subpair in (
-      (r'\bL__',        'L__@NAME@__',          ),
-      (r'\bgen__',      'gen__@NAME@__',        ),
-      (r'\bi_a',        'i_@NAME@_a',           ),
-      (r'\bi_b',        'i_@NAME@_b',           ),
-      (r'\bi_r',        'i_@NAME@_r',           ),
-      (r'\bi_w',        'i_@NAME@_w',           ),
-      (r'\bix__',       'ix__@NAME@__',         ),
-      (r'\bo_',         'o_@NAME@_',            ),
-      (r'\bs__',        's__@NAME@__',          ),
-      (r'@NAME@',       self.namestring,        ),
-      (r'@SIZE@',       str(self.size)          ),
+      (r'\bL__',        'L__@NAME@__',                  ),
+      (r'\bgen__',      'gen__@NAME@__',                        ),
+      (r'\bi_a',        'i_@NAME@_a',                           ),
+      (r'\bi_b',        'i_@NAME@_b',                           ),
+      (r'\bi_r',        'i_@NAME@_r',                           ),
+      (r'\bi_w',        'i_@NAME@_w',                           ),
+      (r'\bix__',       'ix__@NAME@__',                         ),
+      (r'\bo_',         'o_@NAME@_',                            ),
+      (r'\bs__',        's__@NAME@__',                          ),
+      (r'@IX_WRITE@',   "8'h%02x" % self.ix_write,              ),
+      (r'@NAME@',       self.namestring,                        ),
+      (r'@SIZE@',       str(self.size),                         ),
+      (r'@MEM8@',       '1' if hasattr(self,'mem8') else '0',   ),
     ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);

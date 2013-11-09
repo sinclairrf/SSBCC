@@ -15,7 +15,8 @@ PERIPHERAL AXI4_Lite_Slave_DualPortRAM \
                         address=O_DP_ADDRESS \
                         read=I_DP_READ \
                         write=O_DP_WRITE \
-                        size=L_DP_SIZE
+                        size=L_DP_SIZE \
+                        @RAM@
 
 PORTCOMMENT diagnostic output
 OUTPORT 8-bit           o_diag_addr             O_DIAG_ADDR
