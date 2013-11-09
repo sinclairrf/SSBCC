@@ -1043,3 +1043,10 @@ tools, see doc/MemoryInitialization.html.
 
 WARNING:  The values of parameters used in the assembly code must match the
 instantiated design.
+
+
+MISCELLANEOUS
+================================================================================
+
+The "INVERT_RESET" configuration command is used to indicate an active-low reset
+is input to the micro controller rather than an active-high reset.

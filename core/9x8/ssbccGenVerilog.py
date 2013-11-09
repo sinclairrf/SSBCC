@@ -648,7 +648,10 @@ def genModule(fp,config):
   """
   # Insert the always-there stuff at the start of the module.
   config.ios.insert(0,('synchronous reset and processor clock',None,'comment',));
-  config.ios.insert(1,('i_rst',1,'input',));
+  if config.Get('invertReset'):
+    config.ios.insert(1,('i_rstn',1,'input',));
+  else:
+    config.ios.insert(1,('i_rst',1,'input',));
   config.ios.insert(2,('i_clk',1,'input',));
   # Starting from the end, determine the termination character for each line of
   # the module declaration
@@ -715,6 +718,11 @@ def genModule(fp,config):
           fp.write('\n');
           isfirst = False;
         fp.write('localparam %s = %s;\n' % (parameter[0],parameter[1]));
+  # If an inverted reset is supplied, invert it.
+  if config.Get('invertReset'):
+    fp.write('\n');
+    fp.write('// Invert received active-low reset\n');
+    fp.write('wire i_rst = ~i_rstn;\n');
 
 def genOutports(fp,config):
   """

@@ -184,6 +184,11 @@ try:
       if not cmd:
         raise SSBCCException('Malformed "INSTRUCTION" configuration command on line %d: "%s"' % (ixLine,line[:-1],));
       config.SetMemoryBlock('nInstructions',cmd[0],(ixLine,line[:-1],));
+    # INVERT_RESET
+    elif re.match(r'\s*INVERT_RESET\s*$',line):
+      if (config.Exists('invertReset')):
+        raise SSBCCException('INVERT_RESET already specified before line %d' % ixLine);
+      config.Set('invertReset',True);
     # LOCALPARM
     elif re.match(r'\s*LOCALPARAM\b',line):
       cmd = re.findall(r'\s*LOCALPARAM\s+(L_\w+)\s+(\S+)$',line);
@@ -292,6 +297,8 @@ try:
 
   if not config.Exists('sram_width'):
     config.Set('sram_width',9);
+  if not config.Exists('invertReset'):
+    config.Set('invertReset',False);
 
   #
   # end-of-file processing
