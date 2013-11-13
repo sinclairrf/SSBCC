@@ -69,6 +69,16 @@ def ExtractBits(v,bits):
   v %= 2**bL;
   return v;
 
+def IntValue(v):
+  """
+  Convert a Verilog format integer into an integer value.
+  """
+  ov = 0;
+  for vv in [v[i] for i in range(len(v)) if '0' <= v[i] <= '9']:
+    ov *= 10;
+    ov += ord(vv)-ord('0');
+  return ov;
+
 def IsPowerOf2(v):
   """
   Indicate whether or not the argument is a power of 2.
