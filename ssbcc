@@ -529,6 +529,13 @@ try:
     else:
       print 'WARNING:  Unimplemented command ' + fillCommand;
 
+  #
+  # Write package file (for use in VHDL or mixed-language projects)
+  #
+
+  import ssbccGenVhdlPkg
+  ssbccGenVhdlPkg.genVhdlPkg(config);
+
 ################################################################################
 #
 # Terminating except clause
