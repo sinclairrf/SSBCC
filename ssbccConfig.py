@@ -67,7 +67,8 @@ class SSBCCconfig():
     nBits       number of bits in the I/O signal
     iotype      signal direction:  "input", "output", or "inout"
     """
-    self.AddSymbol(name,ixLine);
+    if iotype != 'comment':
+      self.AddSymbol(name,ixLine);
     self.ios.append((name,nBits,iotype,));
 
   def AddInport(self,port,ixLine):
