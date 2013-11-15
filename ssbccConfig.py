@@ -632,6 +632,8 @@ class SSBCCconfig():
       signal type
     """
     cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(I_\w+)\s*$',line);
+    if not cmd:
+      raise SSBCCException('Malformed INPORT statement on line %d: "%s"' % (ixLine,line[:-1],));
     modes = re.findall(r'([^,]+)',cmd[0][0]);
     names = re.findall(r'([^,]+)',cmd[0][1]);
     portName = cmd[0][2];
