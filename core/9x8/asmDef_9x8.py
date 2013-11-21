@@ -810,6 +810,25 @@ class asmDef_9x8:
     """
     self.emitLabelList += ':' + name + ' ';
 
+  def Emit_EvalSingleValue(self,token):
+    """
+    Evaluate the optional single-byte value for a macro.
+    """
+    if token['type'] == 'symbol':
+      token = self.ExpandSymbol(token,singleValue=True);
+    if token['type'] == 'constant':
+      name = token['value'];
+      if not self.IsSymbol(name):
+        raise Exception('Program Bug');
+      ix = self.symbols['list'].index(name);
+      if len(self.symbols['body'][ix]) != 1:
+        raise asmDef.AsmException('Optional constant can only be one byte at %s' % token['loc']);
+      return self.symbols['body'][ix][0]
+    elif token['type'] == 'value':
+      return token['value']
+    else:
+      raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
+
   def Emit_GetAddrAndBank(self,name):
     """
     For the specified variable, return an ordered tuple of the memory address
@@ -998,6 +1017,13 @@ class asmDef_9x8:
       self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
       self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
       self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
+    # .fetchoffset
+    elif token['value'] == '.fetchoffset':
+      name = token['argument'][0]['value'];
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
+      offset = self.Emit_EvalSingleValue(token['argument'][1]);
+      self.EmitPush(fp,addr+offset,self.Emit_String('%s+%s' % (name,offset,)),token['loc']);
+      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
     # .fetchvalue
     elif token['value'] == '.fetchvalue':
       name = token['argument'][0]['value'];
@@ -1066,6 +1092,14 @@ class asmDef_9x8:
       self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
       self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+bankName);
       self.EmitOptArg(fp,token['argument'][1]);
+    # .storeoffset
+    elif token['value'] == '.storeoffset':
+      name = token['argument'][0]['value'];
+      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
+      offset = self.Emit_EvalSingleValue(token['argument'][1]);
+      self.EmitPush(fp,addr+offset,self.Emit_String('%s+%s' % (name,offset,)),token['loc']);
+      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+bankName);
+      self.EmitOptArg(fp,token['argument'][2]);
     # .storevalue
     elif token['value'] == '.storevalue':
       name = token['argument'][0]['value'];
@@ -1263,8 +1297,10 @@ class asmDef_9x8:
     self.AddMacro('.fetch',             1, [ ['','symbol'] ]);
     self.AddMacro('.fetch+',            1, [ ['','symbol'] ]);
     self.AddMacro('.fetch-',            1, [ ['','symbol'] ]);
-    self.AddMacro('.fetchindexed',      3, [
+    self.AddMacro('.fetchindexed',      3, [ ['','symbol'] ]);
+    self.AddMacro('.fetchoffset',       2, [
                                              ['','symbol'],
+                                             ['','singlevalue','symbol']
                                            ]);
     self.AddMacro('.fetchvalue',        2, [ ['','symbol'] ]);
     self.AddMacro('.fetchvector',      -1, [
@@ -1291,6 +1327,11 @@ class asmDef_9x8:
     self.AddMacro('.store-',            1, [ ['','symbol'] ]);
     self.AddMacro('.storeindexed',      4, [
                                              ['','symbol'],
+                                             ['drop','instruction','singlemacro','singlevalue','symbol']
+                                           ]);
+    self.AddMacro('.storeoffset',        3, [
+                                             ['','symbol'],
+                                             ['','singlevalue','symbol'],
                                              ['drop','instruction','singlemacro','singlevalue','symbol']
                                            ]);
     self.AddMacro('.storevalue',        3, [
