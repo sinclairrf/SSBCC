@@ -13,4 +13,4 @@ OUTPORT 8-bit,strobe   o_value,o_value_wr O_VALUE
 PORTCOMMENT termination strobe
 OUTPORT strobe  o_terminate_str O_TERMINATE
 
-@ASSEMBLY@
+ASSEMBLY uc.s
