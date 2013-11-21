@@ -18,8 +18,9 @@
 ;     1 clock cycle to initialize the loop count
 ;     2 clock cycles to return
 ;     9 TOTAL
+;   Add 2 to ensure rounding up when evaluting the integer fraction.
 ;   The loop is 3 clock cycles per iteration
-.constant C_I2C_QUARTER_CYCLE ${(63-9)/3}
+.constant C_I2C_QUARTER_CYCLE ${(63-9+2)/3}
 
 ; ( - )
 .function i2c_send_start
