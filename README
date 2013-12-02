@@ -596,11 +596,12 @@ The following peripherals are provided:
                 AXI4-Lite slave
   big_inport    shift reads from a single INPORT to construct a wide input
   big_outport   shift writes to a single OUTPORT to construct a wide output
+  counter       counter for number of received high cycles from signal
   latch         latch wide inputs for sampling
   monitor_stack simulation diagnostic (see below)
   open_drain    for software-implemented I2C busses or similar
   PWM_8bit      PWM generator with an 8-bit control
-  timer         generate timing for polled loops or similar
+  timer         timing for polled loops or similar
   trace         simulation diagnostic (see below)
   UART          bidirectional UART
   UART_Rx       receive UART
