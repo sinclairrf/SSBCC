@@ -39,3 +39,20 @@
 ; ( u1 u2 - f"u1 > u2" )
 .function cmp_8bit_uu_gt
   .call(cmp_8bit_uu_lt,swap) .return
+
+; Return the smaller of two unsigned values.
+; ( u1 u2 - min(u1,u2) )
+.function min_u8
+  ; ( u1 u2 - u1 u2 f"u1 >= u2" )
+  over .call(cmp_8bit_uu_lt,over) 0=
+  ; ( u1 u2 f"u1 >= u2" - u1 u2 ) r:( - f"u1 >= u2" )
+  >r
+  ; (u1 u2 - u1 u2-u1 )
+  over -
+  ; ( u1 u2-u1 - u1 u2-u1 f"u1 >= u2" ) r:( f"u1 >= u2" - )
+  r>
+  ; if u1<u2:  ( u1 u2-u1 f"u1 >= u2" - u1 0 )
+  ; otherwise: ( u1 u2-u1 f"u1 >= u2" - u1 u2-u1 )
+  &
+  ; ( u1 uX - min(u1,u2) )
+  .return(+)

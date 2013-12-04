@@ -46,4 +46,8 @@
   over over swap .call(cmp_8bit_uu_gt) .outport(O_VALUE) ;  0
   over dup       .call(cmp_8bit_uu_gt) .outport(O_VALUE) ;  0
 
+  over over      .call(min_u8)         .outport(O_VALUE)
+  over over swap .call(min_u8)         .outport(O_VALUE)
+  over dup       .call(min_u8)         .outport(O_VALUE)
+
   drop .return(drop)
