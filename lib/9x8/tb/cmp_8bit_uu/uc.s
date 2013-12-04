@@ -11,11 +11,8 @@
   0x88 0x04 .call(test)
   0x88 0x84 .call(test)
 
-  ; signal termination of the test
-  O_TERMINATE outport
-
-  ; wait forever
-  :infinite .jump(infinite)
+  ; terminate and wait forever
+  .outstrobe(O_TERMINATE) :infinite .jump(infinite)
 
 ; Test all combinations of the 8-bit comparison operations against the two
 ; provided values.
