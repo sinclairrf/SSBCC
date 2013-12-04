@@ -2,7 +2,7 @@
  *
  * Copyright 2013, Sinclair R.F., Inc.
  *
- * Test bench for the math libraries.
+ * Test bench for the core/9x8 libraries.
  *
  ******************************************************************************/
 
