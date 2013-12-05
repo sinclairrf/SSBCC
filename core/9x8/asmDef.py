@@ -473,8 +473,11 @@ def RawTokens(ad,filename,startLineNumber,lines):
       # Ignore comments.
       if line[col] == ';':
         break;
+      # Catch N"" string.
+      if re.match(r'N""',line[col:]):
+        a = re.match(r'N""',line[col:]);
       # Catch strings.
-      if re.match(r'[CNc]?"',line[col:]):
+      elif re.match(r'[CNc]?"',line[col:]):
         a = re.match(r'[CNc]?"([^\\"]|\\.)+"',line[col:]);
         if not a:
           raise AsmException('Malformed string at %s' % flc_loc);
