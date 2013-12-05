@@ -25,9 +25,11 @@
 // listed in useful display order
 reg            [C_PC_WIDTH-1:0] s_PC;           // program counter
 reg                       [8:0] s_opcode;       // current opcode
+reg    [C_RETURN_PTR_WIDTH-1:0] s_R_stack_ptr;  // pointer into return stack memory
 reg        [C_RETURN_WIDTH-1:0] s_R;            // top of return stack
 reg                       [7:0] s_T;            // top of the data stack
 reg                       [7:0] s_N;            // next-to-top on the data stack
+reg      [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr; // pointer into data stack memory
 
 //@SSBCC@ functions
 
@@ -372,7 +374,7 @@ always @ (posedge i_clk)
 reg [C_RETURN_PTR_WIDTH-1:0] s_R_stack_ptr_next;
 
 // reference data stack pointer
-reg [C_RETURN_PTR_WIDTH-1:0] s_R_stack_ptr = {(C_RETURN_PTR_WIDTH){1'b1}};
+initial s_R_stack_ptr = {(C_RETURN_PTR_WIDTH){1'b1}};
 always @ (posedge i_clk)
   if (i_rst)
     s_R_stack_ptr <= {(C_RETURN_PTR_WIDTH){1'b1}};
@@ -417,8 +419,6 @@ always @ (posedge i_clk)
 /*
  * Operate the next-to-top of the data stack.
  */
-
-reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr;
 
 // reference data stack pointer
 reg [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr_next;
