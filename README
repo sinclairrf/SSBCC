@@ -1,8 +1,8 @@
 SSBCC.9x8 is a free Small Stack-Based Computer Compiler with a 9-bit opcode,
 8-bit data core.  It creates vendor-independent, high-speed, low fabric
 utilization micro controllers for FPGAs.  It has been used in Spartan-3A,
-Spartan-6, and Artex-7 FPGAs and has been built for Altera, Lattice, and other
-Xilinx devices.  It is faster and usually smaller than vendor provided
+Spartan-6, Virtex-6, and Artex-7 FPGAs and has been built for Altera, Lattice,
+and other Xilinx devices.  It is faster and usually smaller than vendor provided
 processors.
 
 The compiler takes an architecture file that describes the micro controller
