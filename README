@@ -597,6 +597,7 @@ The following peripherals are provided:
   big_inport    shift reads from a single INPORT to construct a wide input
   big_outport   shift writes to a single OUTPORT to construct a wide output
   counter       counter for number of received high cycles from signal
+  inFIFO_async  input FIFO with an asynchronous data clock
   latch         latch wide inputs for sampling
   monitor_stack simulation diagnostic (see below)
   open_drain    for software-implemented I2C busses or similar
