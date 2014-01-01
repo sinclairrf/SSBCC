@@ -101,7 +101,7 @@ class inFIFO_async(SSBCCperipheral):
                      ('s__%s__data' % self.data,8,'data',),
                     ),ixLine);
     config.AddInport((self.inempty,
-                     ('s__%s__empty' % self.data,1,'data',)
+                     ('s__%s__empty' % self.data,1,'data',),
                     ),ixLine);
 
   def GenVerilog(self,fp,config):

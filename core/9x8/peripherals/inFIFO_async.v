@@ -16,7 +16,7 @@ always @ (i_rst or posedge @INCLK@)
     s__ix_in <= s__ix_in;
 // read side of the FIFO
 reg [@DEPTH_NBITS-1@:0] s__ix_out = @DEPTH_NBITS@'h0;
-always @ (i_rst or posedge i_clk)
+always @ (posedge i_clk)
   if (i_rst)
     s__ix_out <= @DEPTH_NBITS@'h0;
   else if (s_inport && (s_T == 8'd@IX_DATA@))

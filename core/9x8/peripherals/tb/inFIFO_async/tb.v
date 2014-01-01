@@ -2,7 +2,7 @@
  *
  * Copyright 2013, Sinclair R.F., Inc.
  *
- * Test bench for big_inport peripheral.
+ * Test bench for inFIFO_async peripheral.
  *
  ******************************************************************************/
 
@@ -15,6 +15,7 @@ reg s_clk = 1'b1;
 always @ (s_clk)
   s_clk <= #5 ~s_clk;
 
+// synchronous processor reset
 reg s_rst = 1'b1;
 initial begin
   repeat (5) @ (posedge s_clk);
@@ -60,8 +61,6 @@ initial begin
   end
 end
 
-wire     [25:0] s_vb            = 26'h1234567;
-wire      [8:0] s_min           =  9'h19A;
 wire      [7:0] s_diag;
 wire            s_diag_wr;
 wire            s_done;
