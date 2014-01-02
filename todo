@@ -1,13 +1,30 @@
   BUGS:
 
+  example
+*   "<", ... operators for signed 8-bit values
+
   ssbcc
+*   change "outstatus" to "outfull" for UART and UART_Tx
+*   add size[variable_name]
+    add "fetchvalueoffset(var,ix)" and "storevalueoffset(var,ix)"
+    add r* to over-write either s_T or s_N?
 *   accommodate Lattice Diamond synthesis and memory initialization
+*   make "quiet" the default
+*   ensure timer tolerance is non-zero
+*   ensure all "raise" statements include the source line code number
 *   write COMBINE MEMORY tests
+?   bit-slice constants (similarly to parameters)
+    handle ';' that aren't preceded by a space
+    add fetch/store_valueoffset and fetch/store_vectoroffset
+    use .IFNDEF instead of checking assembler check for previously included files
+    add "rot" instruction?
+    add address range validation for memory accesses
+    add warning for unreachable code following .jump or .return instructions
     add "share memory" feature?
       for dual-port memories in slave peripherals (i.e., registers readable by the bus master)
       for peripherals such as adders where long chains of outputs and inports would have been required and .store+/- and .fetch+/- would be much more efficient code-wise
       how to accommodate multiple "shared memory" peripherals?
-    finish interrupt handling
+    finish interrupt handling, add monitor-interrupt peripheral to ensure correct re-enable from the interrupt handler
     remove dead parameters and dead code
     rework design as required to make it more robust
     documentation
@@ -82,10 +99,6 @@
   lib/9x8/forth.s
     -- identify good instructions to include
       pick
-
-  license
-    - look at http://creativecommons.org/licenses/by-sa/
-      - used by Gumstix
 
   publicize
     - opencores
