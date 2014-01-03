@@ -113,8 +113,9 @@ class outFIFO_async(SSBCCperipheral):
       (r'@OUTCLK@',             self.outclk,                    ),
       (r'@IX_OUTPORT@',         str(self.ix_outport),           ),
       (r'@NAME@',               self.data,                      ),
-      (r'ix__',                 'ix__%s__' % self.data,         ),
-      (r's__',                  's__%s__' % self.data,          ),
+      (r'\bgen__',              'gen__%s__' % self.data,        ),
+      (r'\bix__',               'ix__%s__' % self.data,         ),
+      (r'\bs__',                's__%s__' % self.data,          ),
     ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);

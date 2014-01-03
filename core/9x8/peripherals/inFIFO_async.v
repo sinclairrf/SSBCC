@@ -6,7 +6,7 @@ generate
 reg [7:0] s__fifo[@DEPTH-1@:0];
 // write side of the FIFO
 reg [@DEPTH_NBITS-1@:0] s__ix_in = @DEPTH_NBITS@'h0;
-always @ (i_rst or posedge @INCLK@)
+always @ (posedge i_rst or posedge @INCLK@)
   if (i_rst)
     s__ix_in <= @DEPTH_NBITS@'h0;
   else if (@DATA_WR@) begin
@@ -41,8 +41,9 @@ end
 genvar ix__clk;
 wire [@DEPTH_NBITS-1@:0] s__ix_in_clk;
 assign s__ix_in_clk[@DEPTH_NBITS-1@] = s__ix_in_gray_s[2][@DEPTH_NBITS-1@];
-for (ix__clk=@DEPTH_NBITS-1@; ix__clk>0; ix__clk=ix__clk-1)
+for (ix__clk=@DEPTH_NBITS-1@; ix__clk>0; ix__clk=ix__clk-1) begin : gen__ix_in_clk
   assign s__ix_in_clk[ix__clk-1] = s__ix_in_clk[ix__clk] ^ s__ix_in_gray_s[2][ix__clk-1];
+end
 always @ (posedge i_clk)
   s__empty <= (s__ix_in_clk == s__ix_out);
 // full indication to the fabric
@@ -58,8 +59,9 @@ end
 genvar ix__inclk;
 wire [@DEPTH_NBITS-1@:0] s__ix_out_inclk;
 assign s__ix_out_inclk[@DEPTH_NBITS-1@] = s__ix_out_gray_s[2][@DEPTH_NBITS-1@];
-for (ix__inclk=@DEPTH_NBITS-1@; ix__inclk>0; ix__inclk=ix__inclk-1)
+for (ix__inclk=@DEPTH_NBITS-1@; ix__inclk>0; ix__inclk=ix__inclk-1) begin : gen__ix_out_inclk
   assign s__ix_out_inclk[ix__inclk-1] = s__ix_out_inclk[ix__inclk] ^ s__ix_out_gray_s[2][ix__inclk-1];
+end
 reg [@DEPTH_NBITS-1@:0] s__delta_inclk = @DEPTH_NBITS@'h0;
 always @ (posedge @INCLK@)
   s__delta_inclk <= s__ix_in - s__ix_out_inclk;

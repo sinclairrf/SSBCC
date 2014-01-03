@@ -117,8 +117,9 @@ class inFIFO_async(SSBCCperipheral):
       (r'@INCLK@',              self.inclk,                     ),
       (r'@IX_DATA@',            str(self.ix_data),              ),
       (r'@NAME@',               self.data,                      ),
-      (r'ix__',                 'ix__%s__' % self.data,         ),
-      (r's__',                  's__%s__' % self.data,          ),
+      (r'\bgen__',              'gen__%s__' % self.data,        ),
+      (r'\bix__',               'ix__%s__' % self.data,         ),
+      (r'\bs__',                's__%s__' % self.data,          ),
     ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
