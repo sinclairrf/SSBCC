@@ -35,7 +35,7 @@ class monitor_stack(SSBCCperipheral):
       Note:  Normally the last 50 instructions are displayed.
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -43,9 +43,9 @@ class monitor_stack(SSBCCperipheral):
       param_name = param_list[0];
       param_arg = param_list[1:];
       if param_name == 'history':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
       else:
-        raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
+        raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
     # Set optional parameters.
     if not hasattr(self,'history'):
       self.history = 50;

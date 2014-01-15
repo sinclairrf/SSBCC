@@ -52,7 +52,7 @@ class counter(SSBCCperipheral):
     .inport(I_STROBE_COUNT) .inport(I_STROBE_COUNT)
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -66,9 +66,9 @@ class counter(SSBCCperipheral):
     for param_tuple in param_list:
       param = param_tuple[0];
       if param not in names:
-        raise SSBCCException('Unrecognized parameter "%s" at line %d' % (param,ixLine,));
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
       param_test = allowables[names.index(param)];
-      self.AddAttr(config,param,param_tuple[1],param_test[1],ixLine,param_test[2]);
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the optional width is set.
     if not hasattr(self,'width'):
       self.width=8;
@@ -78,20 +78,20 @@ class counter(SSBCCperipheral):
       required.append('outlatch');
     for paramname in required:
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # There are no optional parameters.
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.insignal,1,'input',ixLine);
-    config.AddSignal('s__%s__inport' % self.insignal, self.width, ixLine);
+    config.AddIO(self.insignal,1,'input',loc);
+    config.AddSignal('s__%s__inport' % self.insignal, self.width, loc);
     self.ix_inport = config.NInports();
     config.AddInport((self.inport,
                       ('s__%s__inport' % self.insignal, self.width, 'data', ),
-                      ),ixLine);
+                      ),loc);
     self.ix_latch = config.NOutports();
     if hasattr(self,'outlatch'):
       config.AddOutport((self.outlatch,True,
                         # empty list
-                        ),ixLine);
+                        ),loc);
 
   def GenVerilog(self,fp,config):
     if self.width <= 8:

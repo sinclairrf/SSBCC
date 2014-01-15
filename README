@@ -1047,6 +1047,9 @@ assembly library file.
   ; put this line at the bottom of the file
   .ENDIF ; .IFNDEF C_FILENAME_INCLUDED
 
+The ".INCLUDE" configuration command can be used to read configuration commands
+from additional sources.
+
 
 SIMULATIONS
 ================================================================================

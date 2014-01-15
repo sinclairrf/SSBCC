@@ -50,7 +50,7 @@ class timer(SSBCCperipheral):
               .callc(timer_event)
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -58,22 +58,22 @@ class timer(SSBCCperipheral):
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'inport':
-        self.AddAttr(config,param,param_arg,'I_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,'I_\w+$',loc);
       elif param == 'ratemethod':
-        self.AddRateMethod(config,param,param_arg,ixLine);
+        self.AddRateMethod(config,param,param_arg,loc);
       else:
-        raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
+        raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
     # Ensure the required parameters are provided.
     for paramname in ('inport','ratemethod',):
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     name = 's__%s__expired' % self.inport;
-    config.AddSignal(name, 1, ixLine);
-    config.AddSignal('s_SETRESET_%s' % name,1,ixLine);
+    config.AddSignal(name, 1, loc);
+    config.AddSignal('s_SETRESET_%s' % name,1,loc);
     config.AddInport((self.inport,
                      ('s__%s__expired' % self.inport, 1, 'set-reset'),
-                    ),ixLine);
+                    ),loc);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 

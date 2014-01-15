@@ -79,7 +79,7 @@ class latch(SSBCCperipheral):
       0 :loop O_COUNT_ADDR outport .inport(I_COUNT_READ) swap 1+ dup 3 - .jumpc(loop) drop
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Parse the parameters.
@@ -87,37 +87,37 @@ class latch(SSBCCperipheral):
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'outport_latch':
-        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'O_\w+$',loc);
       elif param == 'outport_addr':
-        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'O_\w+$',loc);
       elif param == 'inport':
-        self.AddAttr(config,param,param_arg,r'I_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'I_\w+$',loc);
       elif param == 'insignal':
-        self.AddAttr(config,param,param_arg,r'i_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'i_\w+$',loc);
       elif param == 'width':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
       else:
-        raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
+        raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
     # Ensure the required parameters are set.
     for param in ('outport_latch', 'outport_addr', 'inport', 'insignal', 'width', ):
       if not hasattr(self,param):
-        raise SSBCCException('Required parameter "%s" not provided at line %d', (param,ixLine,));
+        raise SSBCCException('Required parameter "%s" not provided at %s', (param,loc,));
     # Ensure parameters are reasonable.
     if self.width <= 8:
-      raise SSBCCException('The "latch" peripheral doesn\'t make sense when width <= 8 on line %d' % ixLine);
+      raise SSBCCException('The "latch" peripheral doesn\'t make sense when width <= 8 on %s' % loc);
     # Derived parameters
     self.latch_width = 8*((self.width+7)/8);
     self.addr_width = int(math.ceil(math.log(self.latch_width/8,2)));
     # Configure the processor I/Os, etc.
-    config.AddIO(self.insignal,self.width,'input',ixLine);
-    config.AddSignal('s__%s__select' % self.insignal,8,ixLine);
+    config.AddIO(self.insignal,self.width,'input',loc);
+    config.AddSignal('s__%s__select' % self.insignal,8,loc);
     config.AddInport((self.inport,
                      ('s__%s__select' % self.insignal,8,'data',),
-                    ),ixLine);
+                    ),loc);
     self.ix__o_latch = config.NOutports();
-    config.AddOutport((self.outport_latch,True,),ixLine);
+    config.AddOutport((self.outport_latch,True,),loc);
     self.ix__o_addr = config.NOutports();
-    config.AddOutport((self.outport_addr,False,),ixLine);
+    config.AddOutport((self.outport_addr,False,),loc);
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');

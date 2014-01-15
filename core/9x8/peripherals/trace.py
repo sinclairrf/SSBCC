@@ -31,7 +31,7 @@ class trace(SSBCCperipheral):
             the core.
   """
 
-  def __init__(self,peripheralFile,config,params,ixLine):
+  def __init__(self,peripheralFile,config,params,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     config.functions['display_trace'] = True;

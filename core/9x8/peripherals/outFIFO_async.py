@@ -57,7 +57,7 @@ class outFIFO_async(SSBCCperipheral):
         .jumpc(loop,nop)
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -74,31 +74,31 @@ class outFIFO_async(SSBCCperipheral):
     for param_tuple in param_list:
       param = param_tuple[0];
       if param not in names:
-        raise SSBCCException('Unrecognized parameter "%s" at line %d' % (param,ixLine,));
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
       param_test = allowables[names.index(param)];
-      self.AddAttr(config,param,param_tuple[1],param_test[1],ixLine,param_test[2]);
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
     for paramname in names:
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Ensure the depth is a power of 2.
     if not IsPowerOf2(self.depth):
-      raise SSBCCException('depth=%d must be a power of 2 at line %d' % (self.depth,ixLine,));
+      raise SSBCCException('depth=%d must be a power of 2 at %s' % (self.depth,loc,));
     if self.depth < 16:
-      raise SSBCCException('depth=%d must be at least 16 at line %d' % (self.depth,ixLine,));
+      raise SSBCCException('depth=%d must be at least 16 at %s' % (self.depth,loc,));
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.outclk,1,'input',ixLine);
-    config.AddIO(self.data,8,'output',ixLine);
-    config.AddIO(self.data_rd,1,'input',ixLine);
-    config.AddIO(self.data_empty,1,'output',ixLine);
-    config.AddSignal('s__%s__full' % self.data,1,ixLine);
+    config.AddIO(self.outclk,1,'input',loc);
+    config.AddIO(self.data,8,'output',loc);
+    config.AddIO(self.data_rd,1,'input',loc);
+    config.AddIO(self.data_empty,1,'output',loc);
+    config.AddSignal('s__%s__full' % self.data,1,loc);
     self.ix_outport = config.NOutports();
     config.AddOutport((self.outport,False,
                       # empty list
-                      ),ixLine);
+                      ),loc);
     config.AddInport((self.infull,
                      ('s__%s__full' % self.data,1,'data',),
-                    ),ixLine);
+                    ),loc);
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');

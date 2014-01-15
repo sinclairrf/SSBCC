@@ -94,7 +94,7 @@ class PWM_8bit(SSBCCperipheral):
     .return(drop)
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -102,21 +102,21 @@ class PWM_8bit(SSBCCperipheral):
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'outport':
-        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'O_\w+$',loc);
       elif param == 'outsignal':
-        self.AddAttr(config,param,param_arg,r'o_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'o_\w+$',loc);
       elif param == 'ratemethod':
-        self.ProcessRateMethod(config,param_arg,ixLine);
+        self.ProcessRateMethod(config,param_arg,loc);
       elif param == 'invert':
-        self.AddAttr(config,param,param_arg,None,ixLine);
+        self.AddAttr(config,param,param_arg,None,loc);
       elif param == 'noinvert':
-        self.AddAttr(config,param,param_arg,None,ixLine);
+        self.AddAttr(config,param,param_arg,None,loc);
       elif param == 'instances':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
       elif param == 'norunt':
-        self.AddAttr(config,param,param_arg,None,ixLine);
+        self.AddAttr(config,param,param_arg,None,loc);
       else:
-        raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
+        raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
     # Ensure the required parameters are provided.
     if not hasattr(self,'instances'):
       self.instances = 1;
@@ -127,46 +127,46 @@ class PWM_8bit(SSBCCperipheral):
       self.norunt = False;
     # Ensure parameters do not conflict.
     if hasattr(self,'invert') and hasattr(self,'noinvert'):
-      raise SSBCCException('Only one of "invert" or "noinvert" can be specified at line %d' % ixLine);
+      raise SSBCCException('Only one of "invert" or "noinvert" can be specified at %s' % loc);
     # Use only one of mutually exclusive configuration settings.
     if hasattr(self,'noinvert'):
       self.invert = False;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.outsignal,self.instances,'output',ixLine);
+    config.AddIO(self.outsignal,self.instances,'output',loc);
     self.ix_outport_0 = config.NOutports();
     if self.instances == 1:
       tmpOutport = self.outport;
-      config.AddOutport((tmpOutport,False,),ixLine);
+      config.AddOutport((tmpOutport,False,),loc);
     else:
       for ixOutPort in range(self.instances):
         tmpOutport = '%s_%d' % (self.outport,ixOutPort,);
-        config.AddOutport((tmpOutport,False,),ixLine);
+        config.AddOutport((tmpOutport,False,),loc);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 
-  def ProcessRateMethod(self,config,param_arg,ixLine):
+  def ProcessRateMethod(self,config,param_arg,loc):
     if hasattr(self,'ratemethod'):
-      raise SSBCCException('ratemethod repeated at line %d' % ixLine);
+      raise SSBCCException('ratemethod repeated at %s' % loc);
     if param_arg.find('/') < 0:
       if self.IsIntExpr(param_arg):
         self.ratemethod = str(self.ParseIntExpr(param_arg));
       elif self.IsParameter(config,param_arg):
         self.ratemethod = param_arg;
       else:
-        raise SSBCCException('ratemethod with no "/" must be an integer or a previously declared parameter at line %d' % ixLine);
+        raise SSBCCException('ratemethod with no "/" must be an integer or a previously declared parameter at %s' % loc);
     else:
       baudarg = re.findall('([^/]+)',param_arg);
       if len(baudarg) == 2:
         if not self.IsIntExpr(baudarg[0]) and not self.IsParameter(config,baudarg[0]):
-          raise SSBCCException('Numerator in ratemethod must be an integer or a previously declared parameter at line %d' % ixLine);
+          raise SSBCCException('Numerator in ratemethod must be an integer or a previously declared parameter at %s' % loc);
         if not self.IsIntExpr(baudarg[1]) and not self.IsParameter(config,baudarg[1]):
-          raise SSBCCException('Denominator in ratemethod must be an integer or a previously declared parameter at line %d' % ixLine);
+          raise SSBCCException('Denominator in ratemethod must be an integer or a previously declared parameter at %s' % loc);
         for ix in range(2):
           if self.IsIntExpr(baudarg[ix]):
             baudarg[ix] = str(self.ParseIntExpr(baudarg[ix]));
         self.ratemethod = '('+baudarg[0]+'+'+baudarg[1]+'/2)/'+baudarg[1];
     if not hasattr(self,'ratemethod'):
-      raise SSBCCException('Bad ratemethod value at line %d:  "%s"' % (ixLine,param_arg,));
+      raise SSBCCException('Bad ratemethod value at %s:  "%s"' % (loc,param_arg,));
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');

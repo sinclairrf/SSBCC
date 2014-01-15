@@ -42,40 +42,40 @@ Example:  Add an 8-bit value and a 16-bit value from the stack:\n
   .return
 """
 
-  def __init__(self,peripheralFile,config,params,ixLine):
+  def __init__(self,peripheralFile,config,params,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # List the signals to be declared for the peripheral.
-    config.AddSignal('s__adder_16bit_out_MSB',8,ixLine);
-    config.AddSignal('s__adder_16bit_out_LSB',8,ixLine);
-    config.AddSignal('s__adder_16bit_in_MSB1',8,ixLine);
-    config.AddSignal('s__adder_16bit_in_LSB1',8,ixLine);
-    config.AddSignal('s__adder_16bit_in_MSB2',8,ixLine);
-    config.AddSignal('s__adder_16bit_in_LSB2',8,ixLine);
-    config.AddSignal('s__adder_16bit_in_op',1,ixLine);
+    config.AddSignal('s__adder_16bit_out_MSB',8,loc);
+    config.AddSignal('s__adder_16bit_out_LSB',8,loc);
+    config.AddSignal('s__adder_16bit_in_MSB1',8,loc);
+    config.AddSignal('s__adder_16bit_in_LSB1',8,loc);
+    config.AddSignal('s__adder_16bit_in_MSB2',8,loc);
+    config.AddSignal('s__adder_16bit_in_LSB2',8,loc);
+    config.AddSignal('s__adder_16bit_in_op',1,loc);
     # List the input ports to the peripheral.
     config.AddInport(('I_ADDER_16BIT_MSB',
                      ('s__adder_16bit_out_MSB',8,'data',),
-                    ),ixLine);
+                    ),loc);
     config.AddInport(('I_ADDER_16BIT_LSB',
                      ('s__adder_16bit_out_LSB',8,'data',),
-                    ),ixLine);
+                    ),loc);
     # List the output ports from the peripheral.
     config.AddOutport(('O_ADDER_16BIT_MSB1',False,
                        ('s__adder_16bit_in_MSB1',8,'data',),
-                     ),ixLine);
+                     ),loc);
     config.AddOutport(('O_ADDER_16BIT_LSB1',False,
                       ('s__adder_16bit_in_LSB1',8,'data',),
-                     ),ixLine);
+                     ),loc);
     config.AddOutport(('O_ADDER_16BIT_MSB2',False,
                       ('s__adder_16bit_in_MSB2',8,'data',),
-                     ),ixLine);
+                     ),loc);
     config.AddOutport(('O_ADDER_16BIT_LSB2',False,
                       ('s__adder_16bit_in_LSB2',8,'data',),
-                     ),ixLine);
+                     ),loc);
     config.AddOutport(('O_ADDER_16BIT_OP',False,
                       ('s__adder_16bit_in_op',1,'data',),
-                     ),ixLine);
+                     ),loc);
 
   def GenAssembly(self,config):
     fp = file('adder_16bit.s','w');

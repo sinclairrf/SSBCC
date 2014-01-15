@@ -47,20 +47,20 @@ class SSBCCconfig():
     self.peripheralpaths.append('peripherals');
     self.peripheralpaths.append(os.path.join(sys.path[0],'core/peripherals'));
 
-  def AddConstant(self,name,value,ixLine):
+  def AddConstant(self,name,value,loc):
     """
     Add the constant for the "CONSTANT" configuration command to the "constants"
     dictionary.\n
     name        symbol for the constant
     value       value of the constant
-    ixLine      line number in the architecture file for error messages
+    loc         file name and line number for error messages
     """
-    self.AddSymbol(name,ixLine);
+    self.AddSymbol(name,loc);
     if name in self.constants:
-      raise SSBCCException('CONSTANT "%s" already declared at line %d' % (name,ixLine,));
+      raise SSBCCException('CONSTANT "%s" already declared at %s' % (name,loc,));
     self.constants[name] = value;
 
-  def AddIO(self,name,nBits,iotype,ixLine):
+  def AddIO(self,name,nBits,iotype,loc):
     """
     Add an I/O signal to the processor interface to the system.\n
     name        name of the I/O signal
@@ -68,36 +68,36 @@ class SSBCCconfig():
     iotype      signal direction:  "input", "output", or "inout"
     """
     if iotype != 'comment':
-      self.AddSymbol(name,ixLine);
+      self.AddSymbol(name,loc);
     self.ios.append((name,nBits,iotype,));
 
-  def AddInport(self,port,ixLine):
+  def AddInport(self,port,loc):
     """
     Add an INPORT symbol to the processor.\n
     port        name of the INPORT symbol
-    ixLine      line number in the architecture file for error messages
+    loc         file name and line number for error messages
     """
     name = port[0];
-    self.AddSymbol(name,ixLine);
+    self.AddSymbol(name,loc);
     self.inports.append(port);
 
-  def AddMemory(self,cmd,ixLine):
+  def AddMemory(self,cmd,loc):
     """
     Add a memory to the list of memories.\n
     cmd         3-element list as follows:
                 [0] ==> type:  "RAM" or "ROM"
                 [1] ==> memory name
                 [2] ==> memory length (must be a power of 2)
-    ixLine      line number in the architecture file for error messages
+    loc         file name and line number for error messages
     """
     self.memories['type'].append(cmd[0]);
     self.memories['name'].append(cmd[1]);
     maxLength = eval(cmd[2]);
     if not IsPowerOf2(maxLength):
-      raise SSBCCException('Memory length must be a power of 2, not "%s", at line %d' % (cmd[2],ixLine,));
+      raise SSBCCException('Memory length must be a power of 2, not "%s", at %s' % (cmd[2],loc,));
     self.memories['maxLength'].append(eval(cmd[2]));
 
-  def AddOutport(self,port,ixLine):
+  def AddOutport(self,port,loc):
     """
     Add an OUTPORT symbol to the processor.\n
     port        tuple as follows:
@@ -112,55 +112,55 @@ class SSBCCconfig():
                   type is 'data' or 'strobe'
                   initialization is an optional initial/reset value for the
                     output signal
-    ixLine      line number in the architecture file for error messages
+    loc         file name and line number for error messages
     """
-    self.AddSymbol(port[0],ixLine);
+    self.AddSymbol(port[0],loc);
     self.outports.append(port);
 
-  def AddParameter(self,name,value,ixLine):
+  def AddParameter(self,name,value,loc):
     """
     Add a PARAMETER to the processor.\n
     name        name of the PARAMETER
     value       value of the PARAMETER
-    ixLine      line number in the architecture file for error messages
+    loc         file name and line number for error messages
     """
     if not re.match(r'[LG]_\w+$',name):
-      raise Exception('Program Bug -- bad parameter name at line %d' % ixLine);
-    self.AddSymbol(name,ixLine);
+      raise Exception('Program Bug -- bad parameter name at %s' % loc);
+    self.AddSymbol(name,loc);
     self.parameters.append((name,value,));
 
-  def AddSignal(self,name,nBits,ixLine):
+  def AddSignal(self,name,nBits,loc):
     """
     Add a signal without an initial value to the processor.\n
     name        name of the signal
     nBits       number of bits in the signal
-    ixLine      line number in the architecture file for error messages
+    loc         file name and line number for error messages
     """
-    self.AddSymbol(name,ixLine);
+    self.AddSymbol(name,loc);
     self.signals.append((name,nBits,));
 
-  def AddSignalWithInit(self,name,nBits,init,ixLine):
+  def AddSignalWithInit(self,name,nBits,init,loc):
     """
     Add a signal with an initial/reset value to the processor.\n
     name        name of the signal
     nBits       number of bits in the signal
     init        initial/reset value of the signal
-    ixLine      line number in the architecture file for error messages
+    loc         file name and line number for error messages
     """
-    self.AddSymbol(name,ixLine);
+    self.AddSymbol(name,loc);
     self.signals.append((name,nBits,init,));
 
-  def AddSymbol(self,name,ixLine=None):
+  def AddSymbol(self,name,loc=None):
     """
     Add the specified name to the list of symbols.\n
     Note:  This symbol has no associated functionality and is only used for
            ".ifdef" conditionals.
     """
     if name in self.symbols:
-      if ixLine == None:
+      if loc == None:
         raise SSBCCException('Symbol "%s" already defined, no line number provided');
       else:
-        raise SSBCCException('Symbol "%s" already defined before line %d' % (name,ixLine,));
+        raise SSBCCException('Symbol "%s" already defined before %s' % (name,loc,));
     self.symbols.append(name);
 
   def CompleteCombines(self):
@@ -478,16 +478,16 @@ class SSBCCconfig():
       nROMs = 0;
     # Ensure the COMBINE configuration command is implementable in a dual-port RAM.
     if nSinglePort > 0 and nRAMs > 0:
-      raise SSBCCException('Cannot combine RAMs with other memory types in COMBINE configuration command at line %d' % combined['ixLine']);
+      raise SSBCCException('Cannot combine RAMs with other memory types in COMBINE configuration command at %s' % combined['loc']);
     if nSinglePort > 2 or (nSinglePort > 1 and nROMs > 0):
-      raise SSBCCException('Too many memory types in COMBINE configuration command at line %d' % combined['ixLine']);
+      raise SSBCCException('Too many memory types in COMBINE configuration command at %s' % combined['loc']);
     # Start splitting the listed memories into the one or two output lists and ensure that single-port memories are listed in the correct order.
     mems = combined['mems'];
     ixMem = 0;
     split = list();
     if 'INSTRUCTION' in mems:
       if mems[0] != 'INSTRUCTION':
-        raise SSBCCException('INSTRUCTION must be the first memory listed in the COMBINE configuration command at line %d' % combined['ixLine']);
+        raise SSBCCException('INSTRUCTION must be the first memory listed in the COMBINE configuration command at %s' % combined['loc']);
       split.append(['INSTRUCTION']);
       ixMem += 1;
     while len(mems[ixMem:]) > 0 and mems[ixMem] in ('DATA_STACK','RETURN_STACK',):
@@ -495,7 +495,7 @@ class SSBCCconfig():
       ixMem += 1;
     for memName in ('DATA_STACK','RETURN_STACK',):
       if memName in mems[ixMem:]:
-        raise SSBCCException('Single-port memory %s must be listed before ROMs in COMBINE configuration command at line %d' % combined['ixLine']);
+        raise SSBCCException('Single-port memory %s must be listed before ROMs in COMBINE configuration command at %s' % combined['loc']);
     if mems[ixMem:]:
       split.append(mems[ixMem:]);
     if not (1 <= len(split) <= 2):
@@ -551,7 +551,7 @@ class SSBCCconfig():
         nWordsTail = combined['port'][1]['nWords'];
         port0 = combined['port'][0];
         if port0['nWords'] <= nWordsTail:
-          raise SSBCCException('INSTRUCTION length too small for "COMBINE INSTRUCTION,..." at line %d' % combined['ixLine']);
+          raise SSBCCException('INSTRUCTION length too small for "COMBINE INSTRUCTION,..." at %s' % combined['loc']);
         port0['nWords'] -= nWordsTail;
         port0['packing'][0]['nWords'] -= nWordsTail;
         port0['packing'][0]['length'] -= nWordsTail;
@@ -562,7 +562,7 @@ class SSBCCconfig():
       combined['port'][1]['offset'] = combined['port'][0]['nWords'];
     combined['nWords'] = sum(port['nWords'] for port in combined['port']);
 
-  def ProcessCombine(self,ixLine,line):
+  def ProcessCombine(self,loc,line):
     """
     Parse the "COMBINE" configuration command as follows:\n
     Validate the arguments to the "COMBINE" configuration command and append
@@ -581,22 +581,22 @@ class SSBCCconfig():
     # Perform some syntax checking and get the list of memories to combine.
     cmd = re.findall(r'\s*COMBINE\s+(\S+)\s*$',line);
     if not cmd:
-      raise SSBCCException('Malformed COMBINE configuration command on line %d' % ixLine);
+      raise SSBCCException('Malformed COMBINE configuration command on %s' % loc);
     mems = re.split(r',',cmd[0]);
     if (len(mems)==1) and ('INSTRUCTION' in mems):
-      raise SSBCCException('"COMBINE INSTRUCTION" doesn\'t make sense at line %d' % ixLine);
+      raise SSBCCException('"COMBINE INSTRUCTION" doesn\'t make sense at %s' % loc);
     if ('INSTRUCTION' in mems) and (mems[0] != 'INSTRUCTION'):
-      raise SSBCCException('"INSTRUCTION" must be listed first in COMBINE configuration command at line %d' % ixLine);
+      raise SSBCCException('"INSTRUCTION" must be listed first in COMBINE configuration command at %s' % loc);
     recognized = ['INSTRUCTION','DATA_STACK','RETURN_STACK'] + self.memories['name'];
     unrecognized = [memName for memName in mems if memName not in recognized];
     if unrecognized:
-      raise SSBCCException('"%s" not recognized in COMBINE configuration command at line %d' % (unrecognized[0],ixLine,));
+      raise SSBCCException('"%s" not recognized in COMBINE configuration command at %s' % (unrecognized[0],loc,));
     alreadyUsed = [memName for memName in mems if self.IsCombined(memName)];
     if alreadyUsed:
-      raise SSBCCException('"%s" already used in COMBINE configuration command before line %d' % (alreadyUsed[0],ixLine,));
+      raise SSBCCException('"%s" already used in COMBINE configuration command before %s' % (alreadyUsed[0],loc,));
     repeated = [mems[ix] for ix in range(len(mems)-1) if mems[ix] in mems[ix+1]];
     if repeated:
-      raise SSBCCException('"%s" repeated in COMBINE configuration command on line %d' % (repeated[0],ixLine,));
+      raise SSBCCException('"%s" repeated in COMBINE configuration command on %s' % (repeated[0],loc,));
     # Count the number of the different memory types being combined and validate the combination.
     nSinglePort = sum([thisMemName in ('INSTRUCTION','DATA_STACK','RETURN_STACK',) for thisMemName in mems]);
     nROM = len([thisMemName for thisMemName in mems if self.IsROM(thisMemName)]);
@@ -608,11 +608,11 @@ class SSBCCconfig():
       nSinglePort += 1;
     nDualPort = 1 if nRAM > 0 else 0;
     if nSinglePort + 2*nDualPort > 2:
-      raise SSBCCException('Too many ports required for COMBINE configuration command at line %d' % ixLine);
+      raise SSBCCException('Too many ports required for COMBINE configuration command at %s' % loc);
     # Append the listed memory types to the list of combined memories.
-    self.config['combine'].append({'mems':mems, 'memArch':'sync', 'ixLine':ixLine});
+    self.config['combine'].append({'mems':mems, 'memArch':'sync', 'loc':loc});
 
-  def ProcessInport(self,ixLine,line):
+  def ProcessInport(self,loc,line):
     """
     Parse the "INPORT" configuration commands as follows:
       The configuration command is well formatted.
@@ -633,12 +633,12 @@ class SSBCCconfig():
     """
     cmd = re.findall(r'\s*INPORT\s+(\S+)\s+(\S+)\s+(I_\w+)\s*$',line);
     if not cmd:
-      raise SSBCCException('Malformed INPORT statement on line %d: "%s"' % (ixLine,line[:-1],));
+      raise SSBCCException('Malformed INPORT statement at %s: "%s"' % (loc,line[:-1],));
     modes = re.findall(r'([^,]+)',cmd[0][0]);
     names = re.findall(r'([^,]+)',cmd[0][1]);
     portName = cmd[0][2];
     if len(modes) != len(names):
-      raise SSBCCException('Malformed INPORT configuration command -- number of options don\'t match on line %d: "%s"' % (ixLine,line[:-1],));
+      raise SSBCCException('Malformed INPORT configuration command -- number of options don\'t match on %s: "%s"' % (loc,line[:-1],));
     # Append the input signal names, mode, and bit-width to the list of I/Os.
     has__set_reset = False;
     nBits = 0;
@@ -646,16 +646,16 @@ class SSBCCconfig():
     for ix in range(len(names)):
       if re.match(r'^\d+-bit$',modes[ix]):
         thisNBits = int(modes[ix][0:-4]);
-        self.AddIO(names[ix],thisNBits,'input',ixLine);
+        self.AddIO(names[ix],thisNBits,'input',loc);
         thisPort += ((names[ix],thisNBits,'data',),);
         nBits = nBits + thisNBits;
       elif modes[ix] == 'set-reset':
         has__set_reset = True;
-        self.AddIO(names[ix],1,'input',ixLine);
+        self.AddIO(names[ix],1,'input',loc);
         thisPort += ((names[ix],1,'set-reset',),);
-        self.AddSignal('s_SETRESET_%s' % names[ix],1,ixLine);
+        self.AddSignal('s_SETRESET_%s' % names[ix],1,loc);
       elif modes[ix] == 'strobe':
-        self.AddIO(names[ix],1,'output',ixLine);
+        self.AddIO(names[ix],1,'output',loc);
         thisPort += ((names[ix],1,'strobe',),);
       else:
         raise SSBCCException('Unrecognized INPORT signal type "%s"' % modes[ix]);
@@ -663,9 +663,9 @@ class SSBCCconfig():
         raise SSBCCException('set-reset cannot be simultaneous with other signals in "%s"' % line[:-1]);
       if nBits > self.Get('data_width'):
         raise SSBCCException('Signal width too wide in "%s"' % line[:-1]);
-    self.AddInport(thisPort,ixLine);
+    self.AddInport(thisPort,loc);
 
-  def ProcessOutport(self,line,ixLine):
+  def ProcessOutport(self,line,loc):
     """
     Parse the "OUTPORT" configuration commands as follows:
       The configuration command is well formatted.
@@ -685,12 +685,12 @@ class SSBCCconfig():
     """
     cmd = re.findall(r'^\s*OUTPORT\s+(\S+)\s+(\S+)\s+(O_\w+)\s*$',line);
     if not cmd:
-      raise SSBCCException('Malformed OUTPUT configuration command on line %d: "%s"' % (ixLine,line[:-1],));
+      raise SSBCCException('Malformed OUTPUT configuration command on %s: "%s"' % (loc,line[:-1],));
     modes = re.findall(r'([^,]+)',cmd[0][0]);
     names = re.findall(r'([^,]+)',cmd[0][1]);
     portName = cmd[0][2];
     if len(modes) != len(names):
-      raise SSBCCException('Malformed OUTPORT configuration command -- number of widths/types and signal names don\'t match on line %d: "%s"' % (ixLine,line[:-1],));
+      raise SSBCCException('Malformed OUTPORT configuration command -- number of widths/types and signal names don\'t match on %s: "%s"' % (loc,line[:-1],));
     # Append the input signal names, mode, and bit-width to the list of I/Os.
     nBits = 0;
     isStrobeOnly = True;
@@ -700,9 +700,9 @@ class SSBCCconfig():
         isStrobeOnly = False;
         a = re.match(r'(\d+)-bit(=\S+)?$',modes[ix]);
         if not a:
-          raise SSBCCException('Malformed bitwith/bitwidth=initialization on line %d:  "%s"' % (ixLine,modes[ix],));
+          raise SSBCCException('Malformed bitwith/bitwidth=initialization on %s:  "%s"' % (loc,modes[ix],));
         thisNBits = int(a.group(1));
-        self.AddIO(names[ix],thisNBits,'output',ixLine);
+        self.AddIO(names[ix],thisNBits,'output',loc);
         if a.group(2):
           thisPort += ((names[ix],thisNBits,'data',a.group(2)[1:],),);
         else:
@@ -710,15 +710,15 @@ class SSBCCconfig():
         nBits = nBits + thisNBits;
         self.config['haveBitOutportSignals'] = 'True';
       elif modes[ix] == 'strobe':
-        self.AddIO(names[ix],1,'output',ixLine);
+        self.AddIO(names[ix],1,'output',loc);
         thisPort += ((names[ix],1,'strobe',),);
       else:
-        raise SSBCCException('Unrecognized OUTPORT signal type on line %d: "%s"' % (ixLine,modes[ix],));
+        raise SSBCCException('Unrecognized OUTPORT signal type on %s: "%s"' % (loc,modes[ix],));
       if nBits > 8:
-        raise SSBCCException('Signal width too wide on line %d:  in "%s"' % (ixLine,line[:-1],));
-    self.AddOutport((portName,isStrobeOnly,)+thisPort,ixLine);
+        raise SSBCCException('Signal width too wide on %s:  in "%s"' % (loc,line[:-1],));
+    self.AddOutport((portName,isStrobeOnly,)+thisPort,loc);
 
-  def ProcessPeripheral(self,ixLine,line):
+  def ProcessPeripheral(self,loc,line):
     """
     Process the "PERIPHERAL" configuration command as follows:
       Validate the format of the configuration command.
@@ -742,7 +742,7 @@ class SSBCCconfig():
     # Validate the format of the peripheral configuration command and the the name of the peripheral.
     cmd = re.findall(r'\s*PERIPHERAL\s+(\w+)\s*(.*)$',line);
     if not cmd:
-      raise SSBCCException('Missing peripheral name in line %d:  %s' % (ixLine,line[:-1],));
+      raise SSBCCException('Missing peripheral name in %s:  %s' % (loc,line[:-1],));
     peripheral = cmd[0][0];
     # Find and execute the peripheral Python script.
     # Note:  Because "execfile" and "exec" method are used to load the
@@ -776,7 +776,7 @@ class SSBCCconfig():
       else:
         param_list.append((param_string,None));
     # Add the peripheral to the micro controller configuration.
-    exec('self.peripheral.append(%s(fullperipheral,self,param_list,ixLine));' % peripheral);
+    exec('self.peripheral.append(%s(fullperipheral,self,param_list,loc));' % peripheral);
 
   def Set(self,name,value):
     """

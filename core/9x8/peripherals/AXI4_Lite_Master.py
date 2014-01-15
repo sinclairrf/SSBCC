@@ -152,7 +152,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
   interface.
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -173,13 +173,13 @@ class AXI4_Lite_Master(SSBCCperipheral):
     for param_tuple in param_list:
       param = param_tuple[0];
       if param not in names:
-        raise SSBCCException('Unrecognized parameter "%s" at line %d' % (param,ixLine,));
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
       param_test = allowables[names.index(param)];
-      self.AddAttr(config,param,param_tuple[1],param_test[1],ixLine,param_test[2]);
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided (all parameters are required).
     for paramname in names:
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # There are no optional parameters.
     # Temporary:  Warning message
     if not self.synchronous:
@@ -207,40 +207,40 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ( 'i_%s_rresp',           2,                      'input',        ),
     ):
       thisName = signal[0] % self.basePortName;
-      config.AddIO(thisName,signal[1],signal[2],ixLine);
-    config.AddSignal('s__%s__address' % self.basePortName, self.address_width, ixLine);
-    config.AddSignal('s__%s__rd' % self.basePortName, 1, ixLine);
-    config.AddSignal('s__%s__wr' % self.basePortName, 1, ixLine);
-    config.AddSignal('s__%s__busy' % self.basePortName, 5, ixLine);
-    config.AddSignal('s__%s__error' % self.basePortName, 2, ixLine);
-    config.AddSignal('s__%s__read' % self.basePortName, 32, ixLine);
+      config.AddIO(thisName,signal[1],signal[2],loc);
+    config.AddSignal('s__%s__address' % self.basePortName, self.address_width, loc);
+    config.AddSignal('s__%s__rd' % self.basePortName, 1, loc);
+    config.AddSignal('s__%s__wr' % self.basePortName, 1, loc);
+    config.AddSignal('s__%s__busy' % self.basePortName, 5, loc);
+    config.AddSignal('s__%s__error' % self.basePortName, 2, loc);
+    config.AddSignal('s__%s__read' % self.basePortName, 32, loc);
     self.ix_address = config.NOutports();
     config.AddOutport((self.address,False,
                       # empty list -- disable normal output port signal generation
-                      ),ixLine);
+                      ),loc);
     self.ix_data = config.NOutports();
     config.AddOutport((self.data,False,
                       # empty list -- disable normal output port signal generation
-                      ),ixLine);
+                      ),loc);
     config.AddOutport((self.write_enable,False,
                       ('o_%s_wstrb' % self.basePortName, 4, 'data', ),
-                      ),ixLine);
+                      ),loc);
     config.AddOutport((self.command_read,True,
                       ('s__%s__rd' % self.basePortName, 1, 'strobe', ),
-                      ),ixLine);
+                      ),loc);
     config.AddOutport((self.command_write,True,
                       ('s__%s__wr' % self.basePortName, 1, 'strobe', ),
-                      ),ixLine);
+                      ),loc);
     config.AddInport((self.busy,
                      ('s__%s__busy' % self.basePortName, 5, 'data', ),
-                     ),ixLine);
+                     ),loc);
     config.AddInport((self.error,
                      ('s__%s__error' % self.basePortName, 2, 'data', ),
-                     ),ixLine);
+                     ),loc);
     self.ix_read = config.NInports();
     config.AddInport((self.read,
                      ('s__%s__read' % self.basePortName, 32, 'data', ),
-                     ),ixLine);
+                     ),loc);
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');

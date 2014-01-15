@@ -85,6 +85,31 @@ def IsPowerOf2(v):
   """
   return v == 2**int(math.log(v,2)+0.5);
 
+def LoadFile(filename):
+  """
+  Load the file into a list with the line contents and line numbers.\n
+  filename is either the name of the file or a file object.\n
+  Note:  The file object is closed in either case.
+  """
+  if type(filename) == str:
+    try:
+      filename = file(filename);
+    except:
+      raise SSBCCException('Error opening "%s"' % filename);
+  elif type(filename) == file:
+    pass;
+  else:
+    raise Exception('Unexpected argument type:  %s' % type(filename))
+  v = list();
+  ixLine = 0;
+  for tmpLine in filename:
+    ixLine += 1;
+    while tmpLine and tmpLine[-1] in ('\n','\r',):
+      tmpLine = tmpLine[0:-1];
+    v.append((tmpLine,ixLine,));
+  filename.close();
+  return v;
+
 ################################################################################
 #
 # Unit test.

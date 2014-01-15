@@ -90,27 +90,27 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
   interface.
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
     def validateSize(x):
       if re.match(r'L_\w+$',x):
         if not config.IsParameter(x):
-          raise SSBCCException('"size=%s" is not a parameter at line %d' % (x,ixLine,));
+          raise SSBCCException('"size=%s" is not a parameter at %s' % (x,loc,));
         ix = [param[0] for param in config.parameters].index(x);
         y = config.parameters[ix][1];
         if not re.match(r'[1-9]\d*$', y):
-          raise SSBCCException('localparam must be a numeric constant, not "%s", to be used in "size=%s" at line %d' % (y,x,ixLine,));
+          raise SSBCCException('localparam must be a numeric constant, not "%s", to be used in "size=%s" at %s' % (y,x,loc,));
         y = int(y);
       elif re.match(r'[1-9]\d*$',x):
         y = int(x);
       else:
-        raise SSBCCException('Malformed entry for "size=%s" at line %d' % (x,ixLine,));
+        raise SSBCCException('Malformed entry for "size=%s" at %s' % (x,loc,));
       if math.modf(math.log(y,2))[0] != 0:
-        raise SSBCCException('size=%d must be a power of 2 at line %d' % (y,ixLine,));
+        raise SSBCCException('size=%d must be a power of 2 at %s' % (y,loc,));
       if not (16 <= y <= 256):
-        raise SSBCCException('size=%d must be between 16 and 256 inclusive at line %d' % (y,ixLine,));
+        raise SSBCCException('size=%d must be between 16 and 256 inclusive at %s' % (y,loc,));
       return y;
     allowables = (
       ('address',       r'O_\w+$',      None,           ),
@@ -125,9 +125,9 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     for param_tuple in param_list:
       param = param_tuple[0];
       if param not in names:
-        raise SSBCCException('Unrecognized parameter "%s" at line %d' % (param,ixLine,));
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
       param_test = allowables[names.index(param)];
-      self.AddAttr(config,param,param_tuple[1],param_test[1],ixLine,param_test[2]);
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
     for paramname in (
       'address',
@@ -136,7 +136,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       'write',
     ):
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Set optional parameters.
     for optionalpair in (
         ('size',        256,    ),
@@ -148,7 +148,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
         ('ram8','ram32','ram8',True,),
       ):
       if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
-        raise SSBCCException('Only one of "%s" and "%s" can be specified at line %d' % (exclusivepair[0],exclusivepair[1],ixLine,));
+        raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,));
       if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]):
         setattr(self,exclusivepair[2],exclusivepair[3]);
     # Set the string used to identify signals associated with this peripheral.
@@ -176,19 +176,19 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       ( 'o_%s_rresp',           2,                      'output',       ),
     ):
       thisName = signal[0] % self.basePortName;
-      config.AddIO(thisName,signal[1],signal[2],ixLine);
-    config.AddSignal('s__%s__mc_addr'  % self.namestring, int(math.log(self.size,2)), ixLine);
-    config.AddSignal('s__%s__mc_rdata' % self.namestring, 8, ixLine);
+      config.AddIO(thisName,signal[1],signal[2],loc);
+    config.AddSignal('s__%s__mc_addr'  % self.namestring, int(math.log(self.size,2)), loc);
+    config.AddSignal('s__%s__mc_rdata' % self.namestring, 8, loc);
     config.AddOutport((self.address,False,
                       ('s__%s__mc_addr' % self.namestring, int(math.log(self.size,2)), 'data', ),
-                      ),ixLine);
+                      ),loc);
     config.AddInport((self.read,
                       ('s__%s__mc_rdata' % self.namestring, 8, 'data', ),
-                      ),ixLine);
+                      ),loc);
     self.ix_write = config.NOutports();
     config.AddOutport((self.write,False,
                       # empty list
-                      ),ixLine);
+                      ),loc);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 

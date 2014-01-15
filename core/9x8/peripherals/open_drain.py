@@ -52,7 +52,7 @@ class open_drain(SSBCCperipheral):
     peripheral.
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Parse the parameters.
@@ -60,43 +60,43 @@ class open_drain(SSBCCperipheral):
       param = param_tuple[0];
       param_arg = param_tuple[1];
       if param == 'inport':
-        self.AddAttr(config,param,param_arg,r'I_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'I_\w+$',loc);
       elif param == 'iosignal':
-        self.AddAttr(config,param,param_arg,r'io_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'io_\w+$',loc);
       elif param == 'outport':
-        self.AddAttr(config,param,param_arg,r'O_\w+$',ixLine);
+        self.AddAttr(config,param,param_arg,r'O_\w+$',loc);
       elif param == 'width':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
+        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
       else:
-        raise SSBCCException('Unrecognized parameter at line %d:  "%s"' % (ixLine,param,));
+        raise SSBCCException('Unrecognized parameter at %s:  "%s"' % (loc,param,));
     # Ensure the required parameters are set.
     if not hasattr(self,'inport'):
-      raise SSBCCException('Missing "inport=I_name" at line %d' % ixLine);
+      raise SSBCCException('Missing "inport=I_name" at %s' % loc);
     if not hasattr(self,'iosignal'):
-      raise SSBCCException('Missing "iosignal=io_name" at line %d' % ixLine);
+      raise SSBCCException('Missing "iosignal=io_name" at %s' % loc);
     if not hasattr(self,'outport'):
-      raise SSBCCException('Missing "outport=O_name" at line %d' % ixLine);
+      raise SSBCCException('Missing "outport=O_name" at %s' % loc);
     # Set defaults for non-specified values.
     if not hasattr(self,'width'):
       self.width = 1;
     # Ensure the specified values are reasonable.
     maxWidth = config.Get('data_width');
     if (self.width < 1) or (maxWidth < self.width):
-      raise SSBCCException('width must be between 1 and %d inclusive at line %d' % (maxWidth,ixLine,));
+      raise SSBCCException('width must be between 1 and %d inclusive at %s' % (maxWidth,loc,));
     # Create the internal signal name and initialization.
     self.sname = 's__%s' % self.iosignal;
     sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.iosignal,self.width,'inout',ixLine);
-    config.AddSignalWithInit(self.sname,self.width,None,ixLine);
+    config.AddIO(self.iosignal,self.width,'inout',loc);
+    config.AddSignalWithInit(self.sname,self.width,None,loc);
     config.AddInport((self.inport,
                      (self.iosignal,self.width,'data',),
                     ),
-                    ixLine);
+                    loc);
     config.AddOutport((self.outport,False,
                       (self.sname,self.width,'data',sname_init,),
                      ),
-                     ixLine);
+                     loc);
 
   def GenVerilog(self,fp,config):
     body_1 = """//

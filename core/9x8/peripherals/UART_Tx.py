@@ -95,7 +95,7 @@ class UART_Tx(SSBCCperipheral):
       :loop .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -110,18 +110,18 @@ class UART_Tx(SSBCCperipheral):
           ('outstatus',  r'I_\w+$',    None,  ),
         ):
         if param == param_test[0]:
-          self.AddAttr(config,param,param_arg,param_test[1],ixLine,param_test[2]);
+          self.AddAttr(config,param,param_arg,param_test[1],loc,param_test[2]);
           break;
       else:
         if param == 'baudmethod':
-          self.AddRateMethod(config,param,param_arg,ixLine);
+          self.AddRateMethod(config,param,param_arg,loc);
         elif param in ('outFIFO',):
-          self.AddAttr(config,param,param_arg,r'[1-9]\d*$',ixLine,int);
+          self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
           x = getattr(self,param);
           if math.modf(math.log(x,2))[0] != 0:
-            raise SSBCCException('%s=%d must be a power of 2 at line %d' % (param,x,ixLine,));
+            raise SSBCCException('%s=%d must be a power of 2 at %s' % (param,x,loc,));
         else:
-          raise SSBCCException('Unrecognized parameter at line %d: %s' % (ixLine,param,));
+          raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
     # Ensure the required parameters are provided.
     for paramname in (
         'baudmethod',
@@ -129,7 +129,7 @@ class UART_Tx(SSBCCperipheral):
         'outstatus',
       ):
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Set optional parameters.
     for optionalpair in (
         ('nStop',     1,           ),
@@ -142,7 +142,7 @@ class UART_Tx(SSBCCperipheral):
         ('noOutFIFO',  'outFIFO',  'noOutFIFO',  True, ),
       ):
       if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
-        raise SSBCCException('Only one of "%s" and "%s" can be specified at line %d' % (exclusivepair[0],exclusivepair[1],ixLine,));
+        raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,));
       if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]):
         setattr(self,exclusivepair[2],exclusivepair[3]);
       if hasattr(self,exclusivepair[0]):
@@ -151,17 +151,17 @@ class UART_Tx(SSBCCperipheral):
     # Set the string used to identify signals associated with this peripheral.
     self.namestring = self.outsignal;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.outsignal,1,'output',ixLine);
-    config.AddSignal('s__%s__Tx'          % self.namestring,8,ixLine);
-    config.AddSignal('s__%s__Tx_busy'     % self.namestring,1,ixLine);
-    config.AddSignal('s__%s__Tx_wr'       % self.namestring,1,ixLine);
+    config.AddIO(self.outsignal,1,'output',loc);
+    config.AddSignal('s__%s__Tx'          % self.namestring,8,loc);
+    config.AddSignal('s__%s__Tx_busy'     % self.namestring,1,loc);
+    config.AddSignal('s__%s__Tx_wr'       % self.namestring,1,loc);
     config.AddOutport((self.outport,False,
                    ('s__%s__Tx'           % self.namestring,8,'data',),
                    ('s__%s__Tx_wr'        % self.namestring,1,'strobe',),
-                  ),ixLine);
+                  ),loc);
     config.AddInport((self.outstatus,
                    ('s__%s__Tx_busy'      % self.namestring,1,'data',),
-                 ),ixLine);
+                 ),loc);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 

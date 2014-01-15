@@ -55,7 +55,7 @@ class big_outport(SSBCCperipheral):
       .return(drop)
   """
 
-  def __init__(self,peripheralFile,config,param_list,ixLine):
+  def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
@@ -68,21 +68,21 @@ class big_outport(SSBCCperipheral):
     for param_tuple in param_list:
       param = param_tuple[0];
       if param not in names:
-        raise SSBCCException('Unrecognized parameter "%s" at line %d' % (param,ixLine,));
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
       param_test = allowables[names.index(param)];
-      self.AddAttr(config,param,param_tuple[1],param_test[1],ixLine,param_test[2]);
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided (all parameters are required).
     for paramname in names:
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at line %d' % (paramname,ixLine,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # There are no optional parameters.
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.outsignal,self.width,'output',ixLine);
+    config.AddIO(self.outsignal,self.width,'output',loc);
     self.ix_outport = config.NOutports();
     config.AddOutport((self.outport,False,
                       # empty list
                       ),
-                      ixLine);
+                      loc);
 
   def GenVerilog(self,fp,config):
     body = """//
