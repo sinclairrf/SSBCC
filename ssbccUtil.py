@@ -73,10 +73,38 @@ def IntValue(v):
   """
   Convert a Verilog format integer into an integer value.
   """
+  save_v = v;
+  if re.match(r'([1-9]\d*)?\'[bodh]',v):
+    length = 0;
+    while v[0] != '\'':
+      length *= 10;
+      length += ord(v[0]) - ord('0');
+      v = v[1:];
+    v=v[1:];
+    if v[0] == 'b':
+      base = 2;
+    elif v[0] == 'o':
+      base = 8;
+    elif v[0] == 'd':
+      base = 10;
+    elif v[0] == 'h':
+      base = 16;
+    else:
+      raise Exception('Program bug -- unrecognized base:  "%c"' % v[0]);
+    v = v[1:];
+  else:
+    length = 0;
+    base = 10;
   ov = 0;
-  for vv in [v[i] for i in range(len(v)) if '0' <= v[i] <= '9']:
-    ov *= 10;
-    ov += ord(vv)-ord('0');
+  for vv in [v[i] for i in range(len(v)) if v[i] != '_']:
+    ov *= base;
+    try:
+      dv = int(vv,base);
+    except:
+      raise SSBCCException('Malformed parameter value:  "%s"' % save_v);
+    ov += dv;
+  if length > 0 and ov >= 2**length:
+    raise SSBCCException('Paramter length and value don\'t match:  "%s"' % save_v);
   return ov;
 
 def IsPowerOf2(v):
