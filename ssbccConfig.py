@@ -294,7 +294,7 @@ class SSBCCconfig():
       thisSlice = '[0+:8]';
     for ix in range(len(self.parameters)):
       if self.parameters[ix][0] == name:
-        return ExtractBits(int(self.parameters[ix][1]),thisSlice);
+        return ExtractBits(IntValue(self.parameters[ix][1]),thisSlice);
     else:
       raise Exception('Program Bug:  Parameter "%s" not found' % name);
 
