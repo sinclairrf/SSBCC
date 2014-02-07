@@ -1,7 +1,7 @@
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 #
-# Test bench for PWM_8bit peripheral.
+# Test bench for inFIFO_async peripheral.
 #
 
 ARCHITECTURE    core/9x8 Verilog
