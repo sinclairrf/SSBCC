@@ -621,6 +621,7 @@ The following peripherals are provided:
   UART          bidirectional UART
   UART_Rx       receive UART
   UART_Tx       transmit UART
+  wide_strobe   1 to 8 bit strobe generator
 
 The following command illustrates how to display the help message for
 peripherals:
