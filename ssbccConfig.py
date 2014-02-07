@@ -804,7 +804,7 @@ class SSBCCconfig():
       nBlocks = int(value[findStar+1:]);
     nbits_blockSize = int(round(math.log(blockSize,2)));
     if blockSize != 2**nbits_blockSize:
-      raise SSBCCException('block size must be a power of 2 on line %d: "%s"' % errorInfo);
+      raise SSBCCException('block size must be a power of 2 at %s: "%s"' % errorInfo);
     nbits_nBlocks = CeilLog2(nBlocks);
     self.Set(name, dict(
                    length=blockSize*nBlocks,
