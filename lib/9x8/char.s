@@ -40,18 +40,10 @@
 ; for the most significant nibble at the top of the data stack.
 ; ( u - u_hex_lsn u_hex_msn ) or ( u - u_hex_lsn )
 .function char__byte_to_hex
-  ; ( u - u u_hex_lsn )
-  dup 0x0F .call(char__nibble_to_hex,&)
-  ; ( u u_hex_lsn - u_hex_lsn u_msn )
-  swap 0>> 0>> 0>> 0>>
-  ; ( - )
-  .jumpc(include_msn,nop)
-    ; ( u_hex_lsn u_msn - u_hex_lsn u_msn)
-    .return(drop)
+  dup 0xF0 & .jumpc(include_msn)
+    .call(char__nibble_to_hex) .return
   :include_msn
-  ; ( u_hex_lsn u_msn - u_hex_lsn u_hex_msn )
-  .call(char__nibble_to_hex)
-  .return
+    .call(char__byte_to_2hex) .return
 
 ; Convert a nibble between 0x00 and 0x0F inclusive to it hex digit.
 ; ( u - u_hex_n )
