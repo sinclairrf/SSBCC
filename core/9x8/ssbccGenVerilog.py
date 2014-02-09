@@ -8,6 +8,7 @@
 
 import math
 import os
+import random
 import re
 
 from ssbccUtil import *;
@@ -187,6 +188,8 @@ def genMemories(fp,fpMemFile,config,programBody):
       memName = 's_opcodeMemory';
     else:
       memName = instructionMemNameFormat % ixBlock;
+    if config.Get('synth_instr_mem'):
+      fp.write('%s ' % config.Get('synth_instr_mem'));
     fp.write('reg [%d:0] %s[%d:0];\n' % (instruction_mem_width-1,memName,instructionMemory['blockSize']-1,));
   # Declare data stack RAM and return stacks RAM if they aren't combined into other memories.
   for memType in ('DATA_STACK','RETURN_STACK',):
@@ -216,11 +219,12 @@ def genMemories(fp,fpMemFile,config,programBody):
     if nbits == 9:
       formatp = '  %s[\'h%%0%dX] = { 1\'b1, %%s };' % (memName,instructionAddrWidth,);
       formatn = '  %s[\'h%%0%dX] = 9\'h%%s; // %%s\n' % (memName,instructionAddrWidth,);
-      formate = '  %s[\'h%%0%dX] = 9\'h000;\n' % (memName,instructionAddrWidth,);
+      formate = '  %s[\'h%%0%dX] = 9\'h%%03x;\n' % (memName,instructionAddrWidth,);
     else:
       formatp = '  %s[\'h%%0%dX] = { %d\'d0, 1\'b1, %%s };' % (memName,instructionAddrWidth,nbits-9,);
       formatn = '  %s[\'h%%0%dX] = { %d\'d0, 9\'h%%s }; // %%s\n' % (memName,instructionAddrWidth,nbits-9,);
-      formate = '  %s[\'h%%0%dX] = { %d\'d0, 9\'h000 };\n' % (memName,instructionAddrWidth,nbits-9,);
+      formate = '  %s[\'h%%0%dX] = { %d\'d0, 9\'h%%03x };\n' % (memName,instructionAddrWidth,nbits-9,);
+    rand_instr_mem = config.Get('rand_instr_mem');
     for ixMem in range(instructionMemory['blockSize']):
       memAddr = instructionMemory['blockSize']*ixBlock+ixMem;
       if ixRecordedBody < len(programBody):
@@ -241,7 +245,7 @@ def genMemories(fp,fpMemFile,config,programBody):
             break;
         ixRecordedBody = ixRecordedBody + 1;
       elif ixInstruction < instructionBodyLength:
-        fp.write(formate % ixMem);
+        fp.write(formate % (ixMem,0 if not rand_instr_mem else random.randint(0,2**9-1),));
         fpMemFile.write('@%04X 000\n' % memAddr);
       else:
         break;
