@@ -56,8 +56,6 @@ class big_outport(SSBCCperipheral):
   """
 
   def __init__(self,peripheralFile,config,param_list,loc):
-    # Use the externally provided file name for the peripheral
-    self.peripheralFile = peripheralFile;
     # Get the parameters.
     allowables = (
       ('outport',       r'O_\w+$',              None,           ),
