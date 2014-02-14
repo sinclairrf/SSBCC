@@ -47,7 +47,11 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       Note:  This is the default
     ram32
       optionally specifies using a 32-bit RAM for the dual-port memrory instantiation
-      Note:  This is required for Vivado 2013.3.
+      Note:  This is required for Vivado 2013.3.\n
+  Vivado Users:
+    The peripheral creates a TCL script to facilitate turning the micro
+    controller into an IP core.  Look for a file with the name
+    "vivado_<basePortName>.tcl".\n
   Example:  The code fragments
               <addr> .outport(O_address) .inport(I_read)
             and
@@ -212,3 +216,8 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);
+
+    # Write the TCL script to facilitate creating Vivado IP for the port.
+    vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
+    execfile(vivadoFile,globals());
+    vivado_AXI4_Lite_Bus.WriteTclScript('slave',self.basePortName);

@@ -71,7 +71,11 @@ class AXI4_Lite_Master(SSBCCperipheral):
       specifies the width of the 8-bit aligned address\n
     synchronous={True|False}
       indicates whether or not he micro controller clock and the AXI4-Lite bus
-      are synchronous
+      are synchronous\n
+  Vivado Users:
+    The peripheral creates a TCL script to facilitate turning the micro
+    controller into an IP core.  Look for a file with the name
+    "vivado_<basePortName>.tcl".\n
   Example:  Xilinx' AXI_DMA core has a 7-bit address range for its register
     address map.  The PERIPHERAL configuration statement to interface to this
     core would be:\n
@@ -266,3 +270,8 @@ class AXI4_Lite_Master(SSBCCperipheral):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);
+
+    # Write the TCL script to facilitate creating Vivado IP for the port.
+    vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
+    execfile(vivadoFile,globals());
+    WriteTclScript('master',self.basePortName);
