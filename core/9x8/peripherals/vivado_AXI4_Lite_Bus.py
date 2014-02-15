@@ -87,8 +87,7 @@ set_property description {AXI4-Lite bus for @BASEPORTNAME@} [ipx::get_bus_interf
 # Fix the address space
 ipx::add_address_space {@BASEPORTNAME@} [ipx::current_core]
 set_property master_address_space_ref {@BASEPORTNAME@} [ipx::get_bus_interface @BASEPORTNAME@ [ipx::current_core]]
-set_property range {@ADDR_WIDTH@} [ipx::get_address_space axi_eMaginDMA [ipx::current_core]]
-
+set_property range {@ADDR_WIDTH@} [ipx::get_address_space @BASEPORTNAME@ [ipx::current_core]]
 """;
 
   body += """
