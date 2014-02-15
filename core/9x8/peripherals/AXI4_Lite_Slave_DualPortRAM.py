@@ -158,12 +158,13 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     # Set the string used to identify signals associated with this peripheral.
     self.namestring = self.basePortName;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
+    self.address_width = int(math.log(self.size,2));
     for signal in (
       ( 'i_%s_aresetn',         1,                      'input',        ),
       ( 'i_%s_aclk',            1,                      'input',        ),
       ( 'i_%s_awvalid',         1,                      'input',        ),
       ( 'o_%s_awready',         1,                      'output',       ),
-      ( 'i_%s_awaddr',          math.log(self.size,2),  'input',        ),
+      ( 'i_%s_awaddr',          self.address_width,     'input',        ),
       ( 'i_%s_wvalid',          1,                      'input',        ),
       ( 'o_%s_wready',          1,                      'output',       ),
       ( 'i_%s_wdata',           32,                     'input',        ),
@@ -173,7 +174,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       ( 'i_%s_bready',          1,                      'input',        ),
       ( 'i_%s_arvalid',         1,                      'input',        ),
       ( 'o_%s_arready',         1,                      'output',       ),
-      ( 'i_%s_araddr',          math.log(self.size,2),  'input',        ),
+      ( 'i_%s_araddr',          self.address_width,     'input',        ),
       ( 'o_%s_rvalid',          1,                      'output',       ),
       ( 'i_%s_rready',          1,                      'input',        ),
       ( 'o_%s_rdata',           32,                     'output',       ),
@@ -181,10 +182,10 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     ):
       thisName = signal[0] % self.basePortName;
       config.AddIO(thisName,signal[1],signal[2],loc);
-    config.AddSignal('s__%s__mc_addr'  % self.namestring, int(math.log(self.size,2)), loc);
+    config.AddSignal('s__%s__mc_addr'  % self.namestring, self.address_width, loc);
     config.AddSignal('s__%s__mc_rdata' % self.namestring, 8, loc);
     config.AddOutport((self.address,False,
-                      ('s__%s__mc_addr' % self.namestring, int(math.log(self.size,2)), 'data', ),
+                      ('s__%s__mc_addr' % self.namestring, self.address_width, 'data', ),
                       ),loc);
     config.AddInport((self.read,
                       ('s__%s__mc_rdata' % self.namestring, 8, 'data', ),
@@ -220,4 +221,4 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     # Write the TCL script to facilitate creating Vivado IP for the port.
     vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
     execfile(vivadoFile,globals());
-    vivado_AXI4_Lite_Bus.WriteTclScript('slave',self.basePortName);
+    vivado_AXI4_Lite_Bus.WriteTclScript('slave',self.basePortName,self.address_width);

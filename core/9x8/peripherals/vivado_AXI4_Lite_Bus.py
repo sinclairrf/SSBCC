@@ -6,7 +6,7 @@
 
 import re
 
-def WriteTclScript(mode,basePortName):
+def WriteTclScript(mode,basePortName,addrWidth):
   """
   Write a TCL script to facilitate generating IP for micro controller
   configurations with AXI4-List master or slave busses.\n
@@ -87,6 +87,8 @@ set_property description {AXI4-Lite bus for @BASEPORTNAME@} [ipx::get_bus_interf
 # Fix the address space
 ipx::add_address_space {@BASEPORTNAME@} [ipx::current_core]
 set_property master_address_space_ref {@BASEPORTNAME@} [ipx::get_bus_interface @BASEPORTNAME@ [ipx::current_core]]
+set_property range {@ADDR_WIDTH@} [ipx::get_address_space axi_eMaginDMA [ipx::current_core]]
+
 """;
 
   body += """
@@ -115,9 +117,11 @@ ipx::add_bus_parameter {ASSOCIATED_RESET} [ipx::get_bus_interface @BASEPORTNAME@
 set_property value {i_@BASEPORTNAME@_aresetn} [ipx::get_bus_parameter ASSOCIATED_RESET [ipx::get_bus_interface @BASEPORTNAME@_aclk [ipx::current_core]]]
 """;
 
+  addrWidth = max(addrWidth,12);
   for subpair in [
-    ('@BASEPORTNAME@',  basePortName,   ),
-    ('@MODE@',          mode,           ),
+    ('@ADDR_WIDTH@',    str(2**addrWidth),      ),
+    ('@BASEPORTNAME@',  basePortName,           ),
+    ('@MODE@',          mode,                   ),
   ]:
     body = re.sub(subpair[0],subpair[1],body);
 

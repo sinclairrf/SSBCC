@@ -274,4 +274,4 @@ class AXI4_Lite_Master(SSBCCperipheral):
     # Write the TCL script to facilitate creating Vivado IP for the port.
     vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
     execfile(vivadoFile,globals());
-    WriteTclScript('master',self.basePortName);
+    WriteTclScript('master',self.basePortName,self.address_width);
