@@ -28,7 +28,8 @@ class AXI4_Lite_Master(SSBCCperipheral):
                                 error=<I_error>                 \\
                                 read=<I_read>                   \\
                                 address_width=<N>               \\
-                                synchronous={True|False}
+                                synchronous={True|False}        \\
+                                noWSTRB\n
   Where:
     basePortName=<name>
       specifies the name used to construct the multiple AXI4-Lite signals
@@ -71,7 +72,10 @@ class AXI4_Lite_Master(SSBCCperipheral):
       specifies the width of the 8-bit aligned address\n
     synchronous={True|False}
       indicates whether or not he micro controller clock and the AXI4-Lite bus
-      are synchronous\n
+      are synchronous
+    noWSTRB
+      indicates that the optional WSTRB signal should not be included
+      Note:  The WSTRB signal is optional for slaves\n
   Vivado Users:
     The peripheral creates a TCL script to facilitate turning the micro
     controller into an IP core.  Look for a file with the name
@@ -170,6 +174,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ('read',          r'I_\w+$',              None,           ),
       ('busy',          r'I_\w+$',              None,           ),
       ('error',         r'I_\w+$',              None,           ),
+      ('noWSTRB',       None,                   None,           ),
       ('synchronous',   r'(True|False)$',       bool,           ),
       ('write_enable',  r'O_\w+$',              None,           ),
     );
@@ -181,10 +186,23 @@ class AXI4_Lite_Master(SSBCCperipheral):
       param_test = allowables[names.index(param)];
       self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided (all parameters are required).
-    for paramname in names:
+    for paramname in (
+      'address',
+      'address_width',
+      'basePortName',
+      'command_read',
+      'command_write',
+      'data',
+      'read',
+      'busy',
+      'error',
+      'synchronous',
+      'write_enable',
+    ):
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
-    # There are no optional parameters.
+    # Ensure optional values are set.
+    self.noWSTRB = hasattr(self,'noWSTRB');
     # Temporary:  Warning message
     if not self.synchronous:
       raise SSBCCException('synchronous=False has not been validated yet');
@@ -198,7 +216,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ( 'o_%s_wvalid',          1,                      'output',       ),
       ( 'i_%s_wready',          1,                      'input',        ),
       ( 'o_%s_wdata',           32,                     'output',       ),
-      ( 'o_%s_wstrb',           4,                      'output',       ),
+      ( 'o_%s_wstrb',           4,                      'output',       ) if not self.noWSTRB else None,
       ( 'i_%s_bresp',           2,                      'input',        ),
       ( 'i_%s_bvalid',          1,                      'input',        ),
       ( 'o_%s_bready',          1,                      'output',       ),
@@ -210,6 +228,8 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ( 'i_%s_rdata',           32,                     'input',        ),
       ( 'i_%s_rresp',           2,                      'input',        ),
     ):
+      if not signal:
+        continue
       thisName = signal[0] % self.basePortName;
       config.AddIO(thisName,signal[1],signal[2],loc);
     config.AddSignal('s__%s__address' % self.basePortName, self.address_width, loc);
@@ -226,7 +246,8 @@ class AXI4_Lite_Master(SSBCCperipheral):
     config.AddOutport((self.data,False,
                       # empty list -- disable normal output port signal generation
                       ),loc);
-    config.AddOutport((self.write_enable,False,
+    if not self.noWSTRB:
+      config.AddOutport((self.write_enable,False,
                       ('o_%s_wstrb' % self.basePortName, 4, 'data', ),
                       ),loc);
     config.AddOutport((self.command_read,True,
@@ -274,4 +295,4 @@ class AXI4_Lite_Master(SSBCCperipheral):
     # Write the TCL script to facilitate creating Vivado IP for the port.
     vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
     execfile(vivadoFile,globals());
-    WriteTclScript('master',self.basePortName,self.address_width);
+    WriteTclScript('master',self.basePortName,self.address_width,noWSTRB=self.noWSTRB);

@@ -6,7 +6,7 @@
 
 import re
 
-def WriteTclScript(mode,basePortName,addrWidth):
+def WriteTclScript(mode,basePortName,addrWidth,noWSTRB=False):
   """
   Write a TCL script to facilitate generating IP for micro controller
   configurations with AXI4-List master or slave busses.\n
@@ -77,9 +77,11 @@ set_property description {AXI4-Lite bus for @BASEPORTNAME@} [ipx::get_bus_interf
     ('RVALID',  'rvalid',       mi,     ),
     ('WDATA',   'wdata',        mo,     ),
     ('WREADY',  'wready',       mi,     ),
-    ('WSTRB',   'wstrb',        mo,     ),
+    ('WSTRB',   'wstrb',        mo,     ) if not noWSTRB else None,
     ('WVALID',  'wvalid',       mo,     ),
   ]:
+    if not pairs:
+      continue;
     body += "ipx::add_port_map {%s} [ipx::get_bus_interface @BASEPORTNAME@ [ipx::current_core]]\n" % pairs[0];
     body += "set_property physical_name {%s_@BASEPORTNAME@_%s} [ipx::get_port_map %s [ipx::get_bus_interface @BASEPORTNAME@ [ipx::current_core]]]\n" % (pairs[2],pairs[1],pairs[0],);
 
@@ -88,6 +90,7 @@ set_property description {AXI4-Lite bus for @BASEPORTNAME@} [ipx::get_bus_interf
 ipx::add_address_space {@BASEPORTNAME@} [ipx::current_core]
 set_property master_address_space_ref {@BASEPORTNAME@} [ipx::get_bus_interface @BASEPORTNAME@ [ipx::current_core]]
 set_property range {@ADDR_WIDTH@} [ipx::get_address_space @BASEPORTNAME@ [ipx::current_core]]
+set_property width {32} [ipx::get_address_space @BASEPORTNAME@ [ipx::current_core]]
 """;
 
   body += """
