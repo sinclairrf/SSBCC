@@ -17,19 +17,18 @@ class AXI4_Lite_Master(SSBCCperipheral):
   endian format (i.e., the LSB of the 32-bit word is stored in the lowest
   numbered address).\n
   Usage:
-    PERIPHERAL AXI4_Lite_Master                                 \\
-                                basePortName=<name>             \\
-                                address=<O_address>             \\
-                                data=<O_data>                   \\
-                                write_enable=<O_write_enable>   \\
-                                command_read=<O_command_read>   \\
-                                command_write=<O_command_write> \\
-                                busy=<I_busy>                   \\
-                                error=<I_error>                 \\
-                                read=<I_read>                   \\
-                                address_width=<N>               \\
-                                synchronous={True|False}        \\
-                                noWSTRB\n
+    PERIPHERAL AXI4_Lite_Master                                         \\
+                                basePortName=<name>                     \\
+                                address=<O_address>                     \\
+                                data=<O_data>                           \\
+                                command_read=<O_command_read>           \\
+                                command_write=<O_command_write>         \\
+                                busy=<I_busy>                           \\
+                                error=<I_error>                         \\
+                                read=<I_read>                           \\
+                                address_width=<N>                       \\
+                                synchronous={True|False}                \\
+                                write_enable=<O_write_enable>|noWSTRB\n
   Where:
     basePortName=<name>
       specifies the name used to construct the multiple AXI4-Lite signals
@@ -48,8 +47,6 @@ class AXI4_Lite_Master(SSBCCperipheral):
       Note:  Four outputs to this address are required, starting with the MSB of
              the 32-bit value,  See the examples for illustrations of how this
              works.
-    write_enable=<O_write_enable>
-      specifies the symbol used to set the 4 write enable bits
     command_read=<O_command_read>
       specifies the symbol used to start the AXI4-Lite master core to issue a
       read and store the received data
@@ -73,9 +70,13 @@ class AXI4_Lite_Master(SSBCCperipheral):
     synchronous={True|False}
       indicates whether or not he micro controller clock and the AXI4-Lite bus
       are synchronous
+    write_enable=<O_write_enable>
+      optionally specify the symbol used to set the 4 write enable bits
+      Note:  This must be used if one or more of the slaves includes the
+      optional WSTRB      signals.
     noWSTRB
       indicates that the optional WSTRB signal should not be included
-      Note:  The WSTRB signal is optional for slaves\n
+      Note:  This must be specified if write_enable is not specified.\n
   Vivado Users:
     The peripheral creates a TCL script to facilitate turning the micro
     controller into an IP core.  Look for a file with the name
@@ -87,14 +88,14 @@ class AXI4_Lite_Master(SSBCCperipheral):
                         basePortName=myAxiDmaDevice                     \
                         address=O_myAxiDmaDevice_address                \
                         data=O_myAxiDmaDevice_data                      \
-                        write_enable=O_myAxiDmaDevice_wen               \
                         command_read=O_myAxiDmaDevice_cmd_read          \
                         command_write=O_myAxiDmaDevice_cmd_write        \
                         busy=I_myAxiDmaDevice_busy                      \
                         error=I_myAxiDmaDevice_error                    \
                         read=I_myAxiDmaDevice_read                      \
                         address_width=7                                 \
-                        synchronous=True\n
+                        synchronous=True                                \\
+                        write_enable=O_myAxiDmaDevice_wen\n
     To write to the memory master to slave start address, use the
     following, where "start_address" is a 4-byte variable set elsewhere in the
     program:\n
@@ -185,7 +186,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
         raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
       param_test = allowables[names.index(param)];
       self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
-    # Ensure the required parameters are provided (all parameters are required).
+    # Ensure the required parameters are provided.
     for paramname in (
       'address',
       'address_width',
@@ -197,11 +198,14 @@ class AXI4_Lite_Master(SSBCCperipheral):
       'busy',
       'error',
       'synchronous',
-      'write_enable',
     ):
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
-    # Ensure optional values are set.
+    # Ensure one and only one of the complementary optional values are set.
+    if not hasattr(self,'write_enable') and not hasattr(self,'noWSTRB'):
+      raise SSBCCException('One of "write_enable" or "noWSTRB" must be set at %s' % loc);
+    if hasattr(self,'write_enable') and hasattr(self,'noWSTRB'):
+      raise SSBCCException('Only one of "write_enable" or "noWSTRB" can be set at %s' % loc);
     self.noWSTRB = hasattr(self,'noWSTRB');
     # Temporary:  Warning message
     if not self.synchronous:
