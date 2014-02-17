@@ -45,6 +45,13 @@
   :include_msn
     .call(char__byte_to_2hex) .return
 
+; Convert a 4 byte value to its 8-digit hexadecimal representation.
+; ( u_LSB u u u_MSB - )
+.function char__4byte_to_8hex
+  >r >r >r >r
+  ${4-1} :loop r> swap >r .call(char__byte_to_2hex) r> .jumpc(loop,1-)
+  .return(drop)
+
 ; Convert a nibble between 0x00 and 0x0F inclusive to it hex digit.
 ; ( u - u_hex_n )
 .function char__nibble_to_hex
