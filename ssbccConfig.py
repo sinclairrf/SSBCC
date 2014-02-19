@@ -41,8 +41,12 @@ class SSBCCconfig():
     # list of how the memories will be instantiated
     self.config['combine'] = list();
 
+    # initial search path for .INCLUDE configuration commands
+    self.includepaths = list();
+    self.includepaths.append('.');
+
     # initial search paths for peripherals
-    self.peripheralpaths= list();
+    self.peripheralpaths = list();
     self.peripheralpaths.append('.');
     self.peripheralpaths.append('peripherals');
     self.peripheralpaths.append(os.path.join(sys.path[0],'core/peripherals'));
@@ -162,6 +166,14 @@ class SSBCCconfig():
       else:
         raise SSBCCException('Symbol "%s" already defined before %s' % (name,loc,));
     self.symbols.append(name);
+
+  def AppendIncludePath(self,path):
+    """
+    Add the specified path to the end of the paths to search for .INCLUDE
+    configuration commands.\n
+    path        path to add to the list
+    """
+    self.includepaths.insert(-1,path);
 
   def CompleteCombines(self):
     """

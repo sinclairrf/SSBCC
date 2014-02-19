@@ -76,6 +76,13 @@ try:
     for symbol in argList.D:
       config.AddSymbol(symbol);
 
+  if argList.I:
+    for pathString in argList.I:
+      if not os.path.isdir(pathString):
+        raise SSBCCException('Bad path string:  "%s"' % pathString);
+      config.AppendIncludePath(pathString);
+      config.InsertPeripheralPath(pathString);
+
   if argList.o:
     config.Set('outCoreName',argList.o);
   else:
@@ -88,10 +95,12 @@ try:
 
   #
   # Read the configuration file into a line-by-line buffer.
+  # Note:  argList.filename is a file handle, so no paths will be searched by
+  #        LoadFile.  This is ensured by setting config to None.
   #
 
   filename = argList.filename.name;
-  configList = LoadFile(argList.filename);
+  configList = LoadFile(argList.filename,None);
   ifstack = list();
 
   configListStack = list();
@@ -157,7 +166,7 @@ try:
         raise SSBCCException('Malformed ".INCLUDE" configuration command on %s' % loc);
       configListStack.append((filename,configList,ifstack,));
       filename = cmd[0];
-      configList = LoadFile(filename);
+      configList = LoadFile(filename,config);
       ifstack = list();
     # Consume configuration commands disabled by conditionals
     elif ifstack and not ifstack[-1]:
@@ -310,12 +319,6 @@ try:
       cmd = re.findall(r'([LG]_\w+)=(\S+)',parameter);
       cmd = cmd[0];
       config.OverrideParameter(cmd[0],cmd[1]);
-
-  if argList.I:
-    for pathString in argList.I:
-      if not os.path.isdir(pathString):
-        raise SSBCCException('Bad path string:  "%s"' % pathString);
-      config.InsertPeripheralPath(pathString);
 
   #
   # Append peripherals from command-line.
