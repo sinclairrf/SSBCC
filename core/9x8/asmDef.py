@@ -352,7 +352,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       tValue.append(tParseNumber);
     return dict(type='value', value=tValue, loc=flc_loc);
   # look for a single-byte numeric value
-  a = re.match(r'(0|[+\-]?[1-9]\d*|0[07]+|0x[0-9A-Fa-f]{1,2})$',raw);
+  a = re.match(r'(0|[+\-]?[1-9]\d*|0[07]+|0x[0-9A-Fa-f]+)$',raw);
   if a:
     if 'singlevalue' not in allowed:
       raise AsmException('Value not allowed at %s' % flc_loc);
