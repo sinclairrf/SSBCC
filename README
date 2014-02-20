@@ -1002,6 +1002,37 @@ set the wide signal to all zeroes using:
 
   ${(size['o_big']+7)/8-1} :loop 0 .outport(O_BIG) .jumpc(loop,1-) drop
 
+
+USER-DEFINED MACROS
+================================================================================
+User-defined macros are created using python scripts and registering the macro
+with the assembler using the ".macro" directive.
+
+For example, the ".push32" macro is defined by lib/9x8/push32.py and can be
+used to push 32-bit (4-byte) values onto the data stack as follows:
+
+  .macro push32
+  .constant C_X 0x87654321
+  .main
+    ...
+    .push32(0x12345678)
+    .push32(C_X)
+    .push32(${0x12345678^C_X})
+    ...
+
+The following macros are provided:
+  .push16       push a 16-bit (2-byte) value onto the data stack with the MSB
+                at the top of the data stack
+  .push32       push a 32-bit (4-byte) value onto the data stack with the MSB
+                at the top of the data stack
+
+Directories are searched for in the following order for macros:
+  .
+  ./macros
+  lib/9x8
+  include paths specified by the '-I' command line option.
+
+
 CONDITIONAL COMPILATION
 ================================================================================
 The computer compiler and assembler recognize conditional compilation as

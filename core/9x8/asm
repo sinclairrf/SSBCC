@@ -140,9 +140,12 @@ try:
 
   # Construct the iterator that loops through the code bodies.
   fbi = asmDef.FileBodyIterator(argList.filename,ad);
+
+  # Add include paths for the ".include" and ".macro" directives.
   if argList.L:
     for path in argList.L:
       fbi.AddSearchPath(path);
+      ad.AddMacroSearchPath(path);
 
   ################################################################################
   #

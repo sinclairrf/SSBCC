@@ -1,12 +1,13 @@
 ################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2012-2014, Sinclair R.F., Inc.
 #
 # Assembly language definitions for SSBCC 9x8.
 #
 ################################################################################
 
 import copy
+import os
 import string
 
 import asmDef
@@ -113,6 +114,27 @@ class asmDef_9x8:
     if nRequired < len(args)-1:
       raise Exception('Program Bug -- Only the last macro argument can be optional');
     self.macros['nArgs'].append(range(nRequired,len(args)+1));
+
+  def AddMacroSearchPath(self,path):
+    self.macroSearchPaths.append(path);
+
+  def AddUserMacro(self,macroName):
+    """
+    Add a user-defined macro by processing the associated Python script.
+      macroName         name of the macro
+                        The associated Python script must be named
+                        <macroName>.py and must be in the project directory, an
+                        included directory, or must be one of the macros
+                        provided in "macros" subdirectory of this directory.
+    """
+    for testPath in self.macroSearchPaths:
+      fullMacro = os.path.join(testPath,'%s.py' % macroName);
+      if os.path.isfile(fullMacro):
+        break;
+    else:
+      raise asmDef.AsmException('Definition for macro "%s" not found' % macroName);
+    execfile(fullMacro);
+    exec('%s(self)' % macroName);
 
   def IsMacro(self,name):
     """
@@ -352,6 +374,8 @@ class asmDef_9x8:
     # Ensure the directive bodies are not too short.
     if (firstToken['value'] in ('.main','.interrupt',)) and not (len(rawTokens) > 1):
       raise asmDef.AsmException('"%s" missing body at %s' % (firstToken['value'],firstToken['loc'],));
+    if (firstToken['value'] in ('.macro',)) and not (len(rawTokens) == 2):
+      raise asmDef.AsmException('body for "%s" directive must have exactly one argument at %s' % (firstToken['value'],firstToken['loc'],));
     if (firstToken['value'] in ('.constant','.function','.memory','.variable',)) and not (len(rawTokens) >= 3):
       raise asmDef.AsmException('body for "%s" directive too short at %s' % (firstToken['value'],firstToken['loc'],));
     # Ensure the main body ends in a ".jump".
@@ -555,6 +579,7 @@ class asmDef_9x8:
       .function         add the function and its body, along with the relative
                         addresses, to the list of symbols
       .interrupt        record the function body and relative addresses
+      .macro            register the user-defined macro
       .main             record the function body and relative addresses
       .memory           record the definition of the memory and make it current
                         for subsequent variable definitions.
@@ -581,6 +606,17 @@ class asmDef_9x8:
       if self.interrupt:
         raise asmDef.AsmException('Second definition of ".interrupt" at %s' % firstToken['loc']);
       self.interrupt = self.ExpandTokens(rawTokens[1:]);
+    # Process user-defined macros.
+    elif firstToken['value'] == '.macro':
+      macroName = secondToken['value'];
+      fullMacroName = '.' + macroName;
+      if fullMacroName in self.directives:
+        raise asmDef.AsmException('Macro "%s" is a directive at %s' % (fullMacroName,secondToken['loc'],));
+      if fullMacroName in self.instructions:
+        raise asmDef.AsmException('Macro "%s" is an instruction at %s' % (fullMacroName,secondToken['loc'],));
+      if fullMacroName in self.macros['list']:
+        raise asmDef.AsmException('Macro "%s" is already defined as a macro at %s' % (fullMacroName,secondToken['loc'],));
+      self.AddUserMacro(macroName);
     # Process ".main" definition.
     elif firstToken['value'] == '.main':
       if self.main:
@@ -1115,6 +1151,9 @@ class asmDef_9x8:
       for dummy in range(N):
         self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+ '+bankName);
       self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
+    # user-defined macro
+    elif token['value'] in self.EmitFunction:
+      self.EmitFunction[token['value']](self,fp,token['argument']);
     # error
     else:
       raise Exception('Program Bug -- Unrecognized macro "%s"' % token['value']);
@@ -1213,6 +1252,22 @@ class asmDef_9x8:
     """
 
     #
+    # Enumerate the directives
+    # Note:  The ".include" directive is handled within asmDef.FileBodyIterator.
+    #
+
+    self.directives = dict();
+
+    self.directives['list']= list();
+    self.directives['list'].append('.constant');
+    self.directives['list'].append('.function');
+    self.directives['list'].append('.interrupt');
+    self.directives['list'].append('.macro');
+    self.directives['list'].append('.main');
+    self.directives['list'].append('.memory');
+    self.directives['list'].append('.variable');
+
+    #
     # Configure the instructions.
     #
 
@@ -1262,22 +1317,6 @@ class asmDef_9x8:
     self.specialInstructions['store+']  = 0x070;
     self.specialInstructions['store-']  = 0x074;
 
-    #
-    # Enumerate the directives
-    # Note:  The ".include" directive is handled within asmDef.FileBodyIterator.
-    #
-
-    self.directives = dict();
-
-    self.directives['list']= list();
-    self.directives['list'].append('.constant');
-    self.directives['list'].append('.function');
-    self.directives['list'].append('.interrupt');
-    self.directives['list'].append('.main');
-    self.directives['list'].append('.memory');
-    self.directives['list'].append('.variable');
-
-    #
     #
     # Configure the pre-defined macros
     # Note:  'symbol' is a catch-call for functions, labels, variables, etc.
@@ -1357,11 +1396,18 @@ class asmDef_9x8:
     self.stackLength = dict();
 
     #
+    # Functionality for user-defined macros.
+    #
+
+    self.EmitFunction = dict();
+
+    #
     # Configure the containers for the expanded main, interrupt, function,
     # macro, etc. definitions.
     #
 
+    self.currentMemory = None;
     self.interrupt = None;
     self.main = None;
+    self.macroSearchPaths = ['.','./macros'];
     self.symbols = dict(list=list(), type=list(), body=list());
-    self.currentMemory = None;
