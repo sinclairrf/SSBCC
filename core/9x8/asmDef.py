@@ -105,8 +105,6 @@ class FileBodyIterator:
         # Don't open the include file until all previous content has been emitted.
         if self.current:
           return self.current;
-        if self.pendingInclude in self.included:
-          raise AsmException('File "%s" already included' % self.pendingInclude);
         self.included.append(self.pendingInclude);
         fp_pending = None;
         for path in self.searchPaths:
