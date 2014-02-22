@@ -47,6 +47,7 @@ try:
   argListParser.add_argument('-G', metavar='parametername', action='append', help='parameter names');
   argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
   argListParser.add_argument('-L', metavar='librarypath', action='append', help='Library search path');
+  argListParser.add_argument('-M', metavar='macropath', action='append', help='Macro search path');
   argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
   argListParser.add_argument('-R', metavar='PORT=index', action='append', help='Strobe-only output port names');
   argListParser.add_argument('-S', metavar='MEMORY=length', action='append', help='Memory length');
@@ -141,10 +142,14 @@ try:
   # Construct the iterator that loops through the code bodies.
   fbi = asmDef.FileBodyIterator(argList.filename,ad);
 
-  # Add include paths for the ".include" and ".macro" directives.
+  # Add paths for the ".include" directive.
   if argList.L:
     for path in argList.L:
       fbi.AddSearchPath(path);
+
+  # Add paths for the ".macro" directive.
+  if argList.M:
+    for path in argList.M:
       ad.AddMacroSearchPath(path);
 
   ################################################################################

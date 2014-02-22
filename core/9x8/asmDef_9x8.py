@@ -8,7 +8,10 @@
 
 import copy
 import os
+import re
 import string
+import sys
+import types
 
 import asmDef
 
@@ -118,7 +121,7 @@ class asmDef_9x8:
   def AddMacroSearchPath(self,path):
     self.macroSearchPaths.append(path);
 
-  def AddUserMacro(self,macroName):
+  def AddUserMacro(self,macroName,macroSearchPaths=None):
     """
     Add a user-defined macro by processing the associated Python script.
       macroName         name of the macro
@@ -127,7 +130,9 @@ class asmDef_9x8:
                         included directory, or must be one of the macros
                         provided in "macros" subdirectory of this directory.
     """
-    for testPath in self.macroSearchPaths:
+    if not macroSearchPaths:
+      macroSearchPaths = self.macroSearchPaths;
+    for testPath in macroSearchPaths:
       fullMacro = os.path.join(testPath,'%s.py' % macroName);
       if os.path.isfile(fullMacro):
         break;
@@ -135,6 +140,13 @@ class asmDef_9x8:
       raise asmDef.AsmException('Definition for macro "%s" not found' % macroName);
     execfile(fullMacro);
     exec('%s(self)' % macroName);
+
+  def IsBuiltInMacro(self,name):
+    """
+    Indicate if the macro is built-in to the assembler or is taken from the
+    ./macros directory.
+    """
+    return name in self.macros['builtIn'];
 
   def IsMacro(self,name):
     """
@@ -172,21 +184,18 @@ class asmDef_9x8:
   def MacroLength(self,token):
     """
     Return the length of fixed-length macros or compute and return the length
-    of variable-length macros.\n
-    Note:  The only variable length macros recognized are fetchvector and
-           storevector.
+    of variable-length macros.
     """
     if token['value'] not in self.macros['list']:
       raise Exception('Program Bug -- name "%s" is not a macro' % token['value']);
     ix = self.macros['list'].index(token['value']);
     length = self.macros['length'][ix];
-    if length >= 0:
+    if type(length) == int:
       return length;
-    if token['value'] == '.fetchvector':
-      return int(token['argument'][1]['value']) + 1;
-    if token['value'] == '.storevector':
-      return int(token['argument'][1]['value']) + 2;
-    raise Exception('Program Bug -- Unrecognized variable length macro "%s"' % token['value']);
+    elif type(length) == types.FunctionType:
+      return length(self,token['argument']);
+    else:
+      raise Exception('Program Bug -- Unrecognized variable length macro "%s"' % token['value']);
 
   def MacroNumberArgs(self,name):
     """
@@ -413,17 +422,6 @@ class asmDef_9x8:
     labelsUnused = set(labelDefs) - set(labelsUsed);
     if labelsUnused:
       raise asmDef.AsmException('Unused label(s) %s in body %s' % (labelsUnused,firstToken['loc']));
-    # Ensure symbols referenced by ".input", ".outport", and ".outstrobe" are defined.
-    for token in rawTokens:
-      if (token['type'] == 'macro') and (token['value'] == '.inport'):
-        if not self.IsInport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Symbol "%s is not an input port at %s' % (token['argument'][0]['value'],token['loc']));
-      if (token['type'] == 'macro') and (token['value'] == '.outport'):
-        if not self.IsOutport(token['argument'][0]['value']):
-          raise asmDef.AsmException('Symbol "%s" is either not an output port or is a strobe-only outport at %s' % (token['argument'][0]['value'],token['loc']));
-      if (token['type'] == 'macro') and (token['value'] == '.outstrobe'):
-        if not self.IsOutstrobe(token['argument'][0]['value']):
-          raise asmDef.AsmException('Symbol "%s" is not a strobe-only output port at %s' % (token['argument'][0]['value'],token['loc']));
     # Ensure referenced symbols are already defined (other than labels and
     # function names for call and jump macros).
     checkBody = False;
@@ -606,7 +604,7 @@ class asmDef_9x8:
       if self.interrupt:
         raise asmDef.AsmException('Second definition of ".interrupt" at %s' % firstToken['loc']);
       self.interrupt = self.ExpandTokens(rawTokens[1:]);
-    # Process user-defined macros.
+    # Process user-defined macros (the ".macro XXX" directive can be repeated for non-built-in macros).
     elif firstToken['value'] == '.macro':
       macroName = secondToken['value'];
       fullMacroName = '.' + macroName;
@@ -614,9 +612,10 @@ class asmDef_9x8:
         raise asmDef.AsmException('Macro "%s" is a directive at %s' % (fullMacroName,secondToken['loc'],));
       if fullMacroName in self.instructions:
         raise asmDef.AsmException('Macro "%s" is an instruction at %s' % (fullMacroName,secondToken['loc'],));
-      if fullMacroName in self.macros['list']:
-        raise asmDef.AsmException('Macro "%s" is already defined as a macro at %s' % (fullMacroName,secondToken['loc'],));
-      self.AddUserMacro(macroName);
+      if self.IsBuiltInMacro(fullMacroName):
+        raise asmDef.AsmException('Macro "%s" is a built-in macro at %s' % (fullMacroName,secondToken['loc'],));
+      if fullMacroName not in self.macros['list']:
+        self.AddUserMacro(macroName);
     # Process ".main" definition.
     elif firstToken['value'] == '.main':
       if self.main:
@@ -870,7 +869,8 @@ class asmDef_9x8:
     For the specified variable, return an ordered tuple of the memory address
     within its bank, the corresponding bank index, and the corresponding bank
     name.\n
-    Note:  This is used for the .fetchvector and .storevector macro generation.
+    Note:  This is used by several user-defined macros that fetch from or store
+           to variables.
     """
     if not self.IsSymbol(name):
       raise asmDef.AsmException('"%s" is not a recognized symbol' % name);
@@ -885,7 +885,7 @@ class asmDef_9x8:
   def Emit_GetBank(self,name):
     """
     For the specified variable, return the memory bank index.\n
-    Note:  This is used for the .fetch, .fetch+, .fetch-, .store, .store+, and
+    Note:  This is used by the .fetch, .fetch+, .fetch-, .store, .store+, and
            .store- macros.
     """
     if name not in self.memories['list']:
@@ -1019,7 +1019,8 @@ class asmDef_9x8:
 
   def EmitMacro(self,fp,token):
     """
-    Write the metacode for a macro.
+    Write the metacode for a macro.\n
+    The macros coded here are required to access intrinsics.
     """
     # .call
     if token['value'] == '.call':
@@ -1046,40 +1047,6 @@ class asmDef_9x8:
       name = token['argument'][0]['value'];
       ixBank = self.Emit_GetBank(name);
       self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch-('+name+')');
-    # .fetchindexed
-    elif token['value'] == '.fetchindexed':
-      name = token['argument'][0]['value'];
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
-      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
-      self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
-      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
-    # .fetchoffset
-    elif token['value'] == '.fetchoffset':
-      name = token['argument'][0]['value'];
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
-      offset = self.Emit_EvalSingleValue(token['argument'][1]);
-      self.EmitPush(fp,addr+offset,self.Emit_String('%s+%s' % (name,offset,)),token['loc']);
-      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
-    # .fetchvalue
-    elif token['value'] == '.fetchvalue':
-      name = token['argument'][0]['value'];
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
-      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
-      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
-    # .fetchvector
-    elif token['value'] == '.fetchvector':
-      name = token['argument'][0]['value'];
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
-      N = int(token['argument'][1]['value']);
-      self.EmitPush(fp,addr+N-1,'%s+%d' % (name,N-1));
-      for dummy in range(N-1):
-        self.EmitOpcode(fp,self.specialInstructions['fetch-'] | ixBank,'fetch- '+bankName);
-      self.EmitOpcode(fp,self.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
-    # .inport
-    elif token['value'] == '.inport':
-      name = token['argument'][0]['value'];
-      self.EmitPush(fp,self.InportAddress(name) & 0xFF,name);
-      self.EmitOpcode(fp,self.InstructionOpcode('inport'),'inport');
     # .jump
     elif token['value'] == '.jump':
       self.EmitPush(fp,token['address'] & 0xFF,'');
@@ -1090,17 +1057,6 @@ class asmDef_9x8:
       self.EmitPush(fp,token['address'] & 0xFF,'');
       self.EmitOpcode(fp,self.specialInstructions['jumpc'] | (token['address'] >> 8),'jumpc '+token['argument'][0]['value']);
       self.EmitOptArg(fp,token['argument'][1]);
-    # .outport
-    elif token['value'] == '.outport':
-      name = token['argument'][0]['value'];
-      self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
-      self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport');
-      self.EmitOptArg(fp,token['argument'][1]);
-    # .outstrobe
-    elif token['value'] == '.outstrobe':
-      name = token['argument'][0]['value'];
-      self.EmitPush(fp,self.OutportAddress(name) & 0xFF,name);
-      self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport');
     # .return
     elif token['value'] == '.return':
       self.EmitOpcode(fp,self.specialInstructions['return'],'return');
@@ -1120,37 +1076,6 @@ class asmDef_9x8:
       name = token['argument'][0]['value'];
       ixBank = self.Emit_GetBank(name);
       self.EmitOpcode(fp,self.specialInstructions['store-'] | ixBank,'store- '+name);
-    # .storeindexed
-    elif token['value'] == '.storeindexed':
-      name = token['argument'][0]['value'];
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
-      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
-      self.EmitOpcode(fp,self.InstructionOpcode('+'),'+');
-      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+bankName);
-      self.EmitOptArg(fp,token['argument'][1]);
-    # .storeoffset
-    elif token['value'] == '.storeoffset':
-      name = token['argument'][0]['value'];
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
-      offset = self.Emit_EvalSingleValue(token['argument'][1]);
-      self.EmitPush(fp,addr+offset,self.Emit_String('%s+%s' % (name,offset,)),token['loc']);
-      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+bankName);
-      self.EmitOptArg(fp,token['argument'][2]);
-    # .storevalue
-    elif token['value'] == '.storevalue':
-      name = token['argument'][0]['value'];
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(name);
-      self.EmitPush(fp,addr,self.Emit_String(name),token['loc']);
-      self.EmitOpcode(fp,self.specialInstructions['store'] | ixBank,'store '+bankName);
-      self.EmitOptArg(fp,token['argument'][1]);
-    # .storevector
-    elif token['value'] == '.storevector':
-      (addr,ixBank,bankName) = self.Emit_GetAddrAndBank(token['argument'][0]['value']);
-      N = int(token['argument'][1]['value']);
-      self.EmitPush(fp,addr,token['argument'][0]['value']);
-      for dummy in range(N):
-        self.EmitOpcode(fp,self.specialInstructions['store+'] | ixBank,'store+ '+bankName);
-      self.EmitOpcode(fp,self.InstructionOpcode('drop'),'drop');
     # user-defined macro
     elif token['value'] in self.EmitFunction:
       self.EmitFunction[token['value']](self,fp,token['argument']);
@@ -1324,7 +1249,10 @@ class asmDef_9x8:
     #        expanded.
     #
 
-    self.macros = dict(list=list(), length=list(), args=list(), nArgs=list());
+    self.macros = dict(list=list(), length=list(), args=list(), nArgs=list(), builtIn = list());
+    self.EmitFunction = dict();
+
+    # Macros built in to the assembler (to access primitives).
     self.AddMacro('.call',              3, [
                                              ['','symbol'],
                                              ['nop','instruction','singlemacro','singlevalue','symbol']
@@ -1336,17 +1264,6 @@ class asmDef_9x8:
     self.AddMacro('.fetch',             1, [ ['','symbol'] ]);
     self.AddMacro('.fetch+',            1, [ ['','symbol'] ]);
     self.AddMacro('.fetch-',            1, [ ['','symbol'] ]);
-    self.AddMacro('.fetchindexed',      3, [ ['','symbol'] ]);
-    self.AddMacro('.fetchoffset',       2, [
-                                             ['','symbol'],
-                                             ['','singlevalue','symbol']
-                                           ]);
-    self.AddMacro('.fetchvalue',        2, [ ['','symbol'] ]);
-    self.AddMacro('.fetchvector',      -1, [
-                                             ['','symbol'],
-                                             ['','singlevalue','symbol']
-                                           ]);
-    self.AddMacro('.inport',            2, [ ['','symbol'] ]);
     self.AddMacro('.jump',              3, [
                                              ['','symbol'],
                                              ['nop','instruction','singlemacro','singlevalue','symbol']
@@ -1355,32 +1272,19 @@ class asmDef_9x8:
                                              ['','symbol'],
                                              ['drop','instruction','singlemacro','singlevalue','symbol']
                                            ]);
-    self.AddMacro('.outport',           3, [
-                                             ['','symbol'],
-                                             ['drop','instruction','singlemacro','singlevalue','symbol']
-                                           ]);
-    self.AddMacro('.outstrobe',         2, [ ['','symbol'] ]);
     self.AddMacro('.return',            2, [ ['nop','instruction','singlevalue','symbol'] ]);
     self.AddMacro('.store',             1, [ ['','symbol'] ]);
     self.AddMacro('.store+',            1, [ ['','symbol'] ]);
     self.AddMacro('.store-',            1, [ ['','symbol'] ]);
-    self.AddMacro('.storeindexed',      4, [
-                                             ['','symbol'],
-                                             ['drop','instruction','singlemacro','singlevalue','symbol']
-                                           ]);
-    self.AddMacro('.storeoffset',        3, [
-                                             ['','symbol'],
-                                             ['','singlevalue','symbol'],
-                                             ['drop','instruction','singlemacro','singlevalue','symbol']
-                                           ]);
-    self.AddMacro('.storevalue',        3, [
-                                             ['','symbol'],
-                                             ['drop','instruction','singlemacro','singlevalue','symbol']
-                                           ]);
-    self.AddMacro('.storevector',      -1, [
-                                             ['','symbol'],
-                                             ['','singlevalue','symbol'],
-                                           ]);
+
+    # User-defined macros in ./macros that are "built in" to the assembler.
+    macroSearchPath = os.path.join(sys.path[0],'macros');
+    for macroName in os.listdir(macroSearchPath):
+      if not re.match(r'.*\.py$',macroName):
+        continue;
+      self.AddUserMacro(macroName[:-3],macroSearchPaths=[macroSearchPath]);
+    for macroName in self.macros['list']:
+      self.macros['builtIn'].append(macroName);
 
     #
     # List the macros that have special symbols for their first argument.
@@ -1394,12 +1298,6 @@ class asmDef_9x8:
 
     self.memoryLength = dict();
     self.stackLength = dict();
-
-    #
-    # Functionality for user-defined macros.
-    #
-
-    self.EmitFunction = dict();
 
     #
     # Configure the containers for the expanded main, interrupt, function,

@@ -48,6 +48,7 @@ try:
   argListParser.add_argument('-D', metavar='symbol', type=str, action='append', help='Define symbol');
   argListParser.add_argument('-G', metavar='parameter_name=value', type=str, action='append', help='Override parameter value');
   argListParser.add_argument('-I', metavar='include_dir', type=str, action='append', help='Add search directory for included files and peripherals');
+  argListParser.add_argument('-M', metavar='macropath', action='append', help='Macro search path');
   argListParser.add_argument('-P', metavar='peripheral_name[="parameters"]', type=str, action='append', help='Add peripheral');
   argListParser.add_argument('-o', metavar='outCoreName', type=str, help='output core name');
   argListParser.add_argument('-q', action='store_true', help='quiet');
@@ -393,7 +394,11 @@ try:
   cmd += ' -o ' + assemblerOutput;
   for stack_name in ('data_stack','return_stack',):
     cmd += ' -s %s=%d' % (stack_name,config.config[stack_name],);
-  cmd += ' -L %s/%s' % (sys.path[0], 'lib/9x8');
+  cmd += ' -L %s' % os.path.join(sys.path[0],'lib','9x8');
+  if argList.M:
+    for path in argList.M:
+      cmd += ' -M %s' % path;
+  cmd += ' -M %s' % os.path.join(sys.path[0],'macros','9x8');
   if argList.I:
     for pathString in argList.I:
       cmd += ' -L %s' % pathString;

@@ -1003,12 +1003,47 @@ set the wide signal to all zeroes using:
   ${(size['o_big']+7)/8-1} :loop 0 .outport(O_BIG) .jumpc(loop,1-) drop
 
 
-USER-DEFINED MACROS
+MACROS
 ================================================================================
-User-defined macros are created using python scripts and registering the macro
+There are 3 types of macros used by the assembler.
+
+The first kind of macros are built in to the assembler and are required to
+encode instructions that have embedded values or have mandatory subsequent
+instructions.  These include function calls, jump instructions, function return,
+and memory accesses as follows:
+  .call(function,[op])
+  .callc(function,[op])
+  .fetch(ramName)
+  .fetch+(ramName)
+  .fetch-(ramName)
+  .jump(label,[op])
+  .jumpc(label,[op])
+  .return([op])
+  .store(ramName)
+  .store+(ramName)
+  .store-(ramName)
+
+The second kind of macros are designed to ease access to input and output
+operations and for memory accesses and to help ensure these operations are
+correctly constructed.  These are defined as python scripts in the
+core/9x8/macros directory and are automatically loaded into the assembler.
+These macros are:
+  .fetchindexed(variable)
+  .fetchoffset(variable,ix)
+  .fetchvalue(variableName)
+  .fetchvector(variableName,N)
+  .inport(I_name)
+  .outport(O_name[,op])
+  .outstrobe(O_name)
+  .storeindexed(variableName[,op])
+  .storeoffset(variableName,ix[,op])
+  .storevalue(variableName[,op])
+  .storevector(variableName,N)
+
+The third kind of macro is user-defined macros.  These macros must be registered
 with the assembler using the ".macro" directive.
 
-For example, the ".push32" macro is defined by lib/9x8/push32.py and can be
+For example, the ".push32" macro is defined by macros/9x8/push32.py and can be
 used to push 32-bit (4-byte) values onto the data stack as follows:
 
   .macro push32
@@ -1020,17 +1055,28 @@ used to push 32-bit (4-byte) values onto the data stack as follows:
     .push32(${0x12345678^C_X})
     ...
 
-The following macros are provided:
-  .push16       push a 16-bit (2-byte) value onto the data stack with the MSB
-                at the top of the data stack
-  .push32       push a 32-bit (4-byte) value onto the data stack with the MSB
-                at the top of the data stack
+The following macros are provided in macros/9x8:
+  .push16(v)    push the 16-bit (2-byte) value "v" onto the data stack with the
+                MSB at the top of the data stack
+  .push32(v)    push the 32-bit (4-byte) value "v" onto the data stack with the
+                MSB at the top of the data stack
 
-Directories are searched for in the following order for macros:
+Directories are searched in the following order for macros:
   .
   ./macros
-  lib/9x8
-  include paths specified by the '-I' command line option.
+  include paths specified by the '-M' command line option.
+  macros/9x8
+
+The python scripts in core/9x8/macros and macros/9x8 can be used as design
+examples for user-defined macros.  The assembler does some type checking based
+on the list provided when the macro is registered by the "AddMacro" method, but
+additional type checking is often warranted by the macro "emitFunction" which
+emits the actual assembly code.  The ".fetchvector" and ".storevector" macros
+demonstrates how to design variable-length macros.
+
+It is not an error to repeat the ".macro MACRO_NAME" directive for user-defined
+macros.  The assembler will issue a fatal error if a user-defined macro
+conflicts with a built-in macro.
 
 
 CONDITIONAL COMPILATION
