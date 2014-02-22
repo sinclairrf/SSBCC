@@ -531,7 +531,7 @@ def genMemories_init(fp,config,combined,fpMemFile=None,memName=None,memLength=No
           while curOffset < port['packing'][0]['length']:
             addr = port['offset']+port['ratio']*curOffset+packing['lane']+thisRatio;
             thisFill.append({ 'assign':(formate % addr) });
-            thisValue.append('0');
+            thisValue.append(0);
             curOffset += 1;
       else:
         memParam = config.GetMemoryByName(thisMemName);
@@ -550,7 +550,7 @@ def genMemories_init(fp,config,combined,fpMemFile=None,memName=None,memLength=No
             addr = port['offset']+port['ratio']*curOffset+packing['lane'];
             thisFill.append({ 'assign':(formatd % (addr,line[0:2],)) });
             thisFill[-1]['comment'] = varName if varName else '.';
-            thisValue.append(line[0:2]);
+            thisValue.append(int(line[0:2],16));
             varName = None;
             curOffset += 1;
       if (curOffset > packing['nWords']):
@@ -558,7 +558,7 @@ def genMemories_init(fp,config,combined,fpMemFile=None,memName=None,memLength=No
       while curOffset < packing['length']:
         addr = port['ratio']*curOffset+port['offset'];
         thisFill.append({ 'assign':(formate % addr) });
-        thisValue.append('0');
+        thisValue.append(0);
         curOffset += 1;
     endLength = port['nWords']/port['ratio'];
     for ixFill in range(len(fills)):
@@ -568,12 +568,12 @@ def genMemories_init(fp,config,combined,fpMemFile=None,memName=None,memLength=No
       if curOffset < endLength:
         addr = port['ratio']*curOffset+port['offset']+ixFill;
         thisFill.append({ 'assign':(formate % addr), 'comment':'***' });
-        thisValue.append('0');
+        thisValue.append(0);
         curOffset += 1;
         while curOffset < endLength:
           addr = port['ratio']*curOffset+port['offset']+ixFill;
           thisFill.append({ 'assign':(formate % addr) });
-          thisValue.append('0');
+          thisValue.append(0);
           curOffset += 1;
     for thisFill in fills:
       commentLengths = [len(entry['comment']) for entry in thisFill if 'comment' in entry];
