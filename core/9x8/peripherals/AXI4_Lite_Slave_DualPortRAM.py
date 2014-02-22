@@ -221,4 +221,4 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     # Write the TCL script to facilitate creating Vivado IP for the port.
     vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
     execfile(vivadoFile,globals());
-    vivado_AXI4_Lite_Bus.WriteTclScript('slave',self.basePortName,self.address_width);
+    WriteTclScript('slave',self.basePortName,self.address_width);
