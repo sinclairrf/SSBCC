@@ -17,26 +17,26 @@ def push32(ad):
   ad.AddMacro('.push32', 4, [ ['','singlevalue','symbol'] ]);
 
   # Define the macro functionality.
-  def emitFunction(ad,fp,token):
-    token = token[0];
-    if token['type'] == 'value':
-      v = token['value'];
-    elif token['type'] == 'symbol':
-      name = token['value'];
+  def emitFunction(ad,fp,argument):
+    argument = argument[0];
+    if argument['type'] == 'value':
+      v = argument['value'];
+    elif argument['type'] == 'symbol':
+      name = argument['value'];
       if not ad.IsSymbol(name):
-        raise asmDef.AsmException('Symbol "%s" not recognized at %s' % (token['value'],token['loc'],));
+        raise asmDef.AsmException('Symbol "%s" not recognized at %s' % (argument['value'],argument['loc'],));
       ix = ad.symbols['list'].index(name);
       v = ad.symbols['body'][ix];
       if len(v) != 1:
-        raise asmDef.AsmException('Argument can only be one value at %s' % token['loc']);
+        raise asmDef.AsmException('Argument can only be one value at %s' % argument['loc']);
       v = v[0];
     else:
-      raise asmDef.AsmException('Argument "%s" of type "%s" not recognized at %s' % (token['value'],token['type'],token['loc'],));
+      raise asmDef.AsmException('Argument "%s" of type "%s" not recognized at %s' % (argument['value'],argument['type'],argument['loc'],));
     if type(v) != int:
       raise Exception('Program Bug -- value should be an "int"');
     ad.EmitPush(fp,v%0x100,''); v >>= 8;
     ad.EmitPush(fp,v%0x100,''); v >>= 8;
     ad.EmitPush(fp,v%0x100,''); v >>= 8;
-    printValue = token['value'] if type(token['value']) == str else '0x%08X' % token['value'];
+    printValue = argument['value'] if type(argument['value']) == str else '0x%08X' % argument['value'];
     ad.EmitPush(fp,v%0x100,'.push32(%s)' % printValue);
   ad.EmitFunction['.push32'] = emitFunction;
