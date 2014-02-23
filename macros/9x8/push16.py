@@ -33,6 +33,7 @@ def push16(ad):
       raise asmDef.AsmException('Argument "%s" of type "%s" not recognized at %s' % (token['value'],token['type'],token['loc'],));
     if type(v) != int:
       raise Exception('Program Bug -- value should be an "int"');
-    ad.EmitPush(fp,v%0x100); v >>= 8;
-    ad.EmitPush(fp,v%0x100,'.push16(xxx)');
+    ad.EmitPush(fp,v%0x100,''); v >>= 8;
+    printValue = token['value'] if type(token['value']) == str else '0x%08X' % token['value'];
+    ad.EmitPush(fp,v%0x100,'.push16(%s)' % printValue);
   ad.EmitFunction['.push16'] = emitFunction;
