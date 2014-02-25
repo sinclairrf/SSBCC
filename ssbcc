@@ -293,8 +293,9 @@ try:
     # USER_HEADER
     elif re.match(r'\s*USER_HEADER\b',line):
       user_header_done = False;
-      while (line,ixLine) in configList:
-        if re.match(r'\s*END_USER_HEADER\s',line):
+      while configList:
+        (line,ixLine) = configList.pop(0);
+        if re.match(r'\s*END_USER_HEADER\b',line):
           user_header_done = True;
           break;
         user_header.append(line);
