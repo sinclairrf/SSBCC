@@ -752,6 +752,7 @@ def genOutports(fp,config):
       signalType = signal[2];
       signalInit = '%d\'d0' % signalWidth if len(signal)==3 else signal[3];
       if signalType == 'data':
+        fp.write('initial %s = %s;\n' % (signalName,signalInit,));
         if bitWidth > 0:
           bitName += ', ';
           bitInit += ', '
@@ -777,6 +778,7 @@ def genOutports(fp,config):
       if signalType == 'data':
         pass;
       elif signalType == 'strobe':
+        fp.write('initial %s = 1\'b0;\n' % signalName);
         fp.write('always @ (posedge i_clk)\n');
         fp.write('  if (i_rst)\n');
         fp.write('    %s <= 1\'b0;\n' % signalName);
