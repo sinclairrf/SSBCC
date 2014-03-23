@@ -128,6 +128,7 @@ always @ (posedge s_aclk) begin
 end
 
 // Initiate reads and indicate their termination
+localparam S_INIT_RREADY = 1'b1;        // observed Xilinx behavior -- always high
 initial s_rd_done = 1'b0;
 reg  [1:0] s_rd_acks = 2'b00;
 reg        s_arvalid = 1'b0;
@@ -137,7 +138,7 @@ wire       s_rvalid;
 always @ (posedge s_aclk) begin
   s_rd_done <= 1'b0;
   s_rd_acks <= s_rd_acks;
-  s_rready <= 1'b0;
+  s_rready <= S_INIT_RREADY;
   if (s_rd_acks == 2'b11) begin
     s_rd_done <= 1'b1;
     s_rd_acks <= 2'b00;
@@ -204,5 +205,10 @@ always @ (posedge s_clk)
 always @ (posedge s_clk)
   if (s_done)
     $finish;
+
+//initial begin
+//  $dumpfile("tb.vcd");
+//  $dumpvars();
+//end
 
 endmodule

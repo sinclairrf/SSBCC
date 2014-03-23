@@ -26,6 +26,9 @@ reg                     s__axi_got_waddr        = 1'b0;
 reg                     s__axi_got_wdata        = 1'b0;
 reg                     s__axi_got_raddr        = 1'b0;
 reg [L__NBITS_SIZE-1:2] s__axi_addr             = {(L__NBITS_SIZE-2){1'b0}};
+initial                 o_awready               = 1'b0;
+initial                 o_wready                = 1'b0;
+initial                 o_arready               = 1'b0;
 always @ (posedge i_aclk)
   if (~i_aresetn) begin
     s__axi_idle         <= 1'b1;
@@ -33,6 +36,9 @@ always @ (posedge i_aclk)
     s__axi_got_wdata    <= 1'b0;
     s__axi_got_raddr    <= 1'b0;
     s__axi_addr         <= {(L__NBITS_SIZE-2){1'b0}};
+    o_awready           <= 1'b0;
+    o_wready            <= 1'b0;
+    o_arready           <= 1'b0;
   end else begin
     s__axi_idle         <= s__axi_idle;
     s__axi_got_waddr    <= s__axi_got_waddr;
@@ -75,9 +81,22 @@ always @ (posedge i_aclk)
 initial o_bvalid = 1'b0;
 always @ (*)
   o_bvalid = s__axi_got_wdata;
+reg s__axi_arready_s = 1'b0;
+always @ (posedge i_aclk)
+  if (~i_aresetn)
+    s__axi_arready_s <= 1'b0;
+  else
+    s__axi_arready_s <= o_arready;
 initial o_rvalid = 1'b0;
-always @ (s__axi_got_raddr)
-  o_rvalid = s__axi_got_raddr;
+always @ (posedge i_aclk)
+  if (~i_aresetn)
+    o_rvalid <= 1'b0;
+  else if (s__axi_arready_s)
+    o_rvalid <= 1'b1;
+  else if (i_rready)
+    o_rvalid <= 1'b0;
+  else
+    o_rvalid <= o_rvalid;
 // signals common to both memory architectures
 reg [L__NBITS_SIZE-1:2] s__axi_addr_s = {(L__NBITS_SIZE-2){1'b0}};
 always @ (posedge i_aclk)
