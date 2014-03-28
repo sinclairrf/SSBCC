@@ -45,6 +45,8 @@ ipx::remove_bus_interface {i_@BASEPORTNAME@} [ipx::current_core]
 ipx::remove_bus_interface {o_@BASEPORTNAME@} [ipx::current_core]
 ipx::remove_bus_interface {i_@BASEPORTNAME@_signal_reset} [ipx::current_core]
 ipx::remove_bus_interface {i_@BASEPORTNAME@_signal_clock} [ipx::current_core]
+ipx::remove_memory_map {i_@BASEPORTNAME@} [ipx::current_core]
+ipx::remove_memory_map {o_@BASEPORTNAME@} [ipx::current_core]
 
 # Create the AXI4-Lite port.
 ipx::add_bus_interface {@BASEPORTNAME@} [ipx::current_core]
@@ -88,10 +90,14 @@ set_property description {AXI4-Lite bus for @BASEPORTNAME@} [ipx::get_bus_interf
   body += """
 # Fix the address space
 ipx::add_address_space {@BASEPORTNAME@} [ipx::current_core]
-set_property master_address_space_ref {@BASEPORTNAME@} [ipx::get_bus_interface @BASEPORTNAME@ [ipx::current_core]]
+""";
+  if mode == 'master':
+    body += """set_property master_address_space_ref {@BASEPORTNAME@} [ipx::get_bus_interface @BASEPORTNAME@ [ipx::current_core]]
 set_property range {@ADDR_WIDTH@} [ipx::get_address_space @BASEPORTNAME@ [ipx::current_core]]
 set_property width {32} [ipx::get_address_space @BASEPORTNAME@ [ipx::current_core]]
 """;
+  else:
+    body += "ipx::remove_address_space {@BASEPORTNAME@} [ipx::current_core]\n";
 
   body += """
 # Fix the reset port definition
