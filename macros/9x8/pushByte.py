@@ -29,4 +29,5 @@ def pushByte(ad):
     printValue = argument[0]['value'] if type(argument[0]['value']) == str else '0x%X' % argument[0]['value'];
     printIx    = argument[1]['value'] if type(argument[1]['value']) == str else '0x%X' % argument[1]['value'];
     ad.EmitPush(fp,v,'.pushByte(%s,%s)' % (printValue,printIx,));
+
   ad.EmitFunction['.pushByte'] = emitFunction;
