@@ -1272,7 +1272,7 @@ class asmDef_9x8:
                                              ['','symbol'],
                                              ['drop','instruction','singlemacro','singlevalue','symbol']
                                            ]);
-    self.AddMacro('.return',            2, [ ['nop','instruction','singlevalue','symbol'] ]);
+    self.AddMacro('.return',            2, [ ['nop','instruction','singlemacro','singlevalue','symbol'] ]);
     self.AddMacro('.store',             1, [ ['','symbol'] ]);
     self.AddMacro('.store+',            1, [ ['','symbol'] ]);
     self.AddMacro('.store-',            1, [ ['','symbol'] ]);
