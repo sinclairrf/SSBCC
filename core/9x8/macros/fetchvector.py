@@ -1,5 +1,7 @@
 # Copyright 2014, Sinclair R.F., Inc.
 
+from asmDef import AsmException
+
 def fetchvector(ad):
   """
   Built-in macro to move multiple bytes from memory to the data stack.  The byte
@@ -16,7 +18,10 @@ def fetchvector(ad):
   """
 
   def length(ad,argument):
-    return int(argument[1]['value']) + 1;
+    N = ad.Emit_IntegerValue(argument[1]);
+    if not (N > 0):
+      raise asmDef.AsmException('Vector length must be positive at %s' % argument[1]['loc']);
+    return N+1;
 
   # Add the macro to the list of recognized macros.
   ad.AddMacro('.fetchvector', length, [
@@ -28,9 +33,11 @@ def fetchvector(ad):
   def emitFunction(ad,fp,argument):
     variableName = argument[0]['value'];
     (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(variableName);
-    N = int(argument[1]['value']);
-    ad.EmitPush(fp,addr+N-1,'%s+%d' % (variableName,N-1));
+    N = ad.Emit_IntegerValue(argument[1]);
+    offsetString = '%s-1' % argument[1]['value'] if type(argument[0]['value']) == str else '%d-1' % N;
+    ad.EmitPush(fp,addr+N-1,'%s+%s' % (variableName,offsetString));
     for dummy in range(N-1):
       ad.EmitOpcode(fp,ad.specialInstructions['fetch-'] | ixBank,'fetch- '+bankName);
     ad.EmitOpcode(fp,ad.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
+
   ad.EmitFunction['.fetchvector'] = emitFunction;
