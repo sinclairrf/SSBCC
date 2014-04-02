@@ -331,6 +331,15 @@ class SSBCCconfig():
     else:
       return False;
 
+  def IsConstant(self,name):
+    """
+    Indicate whether or not the specified symbol is a recognized constant.
+    """
+    if re.match(r'C_\w+$',name) and name in self.constants:
+      return True;
+    else:
+      return False;
+
   def IsMemory(self,name):
     """
     Indicate whether or not the specified symbol is the name of a memory.
@@ -341,7 +350,7 @@ class SSBCCconfig():
     """
     Indicate whether or not the specified symbol is the name of a parameter.
     """
-    if re.match(r'[GL]_\w+',name) and name in self.symbols:
+    if re.match(r'[GL]_\w+$',name) and name in self.symbols:
       return True;
     else:
       return False;
