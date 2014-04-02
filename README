@@ -1,15 +1,34 @@
 SSBCC.9x8 is a free Small Stack-Based Computer Compiler with a 9-bit opcode,
-8-bit data core.  It creates vendor-independent, high-speed, low fabric
-utilization micro controllers for FPGAs.  It has been used in Spartan-3A,
-Spartan-6, Virtex-6, and Artix-7 FPGAs and has been built for Altera, Lattice,
-and other Xilinx devices.  It is faster and usually smaller than vendor provided
-processors.
+8-bit data core designed to facilitate FPGA HDL development.
+
+The primary design criteria are:
+- high speed (to avoid timing issues)
+- low fabric utilization
+- vendor independent
+- development tools available for all operating systems
+
+It has been used in Spartan-3A, Spartan-6, Virtex-6, and Artix-7 FPGAs and has
+been built for Altera, Lattice, and other Xilinx devices.  It is faster and
+usually smaller than vendor provided processors.
 
 The compiler takes an architecture file that describes the micro controller
 memory spaces, inputs and outputs, and peripherals and which specifies the HDL
 language and source assembly.  It generates a single HDL module implementing
 the entire micro controller.  No user-written HDL is required to instantiate
 I/Os, program memory, etc.
+
+The features are:
+- high speed, low fabric utilization
+- vendor-independent Verilog output with a VHDL package file
+- simple Forth-like assembly language (41 instructions)
+- single cycle instruction execution
+- automatic generation of I/O ports
+- configurable instruction, data stack, return stack, and memory utilization
+- extensible set of peripherals (I2C busses, UARTs, AXI4-Lite busses, etc.)
+- extensible set of macros
+- memory initialization file to facilitate code development without rebuilds
+- simulation diagnostics to facilitate identifying code errors
+- conditionally included I/Os and peripherals, functions, and assembly code
 
 SSBCC has been used for the following projects:
 - operate a media translator from a parallel camera interface to an OMAP GPMC
@@ -18,6 +37,8 @@ SSBCC has been used for the following projects:
 - operate two UART interfaces and multiple PWM controlled 2-lead bi-color LEDs
 - operate and monitor the Artix-7 fabric in a Zynq system using AXI4-Lite
   master and slave buses, I2C buses for timing-critical voltage measurements
+
+The only external tool required is Python 2.7.
 
 
 DESCRIPTION
@@ -28,18 +49,18 @@ the sizes of the instruction memory, data stack, and return stack; the input and
 output ports; RAM and ROM types and sizes; and peripherals.
 
 The instructions are all single-cycle.  The instructions include
-- pushing an 8-bit value onto the data stack
-- arithmetic operations:  addition, subtraction, increment, and decrement
-- bit-wise logical operations:  and, or, and exclusive or
-- rotations
-- logical operations:  0=, 0<>, -1=, -1<>
-- Forth-like data stack operations:  dup, over, swap, drop, nip
-- Forth-like return stack operations:  >r, r>, r@
-- input and output port operations
-- memory read and write with optional address post increment and post decrement
-- jumps and conditional jumps
-- calls and conditional calls
-- function return
+- 4 arithmetic instructions:  addition, subtraction, increment, and decrement
+- 3 bit-wise logical instructions:  and, or, and exclusive or
+- 7 shift and rotation instructions: <<0, <<1, 0>>, 1>>, <<msb, >>msb, and >>lsb
+- 4 logical instructions:  0=, 0<>, -1=, -1<>
+- 6 Forth-like data stack instructions:  drop, dup, nip, over, push, swap
+- 3 Forth-like return stack instructions:  >r, r>, r@
+- 2 input and output
+- 6 memory read and write with optional address post increment and post decrement
+- 2 jump and conditional jump
+- 2 call and conditional call
+- 1 function return
+- 1 nop
 
 The 9x8 address space is up to 8K.  This is achieved by pushing the 8 lsb of the
 target address onto the data stack immediately before the jump or call
@@ -51,9 +72,9 @@ executed before the instruction sequence at the destination address is executed
 Up to four banks of memory, either RAM or ROM, are available.  Each of these can
 be up to 256 bytes long, providing a total of up to 1 kB of memory.
 
-The assembly language is Forth-like.  Macros are used to encode the jump and
-call instructions and to encode the 2-bit memory bank index in memory store and
-fetch instructions.
+The assembly language is Forth-like.  Built-in macros are used to encode the
+jump and call instructions and to encode the 2-bit memory bank index in memory
+store and fetch instructions.
 
 The computer compiler and assembler are written in Python 2.7.  Peripherals are
 implemented by Python modules which generate the I/O ports and the peripheral
@@ -64,10 +85,6 @@ documented in the core/9x8/doc directory.  Several examples are provided.
 
 The computer compiler and assembler are fully functional and there are no known
 bugs.
-
-Features and peripherals are still being added and the documentation is
-incomplete.  The output HDL is currently restricted to Verilog although a VHDL
-package file is automatically generated by the computer compiler.
 
 
 SPEED AND RESOURCE UTILIZATION
@@ -97,7 +114,7 @@ existing with other subsystems in the FPGA fabric.  What these performance
 numbers do provide is an estimate of the amount of slack available.  For
 example, you can't realistically expect to get 110 MHz from a processor that,
 under ideal conditions, routes and places at 125 MHz, but you can with a
-processor that synthesizes at more than 150 MHz.
+processor that synthesizes at 150 MHz.
 
 
 EXAMPLE:
@@ -276,9 +293,8 @@ Forth uses counted strings, which are specified here as
 
   C"Hello World!"
 
-In this case the number of characters, 12 in this example, in the string is
-pushed onto the data stack after the 'H', i.e., the instruction sequence would
-be
+In this case the number of characters, 12, in the string is pushed onto the data
+stack after the 'H', i.e., the instruction sequence would be
 
   '!' 'd' 'l' ... 'e' 'H' 12
 
@@ -1058,8 +1074,13 @@ used to push 32-bit (4-byte) values onto the data stack as follows:
 The following macros are provided in macros/9x8:
   .push16(v)    push the 16-bit (2-byte) value "v" onto the data stack with the
                 MSB at the top of the data stack
+  .push24(v)    push the 24-bit (3-byte) value "v" onto the data stack with the
+                MSB at the top of the data stack
   .push32(v)    push the 32-bit (4-byte) value "v" onto the data stack with the
                 MSB at the top of the data stack
+  .pushByte(v,ix)
+                push the ix'th byte of v onto the data stack
+                Note:  ix=0 designates the LSB
 
 Directories are searched in the following order for macros:
   .
@@ -1072,7 +1093,8 @@ examples for user-defined macros.  The assembler does some type checking based
 on the list provided when the macro is registered by the "AddMacro" method, but
 additional type checking is often warranted by the macro "emitFunction" which
 emits the actual assembly code.  The ".fetchvector" and ".storevector" macros
-demonstrates how to design variable-length macros.
+demonstrates how to design variable-length macros.  Several macros in
+core/9x8/macros illustrate designing macros with optional arguments.
 
 It is not an error to repeat the ".macro MACRO_NAME" directive for user-defined
 macros.  The assembler will issue a fatal error if a user-defined macro
@@ -1197,6 +1219,10 @@ modifications.
 
 MISCELLANEOUS
 ================================================================================
+
+Features and peripherals are still being added and the documentation is
+incomplete.  The output HDL is currently restricted to Verilog although a VHDL
+package file is automatically generated by the computer compiler.
 
 The "INVERT_RESET" configuration command is used to indicate an active-low reset
 is input to the micro controller rather than an active-high reset.
