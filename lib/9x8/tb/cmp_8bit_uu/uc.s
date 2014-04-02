@@ -1,5 +1,5 @@
 ; Copyright 2013, Sinclair R.F., Inc.
-; Test bench for ../cmp_8bit_uu.s
+; Test bench for ../../cmp_8bit_uu.s
 
 .include cmp_8bit_uu.s
 
