@@ -902,6 +902,27 @@ class asmDef_9x8:
     self.emitLabelList = '';
     return name;
 
+  def Emit_IntegerValue(self,token):
+    """
+    Return the integer value associated with a constant or a numeric expression.
+    """
+    if token['type'] == 'value':
+      v = token['value'];
+    elif token['type'] == 'symbol':
+      name = token['value'];
+      if not self.IsSymbol(name):
+        raise asmDef.AsmException('Symbol "%s" not recognized at %s' % (token['value'],token['loc'],));
+      ix = self.symbols['list'].index(name);
+      v = self.symbols['body'][ix];
+      if len(v) != 1:
+        raise asmDef.AsmException('Argument can only be one value at %s' % token['loc']);
+      v = v[0];
+    else:
+      raise asmDef.AsmException('Argument "%s" of type "%s" not recognized at %s' % (token['value'],token['type'],token['loc'],));
+    if type(v) != int:
+      raise Exception('Program Bug -- value should be an "int"');
+    return v;
+
   #
   # Utilities to write single instructions to the metacode file.
   #
