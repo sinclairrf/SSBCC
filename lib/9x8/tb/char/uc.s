@@ -1,5 +1,5 @@
 ; Copyright 2013, Sinclair R.F., Inc.
-; Test bench for ../char.s
+; Test bench for ../../char.s
 
 .include char.s
 
