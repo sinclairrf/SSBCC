@@ -46,7 +46,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       optionally specifies using an 8-bit RAM for the dual-port memory instantiation
       Note:  This is the default
     ram32
-      optionally specifies using a 32-bit RAM for the dual-port memrory instantiation
+      optionally specifies using a 32-bit RAM for the dual-port memory instantiation
       Note:  This is required for Vivado 2013.3.\n
   Vivado Users:
     The peripheral creates a TCL script to facilitate turning the micro
@@ -107,6 +107,10 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
         if not re.match(r'[1-9]\d*$', y):
           raise SSBCCException('localparam must be a numeric constant, not "%s", to be used in "size=%s" at %s' % (y,x,loc,));
         y = int(y);
+      elif re.match(r'C_\w+$',x):
+        if not config.IsConstant(x):
+          raise SSBCCException('"size=%s" is not a constant at %s' % (x,loc,));
+        y = int(config.constants[x]);
       elif re.match(r'[1-9]\d*$',x):
         y = int(x);
       else:
