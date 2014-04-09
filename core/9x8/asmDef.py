@@ -158,6 +158,9 @@ class FileBodyIterator:
           self.pending = list();
           continue;
         # Otherwise, this line belongs to the body of the preceding directive.
+        if not self.pending:
+          self.pending.append(fp['fp'].name);
+          self.pending.append(fp['line']);
         if not self.current:
           self.current += self.pending[0:2];
         self.current += self.pending[2:];
