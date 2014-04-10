@@ -1,5 +1,7 @@
 # Copyright 2014, Sinclair R.F., Inc.
 
+from asmDef import AsmException
+
 def storevector(ad):
   """
   Built-in macro to move multiple bytes from the data stack to memory.  The MSB
@@ -15,7 +17,8 @@ def storevector(ad):
   """
 
   def length(ad,argument):
-    return int(argument[1]['value']) + 2;
+    N = ad.Emit_IntegerValue(argument[1]);
+    return N+2;
 
   # Add the macro to the list of recognized macros.
   ad.AddMacro('.storevector', length, [
@@ -27,9 +30,11 @@ def storevector(ad):
   def emitFunction(ad,fp,argument):
     variableName = argument[0]['value'];
     (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(variableName);
-    N = int(argument[1]['value']);
-    ad.EmitPush(fp,addr,argument[0]['value']);
+    N = ad.Emit_IntegerValue(argument[1]);
+    if addr+N > 256:
+      raise asmDef.AsmException('Unreasonable address+length=0x%02X+0x%02X > 256 at %s' % (addr,N,argument[0]['loc'],));
+    ad.EmitPush(fp,addr,variableName);
     for dummy in range(N):
       ad.EmitOpcode(fp,ad.specialInstructions['store+'] | ixBank,'store+ '+bankName);
-    ad.EmitOpcode(fp,ad.InstructionOpcode('drop'),'drop -- .storevector(%s,%d)' % (variableName,N,) );
+    ad.EmitOpcode(fp,ad.InstructionOpcode('drop'),'drop -- .storevector(%s,%s)' % (variableName,argument[1]['value'],) );
   ad.EmitFunction['.storevector'] = emitFunction;
