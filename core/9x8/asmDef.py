@@ -199,18 +199,22 @@ def ParseNumber(inString):
   # look for single-digit 0
   if inString == '0':
     return 0;
+  # look for a binary value
+  a = re.match(r'0b[01]+$',inString);
+  if a:
+    return int(a.group(0)[2:],2);
+  # look for an octal value
+  a = re.match(r'0[0-7]+$',inString);
+  if a:
+    return int(a.group(0)[1:],8);
   # look for decimal value
   a = re.match(r'[+\-]?[1-9]\d*$',inString);
   if a:
     return int(a.group(0),10);
-  # look for an octal value
-  a = re.match(r'0[0-7]+$',inString);
-  if a:
-    return int(a.group(0),8);
   # look for a hex value
   a = re.match(r'0x[0-9A-Fa-f]+$',inString);
   if a:
-    return int(a.group(0),16);
+    return int(a.group(0)[2:],16);
   # Everything else is an error
   return None;
 
@@ -319,7 +323,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Malformed single-byte value at %s' % flc_loc);
     return dict(type='value', value=tParseNumber, loc=flc_loc);
   # look for a repeated single-byte numeric value (N*M where M is the repeat count)
-  matchString=r'(0|[+\-]?[1-9]\d*|0[0-7]+|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|C_\w+|\$\{\S+\})$';
+  matchString=r'(0|0b[01]+|0[0-7]+|[+\-]?[1-9]\d*|0x[0-9A-Fa-f]{1,2})\*([1-9]\d*|C_\w+|\$\{\S+\})$';
   a = re.match(matchString,raw);
   if a:
     if 'multivalue' not in allowed:
@@ -353,7 +357,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       tValue.append(tParseNumber);
     return dict(type='value', value=tValue, loc=flc_loc);
   # look for a single-byte numeric value
-  a = re.match(r'(0|[+\-]?[1-9]\d*|0[07]+|0x[0-9A-Fa-f]+)$',raw);
+  a = re.match(r'(0|0b[01]+|0[0-7]+|[+\-]?[1-9]\d*|0x[0-9A-Fa-f]+)$',raw);
   if a:
     if 'singlevalue' not in allowed:
       raise AsmException('Value not allowed at %s' % flc_loc);

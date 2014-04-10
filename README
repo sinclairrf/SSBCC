@@ -268,7 +268,20 @@ will successively push the values 0x10, 0x20, and the character 'x' onto the
 data stack.  The character 'x' will be at the top of the data stack after these
 3 instructions.
 
-See the COMPUTED VALUES section for using computing values in the assembler.
+Numeric values can be represented in binary, octal, decimal, and hex.  Binary
+values start with the two characters "0b" followed by a sequence of binary
+digits; octal numbers start with a "0" followed by a sequence of octal digits;
+decimal values can start with a "+" or "-" have a non-zero first digit and have
+zero or more decimal digits; and hex values start with the two characters "0X"
+followed by a sequence of hex digits.
+
+Examples of equivalent numeric values are:
+  binary:   0b01  0b10010
+  octal:    01    022
+  decimal:  1     18
+  hex:      0x1   0x12
+
+See the COMPUTED VALUES section for using computed values in the assembler.
 
 There are four ways to specify strings in the assembler.  Simply stating the
 string
