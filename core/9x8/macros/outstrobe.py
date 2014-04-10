@@ -21,4 +21,5 @@ def outstrobe(ad):
     name = argument[0]['value'];
     ad.EmitPush(fp,ad.OutportAddress(name) & 0xFF,name);
     ad.EmitOpcode(fp,ad.InstructionOpcode('outport'),'outport');
+
   ad.EmitFunction['.outstrobe'] = emitFunction;

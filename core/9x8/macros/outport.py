@@ -28,4 +28,5 @@ def outport(ad):
     ad.EmitPush(fp,ad.OutportAddress(outportName) & 0xFF,outportName);
     ad.EmitOpcode(fp,ad.InstructionOpcode('outport'),'outport');
     ad.EmitOptArg(fp,argument[1]);
+
   ad.EmitFunction['.outport'] = emitFunction;

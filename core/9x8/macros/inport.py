@@ -22,4 +22,5 @@ def inport(ad):
     name = argument[0]['value'];
     ad.EmitPush(fp,ad.InportAddress(name) & 0xFF,name);
     ad.EmitOpcode(fp,ad.InstructionOpcode('inport'),'inport');
+
   ad.EmitFunction['.inport'] = emitFunction;
