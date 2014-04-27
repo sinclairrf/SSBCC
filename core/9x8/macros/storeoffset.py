@@ -25,10 +25,10 @@ def storeoffset(ad):
 
   # Define the macro functionality.
   def emitFunction(ad,fp,argument):
-    variableName = argument[0]['value'];
-    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(variableName);
+    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
     offset = ad.Emit_EvalSingleValue(argument[1]);
-    ad.EmitPush(fp,addr+offset,ad.Emit_String('%s+%s' % (variableName,offset,)),argument[0]['loc']);
+    ad.EmitPush(fp,addr+offset,ad.Emit_String('%s+%s' % (argument[0]['value'],offset,)),argument[0]['loc']);
     ad.EmitOpcode(fp,ad.specialInstructions['store'] | ixBank,'store '+bankName);
     ad.EmitOptArg(fp,argument[2]);
+
   ad.EmitFunction['.storeoffset'] = emitFunction;

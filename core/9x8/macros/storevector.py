@@ -28,13 +28,13 @@ def storevector(ad):
 
   # Define the macro functionality.
   def emitFunction(ad,fp,argument):
-    variableName = argument[0]['value'];
-    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(variableName);
+    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
     N = ad.Emit_IntegerValue(argument[1]);
     if addr+N > 256:
       raise asmDef.AsmException('Unreasonable address+length=0x%02X+0x%02X > 256 at %s' % (addr,N,argument[0]['loc'],));
-    ad.EmitPush(fp,addr,variableName);
+    ad.EmitPush(fp,addr,argument[0]['value']);
     for dummy in range(N):
       ad.EmitOpcode(fp,ad.specialInstructions['store+'] | ixBank,'store+ '+bankName);
-    ad.EmitOpcode(fp,ad.InstructionOpcode('drop'),'drop -- .storevector(%s,%s)' % (variableName,argument[1]['value'],) );
+    ad.EmitOpcode(fp,ad.InstructionOpcode('drop'),'drop -- .storevector(%s,%s)' % (argument[0]['value'],argument[1]['value'],) );
+
   ad.EmitFunction['.storevector'] = emitFunction;

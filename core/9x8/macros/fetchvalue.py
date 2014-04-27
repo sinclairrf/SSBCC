@@ -17,8 +17,8 @@ def fetchvalue(ad):
 
   # Define the macro functionality.
   def emitFunction(ad,fp,argument):
-    variableName = argument[0]['value'];
-    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(variableName);
-    ad.EmitPush(fp,addr,ad.Emit_String(variableName),argument[0]['loc']);
+    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
+    ad.EmitPush(fp,addr,ad.Emit_String(argument[0]['value']),argument[0]['loc']);
     ad.EmitOpcode(fp,ad.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
+
   ad.EmitFunction['.fetchvalue'] = emitFunction;

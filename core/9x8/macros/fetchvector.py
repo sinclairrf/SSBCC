@@ -31,11 +31,10 @@ def fetchvector(ad):
 
   # Define the macro functionality.
   def emitFunction(ad,fp,argument):
-    variableName = argument[0]['value'];
-    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(variableName);
+    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
     N = ad.Emit_IntegerValue(argument[1]);
     offsetString = '%s-1' % argument[1]['value'] if type(argument[0]['value']) == str else '%d-1' % N;
-    ad.EmitPush(fp,addr+N-1,'%s+%s' % (variableName,offsetString));
+    ad.EmitPush(fp,addr+N-1,'%s+%s' % (argument[0]['value'],offsetString));
     for dummy in range(N-1):
       ad.EmitOpcode(fp,ad.specialInstructions['fetch-'] | ixBank,'fetch- '+bankName);
     ad.EmitOpcode(fp,ad.specialInstructions['fetch'] | ixBank,'fetch '+bankName);

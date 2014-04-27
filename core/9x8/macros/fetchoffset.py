@@ -21,9 +21,9 @@ def fetchoffset(ad):
 
   # Define the macro functionality.
   def emitFunction(ad,fp,argument):
-    name = argument[0]['value'];
-    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(name);
+    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
     offset = ad.Emit_EvalSingleValue(argument[1]);
-    ad.EmitPush(fp,addr+offset,ad.Emit_String('%s+%s' % (name,offset,)),argument[0]['loc']);
+    ad.EmitPush(fp,addr+offset,ad.Emit_String('%s+%s' % (argument[0]['value'],offset,)),argument[0]['loc']);
     ad.EmitOpcode(fp,ad.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
+
   ad.EmitFunction['.fetchoffset'] = emitFunction;

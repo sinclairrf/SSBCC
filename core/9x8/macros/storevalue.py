@@ -23,9 +23,9 @@ def storevalue(ad):
 
   # Define the macro functionality.
   def emitFunction(ad,fp,argument):
-    name = argument[0]['value'];
-    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(name);
-    ad.EmitPush(fp,addr,ad.Emit_String(name),argument[0]['loc']);
+    (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
+    ad.EmitPush(fp,addr,ad.Emit_String(argument[0]['value']),argument[0]['loc']);
     ad.EmitOpcode(fp,ad.specialInstructions['store'] | ixBank,'store '+bankName);
     ad.EmitOptArg(fp,argument[1]);
+
   ad.EmitFunction['.storevalue'] = emitFunction;
