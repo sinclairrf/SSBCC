@@ -1,12 +1,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Copyright 2012, Sinclair R.F., Inc.
+; Copyright 2012, 2014, Sinclair R.F., Inc.
 ;
 ; Major I2C functions:
-;   i2c_send_start      ( - )
-;   i2c_send_byte       ( u - f )
-;   i2c_read_byte       ( - u )
-;   i2c_send_stop       ( - )
+;   i2c_send_start      ( - )           send the start condition
+;   i2c_send_restart    ( - )           send a restart after ACK during write
+;   i2c_send_byte       ( u - f )       send a byte (address, register, data, ...)
+;   i2c_read_byte       ( f - u )       read a byte and either ACK (f=0) or STOP (f=1)
+;   i2c_send_stop       ( - )           send a stop after ACK during write
+;
+; Example to set a single register (ignoring returned ACK/NACK value)
+;   .call(i2c_send_start)
+;   .call(i2c_send_byte,write_address) drop
+;   .call(i2c_send_byte,register) drop
+;   .call(i2c_send_byte,data) drop
+;   .call(i2c_send_stop)
+;
+; Example to read two bytes (ignoring returned ACK/NACK value)
+;   .call(i2c_send_start)
+;   .call(i2c_send_byte,write_address) drop
+;   .call(i2c_send_byte,register) drop
+;   .call(i2c_send_restart)
+;   .call(i2c_send_byte,read_address) drop
+;   .call(i2c_read_byte,0)
+;   .call(i2c_read_byte,1)
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -20,7 +37,9 @@
 ;     9 TOTAL
 ;   Add 2 to ensure rounding up when evaluting the integer fraction.
 ;   The loop is 3 clock cycles per iteration
+.IFNDEF C_I2C_QUARTER_CYCLE
 .constant C_I2C_QUARTER_CYCLE ${(63-9+2)/3}
+.ENDIF
 
 ; ( - )
 .function i2c_send_start
@@ -53,16 +72,25 @@
   .call(i2c_clock_cycle,1)
 .return
 
-; Read the next byte from the device.
-; ( - u )
+; Read the next byte from the device and generate an ACK or a STOP.
+; ( f - u )
 .function i2c_read_byte
+  ; Read 8 bits and pack them into the returned value.
+  ; ( f - u f )
   0 ${8-1} :loop
     swap <<0 .call(i2c_clock_cycle,1) or swap
   .jumpc(loop,1-) drop
-  ; send the acknowledgment bit
-  .call(i2c_clock_cycle,0)
-.return(drop)
- 
+  swap
+  ; Generate the ACK/STOP based on f.
+  ; ( u f - u )
+  0 .outport(O_SDA)
+  .call(i2c_quarter_cycle,0)
+  .call(i2c_quarter_cycle,1)
+  O_SDA outport
+  .call(i2c_quarter_cycle,1)
+  .call(i2c_quarter_cycle)      ; SCL is high on STOP, low on ACK, consumes f
+.return
+
 ; Send a stop by bringing SDA high while SCL is high.
 ; ( - )
 .function i2c_send_stop
