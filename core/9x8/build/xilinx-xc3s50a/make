@@ -37,7 +37,14 @@ XST_ARG+="-opt_mode speed -resource_sharing no ";
 # Configure and run the synthesis
 #
 
-source ${TOOL_DIR}/settings32.sh || { echo "ERROR:  settings32.sh failed" > /dev/stderr; exit 1; }
+SETTINGS="";
+if [[ "`uname --machine`" == "x86_64" && -f "${TOOL_DIR}/settings64.sh" ]]; then
+  SETTINGS="${TOOL_DIR}/settings64.sh";
+fi
+if [ -z "${SETTINGS}" ]; then
+  SETTINGS="${TOOL_DIR}/settings32.sh";
+fi
+source ${SETTINGS} || { echo "ERROR:  ${SETTINGS} failed" > /dev/stderr; exit 1; }
 
 for fname in ${FILES}; do
   echo "verilog work \"${fname}\"";
