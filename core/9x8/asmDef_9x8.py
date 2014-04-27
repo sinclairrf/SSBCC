@@ -864,7 +864,7 @@ class asmDef_9x8:
     else:
       raise asmDef.AsmException('Unrecognized optional argument "%s"' % token['value']);
 
-  def Emit_GetAddrAndBank(self,name):
+  def Emit_GetAddrAndBank(self,token):
     """
     For the specified variable, return an ordered tuple of the memory address
     within its bank, the corresponding bank index, and the corresponding bank
@@ -872,11 +872,12 @@ class asmDef_9x8:
     Note:  This is used by several user-defined macros that fetch from or store
            to variables.
     """
+    name = token['value'];
     if not self.IsSymbol(name):
-      raise asmDef.AsmException('"%s" is not a recognized symbol' % name);
+      raise asmDef.AsmException('"%s" is not a recognized symbol at %s' % (name,token['loc'],));
     ixName = self.symbols['list'].index(name);
     if self.symbols['type'][ixName] != 'variable':
-      raise asmDef.AsmException('"%s" is not a variable' % name);
+      raise asmDef.AsmException('"%s" is not a variable at %s' % (name,token['loc'],));
     body = self.symbols['body'][ixName];
     bankName = body['memory'];
     ixMem = self.memories['list'].index(bankName);
