@@ -882,23 +882,25 @@ to clear the entire memory, etc.
 The available single-cycle memory operation macros are:
   .fetch(mem_name)      replaces T with the value at the address T in the memory
                         mem_name
+                        Note:  .fetchram(var_name) is safer.
   .fetch+(mem_name)     pushes the value at address T in the memory mem_name
                         into the data stack below T and increments T
                         Note:  This is useful for fetching successive values
                                from memory into the data stack.
+                        Note:  .fetchram+(var_name) is safer.
   .fetch-(mem_name)     similar to .fetch+ but decrements T
+                        Note:  .fetchram-(var_name) is safer.
   .store(ram_name)      stores N at address T in the RAM ram_name, also drops
                         the top of the data stack
+                        Note:  .storeram(var_name) is safer.
   .store+(ram_name)     stores N at address T in the RAM ram_name, also drops N
                         from the data stack and increments T
+                        Note:  .storeram+(var_name) is safer.
   .store-(ram_name)     similar to .store+ but decrements T
+                        Note:  .storeram-(var_name) is safer.
 
 The following multi-cycle macros provide more generalized access to the
 memories:
-  .fetchvalue(var_name) fetches the single-byte value of var_name
-                        Note:  This is equivalent to "var_name .fetch(mem_name)"
-                               where mem_name is the memory in which var_name is
-                               stored.
   .fetchindexed(var_name)
                         uses the top of the data stack as an index into var_name
                         Note:  This is equivalent to the 3 instruction sequence
@@ -908,6 +910,25 @@ memories:
                         "offset" bytes
                         Note:  This is equivalent to
                                "${var_name+offset} .fetch(mem_name)"
+  .fetchram(var_name)   is similar to the .fetch(mem_name) macro except that the
+                        variable name is used to identify the memory instead of
+                        the name of the memory
+  .fetchram+(var_name)  is similar to the .fetch+(mem_name) macro except that
+                        the variable name is used to identify the memory instead
+                        of the name of the memory
+  .fetchram-(var_name)  is similar to the .fetch-(mem_name) macro except that the
+                        the variable name is used to identify the memory instead
+                        of the name of the memory
+  .fetchvalue(var_name) fetches the single-byte value of var_name
+                        Note:  This is equivalent to "var_name .fetch(mem_name)"
+                               where mem_name is the memory in which var_name is
+                               stored.
+  .fetchvalueoffset(var_name,offset)
+                        fetches the single-byte value stored at var_name+offset
+                        Note:  This is equivalent to
+                               "${var_name+offset}" .fetch(mem_name)
+                               where mem_name is the memory in which var_name is
+                               stored.
   .fetchvector(var_name,N)
                         fetches N values starting at var_name into the data
                         stack with the value at var_name at the top and the
@@ -916,16 +937,6 @@ memories:
                                "${var_name+N-1} .fetch-(mem_name) ...
                                .fetch-(mem_name) .fetch(mem_name)"
                                where ".fetch-(mem_name)" is repeated N-1 times.
-  .storevalue(var_name) stores the single-byte value at the top of the data
-                        stack at var_name
-                        Note:  This is equivalent to
-                               "var_name .store(mem_name) drop"
-                        Note:  The default "drop" instruction can be replaced by
-                               providing the optional second argument.  For
-                               example, the following instruction will store and
-                               then decrement the value at the top of the data
-                               stack:
-                                 .storevalue(var_name,1-)
   .storeindexed(var_name)
                         uses the top of the data stack as an index into var_name
                         into which to store the next-to-top of the data stack.
@@ -941,6 +952,25 @@ memories:
                                "${var_name+offset} .store(mem_name) drop"
                         Note:  The optional third argument is as per the
                                optional second argument of .storevalue
+  .storeram(var_name)   is similar to the .store(mem_name) macro except that the
+                        variable name is used to identify the RAM instead of the
+                        name of the RAM
+  .storeram+(var_name)  is similar to the .store+(mem_name) macro except that
+                        the variable name is used to identify the RAM instead of
+                        the name of the RAM
+  .storeram-(var_name)  is similar to the .store-(mem_name) macro except that
+                        the variable name is used to identify the RAM instead of
+                        the name of the RAM
+  .storevalue(var_name) stores the single-byte value at the top of the data
+                        stack at var_name
+                        Note:  This is equivalent to
+                               "var_name .store(mem_name) drop"
+                        Note:  The default "drop" instruction can be replaced by
+                               providing the optional second argument.  For
+                               example, the following instruction will store and
+                               then decrement the value at the top of the data
+                               stack:
+                                 .storevalue(var_name,1-)
   .storevector(var_name,N)
                         Does the reverse of the .fetchvector macro.
                         Note:  This is equivalent to the N+2 operation sequence
