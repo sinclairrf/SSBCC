@@ -33,14 +33,16 @@ IBUFGDS sysclk_inst(
 );
 
 wire s_divclk;
-BUFIO2 bufio2_inst(
+BUFIO2 #(
+  .DIVIDE               (4),
+  .DIVIDE_BYPASS        ("FALSE"),
+  .USE_DOUBLER          ("TRUE")
+) bufio2_inst (
   .I            (s_sysclk),
   .IOCLK        (),
   .DIVCLK       (s_divclk),
   .SERDESSTROBE ()
 );
-defparam bufio2_inst.DIVIDE             = 2;
-defparam bufio2_inst.DIVIDE_BYPASS      = "FALSE";
 
 wire s_clk;
 BUFG sclk_inst(

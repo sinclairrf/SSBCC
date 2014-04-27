@@ -5,6 +5,7 @@
 *.drc
 _impact.*
 *.ipf
+log
 *.log
 *.lso
 *.map

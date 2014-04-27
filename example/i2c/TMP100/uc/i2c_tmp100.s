@@ -1,4 +1,4 @@
-; Copyright 2012, Sinclair R.F., Inc.
+; Copyright 2012, 2014, Sinclair R.F., Inc.
 ;
 ; TMP100:
 ;   run in 400 kHz mode
@@ -8,7 +8,7 @@
 .constant C_TMP100_U16 ${9*16+6*2}
 .constant C_TMP100_U18 ${9*16+4*2}
 
-.include ../lib_i2c.s
+.include ../../lib_i2c.s
 
 .main
 
@@ -36,8 +36,8 @@
   0x20
   .call(i2c_send_start)
   .call(i2c_send_byte,swap) .jumpc(error)
-    .call(i2c_read_byte) >r
-    .call(i2c_read_byte) .call(byte_to_hex)
+    .call(i2c_read_byte,0) >r
+    .call(i2c_read_byte,0) .call(byte_to_hex)
     r> .call(byte_to_hex)
     .jump(no_error)
   :error
