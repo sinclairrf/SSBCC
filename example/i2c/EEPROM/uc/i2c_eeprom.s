@@ -5,7 +5,7 @@
 
 .constant C_I2C_EEPROM_ADDR ${0xa*16+0x4*2}
 
-.include ../lib_i2c.s
+.include ../../lib_i2c.s
 
 .memory RAM ram
 .variable ram__msg 0*16
@@ -52,7 +52,7 @@
   ; encountered.  Add the CRLF pair
   ram__msg >r
   :read_loop
-    .call(i2c_read_byte)
+    .call(i2c_read_byte,0)
     dup r> .store+(ram) >r .jumpc(read_loop)
   r> drop
 
