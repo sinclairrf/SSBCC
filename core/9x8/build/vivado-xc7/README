@@ -1,0 +1,11 @@
+Size and speed results for 7-Series family
+Note:  The Zynq devices use the Artix-7 and Kintex-7 fabric.
+
+DEVICE and PERIOD are set before running vivado/make.  Fastest speed is
+determined by the smallest PERIOD that doesn't fail timing.
+
+TOOL            DEVICE                  PERIOD  SPEED   RESOURCE UTILIZATION
+Vivado 2014.1   xc7a35t-3cpg236         100     N/A     58 slices, 204 slice LUTs
+Vivado 2014.1   xc7a35t-3cpg236           3.16  316.5   68 slices, 237 slice LUTs
+Vivado 2014.1   xc7k70t-3fbg484         100     N/A     59 slices, 196 slice LUTs
+Vivado 2014.1   xc7k70t-3fbg484           2.11  473.9   72 slices, 223 slice LUTs
