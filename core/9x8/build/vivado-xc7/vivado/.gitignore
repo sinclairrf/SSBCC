@@ -1,0 +1,5 @@
+*.xpr
+build.cache
+build.srcs
+vivado*.jou
+vivado*.log
