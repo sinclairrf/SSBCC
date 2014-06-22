@@ -389,24 +389,35 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
       raise AsmException('Directive not allowed at %s' % flc_loc);
     return dict(type='directive', value=raw, loc=flc_loc);
   # look for macros
-  a = re.match(r'\.[A-Za-z]\S*(\(\S+(,\S+|,\${\S+})*\))?$',raw);
+  # Note:  Macro arguments can contain a single layer of macros.
+  a = re.match(r'\.[A-Za-z]',raw);
   if a:
     b = re.match(r'\.[^(]+',raw);
     if not ad.IsMacro(b.group(0)):
-      raise AsmException('Unrecognized directive or macro at %s:%d' % (fl_loc,col+1));
+      raise AsmException('Unrecognized directive or macro at %s:%d' % (fl_loc,col+1,));
     if ('macro' not in allowed) and not ('singlemacro' in allowed and ad.IsSingleMacro(b.group(0))):
       raise AsmException('Macro "%s" not allowed at %s:%d' % (b.group(0),fl_loc,col+1,));
-    macroArgs = re.findall(r'([^,]+)',raw[len(b.group(0))+1:-1]);
+    macroArgs = list();
+    if len(b.group(0)) == len(raw):
+      pass;
+    elif (raw[len(b.group(0))] != '(') or (raw[-1] != ')'):
+      raise AsmException('Malformed macro invokaction "%" at %s:%d' % (raw,fl_loc,col+1,));
+    else:
+      tcol = len(b.group(0))+1;
+      while tcol < len(raw):
+        c = re.match(r'[^,(]*(\([^)]*\))?',raw[tcol:-1]);
+        macroArgs.append(c.group(0));
+        tcol += len(c.group(0))+1;
     nArgs = ad.MacroNumberArgs(b.group(0))
     if len(macroArgs) not in nArgs:
       raise AsmException('Wrong number of arguments to macro "%s" at %s:%d' % (b.group(0),fl_loc,col+1));
     while len(macroArgs) < nArgs[-1]:
       macroArgs.append(ad.MacroDefault(b.group(0),len(macroArgs)));
     outArgs = list();
-    col = col + len(b.group(0))+1;
+    tcol = col + len(b.group(0)) + 1;
     for ixArg in range(len(macroArgs)):
-      outArgs.append(ParseToken(ad,fl_loc,col,macroArgs[ixArg],ad.MacroArgTypes(b.group(0),ixArg)));
-      col = col + len(macroArgs[ixArg]) + 1;
+      outArgs.append(ParseToken(ad,fl_loc,tcol,macroArgs[ixArg],ad.MacroArgTypes(b.group(0),ixArg)));
+      tcol += len(macroArgs[ixArg]) + 1;
     return dict(type='macro', value=b.group(0), loc=fl_loc + ':' + str(col+1), argument=outArgs);
   # look for a label definition
   a = re.match(r':[A-Za-z]\w*$',raw);
