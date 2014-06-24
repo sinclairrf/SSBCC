@@ -35,8 +35,8 @@ end else begin : gen__long_addr
       s__addr <= s__addr;
 end
 always @ (*) begin
-  o_awaddr <= { s__addr[L__ADDRESS_WIDTH-1:2], 2'b00 };
-  o_araddr <= { s__addr[L__ADDRESS_WIDTH-1:2], 2'b00 };
+  o_awaddr = { s__addr[L__ADDRESS_WIDTH-1:2], 2'b00 };
+  o_araddr = { s__addr[L__ADDRESS_WIDTH-1:2], 2'b00 };
 end
 // Either use the raw write strobe or synchronize the write strobe.
 wire s__wr_aclk;
