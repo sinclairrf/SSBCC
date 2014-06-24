@@ -164,25 +164,25 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     self.address_width = int(math.log(self.size,2));
     for signal in (
-      ( 'i_%s_aresetn',         1,                      'input',        ),
-      ( 'i_%s_aclk',            1,                      'input',        ),
-      ( 'i_%s_awvalid',         1,                      'input',        ),
-      ( 'o_%s_awready',         1,                      'output',       ),
-      ( 'i_%s_awaddr',          self.address_width,     'input',        ),
-      ( 'i_%s_wvalid',          1,                      'input',        ),
-      ( 'o_%s_wready',          1,                      'output',       ),
-      ( 'i_%s_wdata',           32,                     'input',        ),
-      ( 'i_%s_wstrb',           4,                      'input',        ),
-      ( 'o_%s_bresp',           2,                      'output',       ),
-      ( 'o_%s_bvalid',          1,                      'output',       ),
-      ( 'i_%s_bready',          1,                      'input',        ),
-      ( 'i_%s_arvalid',         1,                      'input',        ),
-      ( 'o_%s_arready',         1,                      'output',       ),
-      ( 'i_%s_araddr',          self.address_width,     'input',        ),
-      ( 'o_%s_rvalid',          1,                      'output',       ),
-      ( 'i_%s_rready',          1,                      'input',        ),
-      ( 'o_%s_rdata',           32,                     'output',       ),
-      ( 'o_%s_rresp',           2,                      'output',       ),
+      ( '%s_aresetn',           1,                      'input',        ),
+      ( '%s_aclk',              1,                      'input',        ),
+      ( '%s_awvalid',           1,                      'input',        ),
+      ( '%s_awready',           1,                      'output',       ),
+      ( '%s_awaddr',            self.address_width,     'input',        ),
+      ( '%s_wvalid',            1,                      'input',        ),
+      ( '%s_wready',            1,                      'output',       ),
+      ( '%s_wdata',             32,                     'input',        ),
+      ( '%s_wstrb',             4,                      'input',        ),
+      ( '%s_bresp',             2,                      'output',       ),
+      ( '%s_bvalid',            1,                      'output',       ),
+      ( '%s_bready',            1,                      'input',        ),
+      ( '%s_arvalid',           1,                      'input',        ),
+      ( '%s_arready',           1,                      'output',       ),
+      ( '%s_araddr',            self.address_width,     'input',        ),
+      ( '%s_rvalid',            1,                      'output',       ),
+      ( '%s_rready',            1,                      'input',        ),
+      ( '%s_rdata',             32,                     'output',       ),
+      ( '%s_rresp',             2,                      'output',       ),
     ):
       thisName = signal[0] % self.basePortName;
       config.AddIO(thisName,signal[1],signal[2],loc);
@@ -204,14 +204,14 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
     for subpair in (
-      (r'\bL__',        'L__@NAME@__',                  ),
+      (r'\bL__',        'L__@NAME@__',                          ),
       (r'\bgen__',      'gen__@NAME@__',                        ),
-      (r'\bi_a',        'i_@NAME@_a',                           ),
-      (r'\bi_b',        'i_@NAME@_b',                           ),
-      (r'\bi_r',        'i_@NAME@_r',                           ),
-      (r'\bi_w',        'i_@NAME@_w',                           ),
+      (r'\bi_a',        '@NAME@_a',                             ),
+      (r'\bi_b',        '@NAME@_b',                             ),
+      (r'\bi_r',        '@NAME@_r',                             ),
+      (r'\bi_w',        '@NAME@_w',                             ),
       (r'\bix__',       'ix__@NAME@__',                         ),
-      (r'\bo_',         'o_@NAME@_',                            ),
+      (r'\bo_',         '@NAME@_',                              ),
       (r'\bs__',        's__@NAME@__',                          ),
       (r'@IX_WRITE@',   "8'h%02x" % self.ix_write,              ),
       (r'@NAME@',       self.namestring,                        ),
@@ -221,8 +221,3 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);
-
-    # Write the TCL script to facilitate creating Vivado IP for the port.
-    vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
-    execfile(vivadoFile,globals());
-    WriteTclScript('slave',self.basePortName,self.address_width);

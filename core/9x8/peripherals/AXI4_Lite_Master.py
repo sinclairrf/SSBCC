@@ -212,25 +212,25 @@ class AXI4_Lite_Master(SSBCCperipheral):
       raise SSBCCException('synchronous=False has not been validated yet');
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     for signal in (
-      ( 'i_%s_aresetn',         1,                      'input',        ),
-      ( 'i_%s_aclk',            1,                      'input',        ),
-      ( 'o_%s_awvalid',         1,                      'output',       ),
-      ( 'i_%s_awready',         1,                      'input',        ),
-      ( 'o_%s_awaddr',          self.address_width,     'output',       ),
-      ( 'o_%s_wvalid',          1,                      'output',       ),
-      ( 'i_%s_wready',          1,                      'input',        ),
-      ( 'o_%s_wdata',           32,                     'output',       ),
-      ( 'o_%s_wstrb',           4,                      'output',       ) if not self.noWSTRB else None,
-      ( 'i_%s_bresp',           2,                      'input',        ),
-      ( 'i_%s_bvalid',          1,                      'input',        ),
-      ( 'o_%s_bready',          1,                      'output',       ),
-      ( 'o_%s_arvalid',         1,                      'output',       ),
-      ( 'i_%s_arready',         1,                      'input',        ),
-      ( 'o_%s_araddr',          self.address_width,     'output',       ),
-      ( 'i_%s_rvalid',          1,                      'input',        ),
-      ( 'o_%s_rready',          1,                      'output',       ),
-      ( 'i_%s_rdata',           32,                     'input',        ),
-      ( 'i_%s_rresp',           2,                      'input',        ),
+      ( '%s_aresetn',           1,                      'input',        ),
+      ( '%s_aclk',              1,                      'input',        ),
+      ( '%s_awvalid',           1,                      'output',       ),
+      ( '%s_awready',           1,                      'input',        ),
+      ( '%s_awaddr',            self.address_width,     'output',       ),
+      ( '%s_wvalid',            1,                      'output',       ),
+      ( '%s_wready',            1,                      'input',        ),
+      ( '%s_wdata',             32,                     'output',       ),
+      ( '%s_wstrb',             4,                      'output',       ) if not self.noWSTRB else None,
+      ( '%s_bresp',             2,                      'input',        ),
+      ( '%s_bvalid',            1,                      'input',        ),
+      ( '%s_bready',            1,                      'output',       ),
+      ( '%s_arvalid',           1,                      'output',       ),
+      ( '%s_arready',           1,                      'input',        ),
+      ( '%s_araddr',            self.address_width,     'output',       ),
+      ( '%s_rvalid',            1,                      'input',        ),
+      ( '%s_rready',            1,                      'output',       ),
+      ( '%s_rdata',             32,                     'input',        ),
+      ( '%s_rresp',             2,                      'input',        ),
     ):
       if not signal:
         continue
@@ -252,7 +252,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
                       ),loc);
     if not self.noWSTRB:
       config.AddOutport((self.write_enable,False,
-                      ('o_%s_wstrb' % self.basePortName, 4, 'data', ),
+                      ('%s_wstrb' % self.basePortName, 4, 'data', ),
                       ),loc);
     config.AddOutport((self.command_read,True,
                       ('s__%s__rd' % self.basePortName, 1, 'strobe', ),
@@ -278,13 +278,13 @@ class AXI4_Lite_Master(SSBCCperipheral):
       (r'\bgen__',              'gen__@NAME@__',                        ),
       (r'\bL__',                'L__@NAME@__',                          ),
       (r'\bs__',                's__@NAME@__',                          ),
-      (r'\bi_a',                'i_@NAME@_a',                           ),
-      (r'\bi_b',                'i_@NAME@_b',                           ),
-      (r'\bi_rd',               'i_@NAME@_rd',                          ),
-      (r'\bi_rr',               'i_@NAME@_rr',                          ),
-      (r'\bi_rv',               'i_@NAME@_rv',                          ),
-      (r'\bi_w',                'i_@NAME@_w',                           ),
-      (r'\bo_',                 'o_@NAME@_',                            ),
+      (r'\bi_a',                '@NAME@_a',                             ),
+      (r'\bi_b',                '@NAME@_b',                             ),
+      (r'\bi_rd',               '@NAME@_rd',                            ),
+      (r'\bi_rr',               '@NAME@_rr',                            ),
+      (r'\bi_rv',               '@NAME@_rv',                            ),
+      (r'\bi_w',                '@NAME@_w',                             ),
+      (r'\bo_',                 '@NAME@_',                              ),
       (r'@ADDRESS_WIDTH@',      str(self.address_width),                ),
       (r'@ISSYNC@',             "1'b1" if self.synchronous else "1'b0", ),
       (r'@IX_ADDRESS@',         str(self.ix_address),                   ),
@@ -295,8 +295,3 @@ class AXI4_Lite_Master(SSBCCperipheral):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);
-
-    # Write the TCL script to facilitate creating Vivado IP for the port.
-    vivadoFile = os.path.join(os.path.dirname(self.peripheralFile),'vivado_AXI4_Lite_Bus.py');
-    execfile(vivadoFile,globals());
-    WriteTclScript('master',self.basePortName,self.address_width,noWSTRB=self.noWSTRB);
