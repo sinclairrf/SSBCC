@@ -103,11 +103,11 @@ Altera          Cyclone-IV      192.1 MHz       281 LEs           (preliminary)
 Altera          Stratix-V       372.9 MHz       198 ALUTs         (preliminary)
 Lattice         LCMXO2-640ZE-3   98.4 MHz       206 LUTs          (preliminary)
 Lattice         LFE2-6E-7       157.9 MHz       203 LUTs          (preliminary)
-Xilinx          Artix-7         316.5 MHz        58 slices, 204 slice LUTs
-Xilinx          Kintex-7        473.9 MHz        59 slices, 196 slice LUTs
-Xilinx          Spartan-3A      148.3 MHz       130 slices, 231 4-input LUTs
-Xilinx          Spartan-6       200.0 MHz        36 slices, 120 Slice LUTs
-Xilinx          Virtex-6        275.7 MHz        38 slices, 122 Slice LUTs (p.)
+Xilinx          Artix-7         316.5 MHz       151 slice LUTs (41 slices)
+Xilinx          Kintex-7        473.9 MHz       196 slice LUTs (55 slices)
+Xilinx          Spartan-3A      148.3 MHz       231 4-input LUTs (130 slices)
+Xilinx          Spartan-6       200.0 MHz       120 Slice LUTs (36 slices)
+Xilinx          Virtex-6        275.7 MHz       122 Slice LUTs (38 slices) (p.)
 
 Disclaimer:  Like other embedded processors, these are the maximum performance
 claims.  Realistic implementations will produce slower maximum clock rates,

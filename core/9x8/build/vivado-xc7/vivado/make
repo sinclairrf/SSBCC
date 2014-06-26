@@ -6,6 +6,7 @@
 #   source /opt/Xilinx/Vivado/2014.1/setttings64.sh
 #   export DEVICE=xc7a35t-3cpg236
 #   export PERIOD=100
+#   [export OPTART="-propconst -sweep -remap -resynth_area"]
 #   ./make
 # Note:  See the pinouts directory for a list of available devices.
 
@@ -60,7 +61,7 @@ report_clocks
 # Incorporate device-dependent pinout.
 read_xdc pinouts/${DEVICE}.xdc
 # Place and route the design.
-opt_design
+opt_design ${OPTARG}
 place_design
 route_design
 # Performance reports.
