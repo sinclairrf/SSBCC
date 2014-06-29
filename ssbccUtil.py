@@ -108,6 +108,12 @@ def IntValue(v):
     raise SSBCCException('Paramter length and value don\'t match:  "%s"' % save_v);
   return ov;
 
+def IsPosInt(v):
+  """
+  Indicate whether or not the argument is a positive integer.
+  """
+  return re.match(r'[1-9][0-9_]*$',v);
+
 def IsPowerOf2(v):
   """
   Indicate whether or not the argument is a power of 2.
