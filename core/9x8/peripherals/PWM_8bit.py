@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012-2013, Sinclair R.F., Inc.
+# Copyright 2012-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -98,39 +98,45 @@ class PWM_8bit(SSBCCperipheral):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
+    allowables = (
+      ( 'outport',      r'O_\w+$',      None,   ),
+      ( 'outsignal',    r'o_\w+$',      None,   ),
+      ( 'ratemethod',   r'\S+$',        lambda v : self.RateMethod(config,v), ),
+      ( 'invert',       None,           True,   ),
+      ( 'noinvert',     None,           True,   ),
+      ( 'instances',    r'[1-9]\d*$',   int,    ),
+      ( 'norunt',       None,           True,   ),
+    );
+    names = [a[0] for a in allowables];
     for param_tuple in param_list:
       param = param_tuple[0];
-      param_arg = param_tuple[1];
-      if param == 'outport':
-        self.AddAttr(config,param,param_arg,r'O_\w+$',loc);
-      elif param == 'outsignal':
-        self.AddAttr(config,param,param_arg,r'o_\w+$',loc);
-      elif param == 'ratemethod':
-        self.ProcessRateMethod(config,param_arg,loc);
-      elif param == 'invert':
-        self.AddAttr(config,param,param_arg,None,loc);
-      elif param == 'noinvert':
-        self.AddAttr(config,param,param_arg,None,loc);
-      elif param == 'instances':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
-      elif param == 'norunt':
-        self.AddAttr(config,param,param_arg,None,loc);
-      else:
-        raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
+      if param not in names:
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
+      param_test = allowables[names.index(param)];
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
-    if not hasattr(self,'instances'):
-      self.instances = 1;
+    for paramname in (
+        'outport',
+        'outsignal',
+        'ratemethod',
+      ):
+      if not hasattr(self,paramname):
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Set optional parameters.
-    if not hasattr(self,'invert') and not hasattr(self,'noinvert'):
-      self.noinvert = True;
-    if not hasattr(self,'norunt'):
-      self.norunt = False;
-    # Ensure parameters do not conflict.
-    if hasattr(self,'invert') and hasattr(self,'noinvert'):
-      raise SSBCCException('Only one of "invert" or "noinvert" can be specified at %s' % loc);
-    # Use only one of mutually exclusive configuration settings.
-    if hasattr(self,'noinvert'):
-      self.invert = False;
+    for optionalpair in (
+        ( 'instances',  1,      ),
+        ( 'norunt',     False,  ),
+      ):
+      if not hasattr(self,optionalpair[0]):
+        setattr(self,optionalpair[0],optionalpair[1]);
+    # Ensure exclusive pair configurations are set and consistent.
+    for exclusivepair in (
+        ( 'invert',     'noinvert',     'noinvert',     True,   ),
+      ):
+      if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
+        raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,));
+      if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]) and exclusivepair[2]:
+        setattr(self,exclusivepair[2],exclusivepair[3]);
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.outsignal,self.instances,'output',loc);
     self.ix_outport_0 = config.NOutports();
@@ -144,53 +150,26 @@ class PWM_8bit(SSBCCperipheral):
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 
-  def ProcessRateMethod(self,config,param_arg,loc):
-    if hasattr(self,'ratemethod'):
-      raise SSBCCException('ratemethod repeated at %s' % loc);
-    if param_arg.find('/') < 0:
-      if self.IsIntExpr(param_arg):
-        self.ratemethod = str(self.ParseIntExpr(param_arg));
-      elif self.IsParameter(config,param_arg):
-        self.ratemethod = param_arg;
-      else:
-        raise SSBCCException('ratemethod with no "/" must be an integer or a previously declared parameter at %s' % loc);
-    else:
-      baudarg = re.findall('([^/]+)',param_arg);
-      if len(baudarg) == 2:
-        if not self.IsIntExpr(baudarg[0]) and not self.IsParameter(config,baudarg[0]):
-          raise SSBCCException('Numerator in ratemethod must be an integer or a previously declared parameter at %s' % loc);
-        if not self.IsIntExpr(baudarg[1]) and not self.IsParameter(config,baudarg[1]):
-          raise SSBCCException('Denominator in ratemethod must be an integer or a previously declared parameter at %s' % loc);
-        for ix in range(2):
-          if self.IsIntExpr(baudarg[ix]):
-            baudarg[ix] = str(self.ParseIntExpr(baudarg[ix]));
-        self.ratemethod = '('+baudarg[0]+'+'+baudarg[1]+'/2)/'+baudarg[1];
-    if not hasattr(self,'ratemethod'):
-      raise SSBCCException('Bad ratemethod value at %s:  "%s"' % (loc,param_arg,));
-
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
     output_on = "1'b1";
     output_off = "1'b0";
-    if self.invert:
+    if hasattr(self,'invert'):
       output_on = "1'b0";
       output_off = "1'b1";
-    norunt = "1'b0";
-    if self.norunt:
-      norunt = "1'b1";
-    for subs in (
-                  (r'\bL__',            'L__@NAME@__',),
-                  (r'\bgen__',          'gen__@NAME@__',),
-                  (r'\bs__',            's__@NAME@__',),
-                  (r'\bix\b',           'ix__@NAME@',),
-                  (r'@COUNT@',          self.ratemethod,),
-                  (r'@INSTANCES@',      str(self.instances),),
-                  (r'@IX_OUTPORT_0@',   str(self.ix_outport_0),),
-                  (r'@OFF@',            output_off,),
-                  (r'@ON@',             output_on,),
-                  (r'@NAME@',           self.outsignal,),
-                  (r'@NORUNT@',         norunt,),
-                ):
-      body = re.sub(subs[0],subs[1],body);
+    for subpair in (
+        ( r'\bL__',             'L__@NAME@__',          ),
+        ( r'\bgen__',           'gen__@NAME@__',        ),
+        ( r'\bs__',             's__@NAME@__',          ),
+        ( r'\bix\b',            'ix__@NAME@',           ),
+        ( r'@COUNT@',           self.ratemethod,        ),
+        ( r'@INSTANCES@',       str(self.instances),    ),
+        ( r'@IX_OUTPORT_0@',    str(self.ix_outport_0), ),
+        ( r'@OFF@',             output_off,             ),
+        ( r'@ON@',              output_on,              ),
+        ( r'@NAME@',            self.outsignal,         ),
+        ( r'@NORUNT@',          '1\'b1' if self.norunt else '1\'b0', ),
+      ):
+      body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);

@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -50,10 +50,10 @@ class big_inport(SSBCCperipheral):
   def __init__(self,peripheralFile,config,param_list,loc):
     # Get the parameters.
     allowables = (
-      ('outlatch',      r'O_\w+$',              None,           ),
-      ('inport',        r'I_\w+$',              None,           ),
-      ('insignal',      r'i_\w+$',              None,           ),
-      ('width',         r'(9|[1-9]\d*)$',       int,            ),
+      ( 'outlatch',     r'O_\w+$',              None,   ),
+      ( 'inport',       r'I_\w+$',              None,   ),
+      ( 'insignal',     r'i_\w+$',              None,   ),
+      ( 'width',        r'(9|[1-9]\d*)$',       int,    ),
     );
     names = [a[0] for a in allowables];
     for param_tuple in param_list:
@@ -94,13 +94,13 @@ always @ (posedge i_clk)
     @NAME@ <= @NAME@;
 """
     for subpair in (
-      (r'@IX_LATCH@',   "8'd%d" % self.ix_latch,                                ),
-      (r'@IX_INPORT@',  "8'd%d" % self.ix_inport,                               ),
-      (r'@WIDTH@',      str(self.width),                                        ),
-      (r'@WIDTH-1:8@',  '%d:8' % (self.width-1) if self.width > 9 else '8'      ),
-      (r'@NAME@',       's__@INSIGNAL@__inport',                                ),
-      (r'@INSIGNAL@',   self.insignal,                                          ),
-    ):
+        ( r'@IX_LATCH@',        "8'd%d" % self.ix_latch,                                ),
+        ( r'@IX_INPORT@',       "8'd%d" % self.ix_inport,                               ),
+        ( r'@WIDTH@',           str(self.width),                                        ),
+        ( r'@WIDTH-1:8@',       '%d:8' % (self.width-1) if self.width > 9 else '8'      ),
+        ( r'@NAME@',            's__@INSIGNAL@__inport',                                ),
+        ( r'@INSIGNAL@',        self.insignal,                                          ),
+      ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);

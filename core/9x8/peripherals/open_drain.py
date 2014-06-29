@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012-2013, Sinclair R.F., Inc.
+# Copyright 2012-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -55,34 +55,27 @@ class open_drain(SSBCCperipheral):
   def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
-    # Parse the parameters.
+    # Get the parameters.
+    allowables = (
+      ( 'inport',       r'I_\w+$',      None,   ),
+      ( 'iosignal',     r'io_\w+$',     None,   ),
+      ( 'outport',      r'O_\w+$',      None,   ),
+      ( 'width',        r'[1-9]\d*$',   lambda v : self.PosInt(v,maxValue=config.Get('data_width')), ),
+    );
+    names = [a[0] for a in allowables];
     for param_tuple in param_list:
       param = param_tuple[0];
-      param_arg = param_tuple[1];
-      if param == 'inport':
-        self.AddAttr(config,param,param_arg,r'I_\w+$',loc);
-      elif param == 'iosignal':
-        self.AddAttr(config,param,param_arg,r'io_\w+$',loc);
-      elif param == 'outport':
-        self.AddAttr(config,param,param_arg,r'O_\w+$',loc);
-      elif param == 'width':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
-      else:
-        raise SSBCCException('Unrecognized parameter at %s:  "%s"' % (loc,param,));
+      if param not in names:
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
+      param_test = allowables[names.index(param)];
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are set.
-    if not hasattr(self,'inport'):
-      raise SSBCCException('Missing "inport=I_name" at %s' % loc);
-    if not hasattr(self,'iosignal'):
-      raise SSBCCException('Missing "iosignal=io_name" at %s' % loc);
-    if not hasattr(self,'outport'):
-      raise SSBCCException('Missing "outport=O_name" at %s' % loc);
+    for paramname in ('inport','iosignal','outport',):
+      if not hasattr(self,paramname):
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Set defaults for non-specified values.
     if not hasattr(self,'width'):
       self.width = 1;
-    # Ensure the specified values are reasonable.
-    maxWidth = config.Get('data_width');
-    if (self.width < 1) or (maxWidth < self.width):
-      raise SSBCCException('width must be between 1 and %d inclusive at %s' % (maxWidth,loc,));
     # Create the internal signal name and initialization.
     self.sname = 's__%s' % self.iosignal;
     sname_init = '%d\'b%s' % (self.width, '1'*self.width, );
@@ -118,13 +111,13 @@ endgenerate
       body = body_1;
     else:
       body = body_big;
-    for subs in (
-                  (r'\bix\b',           'ix__@NAME@',),
-                  (r'@IO_NAME@',        self.iosignal,),
-                  (r'@NAME@',           self.iosignal,),
-                  (r'@S_NAME@',         self.sname,),
-                  (r'@WIDTH@',          str(self.width),),
-                ):
-      body = re.sub(subs[0],subs[1],body);
+    for subpair in (
+        ( r'\bix\b',    'ix__@NAME@',           ),
+        ( r'@IO_NAME@', self.iosignal,          ),
+        ( r'@NAME@',    self.iosignal,          ),
+        ( r'@S_NAME@',  self.sname,             ),
+        ( r'@WIDTH@',   str(self.width),        ),
+      ):
+      body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);

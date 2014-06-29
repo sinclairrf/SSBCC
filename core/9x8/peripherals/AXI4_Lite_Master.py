@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -73,7 +73,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
     write_enable=<O_write_enable>
       optionally specify the symbol used to set the 4 write enable bits
       Note:  This must be used if one or more of the slaves includes the
-      optional WSTRB      signals.
+             optional WSTRB      signals.
     noWSTRB
       indicates that the optional WSTRB signal should not be included
       Note:  This must be specified if write_enable is not specified.\n
@@ -188,25 +188,30 @@ class AXI4_Lite_Master(SSBCCperipheral):
       self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
     for paramname in (
-      'address',
-      'address_width',
-      'basePortName',
-      'command_read',
-      'command_write',
-      'data',
-      'read',
-      'busy',
-      'error',
-      'synchronous',
-    ):
+        'address',
+        'address_width',
+        'basePortName',
+        'command_read',
+        'command_write',
+        'data',
+        'read',
+        'busy',
+        'error',
+        'synchronous',
+      ):
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
+    # Ensure exclusive pair configurations are set and consistent.
+    for exclusivepair in (
+        ('write_enable','noWSTRB',None,None,),
+      ):
+      if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
+        raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,));
+      if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]) and exclusivepair[2]:
+        setattr(self,exclusivepair[2],exclusivepair[3]);
     # Ensure one and only one of the complementary optional values are set.
     if not hasattr(self,'write_enable') and not hasattr(self,'noWSTRB'):
       raise SSBCCException('One of "write_enable" or "noWSTRB" must be set at %s' % loc);
-    if hasattr(self,'write_enable') and hasattr(self,'noWSTRB'):
-      raise SSBCCException('Only one of "write_enable" or "noWSTRB" can be set at %s' % loc);
-    self.noWSTRB = hasattr(self,'noWSTRB');
     # Temporary:  Warning message
     if not self.synchronous:
       raise SSBCCException('synchronous=False has not been validated yet');
@@ -220,7 +225,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ( '%s_wvalid',            1,                      'output',       ),
       ( '%s_wready',            1,                      'input',        ),
       ( '%s_wdata',             32,                     'output',       ),
-      ( '%s_wstrb',             4,                      'output',       ) if not self.noWSTRB else None,
+      ( '%s_wstrb',             4,                      'output',       ) if hasattr(self,'write_enable') else None,
       ( '%s_bresp',             2,                      'input',        ),
       ( '%s_bvalid',            1,                      'input',        ),
       ( '%s_bready',            1,                      'output',       ),
@@ -250,7 +255,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
     config.AddOutport((self.data,False,
                       # empty list -- disable normal output port signal generation
                       ),loc);
-    if not self.noWSTRB:
+    if hasattr(self,'write_enable'):
       config.AddOutport((self.write_enable,False,
                       ('%s_wstrb' % self.basePortName, 4, 'data', ),
                       ),loc);
@@ -275,23 +280,23 @@ class AXI4_Lite_Master(SSBCCperipheral):
     body = self.LoadCore(self.peripheralFile,'.v');
     # avoid i_clk and i_rst
     for subpair in (
-      (r'\bgen__',              'gen__@NAME@__',                        ),
-      (r'\bL__',                'L__@NAME@__',                          ),
-      (r'\bs__',                's__@NAME@__',                          ),
-      (r'\bi_a',                '@NAME@_a',                             ),
-      (r'\bi_b',                '@NAME@_b',                             ),
-      (r'\bi_rd',               '@NAME@_rd',                            ),
-      (r'\bi_rr',               '@NAME@_rr',                            ),
-      (r'\bi_rv',               '@NAME@_rv',                            ),
-      (r'\bi_w',                '@NAME@_w',                             ),
-      (r'\bo_',                 '@NAME@_',                              ),
-      (r'@ADDRESS_WIDTH@',      str(self.address_width),                ),
-      (r'@ISSYNC@',             "1'b1" if self.synchronous else "1'b0", ),
-      (r'@IX_ADDRESS@',         str(self.ix_address),                   ),
-      (r'@IX_DATA@',            str(self.ix_data),                      ),
-      (r'@IX_READ@',            str(self.ix_read),                      ),
-      (r'@NAME@',               self.basePortName,                      ),
-    ):
+        ( r'\bgen__',           'gen__@NAME@__',                        ),
+        ( r'\bL__',             'L__@NAME@__',                          ),
+        ( r'\bs__',             's__@NAME@__',                          ),
+        ( r'\bi_a',             '@NAME@_a',                             ),
+        ( r'\bi_b',             '@NAME@_b',                             ),
+        ( r'\bi_rd',            '@NAME@_rd',                            ),
+        ( r'\bi_rr',            '@NAME@_rr',                            ),
+        ( r'\bi_rv',            '@NAME@_rv',                            ),
+        ( r'\bi_w',             '@NAME@_w',                             ),
+        ( r'\bo_',              '@NAME@_',                              ),
+        ( r'@ADDRESS_WIDTH@',   str(self.address_width),                ),
+        ( r'@ISSYNC@',          "1'b1" if self.synchronous else "1'b0", ),
+        ( r'@IX_ADDRESS@',      str(self.ix_address),                   ),
+        ( r'@IX_DATA@',         str(self.ix_data),                      ),
+        ( r'@IX_READ@',         str(self.ix_read),                      ),
+        ( r'@NAME@',            self.basePortName,                      ),
+      ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);

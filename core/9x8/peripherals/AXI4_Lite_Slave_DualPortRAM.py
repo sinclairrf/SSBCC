@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -98,36 +98,14 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
-    def validateSize(x):
-      if re.match(r'L_\w+$',x):
-        if not config.IsParameter(x):
-          raise SSBCCException('"size=%s" is not a parameter at %s' % (x,loc,));
-        ix = [param[0] for param in config.parameters].index(x);
-        y = config.parameters[ix][1];
-        if not re.match(r'[1-9]\d*$', y):
-          raise SSBCCException('localparam must be a numeric constant, not "%s", to be used in "size=%s" at %s' % (y,x,loc,));
-        y = int(y);
-      elif re.match(r'C_\w+$',x):
-        if not config.IsConstant(x):
-          raise SSBCCException('"size=%s" is not a constant at %s' % (x,loc,));
-        y = int(config.constants[x]);
-      elif re.match(r'[1-9]\d*$',x):
-        y = int(x);
-      else:
-        raise SSBCCException('Malformed entry for "size=%s" at %s' % (x,loc,));
-      if math.modf(math.log(y,2))[0] != 0:
-        raise SSBCCException('size=%d must be a power of 2 at %s' % (y,loc,));
-      if not (16 <= y <= 256):
-        raise SSBCCException('size=%d must be between 16 and 256 inclusive at %s' % (y,loc,));
-      return y;
     allowables = (
-      ('address',       r'O_\w+$',      None,           ),
-      ('basePortName',  r'\w+$',        None,           ),
-      ('ram8',          None,           None,           ),
-      ('ram32',         None,           None,           ),
-      ('read',          r'I_\w+$',      None,           ),
-      ('size',          r'\S+$',        validateSize,   ),
-      ('write',         r'O_\w+$',      None,           ),
+      ( 'address',      r'O_\w+$',      None,           ),
+      ( 'basePortName', r'\w+$',        None,           ),
+      ( 'ram8',         None,           None,           ),
+      ( 'ram32',        None,           None,           ),
+      ( 'read',         r'I_\w+$',      None,           ),
+      ( 'size',         r'\S+$',        lambda v : self.FixedPow2(config,16,256,v), ),
+      ( 'write',        r'O_\w+$',      None,           ),
     );
     names = [a[0] for a in allowables];
     for param_tuple in param_list:
@@ -164,26 +142,26 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     self.address_width = int(math.log(self.size,2));
     for signal in (
-      ( '%s_aresetn',           1,                      'input',        ),
-      ( '%s_aclk',              1,                      'input',        ),
-      ( '%s_awvalid',           1,                      'input',        ),
-      ( '%s_awready',           1,                      'output',       ),
-      ( '%s_awaddr',            self.address_width,     'input',        ),
-      ( '%s_wvalid',            1,                      'input',        ),
-      ( '%s_wready',            1,                      'output',       ),
-      ( '%s_wdata',             32,                     'input',        ),
-      ( '%s_wstrb',             4,                      'input',        ),
-      ( '%s_bresp',             2,                      'output',       ),
-      ( '%s_bvalid',            1,                      'output',       ),
-      ( '%s_bready',            1,                      'input',        ),
-      ( '%s_arvalid',           1,                      'input',        ),
-      ( '%s_arready',           1,                      'output',       ),
-      ( '%s_araddr',            self.address_width,     'input',        ),
-      ( '%s_rvalid',            1,                      'output',       ),
-      ( '%s_rready',            1,                      'input',        ),
-      ( '%s_rdata',             32,                     'output',       ),
-      ( '%s_rresp',             2,                      'output',       ),
-    ):
+        ( '%s_aresetn',         1,                      'input',        ),
+        ( '%s_aclk',            1,                      'input',        ),
+        ( '%s_awvalid',         1,                      'input',        ),
+        ( '%s_awready',         1,                      'output',       ),
+        ( '%s_awaddr',          self.address_width,     'input',        ),
+        ( '%s_wvalid',          1,                      'input',        ),
+        ( '%s_wready',          1,                      'output',       ),
+        ( '%s_wdata',           32,                     'input',        ),
+        ( '%s_wstrb',           4,                      'input',        ),
+        ( '%s_bresp',           2,                      'output',       ),
+        ( '%s_bvalid',          1,                      'output',       ),
+        ( '%s_bready',          1,                      'input',        ),
+        ( '%s_arvalid',         1,                      'input',        ),
+        ( '%s_arready',         1,                      'output',       ),
+        ( '%s_araddr',          self.address_width,     'input',        ),
+        ( '%s_rvalid',          1,                      'output',       ),
+        ( '%s_rready',          1,                      'input',        ),
+        ( '%s_rdata',           32,                     'output',       ),
+        ( '%s_rresp',           2,                      'output',       ),
+      ):
       thisName = signal[0] % self.basePortName;
       config.AddIO(thisName,signal[1],signal[2],loc);
     config.AddSignal('s__%s__mc_addr'  % self.namestring, self.address_width, loc);
@@ -204,20 +182,20 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
     for subpair in (
-      (r'\bL__',        'L__@NAME@__',                          ),
-      (r'\bgen__',      'gen__@NAME@__',                        ),
-      (r'\bi_a',        '@NAME@_a',                             ),
-      (r'\bi_b',        '@NAME@_b',                             ),
-      (r'\bi_r',        '@NAME@_r',                             ),
-      (r'\bi_w',        '@NAME@_w',                             ),
-      (r'\bix__',       'ix__@NAME@__',                         ),
-      (r'\bo_',         '@NAME@_',                              ),
-      (r'\bs__',        's__@NAME@__',                          ),
-      (r'@IX_WRITE@',   "8'h%02x" % self.ix_write,              ),
-      (r'@NAME@',       self.namestring,                        ),
-      (r'@SIZE@',       str(self.size),                         ),
-      (r'@MEM8@',       '1' if hasattr(self,'mem8') else '0',   ),
-    ):
+        ( r'\bL__',             'L__@NAME@__',                          ),
+        ( r'\bgen__',           'gen__@NAME@__',                        ),
+        ( r'\bi_a',             '@NAME@_a',                             ),
+        ( r'\bi_b',             '@NAME@_b',                             ),
+        ( r'\bi_r',             '@NAME@_r',                             ),
+        ( r'\bi_w',             '@NAME@_w',                             ),
+        ( r'\bix__',            'ix__@NAME@__',                         ),
+        ( r'\bo_',              '@NAME@_',                              ),
+        ( r'\bs__',             's__@NAME@__',                          ),
+        ( r'@IX_WRITE@',        "8'h%02x" % self.ix_write,              ),
+        ( r'@NAME@',            self.namestring,                        ),
+        ( r'@SIZE@',            str(self.size),                         ),
+        ( r'@MEM8@',            '1' if hasattr(self,'mem8') else '0',   ),
+      ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);

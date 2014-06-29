@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012-2013, Sinclair R.F., Inc.
+# Copyright 2012-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -39,13 +39,16 @@ class monitor_stack(SSBCCperipheral):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
-    for param in param_list:
-      param_name = param_list[0];
-      param_arg = param_list[1:];
-      if param_name == 'history':
-        self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
-      else:
-        raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
+    allowables = (
+      ( 'history',      r'[1-9]\d*$',   int,    ),
+    );
+    names = [a[0] for a in allowables];
+    for param_tuple in param_list:
+      param = param_tuple[0];
+      if param not in names:
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
+      param_test = allowables[names.index(param)];
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Set optional parameters.
     if not hasattr(self,'history'):
       self.history = 50;
@@ -74,17 +77,17 @@ class monitor_stack(SSBCCperipheral):
     if len(outport_pure_strobe) == 0:
       outport_pure_strobe = '1\'b0';
     outport_pure_strobe = 'wire s__outport_pure_strobe = ' + outport_pure_strobe + ';';
-    for subs in (
-                  (r'\\bix__',                  'ix__monitor_stack__',),
-                  (r'\\bs__',                   's__monitor_stack__',),
-                  (r'@CORENAME@',               config.Get('outCoreName'),),
-                  (r'@HISTORY@',                str(self.history),),
-                  (r'@LAST_INPORT@',            '9\'h%03X' % config.NInports(),),
-                  (r'@LAST_OUTPORT@',           '9\'h%03X' % config.NOutports(),),
-                  (r'@NINSTRUCTIONS@',          str(config.Get('nInstructions')['length']),),
-                  (r'@OUTPORT_PURE_STROBE@',    outport_pure_strobe,),
-                ):
-      body = re.sub(subs[0],subs[1],body);
+    for subpair in (
+        ( r'\\bix__',                   'ix__monitor_stack__',                          ),
+        ( r'\\bs__',                    's__monitor_stack__',                           ),
+        ( r'@CORENAME@',                config.Get('outCoreName'),                      ),
+        ( r'@HISTORY@',                 str(self.history),                              ),
+        ( r'@LAST_INPORT@',             '9\'h%03X' % config.NInports(),                 ),
+        ( r'@LAST_OUTPORT@',            '9\'h%03X' % config.NOutports(),                ),
+        ( r'@NINSTRUCTIONS@',           str(config.Get('nInstructions')['length']),     ),
+        ( r'@OUTPORT_PURE_STROBE@',     outport_pure_strobe,                            ),
+      ):
+      body = re.sub(subpair[0],subpair[1],body);
     for ixBank in range(4):
       memParam = config.GetMemoryByBank(ixBank);
       if memParam:

@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -54,17 +54,19 @@ class timer(SSBCCperipheral):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
+    allowables = (
+      ('inport',        r'I_\w+$',      None,   ),
+      ('ratemethod',    r'\S+$',        lambda v : self.RateMethod(config,v), ),
+    );
+    names = [a[0] for a in allowables];
     for param_tuple in param_list:
       param = param_tuple[0];
-      param_arg = param_tuple[1];
-      if param == 'inport':
-        self.AddAttr(config,param,param_arg,'I_\w+$',loc);
-      elif param == 'ratemethod':
-        self.AddRateMethod(config,param,param_arg,loc);
-      else:
-        raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
+      if param not in names:
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
+      param_test = allowables[names.index(param)];
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
-    for paramname in ('inport','ratemethod',):
+    for paramname in names:
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
@@ -80,11 +82,11 @@ class timer(SSBCCperipheral):
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
     for subs in (
-                  (r'\bL__',            'L__@NAME@__',),
-                  (r'\bs__',            's__@NAME@__',),
-                  (r'@RATEMETHOD@',     str(self.ratemethod),),
-                  (r'@NAME@',           self.inport,),
-                ):
+        ( r'\bL__',             'L__@NAME@__',          ),
+        ( r'\bs__',             's__@NAME@__',          ),
+        ( r'@RATEMETHOD@',      str(self.ratemethod),   ),
+        ( r'@NAME@',            self.inport,            ),
+      ) :
       body = re.sub(subs[0],subs[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);

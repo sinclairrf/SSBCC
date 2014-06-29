@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -68,7 +68,7 @@ class outFIFO_async(SSBCCperipheral):
       ('data_empty',    r'o_\w+$',      None,   ),
       ('outport',       r'O_\w+$',      None,   ),
       ('infull',        r'I_\w+$',      None,   ),
-      ('depth',         r'[1-9]\d*$',   int,    ),
+      ('depth',         r'[1-9]\d*$',   lambda v : self.IntPow2(v,minValue=16),    ),
     );
     names = [a[0] for a in allowables];
     for param_tuple in param_list:
@@ -81,11 +81,6 @@ class outFIFO_async(SSBCCperipheral):
     for paramname in names:
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
-    # Ensure the depth is a power of 2.
-    if not IsPowerOf2(self.depth):
-      raise SSBCCException('depth=%d must be a power of 2 at %s' % (self.depth,loc,));
-    if self.depth < 16:
-      raise SSBCCException('depth=%d must be at least 16 at %s' % (self.depth,loc,));
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     config.AddIO(self.outclk,1,'input',loc);
     config.AddIO(self.data,8,'output',loc);
@@ -103,20 +98,20 @@ class outFIFO_async(SSBCCperipheral):
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
     for subpair in (
-      (r'@DATA@',               self.data,                      ),
-      (r'@DATA_EMPTY@',         self.data_empty,                 ),
-      (r'@DATA_RD@',            self.data_rd,                   ),
-      (r'@DEPTH@',              str(self.depth),                ),
-      (r'@DEPTH-1@',            str(self.depth-1),              ),
-      (r'@DEPTH_NBITS@',        str(CeilLog2(self.depth)),      ),
-      (r'@DEPTH_NBITS-1@',      str(CeilLog2(self.depth)-1),    ),
-      (r'@OUTCLK@',             self.outclk,                    ),
-      (r'@IX_OUTPORT@',         str(self.ix_outport),           ),
-      (r'@NAME@',               self.data,                      ),
-      (r'\bgen__',              'gen__%s__' % self.data,        ),
-      (r'\bix__',               'ix__%s__' % self.data,         ),
-      (r'\bs__',                's__%s__' % self.data,          ),
-    ):
+        ( r'@DATA@',            self.data,                      ),
+        ( r'@DATA_EMPTY@',      self.data_empty,                ),
+        ( r'@DATA_RD@',         self.data_rd,                   ),
+        ( r'@DEPTH@',           str(self.depth),                ),
+        ( r'@DEPTH-1@',         str(self.depth-1),              ),
+        ( r'@DEPTH_NBITS@',     str(CeilLog2(self.depth)),      ),
+        ( r'@DEPTH_NBITS-1@',   str(CeilLog2(self.depth)-1),    ),
+        ( r'@OUTCLK@',          self.outclk,                    ),
+        ( r'@IX_OUTPORT@',      str(self.ix_outport),           ),
+        ( r'@NAME@',            self.data,                      ),
+        ( r'\bgen__',           'gen__%s__' % self.data,        ),
+        ( r'\bix__',            'ix__%s__' % self.data,         ),
+        ( r'\bs__',             's__%s__' % self.data,          ),
+      ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);

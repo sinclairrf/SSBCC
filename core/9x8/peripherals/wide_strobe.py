@@ -38,9 +38,9 @@ class wide_strobe(SSBCCperipheral):
   def __init__(self,peripheralFile,config,param_list,loc):
     # Get the parameters.
     allowables = (
-      ('outport',       r'O_\w+$',              None,           ),
-      ('outsignal',     r'o_\w+$',              None,           ),
-      ('width',         r'(9|[1-9]\d*)$',       int,            ),
+      ( 'outport',      r'O_\w+$',              None,   ),
+      ( 'outsignal',    r'o_\w+$',              None,   ),
+      ( 'width',        r'(9|[1-9]\d*)$',       int,    ),
     );
     names = [a[0] for a in allowables];
     for param_tuple in param_list:
@@ -76,10 +76,10 @@ always @ (posedge i_clk)
     @NAME@ <= @WIDTH@'d0;
 """
     for subpair in (
-      (r'@IX_OUTPORT@', "8'd%d" % self.ix_outport,                              ),
-      (r'@WIDTH@',      str(self.width),                                        ),
-      (r'@NAME@',       self.outsignal,                                         ),
-    ):
+        ( r'@IX_OUTPORT@',      "8'd%d" % self.ix_outport,      ),
+        ( r'@WIDTH@',           str(self.width),                ),
+        ( r'@NAME@',            self.outsignal,                 ),
+      ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);
     fp.write(body);
