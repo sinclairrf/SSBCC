@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012-2013, Sinclair R.F., Inc.
+# Copyright 2012-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -8,6 +8,7 @@ import math;
 import re;
 
 from ssbccPeripheral import SSBCCperipheral
+from ssbccUtil import IsPowerOf2;
 from ssbccUtil import SSBCCException;
 
 class UART_Tx(SSBCCperipheral):
@@ -22,6 +23,7 @@ class UART_Tx(SSBCCperipheral):
                        baudmethod={clk/rate|count} \\
                        [outsignal=o_name]          \\
                        [noOutFIFO|outFIFO=n]       \\
+                       [{CTS|CTSn}=i_cts_name]     \\
                        [nStop={1|2}]\n
   Where:
     outport=O_outport_name
@@ -59,6 +61,17 @@ class UART_Tx(SSBCCperipheral):
     outFIFO=n
       optionally add a FIFO of depth n to the output side of the UART
       Note:  n must be a power of 2.
+    CTS=i_cts_name or CTSn=i_cts_name
+      optionally specify an input handshake signal to control whether or not the
+      peripheral transmits data
+      Note:  If CTS is specified then the transmitter is active when i_cts_name
+             is high.  If CTSn is specified then the transmitter is active when
+             i_cts_name is low.
+      Note:  The default, i.e., neither CTS nor CTSn is specified, is to always
+             enable the transmitter.
+      Note:  If there is no FIFO and the CTS/CTSn handshake indicates that the
+             data flow is disabled, then the busy signal will be high and the
+             processor code must not transmit the next byte.
     nStop=n
       optionally configure the peripheral for n stop bits
       default:  1 stop bit
@@ -99,29 +112,24 @@ class UART_Tx(SSBCCperipheral):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
+    allowables = (
+      ( 'CTS',          r'i_\w+$',              None,           ),
+      ( 'CTSn',         r'i_\w+$',              None,           ),
+      ( 'baudmethod',   r'\S+$',                lambda v : self.RateMethod(config,v), ),
+      ( 'noOutFIFO',    None,                   None,           ),
+      ( 'nStop',        r'[12]$',               int,            ),
+      ( 'outFIFO',      r'[1-9]\d*$',           lambda v : self.IntPow2(v), ),
+      ( 'outport',      r'O_\w+$',              None,           ),
+      ( 'outsignal',    r'o_\w+$',              None,           ),
+      ( 'outstatus',    r'I_\w+$',              None,           ),
+    );
+    names = [a[0] for a in allowables];
     for param_tuple in param_list:
       param = param_tuple[0];
-      param_arg = param_tuple[1];
-      for param_test in (
-          ('noOutFIFO',  None,         None,  ),
-          ('nStop',      r'[12]$',     int,   ),
-          ('outport',    r'O_\w+$',    None,  ),
-          ('outsignal',  r'o_\w+$',    None,  ),
-          ('outstatus',  r'I_\w+$',    None,  ),
-        ):
-        if param == param_test[0]:
-          self.AddAttr(config,param,param_arg,param_test[1],loc,param_test[2]);
-          break;
-      else:
-        if param == 'baudmethod':
-          self.AddRateMethod(config,param,param_arg,loc);
-        elif param in ('outFIFO',):
-          self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
-          x = getattr(self,param);
-          if math.modf(math.log(x,2))[0] != 0:
-            raise SSBCCException('%s=%d must be a power of 2 at %s' % (param,x,loc,));
-        else:
-          raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
+      if param not in names:
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
+      param_test = allowables[names.index(param)];
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
     for paramname in (
         'baudmethod',
@@ -132,36 +140,47 @@ class UART_Tx(SSBCCperipheral):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Set optional parameters.
     for optionalpair in (
-        ('nStop',     1,           ),
-        ('outsignal', 'o_UART_Tx', ),
+        ( 'nStop',      1,              ),
+        ( 'outsignal',  'o_UART_Tx',    ),
       ):
       if not hasattr(self,optionalpair[0]):
         setattr(self,optionalpair[0],optionalpair[1]);
     # Ensure exclusive pair configurations are set and consistent.
     for exclusivepair in (
-        ('noOutFIFO',  'outFIFO',  'noOutFIFO',  True, ),
+        ( 'CTS',        'CTSn',         None,           None,   ),
+        ( 'noOutFIFO',  'outFIFO',      'noOutFIFO',    True,   ),
       ):
       if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
         raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,));
-      if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]):
+      if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]) and exclusivepair[2]:
         setattr(self,exclusivepair[2],exclusivepair[3]);
-      if hasattr(self,exclusivepair[0]):
-        delattr(self,exclusivepair[0]);
-        setattr(self,exclusivepair[1],0);
+    # Convert configurations to alternative format.
+    for equivalent in (
+        ( 'noOutFIFO',  'outFIFO',      0,      ),
+      ):
+      if hasattr(self,equivalent[0]):
+        delattr(self,equivalent[0]);
+        setattr(self,equivalent[1],equivalent[2]);
     # Set the string used to identify signals associated with this peripheral.
     self.namestring = self.outsignal;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.outsignal,1,'output',loc);
+    for ioEntry in (
+        ( 'outsignal',  1,      'output',       ),
+        ( 'CTS',        1,      'input',        ),
+        ( 'CTSn',       1,      'input',        ),
+      ):
+      if hasattr(self,ioEntry[0]):
+        config.AddIO(getattr(self,ioEntry[0]),ioEntry[1],ioEntry[2],loc);
     config.AddSignal('s__%s__Tx'          % self.namestring,8,loc);
     config.AddSignal('s__%s__Tx_busy'     % self.namestring,1,loc);
     config.AddSignal('s__%s__Tx_wr'       % self.namestring,1,loc);
     config.AddOutport((self.outport,False,
-                   ('s__%s__Tx'           % self.namestring,8,'data',),
-                   ('s__%s__Tx_wr'        % self.namestring,1,'strobe',),
-                  ),loc);
+                    ('s__%s__Tx'           % self.namestring,8,'data',),
+                    ('s__%s__Tx_wr'        % self.namestring,1,'strobe',),
+                   ),loc);
     config.AddInport((self.outstatus,
-                   ('s__%s__Tx_busy'      % self.namestring,1,'data',),
-                 ),loc);
+                    ('s__%s__Tx_busy'      % self.namestring,1,'data',),
+                   ),loc);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 
@@ -169,14 +188,15 @@ class UART_Tx(SSBCCperipheral):
     for bodyextension in ('.v',):
       body = self.LoadCore(self.peripheralFile,bodyextension);
       for subpair in (
-                    (r'\bL__',          'L__@NAME@__', ),
-                    (r'\bgen__',        'gen__@NAME@__', ),
-                    (r'\bs__',          's__@NAME@__', ),
-                    (r'@BAUDMETHOD@',   str(self.baudmethod), ),
-                    (r'@NSTOP@',        str(self.nStop), ),
-                    (r'@OUTFIFO@',      str(self.outFIFO), ),
-                    (r'@NAME@',         self.namestring, ),
-                  ):
+          ( r'\bL__',           'L__@NAME@__',          ),
+          ( r'\bgen__',         'gen__@NAME@__',        ),
+          ( r'\bs__',           's__@NAME@__',          ),
+          ( r'@BAUDMETHOD@',    str(self.baudmethod),   ),
+          ( r'@ENABLED@',       self.CTS if hasattr(self,'CTS') else ('!%s' % self.CTSn) if hasattr(self,'CTSn') else '1\'b1', ),
+          ( r'@NSTOP@',         str(self.nStop),        ),
+          ( r'@OUTFIFO@',       str(self.outFIFO),      ),
+          ( r'@NAME@',          self.namestring,        ),
+        ):
         body = re.sub(subpair[0],subpair[1],body);
       body = self.GenVerilogFinal(config,body);
       fp.write(body);

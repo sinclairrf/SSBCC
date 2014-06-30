@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -24,6 +24,7 @@ class UART_Rx(SSBCCperipheral):
                        [noSync|sync=n]             \\
                        [noDeglitch|deglitch=n]     \\
                        [noInFIFO|inFIFO=n]         \\
+                       [{RTR|RTRn}=i_rtr_name]     \\
                        [nStop={1|2}]               \n
   Where:
     inport=I_inport_name
@@ -75,6 +76,17 @@ class UART_Rx(SSBCCperipheral):
     inFIFO=n
       optionally add a FIFO of depth n to the input side of the UART
       Note:  n must be a power of 2.
+    RTR=i_rtr_name or RTRn=i_rtr_name
+      optionally specify an output handshake signal to indicate that the
+      peripheral is ready to receive data
+      Note:  If RTR is specified then the receiver indicates it is ready when
+             i_rtr_name is high.  If RTRn is specified then the transmitter
+             indicates it is ready when i_rtr_name is low.
+      Note:  The default, i.e., neither CTS nor CTSn is specified, is to always
+             enable the receiver.
+      Note:  If there is no FIFO and the RTR/RTRn handshake indicates that the
+             receiver is not ready as soon as it starts receiving data and
+             until that data is read from the peripheral.
     nStop=n
       optionally configure the peripheral for n stop bits
       default:  1 stop bit
@@ -104,33 +116,28 @@ class UART_Rx(SSBCCperipheral):
     # Use the externally provided file name for the peripheral
     self.peripheralFile = peripheralFile;
     # Get the parameters.
+    allowables = (
+      ( 'RTR',          r'o_\w+$',      None,   ),
+      ( 'RTRn',         r'o_\w+$',      None,   ),
+      ( 'baudmethod',   r'\S+$',        lambda v : self.RateMethod(config,v), ),
+      ( 'deglitch',     r'[1-9]\d*$',   int,    ),
+      ( 'inFIFO',       r'[1-9]\d*$',   lambda v : self.IntPow2(v), ),
+      ( 'inempty',      r'I_\w+$',      None,   ),
+      ( 'inport',       r'I_\w+$',      None,   ),
+      ( 'insignal',     r'i_\w+$',      None,   ),
+      ( 'noDeglitch',   None,           None,   ),
+      ( 'noInFIFO',     None,           None,   ),
+      ( 'noSync',       None,           None,   ),
+      ( 'nStop',        r'[12]$',       int,    ),
+      ( 'sync',         r'[1-9]\d*$',   int,    ),
+    );
+    names = [a[0] for a in allowables];
     for param_tuple in param_list:
       param = param_tuple[0];
-      param_arg = param_tuple[1];
-      for param_test in (
-          ('deglitch',   r'[1-9]\d*$', int,   ),
-          ('inempty',    r'I_\w+$',    None,  ),
-          ('inport',     r'I_\w+$',    None,  ),
-          ('insignal',   r'i_\w+$',    None,  ),
-          ('noDeglitch', None,         None,  ),
-          ('noInFIFO',   None,         None,  ),
-          ('noSync',     None,         None,  ),
-          ('nStop',      r'[12]$',     int,   ),
-          ('sync',       r'[1-9]\d*$', int,   ),
-        ):
-        if param == param_test[0]:
-          self.AddAttr(config,param,param_arg,param_test[1],loc,param_test[2]);
-          break;
-      else:
-        if param == 'baudmethod':
-          self.AddRateMethod(config,param,param_arg,loc);
-        elif param in ('inFIFO',):
-          self.AddAttr(config,param,param_arg,r'[1-9]\d*$',loc,int);
-          x = getattr(self,param);
-          if math.modf(math.log(x,2))[0] != 0:
-            raise SSBCCException('%s=%d must be a power of 2 at %s' % (param,x,loc,));
-        else:
-          raise SSBCCException('Unrecognized parameter at %s: %s' % (loc,param,));
+      if param not in names:
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
+      param_test = allowables[names.index(param)];
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
     for paramname in (
         'baudmethod',
@@ -141,28 +148,41 @@ class UART_Rx(SSBCCperipheral):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Set optional parameters.
     for optionalpair in (
-        ('insignal',  'i_UART_Rx', ),
-        ('nStop',     1,           ),
+        ( 'insignal',   'i_UART_Rx',    ),
+        ( 'nStop',      1,              ),
       ):
       if not hasattr(self,optionalpair[0]):
         setattr(self,optionalpair[0],optionalpair[1]);
     # Ensure exclusive pair configurations are set and consistent.
     for exclusivepair in (
-        ('noSync',     'sync',     'sync',       3,    ),
-        ('noDeglitch', 'deglitch', 'noDeglitch', True, ),
-        ('noInFIFO',   'inFIFO',   'noInFIFO',   True, ),
+        ( 'RTR',        'RTRn',         None,           None,   ),
+        ( 'noSync',     'sync',         'sync',         3,      ),
+        ( 'noDeglitch', 'deglitch',     'noDeglitch',   True,   ),
+        ( 'noInFIFO',   'inFIFO',       'noInFIFO',     True,   ),
       ):
       if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
         raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,));
-      if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]):
+      if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]) and exclusivepair[2]:
         setattr(self,exclusivepair[2],exclusivepair[3]);
-      if hasattr(self,exclusivepair[0]):
-        delattr(self,exclusivepair[0]);
-        setattr(self,exclusivepair[1],0);
-    # Set the string used to identify signals associated with this peripheral.
+    # Convert configurations to alternate format.
+    for equivalent in (
+        ( 'noDeglitch', 'deglitch',     0,      ),
+        ( 'noInFIFO',   'inFIFO',       0,      ),
+        ( 'noSync',     'sync',         0,      ),
+      ):
+      if hasattr(self,equivalent[0]):
+        delattr(self,equivalent[0]);
+        setattr(self,equivalent[1],equivalent[2]);
+    # Set the value used to identify signals associated with this peripheral.
     self.namestring = self.insignal;
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO(self.insignal,1,'input',loc);
+    for ioEntry in (
+        ( 'insignal',   1,      'input',        ),
+        ( 'RTR',        1,      'output',       ),
+        ( 'RTRn',       1,      'output',       ),
+      ):
+      if hasattr(self,ioEntry[0]):
+        config.AddIO(getattr(self,ioEntry[0]),ioEntry[1],ioEntry[2],loc);
     config.AddSignal('s__%s__Rx'          % self.namestring,8,loc);
     config.AddSignal('s__%s__Rx_empty'    % self.namestring,1,loc);
     config.AddSignal('s__%s__Rx_rd'       % self.namestring,1,loc);
@@ -171,26 +191,34 @@ class UART_Rx(SSBCCperipheral):
                     ('s__%s__Rx_rd'       % self.namestring,1,'strobe',),
                    ),loc);
     config.AddInport((self.inempty,
-                   ('s__%s__Rx_empty'     % self.namestring,1,'data',),
-                  ),loc);
+                    ('s__%s__Rx_empty'     % self.namestring,1,'data',),
+                   ),loc);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
 
   def GenVerilog(self,fp,config):
     for bodyextension in ('.v',):
       body = self.LoadCore(self.peripheralFile,bodyextension);
+      if hasattr(self,'RTR') or hasattr(self,'RTRn'):
+        body = re.sub(r'@RTR_BEGIN@\n','',body);
+        body = re.sub(r'@RTR_END@\n','',body);
+      else:
+        body = re.sub(r'@RTR_BEGIN@.*?@RTR_END@\n','',body,flags=re.DOTALL);
       for subpair in (
-                    (r'\bL__',          'L__@NAME@__', ),
-                    (r'\bgen__',        'gen__@NAME@__', ),
-                    (r'\bs__',          's__@NAME@__', ),
-                    (r'@INPORT@',       self.insignal, ),
-                    (r'@BAUDMETHOD@',   str(self.baudmethod), ),
-                    (r'@SYNC@',         str(self.sync), ),
-                    (r'@DEGLITCH@',     str(self.deglitch), ),
-                    (r'@INFIFO@',       str(self.inFIFO), ),
-                    (r'@NSTOP@',        str(self.nStop), ),
-                    (r'@NAME@',         self.namestring, ),
-                  ):
-        body = re.sub(subpair[0],subpair[1],body);
+          ( r'@RTR_SIGNAL@',    self.RTR if hasattr(self,'RTR') else self.RTRn if hasattr(self,'RTRn') else '', ),
+          ( r'@RTR_INVERT@',    '' if hasattr(self,'RTR') else '!', ),
+          ( r'\bL__',           'L__@NAME@__',          ),
+          ( r'\bgen__',         'gen__@NAME@__',        ),
+          ( r'\bs__',           's__@NAME@__',          ),
+          ( r'@INPORT@',        self.insignal,          ),
+          ( r'@BAUDMETHOD@',    str(self.baudmethod),   ),
+          ( r'@SYNC@',          str(self.sync),         ),
+          ( r'@DEGLITCH@',      str(self.deglitch),     ),
+          ( r'@INFIFO@',        str(self.inFIFO),       ),
+          ( r'@NSTOP@',         str(self.nStop),        ),
+          ( r'@NAME@',          self.namestring,        ),
+        ):
+        if re.search(subpair[0],body):
+          body = re.sub(subpair[0],subpair[1],body);
       body = self.GenVerilogFinal(config,body);
       fp.write(body);

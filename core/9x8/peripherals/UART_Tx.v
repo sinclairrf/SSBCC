@@ -8,11 +8,12 @@ localparam L__NTX           = 1+8+@NSTOP@-1;
 localparam L__NTX_NBITS     = $clog2((L__NTX==0)?1:L__NTX);
 generate
 reg  [7:0] s__Tx_data;
+wire       s__Tx_enabled = @ENABLED@;
 reg        s__Tx_go;
 reg        s__Tx_uart_busy;
 if (@OUTFIFO@ == 0) begin : gen__nooutfifo
   always @ (s__Tx_uart_busy)
-    s__Tx_busy = s__Tx_uart_busy;
+    s__Tx_busy = s__Tx_uart_busy || !s__Tx_enabled;
   always @ (s__Tx)
     s__Tx_data = s__Tx;
   always @ (s__Tx_wr)
@@ -43,7 +44,7 @@ end else begin : gen__outfifo
   always @ (posedge i_clk)
     if (i_rst)
       s__Tx_go <= 1'b0;
-    else if (s__Tx_fifo_has_data && !s__Tx_uart_busy && !s__Tx_go)
+    else if (s__Tx_enabled && s__Tx_fifo_has_data && !s__Tx_uart_busy && !s__Tx_go)
       s__Tx_go <= 1'b1;
     else
       s__Tx_go <= 1'b0;

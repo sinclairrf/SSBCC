@@ -158,6 +158,9 @@ always @ (posedge i_clk)
     s__Rx_count <= s__Rx_count;
   end
 // Optional FIFO
+@RTR_BEGIN@
+reg s__rtr = 1'b1;
+@RTR_END@
 if (L__INFIFO == 0) begin : gen__nofifo
   always @ (posedge i_clk)
     if (i_rst) begin
@@ -180,6 +183,13 @@ if (L__INFIFO == 0) begin : gen__nofifo
           s__Rx_empty <= s__Rx_empty;
       end
     end
+  @RTR_BEGIN@
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__rtr <= 1'b1;
+    else
+      s__rtr <= ~s__Rx_idle;
+  @RTR_END@
 end else begin : gen__fifo
   reg [L__INFIFO_NBITS:0] s__Rx_fifo_addr_in;
   reg [L__INFIFO_NBITS:0] s__Rx_fifo_addr_out;
@@ -234,5 +244,47 @@ end else begin : gen__fifo
       s__Rx_fifo_addr_out <= s__Rx_fifo_addr_out;
       s__Rx <= s__Rx;
     end
+  @RTR_BEGIN@
+  // Isn't ready to receive if the FIFO is full or if the FIFO is almost full
+  // and there is incoming data (i.e., receiver is not idle).
+  reg s__Rx_idle_s = 1'b0;
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__Rx_idle_s <= 1'b0;
+    else
+      s__Rx_idle_s <= s__Rx_idle;
+  reg s__Rx_wr_s = 1'b0;
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__Rx_wr_s <= 1'b0;
+    else
+      s__Rx_wr_s <= s__Rx_wr;
+  reg s__Rx_busy = 1'b0;
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__Rx_busy <= 1'b0;
+    else if ({s__Rx_idle_s, s__Rx_idle} == 2'b10)
+      s__Rx_busy <= 1'b1;
+    else if (s__Rx_wr_s)
+      s__Rx_busy <= 1'b0;
+    else
+      s__Rx_busy <= s__Rx_busy;
+  reg s__Rx_almost_full = 1'b0;
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__Rx_almost_full <= 1'b0;
+    else
+      s__Rx_almost_full <= (s__Rx_fifo_addr_in == (s__Rx_fifo_addr_out + { 1'b0, {(L__INFIFO_NBITS){1'b1}} }));
+  always @ (posedge i_clk)
+    if (i_rst)
+      s__rtr <= 1'b1;
+    else
+//      s__rtr <= ~(s__Rx_full  || (s__Rx_almost_full && ~s__Rx_idle));
+      s__rtr <= ~(s__Rx_full  || (s__Rx_almost_full && s__Rx_busy));
+  @RTR_END@
 end
+@RTR_BEGIN@
+always @ (*)
+  @RTR_SIGNAL@ <= @RTR_INVERT@s__rtr;
+@RTR_END@
 endgenerate
