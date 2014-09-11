@@ -3,12 +3,29 @@
 # Script to build the micro controller for various 7-series FPGA.
 #
 # Usage:
-#   source /opt/Xilinx/Vivado/2014.1/setttings64.sh
-#   export DEVICE=xc7a35t-3cpg236
-#   export PERIOD=100
-#   [export OPTART="-propconst -sweep -remap -resynth_area"]
-#   ./make
+#   ./make -v 2014.2 -d xc7a35t-3cpg236 -p 100 [-o "-propconst -sweep -remap -resynth_area"]
 # Note:  See the pinouts directory for a list of available devices.
+
+while getopts "hd:o:p:v:" OPTNAME; do
+  case ${OPTNAME} in
+    ( h ) echo "Usage:  run [-t uc_name] [-v ISE_version]" > /dev/stderr;
+          echo "Where:" > /dev/stderr;
+          echo "  uc_name is one of the .9x8 files in ../uc" > /dev/stderr;
+          echo "  ISE_version is an ISE version number" > /dev/stderr;
+          exit 0;;
+    ( d ) DEVICE="${OPTARG}";;
+    ( o ) OPTPAR="${OPTARG}";;
+    ( p ) PERIOD="${OPTARG}";;
+    ( v ) VERSION="${OPTARG}";;
+  esac
+done
+
+VERSION="/opt/Xilinx/Vivado/${VERSION}";
+if [ ! -d "${VERSION}" ]; then
+  echo "FATAL ERROR:  \"${VERSION}\" not found" > /dev/stderr;
+  exit 1;
+fi
+source "${VERSION}/settings64.sh";
 
 # Ensure a version of vivado has been specified.
 
@@ -61,7 +78,7 @@ report_clocks
 # Incorporate device-dependent pinout.
 read_xdc pinouts/${DEVICE}.xdc
 # Place and route the design.
-opt_design ${OPTARG}
+opt_design ${OPTPAR}
 place_design
 route_design
 # Performance reports.
@@ -69,10 +86,23 @@ report_utilization
 report_timing_summary
 EOF
 
-rm -rf clock.xdc;
-
 #
 # Extract desired performance statistics from the log file.
 #
 
-# TODO
+gawk '
+BEGIN { usage_match=0; slack=999999; }
+/^1\. Slice Logic/ || /^2\. Slice Logic Distribution/ || /^3\. Memory/ {usage_match=1; next; }
+/^[0-9]\./ { usage_match=0; next; }
+usage_match && /Slice LUTs/ { LUTs=$5; }
+usage_match && ($2 == "Slice") { slices=$4; }
+usage_match && ($2 == "RAMB18") { ramb18=$4; }
+/^Slack/ { this_slack=1*$4; if (this_slack < slack) slack=this_slack; }
+END {
+  print "*** Performance Statistics ***";
+  print "LUTs   =",LUTs;
+  print "Slices =",slices;
+  print "Slack  =",slack;
+  print "RAMB18 =",ramb18;
+}
+' vivado.log
