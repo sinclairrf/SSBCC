@@ -24,10 +24,12 @@ rm -rf \
   ;
 
 # Build the micro controller.
-../../../../../ssbcc                    \
-  -q                                    \
-  --define-clog2                        \
-  uc_led.9x8                            \
+../../../../../ssbcc                            \
+  -q                                            \
+  --synth-instr-mem '(* ROM_STYLE="BLOCK" *)'   \
+  --rand-instr-mem                              \
+  --define-clog2                                \
+  uc_led.9x8                                    \
 || exit 1;
 
 # Generate the core.
