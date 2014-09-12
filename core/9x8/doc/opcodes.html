@@ -1,12 +1,12 @@
 
-<!-- Copyright 2012, Sinclair R.F., Inc. -->
+<!-- Copyright 2012-2014, Sinclair R.F., Inc. -->
 <html>
 <title>
 Opcodes
 </title>
 <body>
 <h1>Opcodes for the 9x8 micro controller</h1><br/>
-Copyright 2012, Sinclair R.F., Inc.<br/><br/>
+Copyright 2012, 2014, Sinclair R.F., Inc.<br/><br/>
 This document describes the opcodes for the 9x8 micro controller.  The first
   section lists the opcodes in alphabetic order, the second lists them by their
   numerical value, and the final section describes each one in detail.<br/><br/>
@@ -19,9 +19,11 @@ Some of the opcodes are not directly accessible by the assembler and must be
   Alphabetic listing:
     <a href="#&">&amp;</a>,
     <a href="#+">+</a>,
+    <a href="#+c">+c</a>,
     <a href="#-">-</a>,
     <a href="#-1<>">-1&lt;&gt;</a>,
     <a href="#-1=">-1=</a>,
+    <a href="#-c">-c</a>,
     <a href="#0<>">0&lt;&gt;</a>,
     <a href="#0=">0=</a>,
     <a href="#0>>">0&gt;&gt;</a>,
@@ -109,6 +111,14 @@ Some of the opcodes are not directly accessible by the assembler and must be
     <th align="left"><a href="#over">over</a></th>
       <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td>
       <td align="left">push a duplicate of the next-to-top of the data stack onto the data stack</td>
+      </tr>
+    <th align="left"><a href="#+c">+c</a></th>
+      <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td>
+      <td align="left">push the carry bit from N+T onto the data stack</td>
+      </tr>
+    <th align="left"><a href="#-c">-c</a></th>
+      <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td>
+      <td align="left">push the carry bit from N-T onto the data stack</td>
       </tr>
     <th align="left"><a href="#swap">swap</a></th>
       <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td>
@@ -250,6 +260,16 @@ Some of the opcodes are not directly accessible by the assembler and must be
       T &leftarrow; N + T<br/>
       N &leftarrow; <tt>stack--</tt><br/>
       <br/>
+  <h2><a name="+c">Instruction:  +c</a></h2>
+    <b>Desription:</b>  Push the carry bit from N+T onto the data
+      stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; the msb of the 9-bit sum of N+T<br/>
+      N &leftarrow; T<br/>
+      ++stack &leftarrow; N<br/>
+      <br/>
   <h2><a name="-">Instruction:  -</a></h2>
     <b>Desription:</b>  Pop the data stack and replace the top with the
       8&nbsp;difference of the previous top and next-to-top.<br/><br/>
@@ -276,6 +296,16 @@ Some of the opcodes are not directly accessible by the assembler and must be
       R and <tt>return</tt> unchanged<br/>
       T &leftarrow; 0xFF if T=0xFF, 0x00 otherwise<br/>
       N and <tt>stack</tt> unchanged<br/>
+      <br/>
+  <h2><a name="-c">Instruction:  -c</a></h2>
+    <b>Desription:</b>  Push the carry bit from N-T onto the data
+      stack.<br/><br/>
+    <b>Operation:</b><br/><br/>
+      PC &leftarrow; PC+1<br/>
+      R and <tt>return</tt> unchanged<br/>
+      T &leftarrow; the msb of the 9-bit difference N-T<br/>
+      N &leftarrow; T<br/>
+      ++stack &leftarrow; N<br/>
       <br/>
   <h2><a name="0<>">Instruction:  0<></a></h2>
     <b>Desription:</b>  Set the top of the stack to all ones if the previous

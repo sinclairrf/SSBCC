@@ -1,25 +1,23 @@
 #!/bin/bash
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 # Test against Xilinx Spartan 6 and ISE.
 #
 # To replicate the performance runs (using uc_led)
 # - Minimum resource utilization, use -3 speed grade, 10 ns clock, XST and MAP
 #   set for minimum area, and ISE 13.3 or 14.4
-# - Maximum speed
-#   -1L 11.4 9.0 ns "-timing -t  52" ==> 9.112 ns (109.7 MHz)
-#   -1L 12.4 9.4 ns "-timing -t  52" ==> 9.434 ns (106.0 MHz)
-#   -1L 13.3 9.5 ns "-timing -t  36" ==> 9.657 ns (103.6 MHz)
-#   -1L 14.4 9.5 ns "-timing -t  36" ==> 9.657 ns (103.6 MHz)
-#   -2  11.4 7.5 ns "-timing -t  50" ==> 7.948 ns (125.8 MHz)
-#   -2  12.4 7.0 ns "-timing -t   6" ==> 7.544 ns (132.6 MHz)
-#   -2  13.3 5.7 ns "-timing -t  69" ==> 5.682 ns (176.0 MHz)
-#   -2  14.4 5.7 ns "-timing -t  69" ==> 5.682 ns (176.0 MHz)
-#   -3  11.4 5.6 ns "-timing -t  50" ==> 5.700 ns (175.4 MHz)
-#   -3  12.4 5.0 ns "-timing -t  28" ==> 5.064 ns (197.5 MHz)
-#   -3  13.3 5.0 ns "-timing -t  12" ==> 5.000 ns (200.0 MHz)
-#   -3  14.4 5.0 ns "-timing -t  12" ==> 5.000 ns (200.0 MHz)
+# - results for ISE 13.3 and 14.4 or 14.7 are identical
+# - Maximum speed (rounded down)
+#   -1L 11.4 9.6 ns "-timing -t  53" ==> 9.575 ns (104.4 MHz)
+#   -1L 12.4 9.6 ns "-timing -t  52" ==> 9.906 ns (100.9 MHz)
+#   -1L 13.3 9.8 ns "-timing -t   8" ==> 9.844 ns (101.5 MHz)
+#   -2  11.4 8.2 ns "-timing -t  37" ==> 8.166 ns (122.4 MHz)
+#   -2  12.4 7.7 ns "-timing -t  56" ==> 7.955 ns (125.7 MHz)
+#   -2  13.3 5.8 ns "-timing -t  80" ==> 5.781 ns (172.9 MHz)
+#   -3  11.4 5.9 ns "-timing -t  45" ==> 5.927 ns (167.7 MHz)
+#   -3  12.4 5.4 ns "-timing -t  63" ==> 5.162 ns (193.7 MHz)
+#   -3  13.3 5.3 ns "-timing -t  14" ==> 5.162 ns (193.7 MHz)
 
-TESTED="11.4 12.4 13.3 14.4 14.5";
+TESTED="11.4 12.4 13.3 14.7";
 
 TEST_BENCHES="";
 TEST_BENCHES+=" uc_combine_instr_ds";

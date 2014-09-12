@@ -71,6 +71,10 @@
   ; Test "call" and "callc" opcodes.
   .call(test_callc,3) drop
 
+  ; Test the carry bit operations
+  0xBF 0x41 +c - +c - +c drop drop drop
+  0x00 0x02 -c - -c - -c drop drop drop
+
   ; Hang in an infinite loop.
   :infinite .jump(infinite)
 

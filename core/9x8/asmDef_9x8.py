@@ -1221,9 +1221,11 @@ class asmDef_9x8:
     self.instructions = dict(list=list(), opcode=list());
     self.AddInstruction('&',            0x050);
     self.AddInstruction('+',            0x018);
+    self.AddInstruction('+c',           0x00B);
     self.AddInstruction('-',            0x01C);
     self.AddInstruction('-1<>',         0x023);
     self.AddInstruction('-1=',          0x022);
+    self.AddInstruction('-c',           0x00F);
     self.AddInstruction('0<>',          0x021);
     self.AddInstruction('0=',           0x020);
     self.AddInstruction('0>>',          0x004);

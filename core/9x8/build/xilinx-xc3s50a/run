@@ -1,22 +1,22 @@
 #!/bin/bash
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013-2014, Sinclair R.F., Inc.
 # Test against Xilinx Spartan 3A and ISE.
 #
 # To replicate the performance runs:
 # - Minimum resource utilization, use -5 speed grade, 15 ns clock, XST and MAP
 #   set for minimum area.  ISE 11.4, 12.4, 13.3, and 14.4 gave identical
-#   results:  130 slices, 231 LUTs
-# - Maximum speed
-#   -4 11.4 8.1 ns "-timing -t  57" ==> 8.102 ns (123.4 MHz)
-#   -4 12.4 8.2 ns "-timing -t  25" ==> 8.165 ns (122.5 MHz)
-#   -4 13.3 8.0 ns "-timing -t  84" ==> 8.074 ns (123.3 MHz)
-#   -4 14.4 8.1 ns "-timing -t  22" ==> 8.127 ns (123.0 MHz)
-#   -5 11.4 6.7 ns "-timing -t  83" ==> 6.757 ns (148.0 MHz)
-#   -5 12.4 6.8 ns "-timing -t  24" ==> 6.771 ns (147.7 MHz)
-#   -5 13.3 6.7 ns "-timing -t  53" ==> 6.744 ns (148.3 MHz)
-#   -5 14.4 6.8 ns "-timing -t  31" ==> 6.773 ns (147.6 MHz)
+#   results:  129 slices, 232 LUTs
+# - Maximum speed (rounded down)
+#   -4 11.4 8.1 ns "-timing -t  76" ==> 8.093 ns (123.5 MHz)
+#   -4 12.4 8.1 ns "-timing -t  68" ==> 8.131 ns (122.9 MHz)
+#   -4 13.3 8.1 ns "-timing -t  84" ==> 8.117 ns (123.1 MHz)
+#   -4 14.7 8.1 ns "-timing -t  50" ==> 8.097 ns (123.5 MHz)
+#   -5 11.4 6.7 ns "-timing -t  91" ==> 6.694 ns (149.3 MHz)
+#   -5 12.4 6.7 ns "-timing -t  57" ==> 6.751 ns (148.1 MHz)
+#   -5 13.3 6.7 ns "-timing -t  19" ==> 6.749 ns (148.1 MHz)
+#   -5 14.7 6.7 ns "-timing -t  59" ==> 6.689 ns (149.4 MHz)
 
-TESTED="11.4 12.4 13.3 14.4";
+TESTED="11.4 12.4 13.3 14.4 14.7";
 TEST_BENCHES="";
 TEST_BENCHES+=" uc_led";
 TEST_BENCHES+=" uc_peripherals";

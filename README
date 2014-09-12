@@ -20,7 +20,7 @@ I/Os, program memory, etc.
 The features are:
 - high speed, low fabric utilization
 - vendor-independent Verilog output with a VHDL package file
-- simple Forth-like assembly language (41 instructions)
+- simple Forth-like assembly language (43 instructions)
 - single cycle instruction execution
 - automatic generation of I/O ports
 - configurable instruction, data stack, return stack, and memory utilization
@@ -50,6 +50,7 @@ output ports; RAM and ROM types and sizes; and peripherals.
 
 The instructions are all single-cycle.  The instructions include
 - 4 arithmetic instructions:  addition, subtraction, increment, and decrement
+- 2 carry bit instructions:  +c and -c for addition and subtraction respectively
 - 3 bit-wise logical instructions:  and, or, and exclusive or
 - 7 shift and rotation instructions: <<0, <<1, 0>>, 1>>, <<msb, >>msb, and >>lsb
 - 4 logical instructions:  0=, 0<>, -1=, -1<>
@@ -90,11 +91,9 @@ bugs.
 SPEED AND RESOURCE UTILIZATION
 ================================================================================
 These device speed and resource utilization results are copied from the build
-tests.  The full results are listed in core/9x8/build/uc/uc_led.9x8 which
-represents a minimal processor implementation (clock, reset, and one output).
-See the uc_peripherals.9x8 file for results for a more complicated
-implementation.  Device-specific scripts state how these performance numbers
-were obtained.
+tests.  The full results are listed in the core/9x8/build directories.  The
+tests use a minimal processor implementation (clock, reset, and one output).
+Device-specific scripts state how these performance numbers were obtained.
 
 VENDOR          DEVICE          BEST SPEED      SMALLEST RESOURCE UTILIZATION
 ------          ------          ----------      -------------------------------
@@ -103,10 +102,10 @@ Altera          Cyclone-IV      192.1 MHz       281 LEs           (preliminary)
 Altera          Stratix-V       372.9 MHz       198 ALUTs         (preliminary)
 Lattice         LCMXO2-640ZE-3   98.4 MHz       206 LUTs          (preliminary)
 Lattice         LFE2-6E-7       157.9 MHz       203 LUTs          (preliminary)
-Xilinx          Artix-7         316.5 MHz       151 slice LUTs (41 slices)
-Xilinx          Kintex-7        473.9 MHz       196 slice LUTs (55 slices)
-Xilinx          Spartan-3A      148.3 MHz       231 4-input LUTs (130 slices)
-Xilinx          Spartan-6       200.0 MHz       120 Slice LUTs (36 slices)
+Xilinx          Artix-7         TBD             163 slice LUTs (48 slices)
+Xilinx          Kintex-7        TBD             158 slice LUTs (44 slices)
+Xilinx          Spartan-3A      149.4 MHz       232 4-input LUTs (129 slices)
+Xilinx          Spartan-6       193.7 MHz       124 Slice LUTs (34 slices)
 Xilinx          Virtex-6        275.7 MHz       122 Slice LUTs (38 slices) (p.)
 
 Disclaimer:  Like other embedded processors, these are the maximum performance
@@ -381,7 +380,7 @@ single quote character.
 INSTRUCTIONS
 ================================================================================
 
-The 41 instructions are as follows (see core/9x8/doc/opcodes.html for detailed
+The 43 instructions are as follows (see core/9x8/doc/opcodes.html for detailed
 descriptions).  Here, T is the top of the data stack, N is the next-to-top of
 the data stack, and R is the top of the return stack.  All of these are the
 values at the start of the instruction.
@@ -398,6 +397,12 @@ top with the state value:
   -             N - T
   ^             bitwise exclusive or of N and T
   or            bitwise or of N and T
+
+Push the carry bit for addition or subtraction onto the data stack (see
+lib/9x8/math.s for examples on using +c and -c for multi-byte arithmetic):
+
+  +c            carry bit for N+T
+  -c            carry bit for N-T
 
 Increment and decrement replace the top of the data stack with the stated
 result.

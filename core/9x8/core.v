@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright 2012-2013, Sinclair R.F., Inc.
+ * Copyright 2012-2014, Sinclair R.F., Inc.
  *
  * SSBCC.9x8 -- Small Stack Based Computer Compiler, 9-bit opcode, 8-bit data.
  *
@@ -39,10 +39,11 @@ reg      [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr; // pointer into data stack memor
 
 /*******************************************************************************
  *
- * Instantiate the ALU operations.  These are listed in the order in which they
- * first occur in the opcodes.
+ * Instantiate the ALU operations.  These are listed in order by opcode.
  *
  ******************************************************************************/
+
+reg [8:0] s_T_adder;
 
 // opcode = 000000_xxx
 // shifter operations (including "nop" as no shift)
@@ -66,26 +67,27 @@ always @ (s_T,s_opcode)
 reg [7:0] s_T_stack;
 always @ (*)
   case (s_opcode[0+:2])
-      2'b00 : s_T_stack = s_T;                  // dup
-      2'b01 : s_T_stack = s_R[0+:8];            // r@
-      2'b10 : s_T_stack = s_N;                  // over
+      2'b00 : s_T_stack = s_T;                          // dup
+      2'b01 : s_T_stack = s_R[0+:8];                    // r@
+      2'b10 : s_T_stack = s_N;                          // over
+      2'b11 : s_T_stack = { 7'd0, s_T_adder[8] };       // +/-c
     default : s_T_stack = s_T;
   endcase
 
 //  opcode = 000011_x00 (adder) and 001xxx_x.. (incrementers)
-reg [7:0] s_T_adder;
 always @ (*)
   if (s_opcode[6] == 1'b0)
     case (s_opcode[2])
-       1'b0: s_T_adder = s_N + s_T;
-       1'b1: s_T_adder = s_N - s_T;
+       1'b0: s_T_adder = { 1'b0, s_N } + { 1'b0, s_T };
+       1'b1: s_T_adder = { 1'b0, s_N } - { 1'b0, s_T };
     endcase
-  else
+  else begin
     case (s_opcode[2])
-       1'b0: s_T_adder = s_T + 8'h01;
-       1'b1: s_T_adder = s_T - 8'h01;
-    default: s_T_adder = s_T + 8'h01;
+       1'b0: s_T_adder = { 1'b0, s_T } + 9'h01;
+       1'b1: s_T_adder = { 1'b0, s_T } - 9'h01;
+    default: s_T_adder = { 1'b0, s_T } + 9'h01;
     endcase
+  end
 
 // opcode = 000100_0xx
 //                   ^ 0 ==> "=", 1 ==> "<>"
@@ -218,7 +220,7 @@ always @ (*) begin
   end else case (s_opcode[3+:4])
       4'b0000:  // nop, math_rotate
                 ;
-      4'b0001:  begin // dup, r@, over
+      4'b0001:  begin // dup, r@, over, +/-c
                 s_bus_t         = C_BUS_T_PRE;
                 s_bus_n         = C_BUS_N_T;
                 s_stack         = C_STACK_INC;
@@ -401,7 +403,7 @@ always @ (*)
     C_BUS_T_OPCODE:             s_T_pre = s_opcode[0+:8];  // push 8-bit value
     C_BUS_T_N:                  s_T_pre = s_N;
     C_BUS_T_PRE:                s_T_pre = s_T_stack;
-    C_BUS_T_ADDER:              s_T_pre = s_T_adder;
+    C_BUS_T_ADDER:              s_T_pre = s_T_adder[0+:8];
     C_BUS_T_COMPARE:            s_T_pre = {(8){s_T_compare}};
     C_BUS_T_INPORT:             s_T_pre = s_T_inport;
     C_BUS_T_LOGIC:              s_T_pre = s_T_logic;

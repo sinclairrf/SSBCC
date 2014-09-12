@@ -37,6 +37,8 @@ task display_trace;
       9'b00_0001_000 : s_opcode_name = "dup    ";
       9'b00_0001_001 : s_opcode_name = "r@     ";
       9'b00_0001_010 : s_opcode_name = "over   ";
+      9'b00_0001_011 : s_opcode_name = "+c     ";
+      9'b00_0001_111 : s_opcode_name = "-c     ";
       9'b00_0010_010 : s_opcode_name = "swap   ";
       9'b00_0011_000 : s_opcode_name = "+      ";
       9'b00_0011_100 : s_opcode_name = "-      ";
