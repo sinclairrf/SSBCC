@@ -62,7 +62,9 @@ class SSBCCconfig():
     self.AddSymbol(name,loc);
     if name in self.constants:
       raise SSBCCException('CONSTANT "%s" already declared at %s' % (name,loc,));
-    self.constants[name] = value;
+    if not IsIntExpr(value):
+      raise SSBCCException('Could not evaluate expression "%s" for constant at %s' % (value,loc,));
+    self.constants[name] = ParseIntExpr(value);
 
   def AddIO(self,name,nBits,iotype,loc):
     """
