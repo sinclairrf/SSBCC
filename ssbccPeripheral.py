@@ -6,8 +6,10 @@
 
 import re
 
+from ssbccUtil import IsIntExpr
 from ssbccUtil import IsPosInt
 from ssbccUtil import IsPowerOf2
+from ssbccUtil import ParseIntExpr
 from ssbccUtil import SSBCCException
 
 class SSBCCperipheral:
@@ -101,27 +103,6 @@ class SSBCCperipheral:
     """
     raise Exception('VHDL is not implemented for this peripheral');
 
-  def IsIntExpr(self,value):
-    """
-    Test the string to see if it is a well-formatted integer or multiplication
-    of two integers.
-    Allow underscores as per Verilog.
-    """
-    if re.match(r'[1-9][0-9_]*',value):
-      return True;
-    elif re.match(r'\([1-9][0-9_]*(\*[1-9][0-9_]*)+\)',value):
-      return True;
-    else:
-      return False;
-
-  def IsParameter(self,config,name):
-    """
-    See if the provided symbol name is a parameter in the processor core.
-    config      ssbccConfig object for the procedssor core
-    name        symbol name
-    """
-    return config.IsParameter(name);
-
   def LoadCore(self,filename,extension):
     """
     Read the source HDL for the peripheral from the same directory as the python
@@ -137,18 +118,6 @@ class SSBCCperipheral:
     body = fp.read();
     fp.close();
     return body;
-
-  def ParseIntExpr(self,value):
-    """
-    Convert a string containing well-formatted integer or multiplication of two
-    integers.
-    Allow underscores as per Verilog.
-    Note:  If this routine is called, then the value should have already been
-           verified to be a well-formatted integer string.
-    """
-    if not self.IsIntExpr(value):
-      raise Exception('Program Bug -- shouldn\'t call with a badly formatted integer expression');
-    return eval(re.sub('_','',value));
 
   ##############################################################################
   #
@@ -180,7 +149,7 @@ class SSBCCperipheral:
       value = config.constants[value];
     if not IsPosInt(value):
       raise SSBCCException('Must be a constant positive integer');
-    value = self.ParseIntExpr(value);
+    value = ParseIntExpr(value);
     if not IsPowerOf2(value):
       raise SSBCCException('Must be a power of 2');
     if not (lowLimit <= value <= highLimit):
@@ -194,7 +163,7 @@ class SSBCCperipheral:
     """
     if not IsPosInt(value):
       raise SSBCCException('Not a positive integer');
-    value = self.ParseIntExpr(value);
+    value = ParseIntExpr(value);
     if not IsPowerOf2(value):
       raise SSBCCException('Not a power of 2');
     if value < minValue:
@@ -208,7 +177,7 @@ class SSBCCperipheral:
     """
     if not IsPosInt(value):
       raise SSBCCException('Not a positive integer');
-    value = self.ParseIntExpr(value);
+    value = ParseIntExpr(value);
     if (maxValue != 0) and (value > maxValue):
       raise SSBCCException('Out of bounds -- can be at most %d' % maxValue);
     return value;
@@ -226,19 +195,24 @@ class SSBCCperipheral:
       G_CLOCK_FREQUENCY_HZ/L_BAUD_RATE
       100_000_000/G_BAUD_RATE
     """
-    if value.find('/') < 0:
-      if self.IsIntExpr(value):
-        return str(self.ParseIntExpr(value));
-      elif self.IsParameter(config,value):
+    def TestAndGetValue(self,config,value,position):
+      if IsIntExpr(value):
+        return str(ParseIntExpr(value));
+      elif config.IsConstant(value):
+        value = config.constants[value];
+        if not value > 0:
+          raise SSBCCException('Constant "%s" must be positive');
+        return str(value);
+      elif config.IsParameter(value):
         return value;
       else:
-        raise SSBCCException('Value must be a positive integer or a previously declared parameter');
+        raise SSBCCException('%s must be a positive integer or a previously declared positive constant or a parameter', position);
+    if value.find('/') < 0:
+      return TestAndGetValue(self,config,value,'Value');
     else:
       ratearg = re.findall('([^/]+)',value);
       if len(ratearg) != 2:
         raise SSBCCException('Only one "/" allowed in expression');
-      if not self.IsIntExpr(ratearg[0]) and not self.IsParameter(config,ratearg[0]):
-        raise SSBCCException('Numerator must be an integer or a previously declared parameter');
-      if not self.IsIntExpr(ratearg[1]) and not self.IsParameter(config,ratearg[1]):
-        raise SSBCCException('Denominator must be an integer or a previously declared parameter');
+      ratearg[0] = TestAndGetValue(self,config,ratearg[0],'Numerator');
+      ratearg[1] = TestAndGetValue(self,config,ratearg[1],'Denominator');
       return '(%s+%s/2)/%s' % (ratearg[0],ratearg[1],ratearg[1],);

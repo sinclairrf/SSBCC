@@ -108,6 +108,19 @@ def IntValue(v):
     raise SSBCCException('Paramter length and value don\'t match:  "%s"' % save_v);
   return ov;
 
+def IsIntExpr(value):
+  """
+  Test the string to see if it is a well-formatted integer or multiplication of
+  two integers.
+  Allow underscores as per Verilog.
+  """
+  if re.match(r'[1-9][0-9_]*',value):
+    return True;
+  elif re.match(r'\([1-9][0-9_]*(\*[1-9][0-9_]*)+\)',value):
+    return True;
+  else:
+    return False;
+
 def IsPosInt(v):
   """
   Indicate whether or not the argument is a positive integer.
@@ -150,6 +163,18 @@ def LoadFile(filename,config):
     v.append((tmpLine,ixLine,));
   fp.close();
   return v;
+
+def ParseIntExpr(value):
+  """
+  Convert a string containing well-formatted integer or multiplication of two
+  integers.
+  Allow underscores as per Verilog.
+  Note:  If this routine is called, then the value should have already been
+         verified to be a well-formatted integer string.
+  """
+  if not IsIntExpr(value):
+    raise Exception('Program Bug -- shouldn\'t call with a badly formatted integer expression');
+  return eval(re.sub('_','',value));
 
 ################################################################################
 #
