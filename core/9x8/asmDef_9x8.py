@@ -469,9 +469,9 @@ class asmDef_9x8:
                 raise Exception('Program Bug -- unexpected out-of-range value');
               values.append(v);
         else:
-          raise asmDef.AsmException('Illegal token "%s" at %s:%d:%d', (token['type'],token['loc']));
+          raise asmDef.AsmException('Illegal token "%s" at %s' % (token['type'],token['loc'],));
     except:
-      raise asmDef.AsmException('Out-of-range token "%s" at %s:%d:%d', (token['type'],token['loc']));
+      raise asmDef.AsmException('Out-of-range token "%s" at %s' % (token['type'],token['loc'],));
     return values;
 
   def ExpandSymbol(self,token,singleValue):
@@ -753,7 +753,7 @@ class asmDef_9x8:
               raise asmDef.AsmException('Function "%s" not defined for function "%s"' % (callName,self.functionEvaluation['list'][ix],));
             ixName = self.symbols['list'].index(callName);
             if self.symbols['type'][ixName] != 'function':
-              raise asmDef.AsmException('Function "%s" called by "%s" is not a function', (callName, self.functionEvaluation['list'][ix],));
+              raise asmDef.AsmException('Function "%s" called by "%s" is not a function' % (callName, self.functionEvaluation['list'][ix],));
             self.functionEvaluation['list'].append(callName);
             self.functionEvaluation['length'].append(self.symbols['body'][ixName]['length']);
             self.functionEvaluation['body'].append(self.symbols['body'][ixName]['tokens']);
