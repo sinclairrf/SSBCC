@@ -401,7 +401,7 @@ def ParseToken(ad,fl_loc,col,raw,allowed):
     if len(b.group(0)) == len(raw):
       pass;
     elif (raw[len(b.group(0))] != '(') or (raw[-1] != ')'):
-      raise AsmException('Malformed macro invokaction "%" at %s:%d' % (raw,fl_loc,col+1,));
+      raise AsmException('Malformed macro invokaction "%s" at %s:%d' % (raw,fl_loc,col+1,));
     else:
       tcol = len(b.group(0))+1;
       while tcol < len(raw):
