@@ -450,28 +450,31 @@ class asmDef_9x8:
     Return either (1) a list comprised of a single token which may not be a
     byte or (2) a list comprised of multiple tokens, each of which is a single
     byte.\n
-    Note:  This is called by FillRawTokens.
+    Note:  This is called by FillRawTokens.\n
+    Note:  Multi-value lists must be single-byte values (i.e., in the range -128 to 255)
     """
     if len(rawTokens) > 1:
       limit = True;
     values = list();
-    try:
-      for token in rawTokens:
-        if token['type'] == 'value':
-          v = token['value'];
-          if type(v) == int:
-            if limit and not (-128 <= v < 256):
-              raise Exception('Program Bug -- unexpected out-of-range value');
-            values.append(v);
-          else:
-            for v in token['value']:
-              if not (-128 <= v < 256):
-                raise Exception('Program Bug -- unexpected out-of-range value');
-              values.append(v);
-        else:
-          raise asmDef.AsmException('Illegal token "%s" at %s' % (token['type'],token['loc'],));
-    except:
-      raise asmDef.AsmException('Out-of-range token "%s" at %s' % (token['type'],token['loc'],));
+    for token in rawTokens:
+      if token['type'] == 'symbol':
+        ix = self.symbols['list'].index(token['value']);
+        symbolType = self.symbols['type'][ix];
+        if symbolType != 'constant':
+          raise asmDef.AsmException('Illegal symbol "%s" at %s' % (token['value'],token['loc'],));
+        value = self.symbols['body'][ix];
+      elif token['type'] == 'value':
+        value = token['value'];
+      else:
+        raise asmDef.AsmException('Illegal token "%s" with value "%s" at %s' % (token['type'],token['value'],token['loc'],));
+      if type(value) == int:
+        value = [value];
+      else:
+        limit = True;
+      for v in value:
+        if limit and not (-128 <= v < 256):
+          raise asmDef.AsmException('Out-of-rarnge value "%d" at %s' % (v,token['loc'],))
+        values.append(v);
     return values;
 
   def ExpandSymbol(self,token,singleValue):
