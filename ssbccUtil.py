@@ -105,7 +105,7 @@ def IntValue(v):
       raise SSBCCException('Malformed parameter value:  "%s"' % save_v);
     ov += dv;
   if length > 0 and ov >= 2**length:
-    raise SSBCCException('Paramter length and value don\'t match:  "%s"' % save_v);
+    raise SSBCCException('Parameter length and value don\'t match:  "%s"' % save_v);
   return ov;
 
 def IsIntExpr(value):
