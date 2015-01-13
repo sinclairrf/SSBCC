@@ -185,13 +185,14 @@ class SSBCCperipheral:
   def RateMethod(self,config,value):
     """
     Return the string to evaluate the provided value or ratio of two values.
-    The value can be an integer (including underscores) or a parameter.  Ratios
-    are restated to do rounding instead of truncation.\n
+    The value can be an integer (including underscores), a constant, or a
+    parameter.  Ratios are restated to do rounding instead of truncation.\n
     Examples:
       123456
       123_456
       L_DIVISION_RATIO
       G_CLOCK_FREQUENCY_HZ/19200
+      C_CLOCK_FREQUENCY_HZ/19200
       G_CLOCK_FREQUENCY_HZ/L_BAUD_RATE
       100_000_000/G_BAUD_RATE
     """
