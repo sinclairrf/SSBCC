@@ -48,6 +48,7 @@ use it for various vendor-specific tools.
     &nbsp;&nbsp;&nbsp;&nbsp;top_inst/uc_inst_Mram_s_opcodeMemory_1&nbsp;[0:8];<br/>
     &nbsp;&nbsp;END_BUS_BLOCK;<br/>
     END_ADDRESS_SPACE;<br/></tt><br/>
+    Note:  For a Spartan-3A the bit indices <tt>[0:8]</tt> may need to be reversed.<br/><br/>
   <li>Add this file to the build process.<br/><br/>
     For a command-line build this is done by adding "<tt>-bm&nbsp;uc.bmm</tt>"
     to the argument list for ngdbuild.<br/><br/>
