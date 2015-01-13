@@ -30,7 +30,7 @@ class UART(SSBCCperipheral):
                        [noInFIFO|inFIFO=n]         \\
                        [noOutFIFO|outFIFO=n]       \\
                        [{CTS|CTSn}=i_cts_name]     \\
-                       [{RTR|RTRn}=i_rtr_name]     \\
+                       [{RTR|RTRn}=o_rtr_name]     \\
                        [nStop={1|2}]\n
   Where:
     inport=I_inport_name
@@ -54,9 +54,9 @@ class UART(SSBCCperipheral):
       1st method:  clk/rate
         clk is the frequency of "i_clk" in Hz
           a number will be interpreted as the clock frequency in Hz
-          a symbol will be interpreted as a parameter
-            Note:  this parameter must have been declared with a "PARAMETER"
-            command
+          a symbol will be interpreted as a constant or a parameter
+            Note:  the symbol must be declared with the CONSTANT, LOCALPARARM,
+                   or PARAMETER configuration command.
         rate is the desired baud rate
           this is specified as per "clk"
       2nd method:
@@ -110,12 +110,12 @@ class UART(SSBCCperipheral):
       Note:  If there is no FIFO and the CTS/CTSn handshake indicates that the
              data flow is disabled, then the busy signal will be high and the
              processor code must not transmit the next byte.
-    RTR=i_rtr_name or RTRn=i_rtr_name
+    RTR=o_rtr_name or RTRn=o_rtr_name
       optionally specify an output handshake signal to indicate that the
       peripheral is ready to receive data
       Note:  If RTR is specified then the receiver indicates it is ready when
-             i_rtr_name is high.  If RTRn is specified then the transmitter
-             indicates it is ready when i_rtr_name is low.
+             o_rtr_name is high.  If RTRn is specified then the transmitter
+             indicates it is ready when o_rtr_name is low.
       Note:  The default, i.e., neither CTS nor CTSn is specified, is to always
              enable the receiver.
       Note:  If there is no FIFO and the RTR/RTRn handshake indicates that the

@@ -39,9 +39,9 @@ class UART_Tx(SSBCCperipheral):
       1st method:  clk/rate
         clk is the frequency of "i_clk" in Hz
           a number will be interpreted as the clock frequency in Hz
-          a symbol will be interpreted as a parameter
-            Note:  this parameter must have been declared with a "PARAMETER"
-            command
+          a symbol will be interpreted as a constant or a parameter
+            Note:  the symbol must be declared with the CONSTANT, LOCALPARARM,
+                   or PARAMETER configuration command.
         rate is the desired baud rate
           this is specified as per "clk"
       2nd method:

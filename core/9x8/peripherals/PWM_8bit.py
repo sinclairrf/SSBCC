@@ -30,8 +30,13 @@ class PWM_8bit(SSBCCperipheral):
       Note:  The name must start with "o_".
     ratemethod={clk/rate|count}
       specifies the frequency at which the PWM counter is incremented
+      Note:  "clk," "rate," and "count" can be integers or can be declared by
+             CONSTANT, LOCALPARARM, or PARAMETER configuration commands.
       Example:  ratemethod=count means to increment the PWM counter once every
                 "count" clock cycles.
+      Example:  ratemethod=G_CLK_HZ/1_000 means to use the parameter G_CLK_HZ
+                (set elsewhere) and a 1,000 Hz update rate to determine the
+                number of clock cycles between updates.
     invert|noinvert
       optional configuration command to invert or to not invert the PWM output
       Default:  don't invert the output (i.e., a command of 0 means the output is

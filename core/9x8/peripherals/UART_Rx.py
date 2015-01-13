@@ -24,7 +24,7 @@ class UART_Rx(SSBCCperipheral):
                        [noSync|sync=n]             \\
                        [noDeglitch|deglitch=n]     \\
                        [noInFIFO|inFIFO=n]         \\
-                       [{RTR|RTRn}=i_rtr_name]     \\
+                       [{RTR|RTRn}=o_rtr_name]     \\
                        [nStop={1|2}]               \n
   Where:
     inport=I_inport_name
@@ -40,9 +40,9 @@ class UART_Rx(SSBCCperipheral):
       1st method:  clk/rate
         clk is the frequency of "i_clk" in Hz
           a number will be interpreted as the clock frequency in Hz
-          a symbol will be interpreted as a parameter
-            Note:  this parameter must have been declared with a "PARAMETER"
-            command
+          a symbol will be interpreted as a constant or a parameter
+            Note:  the symbol must be declared with the CONSTANT, LOCALPARARM,
+                   or PARAMETER configuration command.
         rate is the desired baud rate
           this is specified as per "clk"
       2nd method:
@@ -52,7 +52,7 @@ class UART_Rx(SSBCCperipheral):
              frequency and a hard-wired baud rate of 9600:
              "baudmethod=G_CLK_FREQ_HZ/9600".
       Note:  The numeric values can have Verilog-style '_' separators between
-               the digits.  For example, 100_000_000 represents 100 million.
+             the digits.  For example, 100_000_000 represents 100 million.
     insignal=i_name
       optionally specifies the name of the single-bit transmit signal
       Default:  i_UART_Rx
@@ -76,12 +76,12 @@ class UART_Rx(SSBCCperipheral):
     inFIFO=n
       optionally add a FIFO of depth n to the input side of the UART
       Note:  n must be a power of 2.
-    RTR=i_rtr_name or RTRn=i_rtr_name
+    RTR=o_rtr_name or RTRn=o_rtr_name
       optionally specify an output handshake signal to indicate that the
       peripheral is ready to receive data
       Note:  If RTR is specified then the receiver indicates it is ready when
-             i_rtr_name is high.  If RTRn is specified then the transmitter
-             indicates it is ready when i_rtr_name is low.
+             o_rtr_name is high.  If RTRn is specified then the transmitter
+             indicates it is ready when o_rtr_name is low.
       Note:  The default, i.e., neither CTS nor CTSn is specified, is to always
              enable the receiver.
       Note:  If there is no FIFO and the RTR/RTRn handshake indicates that the
