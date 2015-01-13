@@ -13,7 +13,7 @@
 //
 localparam L__BAUDMETHOD = ((@BAUDMETHOD@)+1)/2;
 localparam L__BAUDMETHOD_MINUS = L__BAUDMETHOD - 2;
-localparam L__BAUDMETHOD_NBITS = $clog2(L__BAUDMETHOD+1);
+localparam L__BAUDMETHOD_NBITS = $clog2(L__BAUDMETHOD_MINUS+1);
 localparam L__SYNC_LENGTH = @SYNC@;
 localparam L__DEGLITCH_LENGTH = @DEGLITCH@;
 localparam L__NSTOP = @NSTOP@;
@@ -285,6 +285,6 @@ end else begin : gen__fifo
 end
 @RTR_BEGIN@
 always @ (*)
-  @RTR_SIGNAL@ <= @RTR_INVERT@s__rtr;
+  @RTR_SIGNAL@ = @RTR_INVERT@s__rtr;
 @RTR_END@
 endgenerate
