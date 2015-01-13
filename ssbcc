@@ -80,7 +80,7 @@ try:
   if argList.I:
     for pathString in argList.I:
       if not os.path.isdir(pathString):
-        raise SSBCCException('Bad path string:  "%s"' % pathString);
+        raise SSBCCException('Bad path string:  "%s/%s"' % (os.getcwd(),pathString,));
       config.AppendIncludePath(pathString);
       config.InsertPeripheralPath(pathString);
 
