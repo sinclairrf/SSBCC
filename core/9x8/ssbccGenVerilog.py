@@ -799,14 +799,12 @@ def genSignals(fp,config):
     fp.write('// no additional signals\n');
     return;
   maxLength = 0;
-  for ix in range(len(config.signals)):
-    thisSignal = config.signals[ix];
+  for thisSignal in config.signals:
     signalName = thisSignal[0];
     if len(signalName) > maxLength:
       maxLength = len(signalName);
   maxLength = maxLength + 12;
-  for ix in range(len(config.signals)):
-    thisSignal = config.signals[ix];
+  for thisSignal in config.signals:
     signalName = thisSignal[0];
     signalWidth = thisSignal[1];
     signalInit = "%d'd0" % signalWidth if len(thisSignal) < 3 else thisSignal[2];
