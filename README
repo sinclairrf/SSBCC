@@ -48,15 +48,15 @@ The computer compiler uses an architectural description of the processor stating
 the sizes of the instruction memory, data stack, and return stack; the input and
 output ports; RAM and ROM types and sizes; and peripherals.
 
-The instructions are all single-cycle.  The instructions include
+The instructions are all single-cycle.  The instructions are:
 - 4 arithmetic instructions:  addition, subtraction, increment, and decrement
 - 2 carry bit instructions:  +c and -c for addition and subtraction respectively
 - 3 bit-wise logical instructions:  and, or, and exclusive or
-- 7 shift and rotation instructions: <<0, <<1, 0>>, 1>>, <<msb, >>msb, and >>lsb
+- 7 shift and rotation instructions: <<0, <<1, 0>>, 1>>, <<msb, msb>>, and lsb>>
 - 4 logical instructions:  0=, 0<>, -1=, -1<>
 - 6 Forth-like data stack instructions:  drop, dup, nip, over, push, swap
 - 3 Forth-like return stack instructions:  >r, r>, r@
-- 2 input and output
+- 2 I/O: inport, outport
 - 6 memory read and write with optional address post increment and post decrement
 - 2 jump and conditional jump
 - 2 call and conditional call
