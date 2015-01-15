@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012-2014, Sinclair R.F., Inc.
+# Copyright 2012-2015, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -171,9 +171,9 @@ class UART_Tx(SSBCCperipheral):
       ):
       if hasattr(self,ioEntry[0]):
         config.AddIO(getattr(self,ioEntry[0]),ioEntry[1],ioEntry[2],loc);
-    config.AddSignal('s__%s__Tx'          % self.namestring,8,loc);
-    config.AddSignal('s__%s__Tx_busy'     % self.namestring,1,loc);
-    config.AddSignal('s__%s__Tx_wr'       % self.namestring,1,loc);
+    config.AddSignalWithInit('s__%s__Tx'        % self.namestring,8,None,loc);
+    config.AddSignal('s__%s__Tx_busy'           % self.namestring,1,loc);
+    config.AddSignalWithInit('s__%s__Tx_wr'     % self.namestring,1,None,loc);
     config.AddOutport((self.outport,False,
                     ('s__%s__Tx'           % self.namestring,8,'data',),
                     ('s__%s__Tx_wr'        % self.namestring,1,'strobe',),
@@ -188,14 +188,14 @@ class UART_Tx(SSBCCperipheral):
     for bodyextension in ('.v',):
       body = self.LoadCore(self.peripheralFile,bodyextension);
       for subpair in (
-          ( r'\bL__',           'L__@NAME@__',          ),
-          ( r'\bgen__',         'gen__@NAME@__',        ),
-          ( r'\bs__',           's__@NAME@__',          ),
-          ( r'@BAUDMETHOD@',    str(self.baudmethod),   ),
-          ( r'@ENABLED@',       self.CTS if hasattr(self,'CTS') else ('!%s' % self.CTSn) if hasattr(self,'CTSn') else '1\'b1', ),
-          ( r'@NSTOP@',         str(self.nStop),        ),
-          ( r'@OUTFIFO@',       str(self.outFIFO),      ),
-          ( r'@NAME@',          self.namestring,        ),
+          ( r'\bL__',                   'L__@NAME@__',          ),
+          ( r'\bgen__',                 'gen__@NAME@__',        ),
+          ( r'\bs__',                   's__@NAME@__',          ),
+          ( r'@BAUDMETHOD@',            str(self.baudmethod),   ),
+          ( r'@ENABLED@',               self.CTS if hasattr(self,'CTS') else ('!%s' % self.CTSn) if hasattr(self,'CTSn') else '1\'b1', ),
+          ( r'@NSTOP@',                 str(self.nStop),        ),
+          ( r'@OUTFIFO@',               str(self.outFIFO),      ),
+          ( r'@NAME@',                  self.namestring,        ),
         ):
         body = re.sub(subpair[0],subpair[1],body);
       body = self.GenVerilogFinal(config,body);

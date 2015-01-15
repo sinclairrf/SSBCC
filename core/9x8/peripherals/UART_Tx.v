@@ -1,5 +1,6 @@
 //
 // PERIPHERAL UART_Tx:  @NAME@
+// Copyright 2013-2015 Sinclair R.F., Inc.
 //
 localparam L__OUTFIFO_NBITS = $clog2(@OUTFIFO@);
 localparam L__COUNT         = @BAUDMETHOD@-1;
@@ -12,7 +13,7 @@ wire       s__Tx_enabled = @ENABLED@;
 reg        s__Tx_go;
 reg        s__Tx_uart_busy;
 if (@OUTFIFO@ == 0) begin : gen__nooutfifo
-  always @ (s__Tx_uart_busy)
+  always @ (s__Tx_uart_busy, s__Tx_enabled)
     s__Tx_busy = s__Tx_uart_busy || !s__Tx_enabled;
   always @ (s__Tx)
     s__Tx_data = s__Tx;

@@ -279,25 +279,25 @@ class UART(SSBCCperipheral):
       ):
       if hasattr(self,ioEntry[0]):
         config.AddIO(getattr(self,ioEntry[0]),ioEntry[1],ioEntry[2],loc);
-    config.AddSignal('s__%s__Rx'          % self.namestring,8,loc);
-    config.AddSignal('s__%s__Rx_empty'    % self.namestring,1,loc);
-    config.AddSignal('s__%s__Rx_rd'       % self.namestring,1,loc);
-    config.AddSignal('s__%s__Tx'          % self.namestring,8,loc);
-    config.AddSignal('s__%s__Tx_busy'     % self.namestring,1,loc);
-    config.AddSignal('s__%s__Tx_wr'       % self.namestring,1,loc);
+    config.AddSignal('s__%s__Rx'                % self.namestring,8,loc);
+    config.AddSignal('s__%s__Rx_empty'          % self.namestring,1,loc);
+    config.AddSignal('s__%s__Rx_rd'             % self.namestring,1,loc);
+    config.AddSignalWithInit('s__%s__Tx'        % self.namestring,8,None,loc);
+    config.AddSignal('s__%s__Tx_busy'           % self.namestring,1,loc);
+    config.AddSignalWithInit('s__%s__Tx_wr'     % self.namestring,1,None,loc);
     config.AddInport((self.inport,
-                    ('s__%s__Rx'          % self.namestring,8,'data',),
-                    ('s__%s__Rx_rd'       % self.namestring,1,'strobe',),
+                    ('s__%s__Rx'                % self.namestring,8,'data',),
+                    ('s__%s__Rx_rd'             % self.namestring,1,'strobe',),
                    ),loc);
     config.AddInport((self.inempty,
-                   ('s__%s__Rx_empty'     % self.namestring,1,'data',),
+                   ('s__%s__Rx_empty'           % self.namestring,1,'data',),
                   ),loc);
     config.AddOutport((self.outport,False,
-                   ('s__%s__Tx'           % self.namestring,8,'data',),
-                   ('s__%s__Tx_wr'        % self.namestring,1,'strobe',),
+                   ('s__%s__Tx'                 % self.namestring,8,'data',),
+                   ('s__%s__Tx_wr'              % self.namestring,1,'strobe',),
                   ),loc);
     config.AddInport((self.outstatus,
-                   ('s__%s__Tx_busy'      % self.namestring,1,'data',),
+                   ('s__%s__Tx_busy'            % self.namestring,1,'data',),
                  ),loc);
     # Add the 'clog2' function to the processor (if required).
     config.functions['clog2'] = True;
