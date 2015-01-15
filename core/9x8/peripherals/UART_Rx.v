@@ -1,5 +1,6 @@
 //
 // PERIPHERAL UART_Rx:  @NAME@
+// Copyright 2013-2015 Sinclair R.F., Inc.
 //
 // Technique:
 // - optionally synchronize the incoming signal
@@ -159,7 +160,7 @@ always @ (posedge i_clk)
   end
 // Optional FIFO
 @RTR_BEGIN@
-reg s__rtr = 1'b1;
+reg s__rtrn = 1'b1; // Disable reception until the core is out of reset.
 @RTR_END@
 if (L__INFIFO == 0) begin : gen__nofifo
   always @ (posedge i_clk)
@@ -186,9 +187,9 @@ if (L__INFIFO == 0) begin : gen__nofifo
   @RTR_BEGIN@
   always @ (posedge i_clk)
     if (i_rst)
-      s__rtr <= 1'b1;
+      s__rtrn <= 1'b1;
     else
-      s__rtr <= ~s__Rx_idle;
+      s__rtrn <= ~s__Rx_idle;
   @RTR_END@
 end else begin : gen__fifo
   reg [L__INFIFO_NBITS:0] s__Rx_fifo_addr_in;
@@ -222,7 +223,7 @@ end else begin : gen__fifo
       s__Rx_full <= 1'b0;
     else
       s__Rx_full <= (s__Rx_fifo_addr_in == (s__Rx_fifo_addr_out ^ { 1'b1, {(L__INFIFO_NBITS){1'b0}} }));
-  reg [7:0] s__Rx_fifo_mem[@INFIFO@-1:0];
+  reg [7:0] s__Rx_fifo_mem[L__INFIFO-1:0];
   initial s__Rx_fifo_addr_in = {(L__INFIFO_NBITS+1){1'b0}};
   always @ (posedge i_clk)
     if (i_rst)
@@ -245,46 +246,22 @@ end else begin : gen__fifo
       s__Rx <= s__Rx;
     end
   @RTR_BEGIN@
-  // Isn't ready to receive if the FIFO is full or if the FIFO is almost full
-  // and there is incoming data (i.e., receiver is not idle).
-  reg s__Rx_idle_s = 1'b0;
+  // Isn't ready to receive if the FIFO is full or if the FIFO is almost full.
+  reg [L__INFIFO_NBITS:0] s__Rx_used = {(L__INFIFO_NBITS+1){1'b0}};
   always @ (posedge i_clk)
     if (i_rst)
-      s__Rx_idle_s <= 1'b0;
+      s__Rx_used <= {(L__INFIFO_NBITS+1){1'b0}};
     else
-      s__Rx_idle_s <= s__Rx_idle;
-  reg s__Rx_wr_s = 1'b0;
+      s__Rx_used <= s__Rx_fifo_addr_in - s__Rx_fifo_addr_out;
   always @ (posedge i_clk)
     if (i_rst)
-      s__Rx_wr_s <= 1'b0;
+      s__rtrn <= 1'b1;
     else
-      s__Rx_wr_s <= s__Rx_wr;
-  reg s__Rx_busy = 1'b0;
-  always @ (posedge i_clk)
-    if (i_rst)
-      s__Rx_busy <= 1'b0;
-    else if ({s__Rx_idle_s, s__Rx_idle} == 2'b10)
-      s__Rx_busy <= 1'b1;
-    else if (s__Rx_wr_s)
-      s__Rx_busy <= 1'b0;
-    else
-      s__Rx_busy <= s__Rx_busy;
-  reg s__Rx_almost_full = 1'b0;
-  always @ (posedge i_clk)
-    if (i_rst)
-      s__Rx_almost_full <= 1'b0;
-    else
-      s__Rx_almost_full <= (s__Rx_fifo_addr_in == (s__Rx_fifo_addr_out + { 1'b0, {(L__INFIFO_NBITS){1'b1}} }));
-  always @ (posedge i_clk)
-    if (i_rst)
-      s__rtr <= 1'b1;
-    else
-//      s__rtr <= ~(s__Rx_full  || (s__Rx_almost_full && ~s__Rx_idle));
-      s__rtr <= ~(s__Rx_full  || (s__Rx_almost_full && s__Rx_busy));
+      s__rtrn <= s__Rx_used[L__INFIFO_NBITS] || &(s__Rx_used[L__INFIFO_NBITS-1:@RTR_FIFO_COMPARE@]);
   @RTR_END@
 end
 @RTR_BEGIN@
 always @ (*)
-  @RTR_SIGNAL@ = @RTR_INVERT@s__rtr;
+  @RTR_SIGNAL@ = @RTRN_INVERT@s__rtrn;
 @RTR_END@
 endgenerate

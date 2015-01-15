@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013-2014, Sinclair R.F., Inc.
+# Copyright 2013-2015, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -8,7 +8,8 @@ import math;
 import re;
 
 from ssbccPeripheral import SSBCCperipheral
-from ssbccUtil import SSBCCException;
+from ssbccUtil import CeilLog2
+from ssbccUtil import SSBCCException
 
 class UART_Rx(SSBCCperipheral):
   """
@@ -25,6 +26,7 @@ class UART_Rx(SSBCCperipheral):
                        [noDeglitch|deglitch=n]     \\
                        [noInFIFO|inFIFO=n]         \\
                        [{RTR|RTRn}=o_rtr_name]     \\
+                       rtr_buffer=n                \\
                        [nStop={1|2}]               \n
   Where:
     inport=I_inport_name
@@ -87,6 +89,14 @@ class UART_Rx(SSBCCperipheral):
       Note:  If there is no FIFO and the RTR/RTRn handshake indicates that the
              receiver is not ready as soon as it starts receiving data and
              until that data is read from the peripheral.
+      Default:  1
+    rtr_buffer=n
+      optionally specify the number of entries in inFIFO to reserve for data
+      received after the RTR/RTRn signal indicates to stop data flow.
+      Note:  n must be a power of 2.
+      Note:  This requires that inFIFO be specified.
+      Note:  Some USB UARTs  will transmit several characters after the RTR/RTRn
+             signal indicates to stop the data flow.
     nStop=n
       optionally configure the peripheral for n stop bits
       default:  1 stop bit
@@ -129,6 +139,7 @@ class UART_Rx(SSBCCperipheral):
       ( 'noInFIFO',     None,           None,   ),
       ( 'noSync',       None,           None,   ),
       ( 'nStop',        r'[12]$',       int,    ),
+      ( 'rtr_buffer',   r'[1-9]\d*$',   lambda v : self.IntPow2(v), ),
       ( 'sync',         r'[1-9]\d*$',   int,    ),
     );
     names = [a[0] for a in allowables];
@@ -153,6 +164,15 @@ class UART_Rx(SSBCCperipheral):
       ):
       if not hasattr(self,optionalpair[0]):
         setattr(self,optionalpair[0],optionalpair[1]);
+    # Ensure the rtr_buffer, if specified, is consistent with the inFIFO
+    # specification.
+    if hasattr(self,'rtr_buffer'):
+      if not hasattr(self,'inFIFO'):
+        raise SSBCCException('rtr_buffer specification requires simultaneous inFIFO specification at %s' % loc);
+      if not self.rtr_buffer < self.inFIFO:
+        raise SSBCCException('rtr_buffer=%d specification must be less than the inFIFO=%d specification at %s' % (self.rtr_buffer,self.inFIFO,loc,));
+    else:
+      self.rtr_buffer = 1;
     # Ensure exclusive pair configurations are set and consistent.
     for exclusivepair in (
         ( 'RTR',        'RTRn',         None,           None,   ),
@@ -206,17 +226,18 @@ class UART_Rx(SSBCCperipheral):
         body = re.sub(r'@RTR_BEGIN@.*?@RTR_END@\n','',body,flags=re.DOTALL);
       for subpair in (
           ( r'@RTR_SIGNAL@',    self.RTR if hasattr(self,'RTR') else self.RTRn if hasattr(self,'RTRn') else '', ),
-          ( r'@RTR_INVERT@',    '' if hasattr(self,'RTR') else '!', ),
-          ( r'\bL__',           'L__@NAME@__',          ),
-          ( r'\bgen__',         'gen__@NAME@__',        ),
-          ( r'\bs__',           's__@NAME@__',          ),
-          ( r'@INPORT@',        self.insignal,          ),
-          ( r'@BAUDMETHOD@',    str(self.baudmethod),   ),
-          ( r'@SYNC@',          str(self.sync),         ),
-          ( r'@DEGLITCH@',      str(self.deglitch),     ),
-          ( r'@INFIFO@',        str(self.inFIFO),       ),
-          ( r'@NSTOP@',         str(self.nStop),        ),
-          ( r'@NAME@',          self.namestring,        ),
+          ( r'@RTRN_INVERT@',           '!' if hasattr(self,'RTR') else '', ),
+          ( r'\bL__',                   'L__@NAME@__',          ),
+          ( r'\bgen__',                 'gen__@NAME@__',        ),
+          ( r'\bs__',                   's__@NAME@__',          ),
+          ( r'@INPORT@',                self.insignal,          ),
+          ( r'@BAUDMETHOD@',            str(self.baudmethod),   ),
+          ( r'@SYNC@',                  str(self.sync),         ),
+          ( r'@DEGLITCH@',              str(self.deglitch),     ),
+          ( r'@INFIFO@',                str(self.inFIFO),       ),
+          ( r'@NSTOP@',                 str(self.nStop),        ),
+          ( r'@NAME@',                  self.namestring,        ),
+          ( r'@RTR_FIFO_COMPARE@',      str(CeilLog2(self.rtr_buffer)), ),
         ):
         if re.search(subpair[0],body):
           body = re.sub(subpair[0],subpair[1],body);

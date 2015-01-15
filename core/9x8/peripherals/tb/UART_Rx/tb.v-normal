@@ -58,7 +58,7 @@ tb_UART_Rx uut(
   // synchronous reset and processor clock
   .i_rst        (s_rst),
   .i_clk        (s_clk),
-  .i_uart       (s_uart),
+  .i_uart_rx    (s_uart),
   .o_data       (s_data),
   .o_data_wr    (s_data_wr),
   .o_done       (s_done)
