@@ -26,6 +26,7 @@ class SSBCCconfig():
     """
     self.config         = dict();               # various settings, etc.
     self.constants      = dict();               # CONSTANTs
+    self.defines        = dict();               # defines
     self.functions      = dict();               # list of functions to define
     self.inports        = list();               # INPORT definitions
     self.ios            = list();               # List of I/Os
@@ -65,6 +66,19 @@ class SSBCCconfig():
     if not IsIntExpr(value):
       raise SSBCCException('Could not evaluate expression "%s" for constant at %s' % (value,loc,));
     self.constants[name] = ParseIntExpr(value);
+
+  def AddDefine(self,name):
+    """
+    Add the defined symbol.\n
+    name        name for the symbol (must start with "D_")\n
+    Note:  This is only invoked for the command line arguments so there is no
+           "loc" available.\n
+    Note:  Defines can be declared more than once on the command line with no
+           ill effects.
+    """
+    if not self.IsDefine(name):
+      self.AddSymbol(name);
+      self.defines[name] = 1;
 
   def AddIO(self,name,nBits,iotype,loc):
     """
@@ -338,6 +352,15 @@ class SSBCCconfig():
     Indicate whether or not the specified symbol is a recognized constant.
     """
     if re.match(r'C_\w+$',name) and name in self.constants:
+      return True;
+    else:
+      return False;
+
+  def IsDefine(self,name):
+    """
+    Indicate whether or not the specified symbol is a recognized define.
+    """
+    if re.match(r'D_\w+$',name) and name in self.defines:
       return True;
     else:
       return False;

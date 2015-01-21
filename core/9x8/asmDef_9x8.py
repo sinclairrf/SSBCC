@@ -42,8 +42,8 @@ class asmDef_9x8:
     """
     Add the named global symbol to the list of symbols including its mandatory
     type and an optional body.\n
-    Note:  Symbols include memory names, variables, constants, functions,
-           parameters, inports, outports, ...
+    Note:  Symbols include memory names, variables, constants, defines,
+           functions, parameters, inports, outports, ...
     """
     if self.IsSymbol(name):
       raise Exception('Program Bug -- name "%s" already exists is symbols' % name);
@@ -383,7 +383,7 @@ class asmDef_9x8:
     # Ensure the directive bodies are not too short.
     if (firstToken['value'] in ('.main','.interrupt',)) and not (len(rawTokens) > 1):
       raise asmDef.AsmException('"%s" missing body at %s' % (firstToken['value'],firstToken['loc'],));
-    if (firstToken['value'] in ('.macro',)) and not (len(rawTokens) == 2):
+    if (firstToken['value'] in ('.define','.macro',)) and not (len(rawTokens) == 2):
       raise asmDef.AsmException('body for "%s" directive must have exactly one argument at %s' % (firstToken['value'],firstToken['loc'],));
     if (firstToken['value'] in ('.constant','.function','.memory','.variable',)) and not (len(rawTokens) >= 3):
       raise asmDef.AsmException('body for "%s" directive too short at %s' % (firstToken['value'],firstToken['loc'],));
@@ -599,6 +599,9 @@ class asmDef_9x8:
     if firstToken['value'] == '.constant':
       byteList = self.ByteList(rawTokens[2:]);
       self.AddSymbol(secondToken['value'],'constant',body=byteList);
+    # Process ".define" directive
+    elif firstToken['value'] == '.define':
+      self.AddSymbol(secondToken['value'],'define');
     # Process ".function" definition.
     elif firstToken['value'] == '.function':
       self.AddSymbol(secondToken['value'],'function',self.ExpandTokens(rawTokens[2:]));
@@ -1210,6 +1213,7 @@ class asmDef_9x8:
 
     self.directives['list']= list();
     self.directives['list'].append('.constant');
+    self.directives['list'].append('.define');
     self.directives['list'].append('.function');
     self.directives['list'].append('.interrupt');
     self.directives['list'].append('.macro');

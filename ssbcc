@@ -45,7 +45,7 @@ try:
 
   import argparse
   argListParser = argparse.ArgumentParser(description='SSBCC system builder');
-  argListParser.add_argument('-D', metavar='symbol', type=str, action='append', help='Define symbol');
+  argListParser.add_argument('-D', metavar='define', type=str, action='append', help='Define symbol (must start with "D_")');
   argListParser.add_argument('-G', metavar='parameter_name=value', type=str, action='append', help='Override parameter value');
   argListParser.add_argument('-I', metavar='include_dir', type=str, action='append', help='Add search directory for included files and peripherals');
   argListParser.add_argument('-M', metavar='macropath', action='append', help='Macro search path');
@@ -74,8 +74,10 @@ try:
     config.functions['display_opcode'] = True;
 
   if argList.D:
-    for symbol in argList.D:
-      config.AddSymbol(symbol);
+    for name in argList.D:
+      if not re.match('D_',name):
+        raise SSBCCException('Bad define name "%s" should start with "D_"' % name);
+      config.AddDefine(name);
 
   if argList.I:
     for pathString in argList.I:
@@ -379,6 +381,8 @@ try:
   cmd = os.path.join(config.Get('corepath'), compiler[0]);
   for name in config.constants:
     cmd += (' -C %s=%s' % (name,config.constants[name],));
+  for name in config.defines:
+    cmd += (' -D %s' % name);
   for ix in range(len(config.parameters)):
     cmd += (' -G %s' % config.parameters[ix][0]);
   for ix in range(config.NInports()):

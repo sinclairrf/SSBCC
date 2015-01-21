@@ -44,6 +44,7 @@ try:
 
   argListParser = argparse.ArgumentParser(description='SSBCC 9x8 assembler');
   argListParser.add_argument('-C', metavar='CONSTANT=value', action='append', help='Constant definition');
+  argListParser.add_argument('-D', metavar='define', type=str, action='append', help='Define symbol (must start with "D_")');
   argListParser.add_argument('-G', metavar='parametername', action='append', help='parameter names');
   argListParser.add_argument('-I', metavar='PORT=index', action='append', help='Input port names');
   argListParser.add_argument('-L', metavar='librarypath', action='append', help='Library search path');
@@ -75,6 +76,13 @@ try:
       if ad.IsSymbol(a[0]):
         raise asmDef.AsmException('Command line constant "%s" already defined' % a[0]);
       ad.AddSymbol(a[0], 'constant', body=[a[1]]);
+
+  # Record the defines.
+  if argList.D:
+    for name in argList.D:
+      if not re.match('D_',name):
+        raise SSBCCException('Bad define name "%s" should start with "D_"' % name);
+      ad.AddSymbol(name, 'define');
 
   # Record the input names and values in the appropriate record type
   if argList.G:
