@@ -1153,52 +1153,85 @@ conflicts with a built-in macro.
 
 CONDITIONAL COMPILATION
 ================================================================================
-The computer compiler and assembler recognize conditional compilation as
-follows:  .IFDEF, .IFNDEF, .ELSE, and .ENDIF can be used in the architecture
-file and they can be used to conditionally include functions, files, etc within
-the assembly code; .ifdef, .ifndef, .else, and .endif can be used in function
-bodies, variable bodies, etc. to conditionally include assembly code, symbols,
-or data.  Conditionals cannot cross file boundaries.
+Conditional compilation is accepted in the architecture file and in the assembly
+source files and is based on whether or not the referenced symbol is defined.
 
-The computer compiler examines the list of defined symbols such as I/O ports,
-I/O signals, etc. to evaluate the true/false condition associated with the
-.IFDEF and .IFNDEF commands.  The "-D" option to the computer compiler is
-provided to define symbols for enabling conditionally compiled configuration
-commands.  Similarly, the assembler examines the list of I/O ports, I/O signals,
-parameters, constants, etc. to evaluate the .IFDEF, .IFNDEF, .ifdef, and .ifndef
-conditionals.
+In the architecture file, symbols are defined by CONSTANT, INPORT, OUTPORT, and
+PERIPHERAL statements, or by the "-D D_name" argument to ssbcc.  The line
 
-For example, a diagnostic UART can be conditionally included using the
-configuration commands:
+  .IFDEF name
+  <statements>
+  .ENDIF
 
-  .IFDEF ENABLE_UART
+will then include the lines "<statements>" if the symbol "name" is defined.
+The ".IFNDEF" command is similar except that the statements included if the
+symbol is not defined.  A ".ELSE" is also provided.
+
+In an assembly file directives are conditionally included using the .IFDEF and
+.IFNDEF directives, an optional .ELSE directive, and the terminating .ENDIF
+directive.  Note that this is done at the directive level, i.e. function
+declarations, memory declarations, and so forth.  Within a function code is
+conditionally included starting with a ".ifdef(name)" or a ".ifndef(name)", an
+optional ".else" and a terminating ".endif".
+
+For example, a diagnostic UART can be conditionally included in a program by
+including the following lines in the architecture file:
+
+  .IFDEF D_ENABLE_UART
   PORTCOMMENT Diagnostic UART
   PERIPHERAL UART_Tx outport=O_UART_TX ...
   .ENDIF
 
-And the assembly code can include conditional code fragments such the following,
-where the existence of the output port is used to determine whether or not to
-send a character to that output port:
+A "uart_tx" function can be optionally created using code similar to the
+following.  Note that the symbol for the .outport macro is used to determine
+whether or not the function is defined since that is more closely related to
+whether or not the function can be defined.  The function definition must
+preceed any ".ifdef(uart_tx)" conditionals used to output diagnostics.
 
-  .ifdef(O_UART_TX) 'A' .outport(O_UART_TX) .endif
+  .IFDEF O_UART_TX
+  .function uart_tx
+    :loop .outport(O_UART_TX) .jumpc(loop,nop) .return(drop)
+  .ENDIF
 
-Invoking the computer compiler with "-D ENABLE_UART" will generate a module with
-the UART peripheral and will enable the conditional code sending the 'A'
-character to the UART port.
+Diagnostics in the assembly code can be included using either
 
-The following code can be used to preclude multiple attempted inclusions of an
-assembly library file.
+  .ifdef(D_ENABLE_UART) N"Msg\r\n" .call(uart_tx) .endif
+
+or
+
+  .ifdef(uart_tx) N"Msg\r\n" .call(uart_tx) .endif
+
+Conditional compilation cannot cross file boundaries.
+
+The assembler also recognizes the ".define" directive.  For example, specific
+diagnostics could be enabled if the UART is instantiated as follows:
+
+  .IFDEF O_UART_TX
+  .define D_DEBUG_FUNCTION_A
+  .ENDIF
+
+  ...
+
+  .ifdef(D_DEBUG_FUNCTION_A) N"Debug Msg\r\n" .call(uart_tx) .endif
+
+The following code illustrates how to preclude multiple attempted inclusions of
+an assembly library file.
 
   ; put these two lines near the top of the file
-  .IFNDEF C_FILENAME_INCLUDED
-  .constant C_FILENAME_INCLUDED 1
+  .IFNDEF D_FILENAME_INCLUDED
+  .define D_FILENAME_INCLUDED
   ; put the library body here
   ...
   ; put this line at the bottom of the file
-  .ENDIF ; .IFNDEF C_FILENAME_INCLUDED
+  .ENDIF ; .IFNDEF D_FILENAME_INCLUDED
 
 The ".INCLUDE" configuration command can be used to read configuration commands
-from additional sources.
+from additional sources.  For example, the following code will conditionally
+include a general UART library if the outport O_UART_TX is defined:
+
+  .IFDEF O_UART_TX
+  .INCLUDE uart.s
+  .ENDIF
 
 
 SIMULATIONS
