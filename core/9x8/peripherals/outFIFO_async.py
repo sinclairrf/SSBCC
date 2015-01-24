@@ -68,7 +68,7 @@ class outFIFO_async(SSBCCperipheral):
       ('data_empty',    r'o_\w+$',      None,   ),
       ('outport',       r'O_\w+$',      None,   ),
       ('infull',        r'I_\w+$',      None,   ),
-      ('depth',         r'[1-9]\d*$',   lambda v : self.IntPow2(v,minValue=16),    ),
+      ('depth',         r'[1-9]\d*$',   lambda v : self.IntPow2Method(config,v,lowLimit=16),    ),
     );
     names = [a[0] for a in allowables];
     for param_tuple in param_list:

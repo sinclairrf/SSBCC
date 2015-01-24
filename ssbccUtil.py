@@ -172,6 +172,8 @@ def ParseIntExpr(value):
   Note:  If this routine is called, then the value should have already been
          verified to be a well-formatted integer string.
   """
+  if type(value) == int:
+    return value;
   if not IsIntExpr(value):
     raise Exception('Program Bug -- shouldn\'t call with a badly formatted integer expression');
   return eval(re.sub('_','',value));

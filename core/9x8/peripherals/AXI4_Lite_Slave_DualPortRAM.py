@@ -104,7 +104,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       ( 'ram8',         None,           None,           ),
       ( 'ram32',        None,           None,           ),
       ( 'read',         r'I_\w+$',      None,           ),
-      ( 'size',         r'\S+$',        lambda v : self.FixedPow2(config,16,256,v), ),
+      ( 'size',         r'\S+$',        lambda v : self.IntPow2Method(config,v,lowLimit=16,highLimit=256), ),
       ( 'write',        r'O_\w+$',      None,           ),
     );
     names = [a[0] for a in allowables];

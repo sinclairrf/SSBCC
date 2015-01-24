@@ -193,7 +193,7 @@ class UART(SSBCCperipheral):
       ( 'RTRn',         r'o_\w+$',      None,           ),
       ( 'baudmethod',   r'\S+$',        lambda v : self.RateMethod(config,v), ),
       ( 'deglitch',     r'[1-9]\d*$',   int,            ),
-      ( 'inFIFO',       r'[1-9]\d*$',   lambda v : self.IntPow2(v), ),
+      ( 'inFIFO',       r'[1-9]\d*$',   lambda v : self.IntPow2Method(config,v), ),
       ( 'inempty',      r'I_\w+$',      None,           ),
       ( 'inport',       r'I_\w+$',      None,           ),
       ( 'insignal',     r'i_\w+$',      None,           ),
@@ -202,11 +202,11 @@ class UART(SSBCCperipheral):
       ( 'noOutFIFO',    None,           None,           ),
       ( 'noSync',       None,           None,           ),
       ( 'nStop',        r'[12]$',       int,            ),
-      ( 'outFIFO',      r'[1-9]\d*$',   lambda v : self.IntPow2(v), ),
+      ( 'outFIFO',      r'[1-9]\d*$',   lambda v : self.IntPow2Method(config,v), ),
       ( 'outport',      r'O_\w+$',      None,           ),
       ( 'outsignal',    r'o_\w+$',      None,           ),
       ( 'outstatus',    r'I_\w+$',      None,           ),
-      ( 'rtr_buffer',   r'[1-9]\d*$',   lambda v : self.IntPow2(v), ),
+      ( 'rtr_buffer',   r'[1-9]\d*$',   lambda v : self.IntPow2Method(config,v), ),
       ( 'sync',         r'[1-9]\d*$',   int,            ),
     );
     names = [a[0] for a in allowables];
@@ -243,7 +243,7 @@ class UART(SSBCCperipheral):
         raise SSBCCException('rtr_buffer=%d specification cannot exceed inFIFO=%d specification at %s' % (self.rtr_buffer,self.inFIFO,loc,));
     else:
       self.rtr_buffer = 1;
-    # Ensure exclusive pair configurations are set and consistent.
+    # Ensure optional exclusive pair configurations are set and consistent.
     for exclusivepair in (
         ( 'CTS',        'CTSn',         None,           None,   ),
         ( 'RTR',        'RTRn',         None,           None,   ),

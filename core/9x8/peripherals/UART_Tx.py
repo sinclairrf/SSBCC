@@ -118,7 +118,7 @@ class UART_Tx(SSBCCperipheral):
       ( 'baudmethod',   r'\S+$',                lambda v : self.RateMethod(config,v), ),
       ( 'noOutFIFO',    None,                   None,           ),
       ( 'nStop',        r'[12]$',               int,            ),
-      ( 'outFIFO',      r'[1-9]\d*$',           lambda v : self.IntPow2(v), ),
+      ( 'outFIFO',      r'[1-9]\d*$',           lambda v : self.IntPow2Method(config,v), ),
       ( 'outport',      r'O_\w+$',              None,           ),
       ( 'outsignal',    r'o_\w+$',              None,           ),
       ( 'outstatus',    r'I_\w+$',              None,           ),

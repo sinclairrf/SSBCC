@@ -131,7 +131,7 @@ class UART_Rx(SSBCCperipheral):
       ( 'RTRn',         r'o_\w+$',      None,   ),
       ( 'baudmethod',   r'\S+$',        lambda v : self.RateMethod(config,v), ),
       ( 'deglitch',     r'[1-9]\d*$',   int,    ),
-      ( 'inFIFO',       r'[1-9]\d*$',   lambda v : self.IntPow2(v), ),
+      ( 'inFIFO',       r'[1-9]\d*$',   lambda v : self.IntPow2Method(config,v), ),
       ( 'inempty',      r'I_\w+$',      None,   ),
       ( 'inport',       r'I_\w+$',      None,   ),
       ( 'insignal',     r'i_\w+$',      None,   ),
@@ -139,7 +139,7 @@ class UART_Rx(SSBCCperipheral):
       ( 'noInFIFO',     None,           None,   ),
       ( 'noSync',       None,           None,   ),
       ( 'nStop',        r'[12]$',       int,    ),
-      ( 'rtr_buffer',   r'[1-9]\d*$',   lambda v : self.IntPow2(v), ),
+      ( 'rtr_buffer',   r'[1-9]\d*$',   lambda v : self.IntPow2Method(config,v), ),
       ( 'sync',         r'[1-9]\d*$',   int,    ),
     );
     names = [a[0] for a in allowables];

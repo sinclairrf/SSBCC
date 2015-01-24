@@ -60,7 +60,7 @@ class open_drain(SSBCCperipheral):
       ( 'inport',       r'I_\w+$',      None,   ),
       ( 'iosignal',     r'io_\w+$',     None,   ),
       ( 'outport',      r'O_\w+$',      None,   ),
-      ( 'width',        r'[1-9]\d*$',   lambda v : self.PosInt(v,maxValue=config.Get('data_width')), ),
+      ( 'width',        r'\S+$',        lambda v : self.IntMethod(config,v,lowLimit=1,highLimit=config.Get('data_width')), ),
     );
     names = [a[0] for a in allowables];
     for param_tuple in param_list:

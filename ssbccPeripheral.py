@@ -132,12 +132,27 @@ class SSBCCperipheral:
   #
   ##############################################################################
 
-  def FixedPow2(self,config,lowLimit,highLimit,value):
+  def IntPow2Method(self,config,value,lowLimit=1,highLimit=None):
     """
-    Check the provided constant as a power of 2 between the provided limits.\n
-    Note:  This differs from InpPow2 in that localparams and constants are
-           permitted.
+    Return the integer value of the argument if it is a power of 2 between the
+    optional limits (inclusive).  Otherwise throw an error.\n
+    Note:  Other than a lower limit of 1 for "lowLimit", IntMethod validates
+           "lowLimit" and "highLimit".
     """
+    value = self.IntMethod(config,value,lowLimit,highLimit)
+    if lowLimit < 1:
+      raise SSBCCException('Program bug:  lowLimit = %d is less than 1' % lowLimit);
+    if not IsPowerOf2(value):
+      raise SSBCCException('Must be a power of 2');
+    return value;
+
+  def IntMethod(self,config,value,lowLimit=None,highLimit=None):
+    """
+    Return the integer value of the argument.  Throw an error if the argument is
+    unrecognized, not an integer, or is outside the optionally specified range.
+    """
+    if (lowLimit != None) and (highLimit != None) and (highLimit < lowLimit):
+      raise SSBCCException('Program bug:  lowLimit = %d and highLimit = %d conflict' % (lowLimit,highLimit,));
     if re.match(r'L_\w+$',value):
       if not config.IsParameter(value):
         raise SSBCCException('Unrecognized parameter');
@@ -147,39 +162,14 @@ class SSBCCperipheral:
       if not config.IsConstant(value):
         raise SSBCCException('Unrecognized constant');
       value = config.constants[value];
-    if not IsPosInt(value):
-      raise SSBCCException('Must be a constant positive integer');
     value = ParseIntExpr(value);
-    if not IsPowerOf2(value):
-      raise SSBCCException('Must be a power of 2');
-    if not (lowLimit <= value <= highLimit):
-      raise SSBCCException('Must be between %d and %d inclusive' % (lowLimit,highLimit,));
-    return value;
-
-  def IntPow2(self,value,minValue=1):
-    """
-    Return the integer value of the argument if it is a power of 2.  Otherwise
-    throw an error.
-    """
-    if not IsPosInt(value):
-      raise SSBCCException('Not a positive integer');
-    value = ParseIntExpr(value);
-    if not IsPowerOf2(value):
-      raise SSBCCException('Not a power of 2');
-    if value < minValue:
-      raise SSBCCException('Must be at least %d' % minValue);
-    return value;
-
-  def PosInt(self,value,maxValue=0):
-    """
-    Return the integer value of the argument unless it is out of bounds.\n
-    Note:  maxValue=0 means that there is no upper limit.
-    """
-    if not IsPosInt(value):
-      raise SSBCCException('Not a positive integer');
-    value = ParseIntExpr(value);
-    if (maxValue != 0) and (value > maxValue):
-      raise SSBCCException('Out of bounds -- can be at most %d' % maxValue);
+    if (lowLimit != None) and value < lowLimit:
+      if lowLimit == 1:
+        raise SSBCCException('Must be a positive integer');
+      else:
+        raise SSBCCException('Cannot be less than %d' % lowLimit);
+    if (highLimit != None) and value > highLimit:
+      raise SSBCCException('Cannot be more than %d' % highLimit);
     return value;
 
   def RateMethod(self,config,value):
@@ -196,24 +186,44 @@ class SSBCCperipheral:
       G_CLOCK_FREQUENCY_HZ/L_BAUD_RATE
       100_000_000/G_BAUD_RATE
     """
-    def TestAndGetValue(self,config,value,position):
-      if IsIntExpr(value):
-        return str(ParseIntExpr(value));
-      elif config.IsConstant(value):
-        value = config.constants[value];
-        if not value > 0:
-          raise SSBCCException('Constant "%s" must be positive');
-        return str(value);
-      elif config.IsParameter(value):
-        return value;
-      else:
-        raise SSBCCException('%s must be a positive integer or a previously declared positive constant or a parameter', position);
+    def LocalIntMethod(self,config,value,position=None):
+      try:
+        if config.IsParameter(value):
+          return value;
+        else:
+          v = self.IntMethod(config,value,lowLimit=1);
+          return str(v);
+      except SSBCCException, msg:
+        if not position:
+          raise SSBCCException(msg);
+        else:
+          raise SSBCCException('%s in %s' % (msg,position,));
     if value.find('/') < 0:
-      return TestAndGetValue(self,config,value,'Value');
+      return LocalIntMethod(self,config,value);
     else:
       ratearg = re.findall('([^/]+)',value);
       if len(ratearg) != 2:
         raise SSBCCException('Only one "/" allowed in expression');
-      ratearg[0] = TestAndGetValue(self,config,ratearg[0],'Numerator');
-      ratearg[1] = TestAndGetValue(self,config,ratearg[1],'Denominator');
+      ratearg[0] = LocalIntMethod(self,config,ratearg[0],'numerator');
+      ratearg[1] = LocalIntMethod(self,config,ratearg[1],'denominator');
       return '(%s+%s/2)/%s' % (ratearg[0],ratearg[1],ratearg[1],);
+
+  def TimeMethod(self,config,value,lowLimit=None,highLimit=None):
+    """
+    Convert the provided time from the specified units to seconds.
+    """
+    if not re.match(r'(0|[1-9]\d*)(\.\d*)?(e[+-]?\d+)?[mun]?s$',value):
+      raise SSBCCException('Malformed time value');
+    if value[-2:] == 'ms':
+      v = float(value[:-2]) * 1.e-3;
+    elif value[-2:] == 'us':
+      v = float(value[:-2]) * 1.e-6;
+    elif value[-2:] == 'ns':
+      v = float(value[:-2]) * 1.e-9;
+    else:
+      v = float(value[:-1]);
+    if (lowLimit != None) and (v < lowLimit):
+      raise SSBCCException('%s must be %s or greater' % (v,lowLimit,));
+    if (highLimit != None) and (v > highLimit):
+      raise SSBCCException('%s must be %s or smaller' % (v,highLimit,));
+    return v;
