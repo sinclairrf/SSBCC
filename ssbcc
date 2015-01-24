@@ -369,8 +369,8 @@ try:
   ################################################################################
 
   # Generate peripheral libraries (if any).
-  for ix in range(len(config.peripheral)):
-    config.peripheral[ix].GenAssembly(config);
+  for p in config.peripheral:
+    p.GenAssembly(config);
 
   # Compute the file name to store the assembler output
   assemblerOutput = os.path.splitext(argList.filename.name)[0]+'.9x8-meta'
@@ -552,10 +552,10 @@ try:
     elif fillCommand == 'peripherals':
       if not config.peripheral:
         fpOutCore.write('//\n// No peripherals\n//\n');
-      for ix in range(len(config.peripheral)):
-        if ix != 0:
+      for p in config.peripheral:
+        if p != config.peripheral[0]:
           fpOutCore.write('\n');
-        config.peripheral[ix].GenHDL(fpOutCore,config);
+        p.GenHDL(fpOutCore,config);
     # "s_memory" declaration
     elif fillCommand == 's_memory':
       if config.NMemories() == 0:
