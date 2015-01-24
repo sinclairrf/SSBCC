@@ -191,12 +191,9 @@ class servo_motor(SSBCCperipheral):
     if hasattr(self,'period'):
       config.AddSignal(self.periodSignal, 1, loc);
     self.ix_outport = config.NOutports();
-    config.AddSignalWithInit('s__%s__PWM'           % self.namestring, 8, None, loc);
-    config.AddSignalWithInit('s__%s__PWM_wr'        % self.namestring, 1, None, loc);
     config.AddOutport((self.outport,
                        False,
-                       ('s__%s__PWM'        % self.namestring, 8, 'data',),
-                       ('s__%s__PWM_wr'     % self.namestring, 1, 'strobe',),
+                       # empty list
                       ),loc);
     if hasattr(self,'inperiod'):
       config.AddSignal('s_SETRESET_%s' % self.periodSignal,1,loc);
