@@ -600,6 +600,15 @@ The "nop" in the first conditional call prevents the conditional from being
 dropped from the data stack so that it can be used by the subsequent conditional
 function call.
 
+The input from a set-reset INPORT is a pure flag.  I.e., either all of the bits
+are zero or all of the bits are one.  This can be used as part of executing a
+loop a fixed number of times.  For example, the inperiod argument of the
+servo_motor peripheral can be used to receive a strobe every time the PWM goes
+high.  The following loop will wait for 10 occurrences of the rising edge of the
+servo_motor PWM before proceeding to the next block of code:
+
+  10 :loop .inport(I_INPERIOD) + .jumpc(loop,nop) drop
+
 
 PERIPHERAL
 ================================================================================
@@ -653,6 +662,7 @@ The following peripherals are provided:
   open_drain    for software-implemented I2C buses or similar
   outFIFO_async output FIFO with an asynchronous read clock
   PWM_8bit      PWM generator with an 8-bit control
+  servo_motor   PWM modulation suitable for servo motor or similar control
   timer         timing for polled loops or similar
   trace         simulation diagnostic (see below)
   UART          bidirectional UART
