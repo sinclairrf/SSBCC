@@ -387,15 +387,6 @@ class asmDef_9x8:
       raise asmDef.AsmException('body for "%s" directive must have exactly one argument at %s' % (firstToken['value'],firstToken['loc'],));
     if (firstToken['value'] in ('.constant','.function','.memory','.variable',)) and not (len(rawTokens) >= 3):
       raise asmDef.AsmException('body for "%s" directive too short at %s' % (firstToken['value'],firstToken['loc'],));
-    # Ensure the main body ends in a ".jump".
-    lastToken = rawTokens[-1];
-    if firstToken['value'] == '.main':
-      if (lastToken['type'] != 'macro') or (lastToken['value'] != '.jump'):
-        raise asmDef.AsmException('.main body does not end in ".jump" at %s' % lastToken['loc']);
-    # Ensure functions and interrupts end in a ".jump" or ".return".
-    if firstToken['value'] in ('.function','.interrupt',):
-      if (lastToken['type'] != 'macro') or (lastToken['value'] not in ('.jump','.return',)):
-        raise asmDef.AsmException('Last entry in ".function" or ".interrupt" must be a ".jump" or ".return" at %s' % lastToken['loc']);
     # Ensure no macros and no instructions in non-"functions".
     # Byproduct:  No labels allowed in non-"functions".
     if firstToken['value'] not in ('.function','.interrupt','.main',):
@@ -438,6 +429,15 @@ class asmDef_9x8:
           for arg in  token['argument'][ixFirst:]:
             if arg['type'] == 'symbol':
               self.CheckSymbolToken(arg['value'],allowableTypes,arg['loc']);
+    # Ensure the main body ends in a ".jump".
+    lastToken = rawTokens[-1];
+    if firstToken['value'] == '.main':
+      if (lastToken['type'] != 'macro') or (lastToken['value'] != '.jump'):
+        raise asmDef.AsmException('.main body does not end in ".jump" at %s' % lastToken['loc']);
+    # Ensure functions and interrupts end in a ".jump" or ".return".
+    if firstToken['value'] in ('.function','.interrupt',):
+      if (lastToken['type'] != 'macro') or (lastToken['value'] not in ('.jump','.return',)):
+        raise asmDef.AsmException('Last entry in ".function" or ".interrupt" must be a ".jump" or ".return" at %s' % lastToken['loc']);
 
   ################################################################################
   #
