@@ -663,6 +663,7 @@ The following peripherals are provided:
   outFIFO_async output FIFO with an asynchronous read clock
   PWM_8bit      PWM generator with an 8-bit control
   servo_motor   PWM modulation suitable for servo motor or similar control
+  stepper_motor stepper motor controller with acceleration
   timer         timing for polled loops or similar
   trace         simulation diagnostic (see below)
   UART          bidirectional UART
