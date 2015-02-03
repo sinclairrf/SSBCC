@@ -159,7 +159,7 @@ class servo_motor(SSBCCperipheral):
     # Ensure the optionally provided "sync" servo_motor peripheral has been specified.
     if hasattr(self,'sync'):
       for p in config.peripheral:
-        if (type(p) == type(self)) and (p.outsignal == self.sync):
+        if (str(p.__class__) == str(self.__class__)) and (p.outsignal == self.sync):
           break;
       else:
         raise SSBCCException('Can\'t find preceding servo_motor peripheral with outsignal=%s at %s ' % (self.sync,loc,));
