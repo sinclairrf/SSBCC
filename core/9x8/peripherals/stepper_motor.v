@@ -3,8 +3,10 @@
 // Copyright 2015, Sinclair R.F., Inc.
 //
 // Assemble the byes of the control word from the input bytes.
+@MASTER_BEGIN@
 localparam L__RATEMETHOD_MINUS_1 = @RATEMETHOD@ - 1;
 localparam L__NBITS_RATEMETHOD = clog2(L__RATEMETHOD_MINUS_1);
+@MASTER_END@
 reg [@CONTROL_WIDTH@-1:0] s__input_control_word = {(@CONTROL_WIDTH@){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
@@ -14,7 +16,7 @@ always @ (posedge i_clk)
   else
     s__input_control_word <= s__input_control_word;
 wire [@CONTROL_WIDTH_PACKED@-1:0] s__input_control_word_packed = {
-  s__input_control_word[@DW@*((@MODE_WIDTH@+@DWM1@)/@DW@)+@DW@*((@COUNT_WIDTH@+@DWM1@)/@DW@)+@DW@*((@ACCEL_WIDTH@+@DWM1@)/@DW@)+:@RATE_WIDTH@],
+  s__input_control_word[@DW@*((@MODE_WIDTH@+@DWM1@)/@DW@)+@DW@*((@COUNT_WIDTH@+@DWM1@)/@DW@)+@DW@*((@ACCEL_WIDTH@+@DWM1@)/@DW@)+:@RATECMD_WIDTH@],
   s__input_control_word[@DW@*((@MODE_WIDTH@+@DWM1@)/@DW@)+@DW@*((@COUNT_WIDTH@+@DWM1@)/@DW@)+:@ACCEL_WIDTH@],
   s__input_control_word[@DW@*((@MODE_WIDTH@+@DWM1@)/@DW@)+:@COUNT_WIDTH@]
 @OUTMODE_BEGIN@
@@ -50,9 +52,9 @@ always @ (posedge i_clk)
 reg [@CONTROL_WIDTH_PACKED@-1:0] s__output_control_word = @CONTROL_WIDTH_PACKED@'d0;
 always @ (posedge i_clk)
   s__output_control_word <= s__FIFO[s__FIFO_out_addr[0+:@NBITS_FIFO_DEPTH@]];
-wire [@RATE_WIDTH@-1:0] s__next_rate = s__output_control_word[@MODE_WIDTH@+@COUNT_WIDTH@+@ACCEL_WIDTH@+:@RATE_WIDTH@];
-wire [@ACCEL_WIDTH@-1:0] s__next_accel = s__output_control_word[@MODE_WIDTH@+@COUNT_WIDTH@+:@ACCEL_WIDTH@];
-wire [@COUNT_WIDTH@-1:0] s__next_count = s__output_control_word[@MODE_WIDTH@+:@COUNT_WIDTH@];
+wire [@RATECMD_WIDTH@-1:0] s__next_rate  = s__output_control_word[@MODE_WIDTH@+@COUNT_WIDTH@+@ACCEL_WIDTH@+:@RATECMD_WIDTH@];
+wire   [@ACCEL_WIDTH@-1:0] s__next_accel = s__output_control_word[@MODE_WIDTH@+@COUNT_WIDTH@+:@ACCEL_WIDTH@];
+wire   [@COUNT_WIDTH@-1:0] s__next_count = s__output_control_word[@MODE_WIDTH@+:@COUNT_WIDTH@];
 @OUTMODE_BEGIN@
 wire [@MODE_WIDTH@-1:0] s__next_mode = s__output_control_word[0+:@MODE_WIDTH@];
 @OUTMODE_END@
@@ -63,6 +65,7 @@ always @ (posedge i_clk)
     s__FIFO_empty <=1'b1;
   else
     s__FIFO_empty <= (s__FIFO_out_addr == s__FIFO_in_addr);
+@MASTER_BEGIN@
 // Generate the clock enable for the effective internal clock rate.
 reg s__clk_en = 1'b0;
 reg [L__NBITS_RATEMETHOD-1:0] s__clk_en_count = L__RATEMETHOD_MINUS_1[0+:L__NBITS_RATEMETHOD];
@@ -77,6 +80,7 @@ always @ (posedge i_clk)
     else
       s__clk_en_count <= s__clk_en_count - { {(L__NBITS_RATEMETHOD-1){1'b0}}, 1'b1 };
   end
+@MASTER_END@
 // Capture the start strobe from the micro controller.
 reg s__go = 1'b0;
 always @ (posedge i_clk)
@@ -84,7 +88,7 @@ always @ (posedge i_clk)
     s__go <= 1'b0;
   else if (s_outport && (s_T == 8'd@IX_OUTRUN@))
     s__go <= 1'b1;
-  else if (s__clk_en)
+  else if (@S__CLK_EN@)
     s__go <= 1'b0;
   else
     s__go <= s__go;
@@ -94,7 +98,7 @@ wire s__load_next;
 always @ (posedge i_clk)
   if (i_rst)
     s__running <= 1'b0;
-  else if (s__go && s__clk_en)
+  else if (s__go && @S__CLK_EN@)
     s__running <= 1'b1;
   else if (s__load_next && s__FIFO_empty)
     s__running <= 1'b0;
@@ -116,7 +120,7 @@ always @ (posedge i_clk)
     s__count <= @COUNT_WIDTH@'d0;
   else if (s__load_next && !s__FIFO_empty)
     s__count <= s__next_count;
-  else if (s__clk_en && s__step_pre)
+  else if (@S__CLK_EN@ && s__step_pre)
     s__count <= s__count - { {(@COUNT_WIDTH@-1){1'b0}}, !s__count_zero };
   else
     s__count <= s__count;
@@ -125,7 +129,7 @@ always @ (posedge i_clk)
     s__count_zero <= 1'b1;
   else
     s__count_zero <= (s__count == @COUNT_WIDTH@'d0);
-assign s__load_next = s__clk_en && (s__go || s__running && s__step_pre && s__count_zero);
+assign s__load_next = @S__CLK_EN@ && (s__go || s__running && s__step_pre && s__count_zero);
 always @ (posedge i_clk)
   if (i_rst)
     s__FIFO_rd <= 1'b0;
@@ -133,38 +137,43 @@ always @ (posedge i_clk)
     s__FIFO_rd <= s__load_next && !s__FIFO_empty;
 // Operate the accumulators.
 reg [@ACCUM_WIDTH@-1:0] s__angle = @ACCUM_WIDTH@'d0;
-reg [@ACCUM_WIDTH@-1:0] s__rate  = @ACCUM_WIDTH@'d0;
+reg  [@RATE_WIDTH@-1:0] s__rate  = @RATE_WIDTH@'d0;
 reg [@ACCEL_WIDTH@-1:0] s__accel = @ACCEL_WIDTH@'d0;
 @OUTMODE_BEGIN@
 reg  [@MODE_WIDTH@-1:0] s__mode  = @MODE_WIDTH@'d0;
 @OUTMODE_END@
-wire [@ACCUM_WIDTH@-1:0] s__angle_presum = s__angle + s__rate;
+reg [@ACCUM_WIDTH@-1:0] s__angle_presum = @ACCUM_WIDTH@'d0;
+always @ (posedge i_clk)
+  if (i_rst)
+    s__angle_presum <= @ACCUM_WIDTH@'d0;
+  else
+    s__angle_presum <= s__angle + { {(@RATE_SCALE@){s__rate[@RATE_WIDTH@-1]}}, s__rate[@RATE_WIDTH@-1:@ACCEL_RES@-@ACCUM_RES@] };
 always @ (posedge i_clk)
   if (i_rst) begin
     s__angle <= @ACCUM_WIDTH@'d0;
-    s__rate  <= @ACCUM_WIDTH@'d0;
+    s__rate  <= @RATE_WIDTH@'d0;
     s__accel <= @ACCEL_WIDTH@'d0;
 @OUTMODE_BEGIN@
     s__mode  <= @MODE_WIDTH@'d0;
 @OUTMODE_END@
   end else if (s__load_next && !s__FIFO_empty) begin
-    s__angle <= {(@ACCUM_WIDTH@){s__next_rate[@RATE_WIDTH@-1]}};
-    s__rate  <= { s__next_rate, {(@ACCUM_WIDTH@-@RATE_WIDTH@){1'b0}} };
+    s__angle <= {(@ACCUM_WIDTH@){s__next_rate[@RATECMD_WIDTH@-1]}};
+    s__rate  <= { s__next_rate, {(@ACCEL_RES@-@RATE_RES@){1'b0}} };
     s__accel <= s__next_accel;
 @OUTMODE_BEGIN@
     s__mode  <= s__next_mode;
 @OUTMODE_END@
   end else if (!s__running || (s__load_next && s__FIFO_empty)) begin
     s__angle <= @ACCUM_WIDTH@'d0;
-    s__rate  <= @ACCUM_WIDTH@'d0;
+    s__rate  <= @RATE_WIDTH@'d0;
     s__accel <= @ACCEL_WIDTH@'d0;
 @OUTMODE_BEGIN@
     s__mode  <= s__mode;
 @OUTMODE_END@
   end else begin
-    if (s__clk_en) begin
+    if (@S__CLK_EN@) begin
       s__angle <= s__angle_presum;
-      s__rate  <= s__rate  + { {(@ACCUM_WIDTH@-@ACCEL_WIDTH@){s__accel[@ACCEL_WIDTH@-1]}}, s__accel };
+      s__rate  <= s__rate  + { {(@ACCEL_SCALE@-@RATE_SCALE@){s__accel[@ACCEL_WIDTH@-1]}}, s__accel };
     end else begin
       s__angle <= s__angle;
       s__rate  <= s__rate;
@@ -180,8 +189,8 @@ always @ (posedge i_clk)
   if (i_rst) begin
     o__dir <= 1'b0;
     o__step <= 1'b0;
-  end else if (s__clk_en) begin
-    o__dir <= s__rate[@ACCUM_WIDTH@-1];
+  end else if (@S__CLK_EN@) begin
+    o__dir <= s__rate[@RATE_WIDTH@-1];
     o__step <= s__step_pre;
   end else begin
     o__dir <= o__dir;
@@ -191,7 +200,7 @@ always @ (posedge i_clk)
 always @ (posedge i_clk)
   if (i_rst)
     o__mode <= @OUTMODEWIDTH@'d0;
-  else if (s__clk_en)
+  else if (@S__CLK_EN@)
     o__mode <= s__mode;
   else
     o__mode <= o__mode;
