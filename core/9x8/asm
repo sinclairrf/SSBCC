@@ -65,7 +65,7 @@ try:
   # Record the constants in the program symbol table.
   if argList.C:
     for constant in argList.C:
-      a=re.findall(r'^(C_\w+)=(\w+)$',constant);
+      a=re.findall(r'^(C_\w+)=(-?[1-9]\d*|\w+)$',constant);
       if not a:
         raise asmDef.AsmException('Malformed -C argument: "%s"' % constant);
       a = list(a[0]);
