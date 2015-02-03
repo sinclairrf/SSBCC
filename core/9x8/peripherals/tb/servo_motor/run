@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2015, Sinclair R.F., Inc.
 
 NAME=servo_motor
 
