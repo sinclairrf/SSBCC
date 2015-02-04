@@ -56,7 +56,6 @@ class stepper_motor(SSBCCperipheral):
   Or:\n
     PERIPHERAL stepper_motor    basename=name                           \\
                                 master=mastername                       \\
-                                outcontrol=O_name                       \\
                                 outrecord=O_name                        \\
                                 outrun=O_name                           \\
                                 indone=I_name                           \\
@@ -74,6 +73,8 @@ class stepper_motor(SSBCCperipheral):
       specifies a preceding stepper_motor peripheral to use for the internal
       clock and to use for the accleration, rate, angle accumulator, and mode
       sizes
+      Note:  The "outcontrol" port from the master peripheral is used to queue
+             the control words for its slaves.
     outcontrol=O_name
       specifies the port used to assemble 8-bit control values into the stepper
       motor control word
@@ -290,7 +291,6 @@ class stepper_motor(SSBCCperipheral):
       periperal.\n
       PERIPHERAL        stepper_motor   basename=slave                  \\
                                         master=stepper                  \\
-                                        outcontrol=O_slave_control      \\
                                         outrecord=O_slave_wr            \\
                                         outrun=O_slave_go               \\
                                         indone=I_slave_done             \\
@@ -337,6 +337,7 @@ class stepper_motor(SSBCCperipheral):
       'accumres',
       'countwidth',
       'modewidth',
+      'outcontrol',
       'ratemethod',
       'rateres',
       'ratescale',
@@ -346,7 +347,6 @@ class stepper_motor(SSBCCperipheral):
       'basename',
       'indone',
       'inerror',
-      'outcontrol',
       'outrecord',
       'outrun',
     )
@@ -394,10 +394,11 @@ class stepper_motor(SSBCCperipheral):
     config.AddIO('i_%s_error'  % self.basename, 1, 'input',  loc)
     config.AddSignal('s__%s__done' % self.basename, 1, loc)
     self.ix_outcontrol = config.NOutports()
-    config.AddOutport((self.outcontrol,
-                       False,
-                       # empty list
-                      ),loc)
+    if not hasattr(self,'master'):
+      config.AddOutport((self.outcontrol,
+                         False,
+                         # empty list
+                        ),loc)
     self.ix_outrecord = config.NOutports()
     config.AddOutport((self.outrecord,
                        True,
@@ -441,6 +442,7 @@ class stepper_motor(SSBCCperipheral):
     else:
       body = re.sub(r'@OUTMODE_BEGIN@\n','',body)
       body = re.sub(r'@OUTMODE_END@\n','',body)
+    masterBasename = self.basename if not hasattr(self,'master') else self.master.basename
     for subpair in (
       ( r'@ACCEL_WIDTH@',               str(self.accelwidth),           ),
       ( r'@ACCEL_RES@',                 str(self.accelres),             ),
@@ -469,7 +471,8 @@ class stepper_motor(SSBCCperipheral):
       ( r'\bi__',                       'i_%s_' % self.basename,        ),
       ( r'\bo__',                       'o_%s_' % self.basename,        ),
       ( r'\bs__',                       's__%s__' % self.basename,      ),
-      ( r'@S__CLK_EN@',                 's__%s__clk_en' % (self.basename if not hasattr(self,'master') else self.master.basename), ),
+      ( r'@S__CLK_EN@',                 's__%s__clk_en' % masterBasename, ),
+      ( r'@S__INPUT_CONTROL_WORD_PACKED@', 's__%s__input_control_word_packed' % masterBasename, ),
     ):
       body = re.sub(subpair[0],subpair[1],body)
     body = self.GenVerilogFinal(config,body)

@@ -2,11 +2,10 @@
 // PERIPHERAL stepper_motor:  @NAME@
 // Copyright 2015, Sinclair R.F., Inc.
 //
-// Assemble the byes of the control word from the input bytes.
 @MASTER_BEGIN@
 localparam L__RATEMETHOD_MINUS_1 = @RATEMETHOD@ - 1;
 localparam L__NBITS_RATEMETHOD = clog2(L__RATEMETHOD_MINUS_1);
-@MASTER_END@
+// Assemble the byes of the control word from the input bytes.
 reg [@CONTROL_WIDTH@-1:0] s__input_control_word = {(@CONTROL_WIDTH@){1'b0}};
 always @ (posedge i_clk)
   if (i_rst)
@@ -23,6 +22,7 @@ wire [@CONTROL_WIDTH_PACKED@-1:0] s__input_control_word_packed = {
   , s__input_control_word[0+:@MODE_WIDTH@]
 @OUTMODE_END@
 };
+@MASTER_END@
 // Instantiate the control word FIFO and operate its input side.
 reg s__FIFO_wr = 1'b0;
 always @ (posedge i_clk)
@@ -39,7 +39,7 @@ always @ (posedge i_clk)
 reg [@CONTROL_WIDTH_PACKED@-1:0] s__FIFO[@FIFO_DEPTH@-1:0];
 always @ (posedge i_clk)
   if (s__FIFO_wr)
-    s__FIFO[s__FIFO_in_addr[0+:@NBITS_FIFO_DEPTH@]] <= s__input_control_word_packed;
+    s__FIFO[s__FIFO_in_addr[0+:@NBITS_FIFO_DEPTH@]] <= @S__INPUT_CONTROL_WORD_PACKED@;
 // Operate the output side of the FIFO and translate the packed controls into
 // individual signals.
 reg s__FIFO_rd = 1'b0;
