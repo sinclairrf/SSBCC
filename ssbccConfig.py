@@ -640,7 +640,7 @@ class SSBCCconfig():
     alreadyUsed = [memName for memName in mems if self.IsCombined(memName)];
     if alreadyUsed:
       raise SSBCCException('"%s" already used in COMBINE configuration command before %s' % (alreadyUsed[0],loc,));
-    repeated = [mems[ix] for ix in range(len(mems)-1) if mems[ix] in mems[ix+1]];
+    repeated = [mems[ix] for ix in range(len(mems)-1) if mems[ix] in mems[ix+1:]];
     if repeated:
       raise SSBCCException('"%s" repeated in COMBINE configuration command on %s' % (repeated[0],loc,));
     # Count the number of the different memory types being combined and validate the combination.
