@@ -1,6 +1,9 @@
-; Copyright 2014, Sinclair R.F., Inc.
+; Copyright 2014-2015, Sinclair R.F., Inc.
 ;
 ; Unsigned arithmetic operations.
+
+.IFNDEF D__INCLUDED__MATH_S__
+.define D__INCLUDED__MATH_S__
 
 ; Notation:
 ;   ux_n is the n'th byte of ux where n=0 is the LSB
@@ -74,3 +77,5 @@
 .function math__add_u32_u32_u32
   >r .call(math__add_u32_u24_u32)
   r> .return(+)
+
+.ENDIF ; D__INCLUDED__MATH_S__

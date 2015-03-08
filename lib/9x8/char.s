@@ -1,9 +1,9 @@
-; Copyright 2013, Sinclair R.F., Inc.
+; Copyright 2013, 2015, Sinclair R.F., Inc.
 ;
 ; Character manipulation functions
 
-.IFNDEF C__INCLUDED__CHAR_S__
-.constant C__INCLUDED__CHAR_S__ 0
+.IFNDEF D__INCLUDED__CHAR_S__
+.define D__INCLUDED__CHAR_S__
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -86,4 +86,4 @@
   'f' over - 0x80 & .jumpc(error) ${ord('a')-10} - .return(0)
   :error .return(0xFF)
 
-.ENDIF ; C__INCLUDED__CHAR_S__
+.ENDIF ; D__INCLUDED__CHAR_S__

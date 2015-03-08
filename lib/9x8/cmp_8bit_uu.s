@@ -1,6 +1,9 @@
-; Copyright 2013, Sinclair R.F., Inc.
+; Copyright 2013, 2015, Sinclair R.F., Inc.
 ;
 ; 8-bit unsigned vs. unsigned comparison operators
+
+.IFNDEF D__INCLUDED__CMP_8BIT_UU_S__
+.define D__INCLUDED__CMP_8BIT_UU_S__
 
 ; Compare two unsigned 8-bit values for equality.
 ; ( u1 u2 - f"u1 = u2" )
@@ -56,3 +59,5 @@
   &
   ; ( u1 uX - min(u1,u2) )
   .return(+)
+
+.ENDIF ; D__INCLUDED__CMP_8BIT_UU_S__
