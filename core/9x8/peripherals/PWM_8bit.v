@@ -1,5 +1,6 @@
 //
 // PERIPHERAL PWM_8bit:  @NAME@
+// Copyright 2013, Sinclair R.F., Inc.
 //
 localparam L__COUNT = @COUNT@-1;
 localparam L__COUNT_NBITS = $clog2(L__COUNT+1);

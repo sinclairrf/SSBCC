@@ -1,5 +1,6 @@
 //
 // monitor_stack peripheral
+// Copyright 2013, Sinclair R.F., Inc.
 //
 // Note: The validity of N and T are not monitored for invalid operations.  For
 //       example, if N is not valid and a "swap" is performed, then the data

@@ -1,5 +1,6 @@
 //
 // PERIPHERAL inFIFO_async:  @NAME@
+// Copyright 2014, Sinclair R.F., Inc.
 //
 generate
 // FIFO memory

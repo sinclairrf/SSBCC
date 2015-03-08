@@ -1,5 +1,6 @@
 //
 // PERIPHERAL:  AXI4-Lite slave dual-port-RAM interface
+// Copyright 2014, Sinclair R.F., Inc.
 //
 // Note:  While the AXI4-Lite protocol allows simultaneous read and write
 // operations, only one side of the dual-port RAM is available to the AXI4-lite

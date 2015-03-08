@@ -1,5 +1,6 @@
 //
 // PERIPHERAL servo_motor:  @NAME@
+// Copyright 2015, Sinclair R.F.,  Inc.
 //
 generate
 reg [@NBITS_PWM@-1:0] s__pwm_count_init = @DEFAULT_PWM@;

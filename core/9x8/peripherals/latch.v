@@ -1,5 +1,6 @@
 //
 // latch peripheral for @INSIGNAL@
+// Copyright 2013, Sinclair R.F., Inc.
 //
 generate
 // Register the input signal when  commanded.

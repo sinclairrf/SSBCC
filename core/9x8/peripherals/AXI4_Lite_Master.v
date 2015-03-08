@@ -1,5 +1,6 @@
 //
 // PERIPHERAL:  AXI4-Lite Master
+// Copyright 2014, Sinclair R.F., Inc.
 //
 generate
 localparam L__ADDRESS_WIDTH = @ADDRESS_WIDTH@;
