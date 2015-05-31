@@ -52,7 +52,7 @@ def genFunctions(fp,config):
   """
   if 'display_opcode' in config.functions:
     displayOpcodePath = os.path.join(config.Get('corepath'),'display_opcode.v');
-    fpDisplayOpcode = open(displayOpcodePath,'r');
+    fpDisplayOpcode = open(displayOpcodePath,'rt');
     if not fpDisplayOpcode:
       raise Exception('Program Bug -- "%s" not found' % displayOpcodePath);
     body = fpDisplayOpcode.read();
@@ -73,7 +73,7 @@ endfunction
 """);
   if 'display_trace' in config.functions:
     displayTracePath = os.path.join(config.Get('corepath'),'display_trace.v');
-    fpDisplayTrace = open(displayTracePath,'r');
+    fpDisplayTrace = open(displayTracePath,'rt');
     if not fpDisplayTrace:
       raise Exception('Program Bug -- "%s" not found' % displayTracePath);
     body = fpDisplayTrace.read();

@@ -110,7 +110,7 @@ class FileBodyIterator:
         for path in self.searchPaths:
           fullInclude = os.path.join(path,self.pendingInclude);
           if os.path.exists(fullInclude):
-            fp_pending = open('%s/%s' % (path,self.pendingInclude),'r');
+            fp_pending = open('%s/%s' % (path,self.pendingInclude),'rt');
             break;
         else:
           raise AsmException('%s not found' % self.pendingInclude);

@@ -114,7 +114,7 @@ class SSBCCperipheral:
            and UART_Rx HDL files.
     """
     hdlName = re.sub(r'\.py$',extension,filename);
-    fp = open(hdlName,'r');
+    fp = open(hdlName,'rt');
     body = fp.read();
     fp.close();
     return body;

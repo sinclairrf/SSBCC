@@ -417,7 +417,7 @@ try:
     raise SSBCCException('Running the assembler');
 
   # Read the assembler output tables.
-  fpAssemberOutput = open(assemblerOutput,'r');
+  fpAssemberOutput = open(assemblerOutput,'rt');
   ixLine = 0;
   programBody = list();
   programBodyLength = 0;
@@ -509,7 +509,7 @@ try:
   rawCoreName = os.path.join(config.Get('corepath'),genCoreName());
   if not os.path.isfile(rawCoreName):
     raise SSBCCException('Core "%s% missing for hdl = "%s"' % (rawCoreName,config.Get('hdl'),));
-  fpRawCore = open(rawCoreName,'r');
+  fpRawCore = open(rawCoreName,'rt');
 
   outName = genOutName(config.Get('outCoreName'));
   fpOutCore = open(outName,'wt');
