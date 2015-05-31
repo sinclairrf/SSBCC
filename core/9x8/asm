@@ -10,6 +10,7 @@
 
 # global modules
 import argparse
+import os
 import re
 import sys
 
@@ -53,6 +54,7 @@ try:
   argListParser.add_argument('-R', metavar='PORT=index', action='append', help='Strobe-only output port names');
   argListParser.add_argument('-S', metavar='MEMORY=length', action='append', help='Memory length');
   argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
+  argListParser.add_argument('--list-macros', action='store_true', help='list the built-in and user-defined macros');
   argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
   argListParser.add_argument('-s', metavar='STACK_NAME=length', action='append', help='Stack length');
   argListParser.add_argument('filename', metavar='filename', nargs='+', type=validateFile, help='required list of files');
@@ -159,6 +161,36 @@ try:
   if argList.M:
     for path in argList.M:
       ad.AddMacroSearchPath(path);
+
+  # If asked, list the available macros.
+  if argList.list_macros:
+    print '\nBuilt-in macros\n'
+    tmp = [name for name in ad.macros['builtIn']]
+    tmp.sort()
+    for name in tmp:
+      print name
+    for testPath in ad.macroSearchPaths:
+      if not os.path.isdir(testPath):
+        continue
+      for testName in os.listdir(testPath):
+        if not re.match(r'.*\.py$',testName):
+          continue;
+        fullFile = os.path.join(testPath,testName);
+        if not os.path.isfile(fullFile):
+          continue
+        try:
+          execfile(fullFile)
+          exec('%s(ad)' % testName[:-3])
+        except:
+          pass
+    print '\nUser-defined macros\n'
+    tmp = [name for name in ad.macros['list'] if name not in ad.macros['builtIn']]
+    tmp.sort()
+    for name in tmp:
+      print name
+    print
+    print 'Assembler terminated by "--list-macros" option'
+    sys.exit(1)
 
   ################################################################################
   #
