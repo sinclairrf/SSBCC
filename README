@@ -928,7 +928,9 @@ memories:
                         fetches the single-byte value of var_name offset by
                         "offset" bytes
                         Note:  This is equivalent to
-                               "${var_name+offset} .fetch(mem_name)"
+                                 "${var_name+offset} .fetch(mem_name)"
+                               where mem_name is the memory in which var_name is
+                               stored.
   .fetchram(var_name)   is similar to the .fetch(mem_name) macro except that the
                         variable name is used to identify the memory instead of
                         the name of the memory
@@ -939,13 +941,8 @@ memories:
                         the variable name is used to identify the memory instead
                         of the name of the memory
   .fetchvalue(var_name) fetches the single-byte value of var_name
-                        Note:  This is equivalent to "var_name .fetch(mem_name)"
-                               where mem_name is the memory in which var_name is
-                               stored.
-  .fetchvalueoffset(var_name,offset)
-                        fetches the single-byte value stored at var_name+offset
                         Note:  This is equivalent to
-                               "${var_name+offset}" .fetch(mem_name)
+                                 "var_name .fetch(mem_name)"
                                where mem_name is the memory in which var_name is
                                stored.
   .fetchvector(var_name,N)
@@ -953,14 +950,14 @@ memories:
                         stack with the value at var_name at the top and the
                         value at var_name+N-1 deep in the stack.
                         Note:  This is equivalent N+1 operation sequence
-                               "${var_name+N-1} .fetch-(mem_name) ...
-                               .fetch-(mem_name) .fetch(mem_name)"
+                                 "${var_name+N-1} .fetch-(mem_name) ...
+                                 .fetch-(mem_name) .fetch(mem_name)"
                                where ".fetch-(mem_name)" is repeated N-1 times.
   .storeindexed(var_name)
                         uses the top of the data stack as an index into var_name
                         into which to store the next-to-top of the data stack.
                         Note:  This is equivalent to the 4 instruction sequence
-                               "var_name + .store(mem_name) drop".
+                                 "var_name + .store(mem_name) drop".
                         Note:  The default "drop" instruction can be overriden
                                by providing the optional second argument
                                similarly to the .storevalue macro.
@@ -968,9 +965,11 @@ memories:
                         stores the single-byte value at the top of the data
                         stack at var_name offset by "offset" bytes
                         Note:  This is equivalent to
-                               "${var_name+offset} .store(mem_name) drop"
-                        Note:  The optional third argument is as per the
-                               optional second argument of .storevalue
+                                 "${var_name+offset} .store(mem_name) drop"
+                               where mem_name is the memory in which var_name is
+                               stored.
+                        Note:  The default "drop" instruction can be replaced by
+                               providing the optional third argument.
   .storeram(var_name)   is similar to the .store(mem_name) macro except that the
                         variable name is used to identify the RAM instead of the
                         name of the RAM
@@ -983,7 +982,7 @@ memories:
   .storevalue(var_name) stores the single-byte value at the top of the data
                         stack at var_name
                         Note:  This is equivalent to
-                               "var_name .store(mem_name) drop"
+                                 "var_name .store(mem_name) drop"
                         Note:  The default "drop" instruction can be replaced by
                                providing the optional second argument.  For
                                example, the following instruction will store and
@@ -993,8 +992,8 @@ memories:
   .storevector(var_name,N)
                         Does the reverse of the .fetchvector macro.
                         Note:  This is equivalent to the N+2 operation sequence
-                               "var_name .store+(mem_name) ... .store+(mem_name)
-                               .store(mem_name) drop"
+                                 "var_name .store+(mem_name) ... .store+(mem_name)
+                                 .store(mem_name) drop"
                                where ".store+(mem_name)" is repeated N-1 times.
 
 The .fetchvector and .storevector macros are intended to work with values stored

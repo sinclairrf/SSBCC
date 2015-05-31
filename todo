@@ -6,7 +6,6 @@
   ssbcc
 *   change "outstatus" to "outfull" for UART and UART_Tx
 *   add size[variable_name]
-    add "fetchvalueoffset(var,ix)" and "storevalueoffset(var,ix)"
     add r* to over-write either s_T or s_N?
 *   accommodate Lattice Diamond synthesis and memory initialization
 *   make "quiet" the default
@@ -15,7 +14,6 @@
 *   write COMBINE MEMORY tests
 ?   bit-slice constants (similarly to parameters)
     handle ';' that aren't preceded by a space
-    add fetch/store_valueoffset and fetch/store_vectoroffset
     use .IFNDEF instead of checking assembler check for previously included files
     add "rot" instruction?
     add address range validation for memory accesses

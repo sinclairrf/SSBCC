@@ -1,4 +1,6 @@
-# Copyright 2014, Sinclair R.F., Inc.
+# Copyright 2014-2015, Sinclair R.F., Inc.
+
+from asmDef import AsmException
 
 def storeoffset(ad):
   """
@@ -20,13 +22,15 @@ def storeoffset(ad):
   ad.AddMacro('.storeoffset', 3, [
                                    ['','symbol'],
                                    ['','singlevalue','symbol'],
-                                   ['drop','instruction','singlemacro','singlevalue','symbol']
+                                   ['drop','instruction','parameter','singlemacro','singlevalue','symbol']
                                  ]);
 
   # Define the macro functionality.
   def emitFunction(ad,fp,argument):
     (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
     offset = ad.Emit_EvalSingleValue(argument[1]);
+    if addr+offset >= 256:
+      raise asmDef.AsmException('Unreasonable address+length=0x%02X+0x%02X >= 256 at %s' % (addr,N,argument[0]['loc'],))
     ad.EmitPush(fp,addr+offset,ad.Emit_String('%s+%s' % (argument[0]['value'],offset,)),argument[0]['loc']);
     ad.EmitOpcode(fp,ad.specialInstructions['store'] | ixBank,'store '+bankName);
     ad.EmitOptArg(fp,argument[2]);

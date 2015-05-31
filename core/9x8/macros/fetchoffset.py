@@ -1,4 +1,6 @@
-# Copyright 2014, Sinclair R.F., Inc.
+# Copyright 2014-2015, Sinclair R.F., Inc.
+
+from asmDef import AsmException
 
 def fetchoffset(ad):
   """
@@ -23,6 +25,8 @@ def fetchoffset(ad):
   def emitFunction(ad,fp,argument):
     (addr,ixBank,bankName) = ad.Emit_GetAddrAndBank(argument[0]);
     offset = ad.Emit_EvalSingleValue(argument[1]);
+    if addr+offset >= 256:
+      raise asmDef.AsmException('Unreasonable address+length=0x%02X+0x%02X >= 256 at %s' % (addr,N,argument[0]['loc'],))
     ad.EmitPush(fp,addr+offset,ad.Emit_String('%s+%s' % (argument[0]['value'],offset,)),argument[0]['loc']);
     ad.EmitOpcode(fp,ad.specialInstructions['fetch'] | ixBank,'fetch '+bankName);
 
