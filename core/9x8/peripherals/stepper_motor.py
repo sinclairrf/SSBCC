@@ -19,11 +19,12 @@ class stepper_motor(SSBCCperipheral):
   micro controller.\n
   The core runs accumulators for the angle and the rate.  I.e. the rate is an
   accumulated sum of the initial rate and the commanded acceleration and the
-  angle is an accumulation of this possibly changing rate.  The direction signal
-  to the stepper motor is the sign bit from the accumulated rate.  The "step"
-  signal to the stepper motor driver is strobed every time the accumulated angle
-  overflows or underflows and the direction bit to the driver is set according
-  to whether the accumulated angle overflowed or underflowed.\n
+  angle is an accumulation of this possibly changing rate.  The direction
+  signal (if present) to the stepper motor is the sign bit from the accumulated
+  rate.  The "step" signal to the stepper motor driver is strobed every time
+  the accumulated angle overflows or underflows and the direction bit to the
+  driver is set according to whether the accumulated angle overflowed or
+  underflowed.\n
   The motor control word consists of the following signals:
     initial rate
     acceleration
@@ -43,7 +44,8 @@ class stepper_motor(SSBCCperipheral):
                                 outrecord=O_name                        \\
                                 outrun=O_name                           \\
                                 indone=I_name                           \\
-                                inerror=I_name                          \\
+                                [inerror=I_name]                        \\
+                                [nodir]                                 \\
                                 ratemethod={CLK_FREQ_HZ/RATE_HZ|count}  \\
                                 ratescale=N_rate_scale                  \\
                                 rateres=N_rate                          \\
@@ -59,7 +61,8 @@ class stepper_motor(SSBCCperipheral):
                                 outrecord=O_name                        \\
                                 outrun=O_name                           \\
                                 indone=I_name                           \\
-                                inerror=I_name                          \\
+                                [nodir]                                 \\
+                                [inerror=I_name]                        \\
                                 [FIFO=N_fifo]\n
   Where:
     basename=name
@@ -92,9 +95,12 @@ class stepper_motor(SSBCCperipheral):
       FIFO have finished
       Note:  The name must start with "I_".
     inerror=I_name
-      specifies the port used to read the error status from the stepper motor
-      controller
+      optionally specifies the port used to read the error status from the
+      stepper motor controller
       Note:  The name must start with "I_".
+    nodir
+      optionally specify that the stepper motor does not generate a direction
+      bit
     ratemethod
       specified the method to generate the internal clock rate from the
       processor clock
@@ -306,22 +312,23 @@ class stepper_motor(SSBCCperipheral):
     self.peripheralFile = peripheralFile
     # Get the parameters.
     allowables = (
-      ( 'FIFO',         r'\S+$',                lambda v : self.IntPow2Method(config,v,lowLimit=16),  ),
-      ( 'accelres',     r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),       ),
-      ( 'accelscale',   r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),       ),
-      ( 'accumres',     r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),       ),
-      ( 'basename',     r'[A-Za-z]\w*$',        None,                                                 ),
-      ( 'countwidth',   r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),       ),
-      ( 'indone',       r'I_\w+$',              None,                                                 ),
-      ( 'inerror',      r'I_\w+$',              None,                                                 ),
-      ( 'master',       r'[A-Za-z]\w*$',        None,                                                 ),
-      ( 'modewidth',    r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),       ),
-      ( 'outcontrol',   r'O_\w+$',              None,                                                 ),
-      ( 'outrecord',    r'O_\w+$',              None,                                                 ),
-      ( 'outrun',       r'O_\w+$',              None,                                                 ),
-      ( 'ratemethod',   r'\S+$',                lambda v : self.RateMethod(config,v),                 ),
-      ( 'rateres',      r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),       ),
-      ( 'ratescale',    r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),       ),
+      ( 'FIFO',         r'\S+$',                lambda v : self.IntPow2Method(config,v,lowLimit=16),    ),
+      ( 'accelres',     r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),         ),
+      ( 'accelscale',   r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),         ),
+      ( 'accumres',     r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),         ),
+      ( 'basename',     r'[A-Za-z]\w*$',        None,                                                   ),
+      ( 'countwidth',   r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),         ),
+      ( 'indone',       r'I_\w+$',              None,                                                   ),
+      ( 'inerror',      r'I_\w+$',              None,                                                   ),
+      ( 'master',       r'[A-Za-z]\w*$',        None,                                                   ),
+      ( 'modewidth',    r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),         ),
+      ( 'nodir',        None,                   None,                                                   ),
+      ( 'outcontrol',   r'O_\w+$',              None,                                                   ),
+      ( 'outrecord',    r'O_\w+$',              None,                                                   ),
+      ( 'outrun',       r'O_\w+$',              None,                                                   ),
+      ( 'ratemethod',   r'\S+$',                lambda v : self.RateMethod(config,v),                   ),
+      ( 'rateres',      r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),         ),
+      ( 'ratescale',    r'\S+$',                lambda v : self.IntMethod(config,v,lowLimit=1),         ),
     )
     names = [a[0] for a in allowables]
     for param_tuple in param_list:
@@ -346,7 +353,6 @@ class stepper_motor(SSBCCperipheral):
     reqdParms = (
       'basename',
       'indone',
-      'inerror',
       'outrecord',
       'outrun',
     )
@@ -387,11 +393,13 @@ class stepper_motor(SSBCCperipheral):
     if not (self.rateres <= self.accumres <= self.accelres):
       raise SSBCCException('accumres must be between rateres and accelres at %s' % loc)
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    config.AddIO('o_%s_dir'    % self.basename, 1, 'output', loc)
-    config.AddIO('o_%s_step'   % self.basename, 1, 'output', loc)
+    if not hasattr(self,'nodir'):
+      config.AddIO('o_%s_dir'   % self.basename, 1, 'output', loc)
+    config.AddIO('o_%s_step'    % self.basename, 1, 'output', loc)
     if self.modewidth > 0:
-      config.AddIO('o_%s_mode' % self.basename, 1, 'output', loc)
-    config.AddIO('i_%s_error'  % self.basename, 1, 'input',  loc)
+      config.AddIO('o_%s_mode'  % self.basename, 1, 'output', loc)
+    if hasattr(self,'inerror'):
+      config.AddIO('i_%s_error' % self.basename, 1, 'input',  loc)
     config.AddSignal('s__%s__done' % self.basename, 1, loc)
     self.ix_outcontrol = config.NOutports()
     if not hasattr(self,'master'):
@@ -409,7 +417,8 @@ class stepper_motor(SSBCCperipheral):
                        True,
                        # empty list
                       ),loc)
-    config.AddInport((self.inerror,
+    if hasattr(self,'inerror'):
+      config.AddInport((self.inerror,
                       ('i_%s_error' % self.basename, 1, 'data', ),
                      ), loc)
     config.AddInport((self.indone,
@@ -442,6 +451,8 @@ class stepper_motor(SSBCCperipheral):
     else:
       body = re.sub(r'@OUTMODE_BEGIN@\n','',body)
       body = re.sub(r'@OUTMODE_END@\n','',body)
+    if hasattr(self,'nodir'):
+      body = re.sub(r' *o__dir.*?\n','',body)
     masterBasename = self.basename if not hasattr(self,'master') else self.master.basename
     for subpair in (
       ( r'@ACCEL_WIDTH@',               str(self.accelwidth),           ),
