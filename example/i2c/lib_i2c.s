@@ -38,7 +38,7 @@
 ;   Add 2 to ensure rounding up when evaluting the integer fraction.
 ;   The loop is 3 clock cycles per iteration
 .IFNDEF C_I2C_QUARTER_CYCLE
-.constant C_I2C_QUARTER_CYCLE ${(63-9+2)/3}
+.constant C_I2C_QUARTER_CYCLE ${max(1,(63-9+2)/3)}
 .ENDIF
 
 ; ( - )
