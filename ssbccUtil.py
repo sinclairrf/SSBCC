@@ -114,9 +114,9 @@ def IsIntExpr(value):
   two integers.
   Allow underscores as per Verilog.
   """
-  if re.match(r'-?[1-9][0-9_]*',value):
+  if re.match(r'(0|-?[1-9][0-9_]*)$',value):
     return True;
-  elif re.match(r'\(-?[1-9][0-9_]*(\*[1-9][0-9_]*)+\)',value):
+  elif re.match(r'(-?[1-9][0-9_]*\(\*[1-9][0-9_]*\)+)$',value):
     return True;
   else:
     return False;
