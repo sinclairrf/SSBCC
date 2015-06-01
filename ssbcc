@@ -54,6 +54,7 @@ try:
   argListParser.add_argument('-q', action='store_true', help='quiet');
   argListParser.add_argument('--define-clog2', action='store_true', help='define clog2 instead of using built-in $clog2');
   argListParser.add_argument('--display-opcode', action='store_true', help='add 3-letter decode of opcode (for trace viewer)');
+  argListParser.add_argument('--help-macro', metavar='macroName', type=str, help='Display usage message for the specified macro (passed on to the assembler)');
   argListParser.add_argument('--list-macros', action='store_true', help='list the built-in and user-defined macros (passed on to the assembler)');
   argListParser.add_argument('--rand-instr-mem', action='store_true', help='fill unused instruction memory with random values');
   argListParser.add_argument('--synth-instr-mem', type=str, help='synthesis constraint for instruction memory');
@@ -380,6 +381,8 @@ try:
   if not compiler:
     raise SSBCCException('ASSEMBLY configuration command is missing');
   cmd = os.path.join(config.Get('corepath'), compiler[0]);
+  if argList.help_macro:
+    cmd += ' --help-macro %s' % argList.help_macro
   if argList.list_macros:
     cmd += ' --list-macros'
   for name in config.constants:

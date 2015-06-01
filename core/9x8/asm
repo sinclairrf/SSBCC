@@ -53,6 +53,7 @@ try:
   argListParser.add_argument('-O', metavar='PORT=index', action='append', help='Output port names');
   argListParser.add_argument('-R', metavar='PORT=index', action='append', help='Strobe-only output port names');
   argListParser.add_argument('-S', metavar='MEMORY=length', action='append', help='Memory length');
+  argListParser.add_argument('--help-macro', metavar='macroName', type=str, help='Display usage message for the specified macro');
   argListParser.add_argument('-i', action='store_true', help='enable/require interrupt');
   argListParser.add_argument('--list-macros', action='store_true', help='list the built-in and user-defined macros');
   argListParser.add_argument('-o', metavar='outfile', type=argparse.FileType('w'), required =True, help='output metafile');
@@ -161,6 +162,34 @@ try:
   if argList.M:
     for path in argList.M:
       ad.AddMacroSearchPath(path);
+
+  ##############################################################################
+  #
+  # Terminating help messages
+  #
+  ##############################################################################
+
+  # If asked, print the usage for the specified macro.
+  if argList.help_macro:
+    macroName = argList.help_macro
+    if macroName[0] != '.':
+      macroName = '.%s' % macroName
+    if macroName not in ad.macros['list']:
+      try:
+        ad.AddUserMacro(macroName[1:])
+      except:
+        pass
+    if macroName in ad.macros['list']:
+      ix = ad.macros['list'].index(macroName)
+      if ad.macros['doc'][ix]:
+        print '\n%s usage message:' % macroName
+        print ad.macros['doc'][ix]
+      else:
+        print '\nNo usage message for %s\n' % macroName
+    else:
+      print 'Macro "%s" not recognized or malformed' % macroName
+    print 'Assembler terminated by "--help-macro" option'
+    sys.exit(1)
 
   # If asked, list the available macros.
   if argList.list_macros:

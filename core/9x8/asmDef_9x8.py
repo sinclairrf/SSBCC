@@ -82,7 +82,7 @@ class asmDef_9x8:
   #
   ################################################################################
 
-  def AddMacro(self,name,macroLength,args):
+  def AddMacro(self,name,macroLength,args,doc=None):
     """
     Add a macro to the list of recognized macros.
       name              string with the name of the macro
@@ -100,7 +100,8 @@ class asmDef_9x8:
                               required or optional arguments.
                         Note:  Only the last list in args is allowed to
                                indicate an optional value for that argument.
-                          
+      doc               doc string for the macro
+
     Also record the allowed number of allowed arguments to the macro.
     """
     if name in self.macros['list']:
@@ -108,6 +109,7 @@ class asmDef_9x8:
     self.macros['list'].append(name);
     self.macros['length'].append(macroLength);
     self.macros['args'].append(args);
+    self.macros['doc'].append(doc)
     # Compute the range of the number of allowed arguments by first counting
     # the number of required arguments and then determining whether or not
     # there is at most one optional argument.
@@ -140,6 +142,9 @@ class asmDef_9x8:
       raise asmDef.AsmException('Definition for macro "%s" not found' % macroName);
     execfile(fullMacro);
     exec('%s(self)' % macroName);
+    exec('docString = %s.__doc__' % macroName)
+    if docString and not self.macros['doc'][-1]:
+      self.macros['doc'][-1] = docString
 
   def IsBuiltInMacro(self,name):
     """
@@ -1280,7 +1285,7 @@ class asmDef_9x8:
     #        expanded.
     #
 
-    self.macros = dict(list=list(), length=list(), args=list(), nArgs=list(), builtIn = list());
+    self.macros = dict(list=list(), length=list(), args=list(), nArgs=list(), builtIn = list(), doc = list());
     self.EmitFunction = dict();
 
     # Macros built in to the assembler (to access primitives).
