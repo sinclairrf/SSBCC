@@ -417,7 +417,7 @@ try:
 
   # Invoke the compiler and exit if it failed.
   if not argList.q:
-    print 'Invoking the assember with the following command:  ' + cmd;
+    print 'Invoking the assembler with the following command:  ' + cmd;
   cmdStatus = os.system(cmd);
   if cmdStatus != 0:
     raise SSBCCException('Running the assembler');
