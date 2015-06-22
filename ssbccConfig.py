@@ -1,10 +1,5 @@
-################################################################################
-#
-# Copyright 2012-2013, Sinclair R.F., Inc.
-#
-# Utilities required by ssbcc
-#
-################################################################################
+# Copyright 2012-2015, Sinclair R.F., Inc.
+# Utilities required by ssbcc.
 
 import math
 import os
@@ -63,7 +58,7 @@ class SSBCCconfig():
     self.AddSymbol(name,loc);
     if name in self.constants:
       raise SSBCCException('CONSTANT "%s" already declared at %s' % (name,loc,));
-    if not IsIntExpr(value):
+    if not ((type(value) == int) or IsIntExpr(value)):
       raise SSBCCException('Could not evaluate expression "%s" for constant at %s' % (value,loc,));
     self.constants[name] = ParseIntExpr(value);
 
@@ -122,7 +117,7 @@ class SSBCCconfig():
     Add an OUTPORT symbol to the processor.\n
     port        tuple as follows:
                 port[0] - name of the OUTPORT symbol
-                port[1] - True if the outport is a strobe-only outport, false
+                port[1] - True if the outport is a strobe-only outport, False
                           otherwise
                 port[2:] - zero or more tuples as follows:
                   (o_signal,width,type,[initialization],)
