@@ -1,8 +1,6 @@
-################################################################################
-#
-# Copyright 2012-2014, Sinclair R.F., Inc.
-#
-################################################################################
+# Copyright 2012-2015, Sinclair R.F., Inc.
+# Base classes and utility function for generating general-purpose and interrupt
+# peripherals.
 
 import re
 
