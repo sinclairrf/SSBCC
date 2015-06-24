@@ -9,10 +9,10 @@ for INCLUDE_UART in false true; do
   for INCLUDE_I2C in false true; do
     FLAGS="";
     if ${INCLUDE_UART}; then
-      FLAGS+=" -D INCLUDE_UART";
+      FLAGS+=" -D D_INCLUDE_UART";
     fi
     if ${INCLUDE_I2C}; then
-      FLAGS+=" -D INCLUDE_I2C";
+      FLAGS+=" -D D_INCLUDE_I2C";
     fi
     ssbcc -q ${FLAGS} uc.9x8 || { echo "FATAL ERROR:  ssbcc failed" > /dev/stderr; exit 1; }
     FAILED=false;
