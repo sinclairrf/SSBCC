@@ -84,7 +84,7 @@ try:
   if argList.D:
     for name in argList.D:
       if not re.match('D_',name):
-        raise SSBCCException('Bad define name "%s" should start with "D_"' % name);
+        raise asmDef.AsmException('Argument "%s" to "%s" should start with "D_"' % (name,sys.argv[0],));
       ad.AddSymbol(name, 'define');
 
   # Record the input names and values in the appropriate record type

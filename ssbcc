@@ -78,7 +78,7 @@ try:
   if argList.D:
     for name in argList.D:
       if not re.match('D_',name):
-        raise SSBCCException('Bad define name "%s" should start with "D_"' % name);
+        raise SSBCCException('Argument "%s" to %s should start with "D_"' % (name,sys.argv[0],));
       config.AddDefine(name);
 
   if argList.I:
