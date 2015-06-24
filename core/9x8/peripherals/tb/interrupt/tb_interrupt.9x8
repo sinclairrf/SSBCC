@@ -1,0 +1,14 @@
+# Copyright 2015, Sinclair R.F., Inc.
+# Test bench for interrupt peripheral.
+
+ARCHITECTURE    core/9x8 Verilog
+ASSEMBLY        tb_interrupt.s
+
+INSTRUCTION     256
+DATA_STACK      16
+RETURN_STACK    16
+
+PERIPHERAL trace
+
+PORTCOMMENT     external interrupt
+PERIPHERAL      interrupt       insignal0=i_interrupt

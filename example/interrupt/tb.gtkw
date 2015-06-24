@@ -1,0 +1,49 @@
+[*]
+[*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
+[*] Sat Jun 20 01:50:44 2015
+[*]
+[dumpfile] "/home/rsinclair/Projects/ssbcc-interrupt/example/interrupt/tb.vcd"
+[dumpfile_mtime] "Sat Jun 20 01:39:12 2015"
+[dumpfile_size] 2501556
+[savefile] "/home/rsinclair/Projects/ssbcc-interrupt/example/interrupt/tb.gtkw"
+[timestart] 0
+[size] 959 576
+[pos] -1 -1
+*-26.975466 8500000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+[treeopen] tb.uut.
+[sst_width] 43
+[signals_width] 218
+[sst_expanded] 0
+[sst_vpaned_height] 151
+@28
+tb.s_rst
+tb.s_clk
+tb.s_interrupt
+tb.s_UART_Tx
+tb.uut.s__o_uart_tx__Tx_busy
+@200
+-
+@28
+tb.uut.s_interrupt
+@22
+>200000
+tb.uut.s_PC[9:0]
+>100000
+tb.uut.s_opcode[8:0]
+@820
+>0
+tb.uut.s_opcode_name[23:0]
+@22
+tb.uut.s_R_stack_ptr[3:0]
+tb.uut.s_R[9:0]
+tb.uut.s_T[7:0]
+tb.uut.s_N[7:0]
+tb.uut.s_Np_stack_ptr[3:0]
+@29
+tb.uut.s_interrupt_ena
+@28
+tb.uut.s_interrupt_mask[1:0]
+tb.uut.s_interrupt_raw[1:0]
+[pattern_trace] 1
+[pattern_trace] 0

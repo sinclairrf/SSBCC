@@ -70,6 +70,20 @@ def ExtractBits(v,bits):
   v %= 2**bL;
   return v;
 
+def InitSignal(nBits,v):
+  """
+  Generate an initial value for a Verilog signal.
+  """
+  if v == None:
+    return None;
+  elif type(v) == str:
+    return v;
+  elif type(v) == int:
+    format = '%d\'h%%0%dX' % (nBits,int((nBits+3)/4),);
+    return format % v;
+  else:
+    raise Exception('Program Bug:  unrecognized signal type "%s"' % type(signalInit))
+
 def IntValue(v):
   """
   Convert a Verilog format integer into an integer value.

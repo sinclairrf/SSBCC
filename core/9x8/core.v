@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright 2012-2014, Sinclair R.F., Inc.
+ * Copyright 2012-2015, Sinclair R.F., Inc.
  *
  * SSBCC.9x8 -- Small Stack Based Computer Compiler, 9-bit opcode, 8-bit data.
  *
@@ -50,6 +50,7 @@ reg [8:0] s_T_adder;
 // 6-input LUT formulation -- 3-bit opcode, 3 bits of T centered at current bit
 reg [7:0] s_math_rotate;
 always @ (s_T,s_opcode)
+//@SSBCC@ interrupt__s_math_rotate
   case (s_opcode[0+:3])
      3'b000 : s_math_rotate = s_T;                      // nop
      3'b001 : s_math_rotate = { s_T[0+:7], 1'b0 };      // <<0
@@ -203,6 +204,7 @@ always @ (*) begin
   s_inport      = 1'b0;
   s_outport     = 1'b0;
   s_mem_wr      = 1'b0;
+//@SSBCC@ interrupt__s_opcode
   if (s_opcode[8] == 1'b1) begin // push
     s_bus_t     = C_BUS_T_OPCODE;
     s_bus_n     = C_BUS_N_T;
@@ -303,54 +305,10 @@ end
  ******************************************************************************/
 
 // non-clocked PC required for shadow register in SRAM blocks
-reg [C_PC_WIDTH-1:0] s_PC_next;
-always @ (*)
-  case (s_bus_pc)
-    C_BUS_PC_NORMAL:
-      s_PC_next = s_PC_plus1;
-    C_BUS_PC_JUMP:
-      s_PC_next = s_PC_jump;
-    C_BUS_PC_RETURN:
-      s_PC_next = s_R[0+:C_PC_WIDTH];
-    default:
-      s_PC_next = s_PC_plus1;
-  endcase
+//@SSBCC@ s_PC_next
 
 // Return stack candidate
-reg [C_RETURN_WIDTH-1:0] s_R_pre;
-generate
-  if (C_PC_WIDTH < 8) begin : gen_r_narrow
-    always @ (*)
-      case (s_bus_r)
-        C_BUS_R_T:
-          s_R_pre = s_T;
-        C_BUS_R_PC:
-          s_R_pre = { {(8-C_PC_WIDTH){1'b0}}, s_PC_plus1 };
-        default:
-          s_R_pre = s_T;
-      endcase
-  end else if (C_PC_WIDTH == 8) begin : gen_r_same
-    always @ (*)
-      case (s_bus_r)
-        C_BUS_R_T:
-          s_R_pre = s_T;
-        C_BUS_R_PC:
-          s_R_pre = s_PC_plus1;
-        default:
-          s_R_pre = s_T;
-      endcase
-  end else begin : gen_r_wide
-    always @ (*)
-      case (s_bus_r)
-        C_BUS_R_T:
-          s_R_pre = { {(C_PC_WIDTH-8){1'b0}}, s_T };
-        C_BUS_R_PC:
-          s_R_pre = s_PC_plus1;
-        default:
-          s_R_pre = { {(C_PC_WIDTH-8){1'b0}}, s_T };
-      endcase
-  end
-endgenerate
+//@SSBCC@ s_R_pre
 
 /*******************************************************************************
  *

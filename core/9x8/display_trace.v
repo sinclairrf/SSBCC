@@ -1,5 +1,8 @@
+// Copyright 2013-2015, Sinclair R.F., Inc.
 // Display micro controller PC, opcode, and stacks.
-localparam L__TRACE_SIZE        = C_PC_WIDTH            // pc width
+localparam L__TRACE_SIZE        = 1                     // s_interrupt
+                                + 1                     // s_interrupted
+                                + C_PC_WIDTH            // pc width
                                 + 9                     // opcode width
                                 + C_DATA_PTR_WIDTH      // data stack pointer width
                                 + 1                     // s_N_valid
@@ -12,6 +15,8 @@ localparam L__TRACE_SIZE        = C_PC_WIDTH            // pc width
                                 ;
 task display_trace;
   input                     [L__TRACE_SIZE-1:0] s_raw;
+  reg                                   s_interrupt;
+  reg                                   s_interrupted;
   reg                  [C_PC_WIDTH-1:0] s_PC;
   reg                             [8:0] s_opcode;
   reg            [C_DATA_PTR_WIDTH-1:0] s_Np_stack_ptr;
@@ -24,8 +29,12 @@ task display_trace;
   reg          [C_RETURN_PTR_WIDTH-1:0] s_Rw_ptr;
   reg                         [7*8-1:0] s_opcode_name;
   begin
-    { s_PC, s_opcode, s_Np_stack_ptr, s_N_valid, s_N, s_T_valid, s_T, s_R_valid, s_R, s_Rw_ptr } = s_raw;
-    casez (s_opcode)
+    { s_interrupt, s_interrupted, s_PC, s_opcode, s_Np_stack_ptr, s_N_valid, s_N, s_T_valid, s_T, s_R_valid, s_R, s_Rw_ptr } = s_raw;
+    if (s_interrupt)
+      s_opcode_name = "int    ";
+    else if (s_interrupted)
+      s_opcode_name = "nop_int";
+    else casez (s_opcode)
       9'b00_0000_000 : s_opcode_name = "nop    ";
       9'b00_0000_001 : s_opcode_name = "<<0    ";
       9'b00_0000_010 : s_opcode_name = "<<1    ";

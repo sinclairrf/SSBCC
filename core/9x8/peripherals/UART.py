@@ -179,7 +179,12 @@ class UART(SSBCCperipheral):
     Use the following assembly code to transmit the message "Hello World!".
     This transmits the entire message whether or not the peripheral has a FIFO.\n
     N"Hello World!\\r\\n"
-      :loop .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop
+      :loop .outport(O_UART_TX) :wait .inport(I_UART_TX_BUSY) .jumpc(wait) .jumpc(loop,nop) drop\n
+  Interrupt handler:  "!s__<outsignal>__TX_uart_busy" is is suitable input to
+  an interrupt handler where "<outsignal>" is the name assigned to "outsignal".
+  This signal is low when the peripheral is not transmitting data and there is
+  no output FIFO and can be used as an indication that the peripheral is ready
+  for a new byte to transmit.
   """
 
   def __init__(self,peripheralFile,config,param_list,loc):

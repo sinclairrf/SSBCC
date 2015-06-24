@@ -1,7 +1,12 @@
+// Copyright 2013-2015, Sinclair R.F., Inc.
 // short, human-readable versions of s_opcode suitable for waveform viewers
 reg [3*8-1:0] s_opcode_name = "nop";
 always @ (posedge i_clk)
-  casez (s_opcode)
+  if (s_interrupt)
+    s_opcode_name = "int"; // interrupt cycle
+  else if (s_interrupted)
+    s_opcode_name = "npi"; // nop induced by interrupt
+  else casez (s_opcode)
     9'b00_0000_000 : s_opcode_name = "nop";
     9'b00_0000_001 : s_opcode_name = "<<0";
     9'b00_0000_010 : s_opcode_name = "<<1";

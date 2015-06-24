@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2012-2015, Sinclair R.F., Inc.
 #
 # Verilog generation functions.
 #
@@ -18,6 +18,51 @@ from ssbccUtil import *;
 # Generate input and output core names.
 #
 ################################################################################
+
+def doFillCommand(fillCommand,fpOutCore,config):
+  """
+  Do core-specific fill commands for the "..@SSBCC@ <fillCommand>" lines.
+  """
+  # functions and tasks
+  if fillCommand == "functions":
+    genFunctions(fpOutCore,config);
+  # inports
+  elif fillCommand == 'inports':
+    genInports(fpOutCore,config);
+  # interrupt conditionals
+  elif fillCommand == 'interrupt__s_math_rotate':
+    if config.InterruptVector():
+      fpOutCore.write("""  if (s_interrupt || s_interrupted)
+    s_math_rotate = s_T;
+  else""");
+  elif fillCommand == 'interrupt__s_opcode':
+    if config.InterruptVector():
+      fpOutCore.write("""  if (s_interrupted) begin
+    // nop
+  end else if (s_interrupt) begin
+    s_return    = C_RETURN_INC;
+  end else""");
+  # localparam
+  elif fillCommand == 'localparam':
+    genLocalParam(fpOutCore,config);
+  # module
+  elif fillCommand == 'module':
+    genModule(fpOutCore,config);
+  # outports
+  elif fillCommand == 'outports':
+    genOutports(fpOutCore,config);
+  # "s_PC_next" body
+  elif fillCommand == 's_PC_next':
+    genSPCnext(fpOutCore,config);
+  # "s_R_pre" body
+  elif fillCommand == 's_R_pre':
+    genSRpre(fpOutCore,config);
+  # additional signals
+  elif fillCommand == 'signals':
+    genSignals(fpOutCore,config);
+  # error
+  else:
+    print 'WARNING:  Unimplemented command ' + fillCommand;
 
 def genCoreName():
   """
@@ -50,6 +95,12 @@ def genFunctions(fp,config):
                         waveform viewers
     display_trace       when the trace or monitor_stack peripherals are included
   """
+  def DisableInterrupt(body):
+    for replace in ('s_interrupt','s_interrupted',):
+      replace = '\(' + replace + '\)';
+      while re.search(replace,body):
+        body = re.sub(replace,'(1\'b0)',body);
+    return body;
   if 'display_opcode' in config.functions:
     displayOpcodePath = os.path.join(config.Get('corepath'),'display_opcode.v');
     fpDisplayOpcode = open(displayOpcodePath,'rt');
@@ -57,6 +108,8 @@ def genFunctions(fp,config):
       raise Exception('Program Bug -- "%s" not found' % displayOpcodePath);
     body = fpDisplayOpcode.read();
     fpDisplayOpcode.close();
+    if not config.InterruptVector():
+      body = DisableInterrupt(body);
     fp.write(body);
   if ('clog2' in config.functions) and config.Get('define_clog2'):
     fp.write("""
@@ -78,6 +131,8 @@ endfunction
       raise Exception('Program Bug -- "%s" not found' % displayTracePath);
     body = fpDisplayTrace.read();
     fpDisplayTrace.close();
+    if not config.InterruptVector():
+      body = DisableInterrupt(body);
     fp.write(body);
 
 def genInports(fp,config):
@@ -161,7 +216,8 @@ def genLocalParam(fp,config):
   """
   Generate the localparams for implementation-specific constants.
   """
-  fp.write('localparam C_PC_WIDTH                              = %4d;\n' % CeilLog2(config.Get('nInstructions')['length']));
+  pcWidth = CeilLog2(config.Get('nInstructions')['length']);
+  fp.write('localparam C_PC_WIDTH                              = %4d;\n' % pcWidth);
   fp.write('localparam C_RETURN_PTR_WIDTH                      = %4d;\n' % CeilLog2(config.Get('return_stack')));
   fp.write('localparam C_DATA_PTR_WIDTH                        = %4d;\n' % CeilLog2(config.Get('data_stack')));
   fp.write('localparam C_RETURN_WIDTH                          = (C_PC_WIDTH <= 8) ? 8 : C_PC_WIDTH;\n');
@@ -750,7 +806,8 @@ def genOutports(fp,config):
       signalName = signal[0];
       signalWidth = signal[1];
       signalType = signal[2];
-      signalInit = '%d\'d0' % signalWidth if len(signal)==3 else signal[3];
+      signalInit = 0 if len(signal)==3 else signal[3];
+      signalInit = InitSignal(signalWidth,signalInit)
       if signalType == 'data':
         fp.write('initial %s = %s;\n' % (signalName,signalInit,));
         if bitWidth > 0:
@@ -807,7 +864,7 @@ def genSignals(fp,config):
   for thisSignal in config.signals:
     signalName = thisSignal[0];
     signalWidth = thisSignal[1];
-    signalInit = "%d'd0" % signalWidth if len(thisSignal) < 3 else thisSignal[2];
+    signalInit = 0 if len(thisSignal)==2 else thisSignal[2];
     outString = 'reg ';
     if signalWidth == 1:
       outString += '       ';
@@ -818,9 +875,72 @@ def genSignals(fp,config):
     outString += signalName;
     if signalInit != None:
       outString += ' '*(maxLength-len(outString));
-      outString += ' = ' + signalInit;
+      outString += ' = ' + InitSignal(signalWidth,signalInit);
     outString += ';\n'
     fp.write(outString);
+
+def genSPCnext(fp,config):
+  """
+  Write the logic to generate the next PC address.\n
+  Note:  This signal depends on whether or not interrupts are enabled.
+  """
+  pcWidth = CeilLog2(config.Get('nInstructions')['length']);
+  fp.write("reg [C_PC_WIDTH-1:0] s_PC_next;\n");
+  fp.write("always @ (*)\n");
+  if config.InterruptVector():
+    format_pc_addr = "%d\'h%%0%dx" % (pcWidth,(pcWidth+3)/4,);
+    fp.write("  if (s_interrupt)\n");
+    fp.write("    s_PC_next = %s;\n" % (format_pc_addr % config.InterruptVector()));
+    fp.write("  else");
+  fp.write("  case (s_bus_pc)\n");
+  fp.write("    C_BUS_PC_NORMAL:\n");
+  fp.write("      s_PC_next = s_PC_plus1;\n");
+  fp.write("    C_BUS_PC_JUMP:\n");
+  fp.write("      s_PC_next = s_PC_jump;\n");
+  fp.write("    C_BUS_PC_RETURN:\n");
+  fp.write("      s_PC_next = s_R[0+:C_PC_WIDTH];\n");
+  fp.write("    default:\n");
+  fp.write("      s_PC_next = s_PC_plus1;\n");
+  fp.write("  endcase\n");
+
+def genSRpre(fp,config):
+  """
+  Write the logic to select the value to be put onto the return stack.\n
+  Note:  This also captures the pc value to be put onto the return stack as
+         part of interrupt handling.
+  """
+  data_width = config.Get('data_width');
+  pcWidth = CeilLog2(config.Get('nInstructions')['length']);
+  if pcWidth <= data_width:
+    assignT = "s_T";
+  else:
+    assignT = "{ {(C_PC_WIDTH-%d){1'b0}}, s_T }" % data_width;
+  if pcWidth < data_width:
+    assignPC = "{ {(%d-C_PC_WIDTH){1'b0}}, %%s }" % data_width;
+  else:
+    assignPC = "%s";
+  if config.InterruptVector():
+    fp.write("reg [C_RETURN_WIDTH-1:0] s_PC_s  = {(C_RETURN_WIDTH){1'b0}};\n");
+    fp.write("always @ (posedge i_clk)\n");
+    fp.write("  if (i_rst)\n");
+    fp.write("    s_PC_s  <= {(C_RETURN_WIDTH){1'b0}};\n");
+    fp.write("  else\n");
+    fp.write("    s_PC_s  <= s_PC;\n");
+    fp.write("\n");
+  fp.write("reg [C_RETURN_WIDTH-1:0] s_R_pre;\n");
+  fp.write("always @ (*)\n");
+  if config.InterruptVector():
+    fp.write("  if (s_interrupt)\n");
+    fp.write("    s_R_pre = %s;\n" % (assignPC % "s_PC_s"));
+    fp.write("  else");
+  fp.write("  case (s_bus_r)\n");
+  fp.write("    C_BUS_R_T:\n");
+  fp.write("      s_R_pre = %s;\n" % assignT);
+  fp.write("    C_BUS_R_PC:\n");
+  fp.write("      s_R_pre = %s;\n" % (assignPC % "s_PC_plus1"));
+  fp.write("    default:\n");
+  fp.write("      s_R_pre = %s;\n" % assignT);
+  fp.write("  endcase\n");
 
 def genUserHeader(fp,user_header):
   """

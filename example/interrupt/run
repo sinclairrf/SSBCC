@@ -1,0 +1,11 @@
+#!/bin/bash
+# Copyright 2015, Sinclair R.F., Inc.
+
+NAME=dual_interrupt
+
+../../ssbcc -q --display-opcode -P monitor_stack ${NAME}.9x8 \
+|| { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+
+iverilog -o tb tb.v ${NAME}.v \
+|| { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+./tb

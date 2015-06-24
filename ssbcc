@@ -1,12 +1,7 @@
 #!/usr/bin/python2.7
-
-################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
-#
+# Copyright 2012-2015, Sinclair R.F., Inc.
 # Build an SSBCC system.
-#
-################################################################################
 
 import math
 import os
@@ -16,6 +11,7 @@ import tempfile
 
 from ssbccUtil import *;
 from ssbccConfig import SSBCCconfig;
+from ssbccPeripheral import InterruptPeripheralAssigned;
 
 ################################################################################
 #
@@ -385,6 +381,8 @@ try:
     cmd += ' --help-macro %s' % argList.help_macro
   if argList.list_macros:
     cmd += ' --list-macros'
+  if InterruptPeripheralAssigned():
+    cmd += ' -i';
   for name in config.constants:
     cmd += (' -C %s=%s' % (name,config.constants[name],));
   for name in config.defines:
@@ -456,10 +454,8 @@ try:
     elif re.match(':program',line):
       cmd = re.findall(':program (\d+) (\S+) (\d+)',line);
       mainStart = int(cmd[0][0]);
-      if cmd[0][1] == '[]':
-        interruptStart = -1;
-      else:
-        interruptStart = int(cmd[0][1]);
+      if cmd[0][1] != '[]':
+        config.Set('interruptAddress',int(cmd[0][1]));
       mainLength = int(cmd[0][2]);
       for line in fpAssemberOutput:
         ixLine = ixLine + 1;
@@ -483,6 +479,13 @@ try:
   # Ensure the processor has been consistently defined.
   #
   ################################################################################
+
+  # Ensure consistent implementation of an interrupt peripheral and an interrupt
+  # handler in the source assembly.
+  if InterruptPeripheralAssigned() and not config.InterruptVector():
+    raise SSBCCException('Interrupt peripheral defined but no .interrupt function defined');
+  if config.InterruptVector() and not InterruptPeripheralAssigned():
+    raise ssbccPeripheral('.interrupt function defined but no interrupt peripheral defined');
 
   # Ensure all memories are used.
   for ixMem in range(config.NMemories()):
@@ -536,24 +539,9 @@ try:
       fpOutCore.write(line);
       continue;
     fillCommand = re.findall(r'..@SSBCC@\s+(\S+)',line)[0];
-    # functions and tasks
-    if fillCommand == "functions":
-      genFunctions(fpOutCore,config);
-    # inports
-    elif fillCommand == 'inports':
-      genInports(fpOutCore,config);
-    # localparam
-    elif fillCommand == 'localparam':
-      genLocalParam(fpOutCore,config);
     # memories
-    elif fillCommand == 'memories':
+    if fillCommand == 'memories':
       genMemories(fpOutCore,fpMemFile,config,programBody);
-    # module
-    elif fillCommand == 'module':
-      genModule(fpOutCore,config);
-    # outports
-    elif fillCommand == 'outports':
-      genOutports(fpOutCore,config);
     # peripherals
     elif fillCommand == 'peripherals':
       if not config.peripheral:
@@ -568,9 +556,6 @@ try:
         fpOutCore.write('wire [7:0] s_memory = 8\'h00;\n');
       else:
         fpOutCore.write('wire [7:0] s_memory;\n');
-    # additional signals
-    elif fillCommand == 'signals':
-      genSignals(fpOutCore,config);
     # user_header
     elif fillCommand == 'user_header':
       genUserHeader(fpOutCore,user_header);
@@ -580,9 +565,9 @@ try:
         fpOutCore.write('/* verilator tracing_on */\n');
       else:
         fpOutCore.write('/* verilator tracing_off */\n');
-    # error
+    # All others are specific to the core.
     else:
-      print 'WARNING:  Unimplemented command ' + fillCommand;
+      doFillCommand(fillCommand,fpOutCore,config);
 
   #
   # Write package file (for use in VHDL or mixed-language projects)

@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012-2013, Sinclair R.F., Inc.
+# Copyright 2012-2015, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -45,6 +45,8 @@ generate
 reg [C_PC_WIDTH-1:0] s__PC_s[1:0];
 reg            [8:0] s__opcode_s = 9'h000;
 reg        [7*8-1:0] s__opcode_name;
+reg                  s__interrupt_s = 1'b0;
+reg                  s__interrupted_s = 1'b0;
 initial begin
   s__PC_s[0] = {(C_PC_WIDTH){1'b0}};
   s__PC_s[1] = {(C_PC_WIDTH){1'b0}};
@@ -52,10 +54,15 @@ end
 always @ (posedge i_clk) begin
   s__PC_s[0] <= s_PC;
   s__PC_s[1] <= s__PC_s[0];
+  s__interrupt_s <= s_interrupt;
+  s__interrupted_s <= s_interrupted;
   s__opcode_s <= s_opcode;
-  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, 1'b1, s_N, 1'b1, s_T, 1'b1, s_R, s_R_stack_ptr });
+  display_trace({ s__interrupt_s, s__interrupted_s, s__PC_s[1], s__opcode_s, s_Np_stack_ptr, 1'b1, s_N, 1'b1, s_T, 1'b1, s_R, s_R_stack_ptr });
 end
 endgenerate
 """;
+    if not config.InterruptVector():
+      for replace in ('s_interrupt','s_interrupted',):
+        body = re.sub(replace+';','1\'b0;',body);
     body = re.sub(r'\bs__','s__trace__',body);
     fp.write(body);

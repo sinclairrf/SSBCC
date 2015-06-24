@@ -6,6 +6,7 @@ import os
 import re
 import sys
 
+from ssbccPeripheral import SSBCCinterruptPeripheral
 from ssbccUtil import *
 
 class SSBCCconfig():
@@ -328,6 +329,21 @@ class SSBCCconfig():
     path        path to add to the list
     """
     self.peripheralpaths.insert(-1,path);
+
+  def InterruptVector(self):
+    """
+    Indicate whether or not interrupts have been enabled and, if so, what the
+    interrupt address is.\n
+    Note:  The interrupt address cannot be zero because .main starts at address
+           0 and it must have a non-empty body.\n
+    Note:  Returning "None" when there is not interrupt address ensures both a
+           "False" evaluation and that the value cannot be turned into an
+           integer for an address.
+    """
+    if not self.Exists('interruptAddress'):
+      return None;
+    else:
+      return self.Get('interruptAddress');
 
   def IsCombined(self,name):
     """

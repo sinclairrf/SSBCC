@@ -1,0 +1,3 @@
+*.mem
+*_pkg.vhd
+dual_interrupt.v

@@ -1,6 +1,6 @@
 //
 // monitor_stack peripheral
-// Copyright 2013, Sinclair R.F., Inc.
+// Copyright 2013-2015, Sinclair R.F., Inc.
 //
 // Note: The validity of N and T are not monitored for invalid operations.  For
 //       example, if N is not valid and a "swap" is performed, then the data
@@ -25,6 +25,8 @@ initial s__T_valid = 1'b0;
 always @ (posedge i_clk)
   if (i_rst)
     s__T_valid <= 1'b0;
+  else if (s_interrupt || s_interrupted)
+    s__T_valid <= s__T_valid;
   else case (s_bus_t)
     C_BUS_T_OPCODE:     s__T_valid <= 1'b1;
     C_BUS_T_N:          s__T_valid <= s__N_valid;
@@ -89,7 +91,9 @@ always @ (posedge i_clk)
       $display("%12d : Malformed next-to-top-of-data-stack validity in @CORENAME@", $time);
       s__data_stack_error <= 1'b1;
     end
-    case (s_bus_t)
+    if (s_interrupt || s_interrupted)
+      ; // do nothing
+    else case (s_bus_t)
       C_BUS_T_MATH_ROTATE:
         if (!s__T_valid && (s_opcode[0+:3] != 3'h0)) begin
           $display("%12d : Illegal rotate on invalid top of data stack in @CORENAME@", $time);
@@ -138,7 +142,9 @@ always @ (posedge i_clk)
       default:
         ;
     endcase
-    if ((s_opcode == 9'b00_0111_000) && !s__T_valid) begin
+    if (s_interrupt || s_interrupted)
+      ; // do nothing
+    else if ((s_opcode == 9'b00_0111_000) && !s__T_valid) begin
       $display("%12d : Outport with invalid top-of-data-stack in @CORENAME@", $time);
       s__data_stack_error <= 1'b1;
     end
@@ -193,7 +199,7 @@ always @ (posedge i_clk)
     s__R_is_address <= 1'b0;
     s__return_is_address <= {(2**C_RETURN_PTR_WIDTH){1'b0}};
   end else if (s_return == C_RETURN_INC) begin
-    s__R_is_address <= (s_bus_r == C_BUS_R_PC);
+    s__R_is_address <= s_interrupt || (s_bus_r == C_BUS_R_PC);
     s__return_is_address[s_R_stack_ptr_next] <= s__R_is_address;
   end else if (s_return == C_RETURN_DEC) begin
     s__R_is_address <= s__return_is_address[s_R_stack_ptr];
@@ -206,7 +212,9 @@ always @ (posedge i_clk)
       $display("%12d : Non-address by return instruction in @CORENAME@", $time);
       s__R_address_error <= 1'b1;
     end
-    if (((s_opcode == 9'b00_0001_001) || (s_opcode == 9'b00_1001_001)) && s__R_is_address) begin
+    if (s_interrupt || s_interrupted)
+      ; // do nothing
+    else if (((s_opcode == 9'b00_0001_001) || (s_opcode == 9'b00_1001_001)) && s__R_is_address) begin
       $display("%12d : Copied address to data stack in @CORENAME@", $time);
       s__R_address_error <= 1'b1;
     end
@@ -221,7 +229,9 @@ initial begin
   s__mem_address_limit[3] = @MEM_LIMIT_3@;
 end
 always @ (posedge i_clk)
-  if ((s_opcode[3+:6] == 6'b000110) && ({ 1'b0, s_T } >= @LAST_INPORT@)) begin
+  if (s_interrupt || s_interrupted) begin
+    // do nothing
+  end else if ((s_opcode[3+:6] == 6'b000110) && ({ 1'b0, s_T } >= @LAST_INPORT@)) begin
     $display("%12d : Range error on inport in @CORENAME@", $time);
     s__range_error <= 1'b1;
   end else if ((s_opcode[3+:6] == 6'b000111) && ({ 1'b0, s_T } >= @LAST_OUTPORT@)) begin
@@ -235,6 +245,8 @@ always @ (posedge i_clk)
 reg       [L__TRACE_SIZE-1:0] s__history[@HISTORY@-1:0];
 reg                     [8:0] s__opcode_s = 9'b0;
 reg          [C_PC_WIDTH-1:0] s__PC_s[1:0];
+reg                           s__interrupt_s = 1'b0;
+reg                           s__interrupted_s = 1'b0;
 integer ix__history;
 initial begin
   for (ix__history=0; ix__history<@HISTORY@; ix__history=ix__history+1)
@@ -245,16 +257,18 @@ end
 always @ (posedge i_clk) begin
   s__PC_s[1] <= s__PC_s[0];
   s__PC_s[0] <= s_PC;
+  s__interrupt_s <= s_interrupt;
+  s__interrupted_s <= s_interrupted;
   s__opcode_s <= s_opcode;
   for (ix__history=1; ix__history<@HISTORY@; ix__history=ix__history+1)
     s__history[ix__history-1] <= s__history[ix__history];
-  s__history[@HISTORY@-1] <= { s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_R_stack_ptr };
+  s__history[@HISTORY@-1] <= { s__interrupt_s, s__interrupted_s, s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_R_stack_ptr };
 end
 wire s_terminate = s__PC_error || s__data_stack_error || s__return_stack_error || s__R_address_error || s__range_error;
 always @ (posedge s_terminate) begin
   for (ix__history=0; ix__history<@HISTORY@; ix__history=ix__history+1)
     display_trace(s__history[ix__history]);
-  display_trace({ s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_R_stack_ptr });
+  display_trace({ s_interrupt, s_interrupted, s__PC_s[1], s__opcode_s, s_Np_stack_ptr, s__N_valid, s_N, s__T_valid, s_T, s__R_valid, s_R, s_R_stack_ptr });
   $finish;
 end
 endgenerate

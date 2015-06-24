@@ -22,7 +22,6 @@
       for dual-port memories in slave peripherals (i.e., registers readable by the bus master)
       for peripherals such as adders where long chains of outputs and inports would have been required and .store+/- and .fetch+/- would be much more efficient code-wise
       how to accommodate multiple "shared memory" peripherals?
-    finish interrupt handling, add monitor-interrupt peripheral to ensure correct re-enable from the interrupt handler
     remove dead parameters and dead code
     rework design as required to make it more robust
     documentation
@@ -45,7 +44,6 @@
           change "opcodes.html" to "instructions.html", ...
         parameters
         constants
-        interrupts
       peripherals
       running the test benches
     core.v
@@ -62,8 +60,6 @@
         avoid full parsing of false branches (accommodate other cores?)
         add symbol for current core -- is9x8 (?)
     peripherals
-      INTERRUPT
-      interrupt enable/disable (through INTERRUPT command)
       multi-byte adder
       multiplier
       PICK -- emulate the Forth operator?

@@ -1,0 +1,29 @@
+# Copyright 2015, Sinclair R.F., Inc.
+# Demonstrate dual interrupt peripheral.
+
+ARCHITECTURE    core/9x8 Verilog
+ASSEMBLY        dual_interrupt.s
+
+INSTRUCTION     1024
+DATA_STACK      16
+RETURN_STACK    16
+MEMORY          ROM myrom 16
+MEMORY          RAM myram 16
+
+CONSTANT        C_CLOCK_HZ      10_000_000
+CONSTANT        C_UART_BAUD     119_200
+
+PORTCOMMENT     transmit-only UART
+PERIPHERAL      UART_Tx         outport=O_UART_TX                                               \
+                                outstatus=I_UART_TX_BUSY                                        \
+                                baudmethod=C_CLOCK_HZ/C_UART_BAUD                               \
+                                outsignal=o_uart_tx                                             \
+                                noOutFIFO
+
+PORTCOMMENT     interrupts
+PERIPHERAL      interrupt       insignal0=i_interrupt,C_INTERRUPT                               \
+                                insignal1=!s__o_uart_tx__Tx_uart_busy,C_UART_TX_INTERRUPT       \
+                                inport=I_INTERRUPT                                              \
+                                outmaskport=O_INTERRUPT_MASK                                    \
+                                inmaskport=I_INTERRUPT_MASK                                     \
+                                initmask=2'b01

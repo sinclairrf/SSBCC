@@ -25,6 +25,7 @@ The features are:
 - automatic generation of I/O ports
 - configurable instruction, data stack, return stack, and memory utilization
 - extensible set of peripherals (I2C busses, UARTs, AXI4-Lite busses, etc.)
+- optional interrupt peripheral and interrupt handler
 - extensible set of macros
 - memory initialization file to facilitate code development without rebuilds
 - simulation diagnostics to facilitate identifying code errors
@@ -678,6 +679,38 @@ peripherals:
 
 User defined peripherals can be in the same directory as the architecture file
 or a subdirectory named "peripherals".
+
+
+INTERRUPTS
+================================================================================
+
+Interrupts are enabled by including an interrupt peripheral in the architecture
+file and an interrupt handler in the assembly code.
+
+Incorporating an interrupt adds the following output ports as strobes:
+
+  O_INTERRUPT_DIS       disable interrupts
+  O_INTERRUPT_ENA       enable interrupts
+
+and the following 3 macros
+
+  .dis          disable interrupts
+                Note:  This is equivalent to .outstrobe(O_INTERRUPT_DIS)
+  .ena          enable interrupts
+                Note:  This is equivalent to .outstrobe(O_INTERRUPT_ENA)
+  .returni      return from interrupt handler and enable interrupts
+                Note:  This is equivalent to the 3 instruction sequence
+                       "O_INTERRUPT_ENA return outport"
+                Note:  The assembler prohibits the ".return" macro in the
+                       interrupt handler and the ".returni" macro anywhere other
+                       than the interrupt handler.
+
+See examples/interrupt for a demonstration of an interrupt handler for two
+events, one external to the processor and one internal to the processor.
+
+The interrupt handler included in core/9x8/peripherals handles one to eight
+interrupt sources.  See core/9x8/doc/interrupt.html for instructions on creating
+custom interrupt peripherals, possibly with more interrupt sources.
 
 
 PARAMETER and LOCALPARAM

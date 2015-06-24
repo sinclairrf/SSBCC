@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012-2014, Sinclair R.F., Inc.
+# Copyright 2012-2015, Sinclair R.F., Inc.
 #
 # Assembly language definitions for SSBCC 9x8.
 #
@@ -439,10 +439,23 @@ class asmDef_9x8:
     if firstToken['value'] == '.main':
       if (lastToken['type'] != 'macro') or (lastToken['value'] != '.jump'):
         raise asmDef.AsmException('.main body does not end in ".jump" at %s' % lastToken['loc']);
-    # Ensure functions and interrupts end in a ".jump" or ".return".
-    if firstToken['value'] in ('.function','.interrupt',):
+    # Ensure the interrupt body contains a ".returni" and does not contain any ".return"s.
+    if firstToken['value'] == '.interrupt':
+      for token in [token for token in rawTokens if (token['type'] == 'macro') and (token['value'] == '.return')]:
+        raise asmDef.AsmException('".return" macro prohibited in .interrupt at %s' % token['loc']);
+      foundReturni = [token for token in rawTokens if (token['type'] == 'macro') and (token['value'] == '.returni')];
+      if not foundReturni:
+        raise asmDef.AsmException('.returni missing in .interrupt body at %s' % rawTokens[0]['loc']);
+      if (lastToken['type'] != 'macro') or (lastToken['value'] not in ('.jump','.returni',)):
+        raise asmDef.AsmException('.interrupt must end in .jump or .returni instead of "%s" at %s' % (lastToken['value'],lastToken['loc'],));
+    # Ensure functions end in a ".jump" or ".return".
+    if firstToken['value'] == '.function':
       if (lastToken['type'] != 'macro') or (lastToken['value'] not in ('.jump','.return',)):
-        raise asmDef.AsmException('Last entry in ".function" or ".interrupt" must be a ".jump" or ".return" at %s' % lastToken['loc']);
+        raise asmDef.AsmException('function "%s" must end in .jump or .return instead of "%s" at %s' % (firstToken['value'],lastToken['value'],lastToken['loc'],));
+    # Ensure that .main and normal functions do not use ".returni".
+    if firstToken['value'] in ('.main','.function',):
+      for token in [token for token in rawTokens if (token['type'] == 'macro') and (token['value'] == '.returni')]:
+        raise asmDef.AsmException('.returni prohibited outside .interrupt at %s' % token['loc']);
 
   ################################################################################
   #
@@ -739,20 +752,22 @@ class asmDef_9x8:
     """
     self.functionEvaluation = dict(list=list(), length=list(), body=list(), address=list());
     nextStart = 0;
+    # ".interrupt" is optionally required (and is sure to exist by this
+    # function call if it is required).  The interrupt handler always starts at
+    # address 3 so that address 0 can be a jump to ".main".
+    if self.interrupt:
+      nextStart = 3;
+      self.functionEvaluation['list'].append('.interrupt');
+      self.functionEvaluation['length'].append(self.interrupt['length']);
+      self.functionEvaluation['body'].append(self.interrupt['tokens']);
+      self.functionEvaluation['address'].append(nextStart);
+      nextStart = nextStart + self.functionEvaluation['length'][-1];
     # ".main" is always required.
     self.functionEvaluation['list'].append('.main');
     self.functionEvaluation['length'].append(self.main['length']);
     self.functionEvaluation['body'].append(self.main['tokens']);
     self.functionEvaluation['address'].append(nextStart);
     nextStart = nextStart + self.functionEvaluation['length'][-1];
-    # ".interrupt" is optionally required (and is sure to exist by this function
-    # call if it is required).
-    if self.interrupt:
-      self.functionEvaluation['list'].append('.interrupt');
-      self.functionEvaluation['length'].append(self.interrupt['length']);
-      self.functionEvaluation['body'].append(self.interrupt['tokens']);
-      self.functionEvaluation['address'].append(nextStart);
-      nextStart = nextStart + self.functionEvaluation['length'][-1];
     # Loop through the required function bodies as they are identified.
     ix = 0;
     while ix < len(self.functionEvaluation['body']):
@@ -1065,6 +1080,20 @@ class asmDef_9x8:
       self.EmitPush(fp,token['address'] & 0xFF,'');
       self.EmitOpcode(fp,self.specialInstructions['callc'] | (token['address'] >> 8),'callc '+token['argument'][0]['value']);
       self.EmitOptArg(fp,token['argument'][1]);
+    # .dis
+    elif token['value'] == '.dis':
+      if not self.interruptsEnabled:
+        raise Exception('Program Bug -- interrupts not enabled');
+      dis_outport = self.interrupt_dis_outport;
+      self.EmitPush(fp,self.OutportAddress(dis_outport),dis_outport);
+      self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport (.dis)');
+    # .ena
+    elif token['value'] == '.ena':
+      if not self.interruptsEnabled:
+        raise Exception('Program Bug -- interrupts not enabled');
+      ena_outport = self.interrupt_ena_outport;
+      self.EmitPush(fp,self.OutportAddress(ena_outport),ena_outport);
+      self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport (.ena)');
     # .fetch
     elif token['value'] == '.fetch':
       name = token['argument'][0]['value'];
@@ -1094,6 +1123,14 @@ class asmDef_9x8:
     elif token['value'] == '.return':
       self.EmitOpcode(fp,self.specialInstructions['return'],'return');
       self.EmitOptArg(fp,token['argument'][0]);
+    # .returni
+    elif token['value'] == '.returni':
+      if not self.interruptsEnabled:
+        raise Exception('Program Bug -- interrupts not enabled');
+      ena_outport = self.interrupt_ena_outport;
+      self.EmitPush(fp,self.OutportAddress(ena_outport),ena_outport);
+      self.EmitOpcode(fp,self.specialInstructions['return'],'return');
+      self.EmitOpcode(fp,self.InstructionOpcode('outport'),'outport (.ena)');
     # .store
     elif token['value'] == '.store':
       name = token['argument'][0]['value'];
@@ -1146,14 +1183,21 @@ class asmDef_9x8:
     # Write the program marker, address of .main, address or "[]" of .interrupt,
     # and the total program length.
     fp.write(':program');
-    fp.write(' %d' % self.functionEvaluation['address'][0]);
     if self.interrupt:
-      fp.write(' %d' % self.functionEvaluation['address'][1]);
+      fp.write(' %d' % self.functionEvaluation['address'][1]);  # .main
+      fp.write(' %d' % self.functionEvaluation['address'][0]);  # .interrupt
     else:
-      fp.write(' []');
+      fp.write(' %d' % self.functionEvaluation['address'][0]);  # .main
+      fp.write(' []');                                          # no .interrupt
     fp.write(' %d' % (self.functionEvaluation['address'][-1] + self.functionEvaluation['length'][-1]));
     fp.write('\n');
     # Emit the bodies
+    if self.interrupt:
+      self.emitLabelList = '';
+      mainAddress = self.functionEvaluation['address'][1];
+      self.EmitPush(fp,mainAddress & 0xFF,name='');
+      self.EmitOpcode(fp,self.specialInstructions['jump'] | (mainAddress >> 8),'jump .main');
+      self.EmitOpcode(fp,self.InstructionOpcode('nop'),'nop');
     for ix in range(len(self.functionEvaluation['list'])):
       fp.write('- %s\n' % self.functionEvaluation['list'][ix]);
       self.emitLabelList = '';
@@ -1194,7 +1238,7 @@ class asmDef_9x8:
   #
   ################################################################################
 
-  def __init__(self):
+  def __init__(self,enableInterrupts):
     """
     Initialize the tables definining the following:
       directly invokable instruction mnemonics and the associated opcodes
@@ -1206,7 +1250,10 @@ class asmDef_9x8:
         restrictions for optional arguments\n
     Initialize lists and members to record memory attributes, stack lengths,
     body of the .main function, body of the optional .interrupt function,
-    current memory for variable definitions, etc.
+    current memory for variable definitions, etc.\n
+    If enableInterrupts is True, then also define the ".ena", ".dis", and
+    ".returni" macros to enable and disable interrupts and to return from the
+    interrupt handler.
     """
 
     #
@@ -1249,10 +1296,8 @@ class asmDef_9x8:
     self.AddInstruction('<<msb',        0x003);
     self.AddInstruction('>r',           0x040);
     self.AddInstruction('^',            0x052);
-    #self.AddInstruction('dis',          0x01C);
     self.AddInstruction('drop',         0x054);
     self.AddInstruction('dup',          0x008);
-    #self.AddInstruction('ena',          0x019);
     self.AddInstruction('inport',       0x030);
     self.AddInstruction('lsb>>',        0x007);
     self.AddInstruction('msb>>',        0x006);
@@ -1334,6 +1379,20 @@ class asmDef_9x8:
 
     self.memoryLength = dict();
     self.stackLength = dict();
+
+    #
+    # Conditional implementation of interrupts.
+    #
+
+    if type(enableInterrupts) != bool:
+      raise Exception('Program Bug -- enableInterrupts must be a boolean');
+    self.interruptsEnabled = enableInterrupts;
+    if enableInterrupts:
+      self.interrupt_dis_outport = 'O_INTERRUPT_DIS';
+      self.interrupt_ena_outport = 'O_INTERRUPT_ENA';
+      self.AddMacro('.dis',             2, []);
+      self.AddMacro('.ena',             2, []);
+      self.AddMacro('.returni',         3, []);
 
     #
     # Configure the containers for the expanded main, interrupt, function,

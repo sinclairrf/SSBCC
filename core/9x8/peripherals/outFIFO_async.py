@@ -58,7 +58,11 @@ class outFIFO_async(SSBCCperipheral):
       :loop
         .inport(I_DATA_FIFO_FULL) .jumpc(loop)
         .outport(O_DATA_FIFO)
-        .jumpc(loop,nop)
+        .jumpc(loop,nop)\n
+  Interrupt handler:  "!s__<data>__outempty_in" is is suitable input to an
+  interrupt handler where "<data>" is the name assigned to "data".  This signal
+  is high when the FIFO is empty, so a falling edge (the leading "!") is a
+  suitable condition for the interrupt to occur.
   """
 
   def __init__(self,peripheralFile,config,param_list,loc):

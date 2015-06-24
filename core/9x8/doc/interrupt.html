@@ -1,0 +1,147 @@
+<!-- Copyright 2015, Sinclair R.F., Inc. -->
+<html>
+<title>
+macros
+</title>
+<body>
+<h1>Interrupt handlers for the 9x8 micro controller</h1><br/>
+Copyright 2012, Sinclair R.F., Inc.<br/><br/>
+This document describes how to implement interrupt handlers for the 9x8 micro
+  controller.<br/><br/>
+There is a single interrupt in the controller, although this interrupt can be
+  triggered by more than one signal.  Implementing interrupts consists of two
+  actions:  adding a single interrupt peripheral to the processor architecture
+  and adding a ".interrupt" body to the assembly source.<br/><br/>
+The interrupt test bench illustrates how to add an interrupt for a single
+  external event and the design in <tt>example/interrupt</tt> illustrates how to
+  add an interrupt for two events, one external to the processor and one
+  internal to the processor.<br/><br/>
+<h2>Theory of Operation</h2>
+  The interrupt peripheral creates two signals, <tt>s_interrupt</tt> and
+  <tt>s_interrupted</tt>, for the interrupt event and to disable normal
+  processor operation until the interrupt handler is running.<br/><br/>
+  Specifically, <tt>s_interrupt</tt> is a non-registered signal that is high
+  when (1)&nbsp;interrupts are enabled, (2)&nbsp;an interrupt edge has occurred
+  (and not be precluded by the interrupt mask, if any), and (3)&nbsp;the
+  processor is not in the middle of executing a jump, call, or return.<br/><br/>
+  When <tt>s_interrupt</tt> goes high, the processor pushes the PC address for
+  the current instruction onto the return stack, sets the next PC address to be
+  the interrupt handler start address (so that the interrupt handler will start
+  executing in 2&nbsp;instruction cycles), and otherwise performs a "nop."
+  Because of the piplined PC/opcode architecture, a delay register is required
+  for the current opcode PC address to be available.<br/><br/>
+  The instruction cycle after <tt>s_interrupt</tt> is high must perform a "nop."
+  This is done by using <tt>s_interrupted</tt> as a registered, delayed, version
+  of <tt>s_interrupt</tt>.  When <tt>s_interrupted</tt> is high, the processor
+  core is coerced to perform a "nop" and the instruction pipeline architecture
+  starts fetching the second instruction in the interrupt handler.<br/><br/>
+  When the "return" opcode is performed by the interrupt handler, execution will
+  resume at the instruction that would have been performed when
+  <tt>s_interrupt</tt> was high.  This instruction cannot be one immediately
+  after a <tt>jump</tt>, <tt>call</tt>, or <tt>return</tt> or one after a
+  <tt>jumpc</tt> or <tt>callc</tt> if the conditional was true, otherwise the
+  processor will not perform the desired jump, call, or return and will simply
+  start executing the code following the instruction after the jump, call, or
+  return.<br/><br/>
+  On&nbsp;return from the interrupt handler, the interrupts are enabled in a way
+  that precludes the interrupt handler from being interrupted again.  This is
+  done with the three instruction sequence "<tt>O_INTERRUPT_ENA return
+  outport</tt>."  The outport, as the instruction performed immediately after
+  the return, enables interrupts on the following instruction cycle, which will
+  be the first instruction cycle resuming the previous execution
+  sequence.<br/><br/>
+  The interrupt peripheral needs to generate the <tt>s_interrupt</tt> and
+  <tt>s_interrupted</tt> signals and the <tt>O_INTERRUPT_DIS</tt> and
+  <tt>O_INTERRUPT_ENA</tt> outport strobes; create signals for any interrupt
+  signals external to the processor; and instantiate the HDL for the
+  interrupt.  Using the base class <tt>SSBCCinterruptPeripheral</tt> from
+  <tt>ssbccPeripheral</tt> ensures the <tt>s_interrupt</tt> and
+  <tt>s_interrupted</tt> signals are declared, although the code to generate
+  their values is not created, and it ensures the two outport strobes are
+  created.<br/><br/>
+<h2>Example Implementation</h2>
+  The interrupt peripheral provided with the core provides an interface for one
+  to eight edge triggered interrupts.  These interrupt sources can be external
+  to the processor or they can be signals from other peripherals.  They are
+  normally rising edge triggered, but they can also be falling edge triggered.
+  The peripheral also provides an optional mask for the interrupt sources,
+  allowing it to be set, read, and initialized to a particular value.
+  Constants for bit maps for the interrupt signals can be defined as part of
+  selecting the signal for each of the one to eight interrupt signal
+  sources.<br/><br/>
+  The test bench for this interrupt peripheral illustrates a single, external,
+  rising-edge interrupt signal.  The timing of the external interrupt was varied
+  to validate correct generation of the <tt>s_interrupt</tt> signal and return
+  from the interrupt handler (this was done by manually verifying the
+  displayed instruction sequences).<br/><br/>
+  An example interrupt controller for two interrupt signals, one external and
+  one internal, and one rising edge and one falled edge, along with a mask for
+  the interrupt signals, is also provided in
+  <tt>example/interrupt</tt>.<br/><br/>
+<h2>Construction of Interrupt Peripherals</h2>
+  This discussion is based on the interrupt peripheral provided with the 9x8
+  processor core.  It&nbsp;describes the HDL required to implement the interrupt
+  hardware.<br/><br/>
+  The processor core sets <tt>s_bus_pc</tt> to <tt>C_BUS_PC_JUMP</tt> when a
+  jump or call is performed and it sets it to <tt>C_BUS_PC_RETURN</tt> when a
+  return is being performed.  When <tt>s_bus_pc</tt> is either one of these
+  values at the end of a processor clock cycle, then the instruction pipeline
+  will be in the middle of performing a jump, call, or return during the
+  following interval.  During this subsequent interval, interrupts must be
+  disabled.  This is done by capturing the status of <tt>s_bus_pc</tt> in the
+  register <tt>s_in_jump</tt> and prohibiting interrupts if <tt>s_in_jump</tt>
+  is high.<br/><br/>
+  The status of candidate interrupt signals is captured in
+  <tt>s_interrupt_raw</tt>.  I.e., signal inversion is performed as required by
+  the peripheral architecture statement and masking is performed where the mask
+  is high if the signal is to be included as a candidate interrupt.  The "raw"
+  interrupt triggers are then generated by looking for rising edges in this
+  signal as compared to the value(s) for the previous clock cycle.<br/><br/>
+  Two signals are then used to capture the trigger.  The first,
+  <tt>s_interrupt_trigger</tt> records which enabled signals had a rising edge.
+  In&nbsp;order to reduced the depth of subsequent logic for the interrupt
+  signal itself, the single-bit signal <tt>s_interrupt_trigger_any</tt> records
+  whether or not any enabled signal had a rising edge.  The history of both of
+  these signals is cleared if the processor reads the input port for
+  <tt>s_interrupt_trigger</tt>.<br/><br/>
+  The non-registered interrupt signal is then generated if (1)&nbsp;interrupts
+  are enabled, (2)&nbsp;a rising edge has occured, and (3)&nbsp;interrupts are
+  not disabled because the instruction pipeline is in the middle of a jump,
+  call, or return.<br/><br/>
+  A&nbsp;delayed version of <tt>s_interrupt</tt> is registed as
+  <tt>s_interrupted</tt> for generation of the interrupt-induced "nop"
+  instruction that must follow the interrupt.<br/><br/>
+  Finally, the interrupt enable signal is generated.  Interrupts are initially
+  disabled (so that the processor can perform its initialization without
+  spurious stated induced by premature interrupts).  Interrupts are then
+  disabled when an interrupt occurs or when the <tt>O_INTERRUPT_DIS</tt> strobe
+  is received.  Interrupts are only enabled when the <tt>O_INTERRUPT_ENA</tt>
+  strobe is received.<br/><br/>
+<h2>Construction of Interrupt Handlers</h2>
+  If&nbsp;there is only one signal that can produce an interrupt (as set in the
+  peripheral architecture statement), then the interrupt handler simply
+  processed the interrupt and exits using the <tt>.returni</tt> macro.  For
+  example, the following code simply counts the number of interrupts received
+  (provided that they don't occur so fast that the interrupt handler isn't
+  called as fast as the interrupts occur):<br/><br/>
+  <tt>&nbsp;&nbsp;.interrupt<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;.fetchvalue(interruptCount) 1+ .storevalue(interruptCount)<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;.returni<br/></tt><br/>
+  If&nbsp;there is more than one signal that can produce an interrupt, then the
+  construction of the interrupt handler is slightly more complicated.  Suppose
+  the interrupt peripheral architecture statement is:<br/><br/>
+  <tt>&nbsp;&nbsp;PERIPHERAL&nbsp;interrupt&nbsp;insignal0=i_int0,C_INT0&nbsp;\<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;insignal1=i_int1,C_INT1&nbsp;\<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inport=I_INTERRUPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br/></tt><br/>
+  The interrupt handler then reads the interrupt trigger, conditionally calls
+  subroutines for the appropriate interrupt, clears the trigger from the data
+  stack, and returns as follows:<br/><br/>
+  <tt>&nbsp;&nbsp;.interrupt<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;.inport(I_INTERRUPT)<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;dup C_INT0 &amp; .callc(int0)<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;dup C_INT1 &amp; .callc(int1)<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;drop<br/></tt>
+  <tt>&nbsp;&nbsp;&nbsp;&nbsp;.returni<br/></tt><br/>
+</body>
+</html>

@@ -57,6 +57,9 @@ class monitor_stack(SSBCCperipheral):
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
+    if not config.InterruptVector():
+      for replace in (r's_interrupt\b',r's_interrupted\b',):
+        body = re.sub(replace,'1\'b0',body);
     outport_pure_strobe = '';
     for ix in range(config.NOutports()):
       thisPort = config.outports[ix][2:];
