@@ -16,10 +16,8 @@ PERIPHERAL      outFIFO_async   outclk=i_aclk           \
                                 data_empty=o_data_empty \
                                 outport=O_DATA          \
                                 infull=I_FULL           \
-                                depth=32
-
-PORTCOMMENT     feed-back empty condition
-INPORT          1-bit           i_empty                 I_EMPTY
+                                depth=32                \
+                                outempty=I_EMPTY
 
 PORTCOMMENT     termination signal
 OUTPORT         1-bit           o_done                  O_DONE

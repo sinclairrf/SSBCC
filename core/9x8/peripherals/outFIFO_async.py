@@ -22,7 +22,8 @@ class outFIFO_async(SSBCCperipheral):
                                 data_empty=<o_data_empty>       \\
                                 outport=<O_data>                \\
                                 infull=<I_full>                 \\
-                                depth=<N>                       \n
+                                depth=<N>                       \\
+                                [outempty=I_empty]              \n
   Where:
     outclk=<i_clock>
       specifies the name of the asynchronous read clock
@@ -39,7 +40,10 @@ class outFIFO_async(SSBCCperipheral):
       status of the FIFO
     depth=<N>
       specifies the depth of the FIFO
-      Note:  N must be a power of 2 and must be at least 16.\n
+      Note:  N must be a power of 2 and must be at least 16.
+    outempty=O_empty
+      optionally specifies the name of an input port for the processor to access
+      the "empty" status of the FIFO\n
   Example:  Provide a FIFO to an external device or IP.\n
     The PERIPHERAL statement would be:\n
       PERIPHERAL outFIFO_async  outclk=i_dev_clk          \\
@@ -69,6 +73,7 @@ class outFIFO_async(SSBCCperipheral):
       ('outport',       r'O_\w+$',      None,   ),
       ('infull',        r'I_\w+$',      None,   ),
       ('depth',         r'[1-9]\d*$',   lambda v : self.IntPow2Method(config,v,lowLimit=16),    ),
+      ('outempty',      r'I_\w+$',      None,   ),
     );
     names = [a[0] for a in allowables];
     for param_tuple in param_list:
@@ -79,6 +84,8 @@ class outFIFO_async(SSBCCperipheral):
       self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
     # Ensure the required parameters are provided.
     for paramname in names:
+      if paramname in ('outempty',):
+        continue;
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
@@ -95,9 +102,28 @@ class outFIFO_async(SSBCCperipheral):
                      ('s__%s__full' % self.data,1,'data',),
                     ),loc);
 
+    if hasattr(self,'outempty'):
+      self.outempty_name = 's__%s__outempty_in' % self.data;
+      config.AddSignal(self.outempty_name,1,loc);
+      self.ix_outempty = config.NInports();
+      config.AddInport((self.outempty,
+                       (self.outempty_name,1,'data',),
+                      ),loc);
+
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
+    if hasattr(self,'outempty'):
+      body_outempty = """\
+always @ (posedge i_clk)
+  if (i_rst)
+    s__outempty_in <= 1'b0;
+  else
+    s__outempty_in <= (s__delta_clk == @DEPTH_NBITS@'d0);
+"""
+    else:
+      body_outempty = '';
     for subpair in (
+        ( r' *@OUTEMPTY@ *\n',  body_outempty,                  ),
         ( r'@DATA@',            self.data,                      ),
         ( r'@DATA_EMPTY@',      self.data_empty,                ),
         ( r'@DATA_RD@',         self.data_rd,                   ),

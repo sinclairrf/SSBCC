@@ -43,7 +43,6 @@ wire            s_empty;
 wire            s_done;
 
 wire            s_diag_rd = ~s_empty && s_readout_en;
-reg             s_empty_clk = 1'b0;
 
 tb_outFIFO_async uut(
   // synchronous reset and processor clock
@@ -54,14 +53,9 @@ tb_outFIFO_async uut(
   .o_data       (s_diag),
   .i_data_rd    (s_diag_rd),
   .o_data_empty (s_empty),
-  // feed-back empty condition
-  .i_empty      (s_empty_clk),
   // termination signal
   .o_done       (s_done)
 );
-
-always @ (posedge s_clk)
-  s_empty_clk <= s_empty;
 
 // validation output
 always @ (posedge s_fast_clk)

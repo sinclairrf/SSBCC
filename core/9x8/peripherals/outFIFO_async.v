@@ -72,4 +72,5 @@ always @ (posedge i_clk)
   s__delta_clk <= s__ix_in - s__ix_out_clk;
 always @ (posedge i_clk)
   s__full <= &s__delta_clk[@DEPTH_NBITS-1@:2];
+@OUTEMPTY@
 endgenerate
