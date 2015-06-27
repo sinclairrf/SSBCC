@@ -104,7 +104,7 @@ class outFIFO_async(SSBCCperipheral):
 
     if hasattr(self,'outempty'):
       self.outempty_name = 's__%s__outempty_in' % self.data;
-      config.AddSignal(self.outempty_name,1,loc);
+      config.AddSignalWithInit(self.outempty_name,1,'1\'b1',loc);
       self.ix_outempty = config.NInports();
       config.AddInport((self.outempty,
                        (self.outempty_name,1,'data',),
@@ -115,15 +115,12 @@ class outFIFO_async(SSBCCperipheral):
     if hasattr(self,'outempty'):
       body_outempty = """\
 always @ (posedge i_clk)
-  if (i_rst)
-    s__outempty_in <= 1'b0;
-  else
-    s__outempty_in <= (s__delta_clk == @DEPTH_NBITS@'d0);
+  s__outempty_in <= (s__delta_clk == @DEPTH_NBITS@'d0);
 """
     else:
       body_outempty = '';
     for subpair in (
-        ( r' *@OUTEMPTY@ *\n',  body_outempty,                  ),
+        ( r'@OUTEMPTY@\n',      body_outempty,                  ),
         ( r'@DATA@',            self.data,                      ),
         ( r'@DATA_EMPTY@',      self.data_empty,                ),
         ( r'@DATA_RD@',         self.data_rd,                   ),
