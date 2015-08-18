@@ -10,28 +10,29 @@ DATA_STACK      32
 RETURN_STACK    16
 
 PARAMETER       G_CLK_FREQ_HZ   100_000_000
+CONSTANT        C_PWM_CLK_HZ    6000*255
 
 PORTCOMMENT allow runts
 PERIPHERAL      PWM_8bit        outport=O_PWM_SR \
                                 outsignal=o_pwm_sr \
-                                ratemethod=G_CLK_FREQ_HZ/(6000*255)
+                                ratemethod=G_CLK_FREQ_HZ/C_PWM_CLK_HZ
 
 PORTCOMMENT no-runt PWM
 PERIPHERAL      PWM_8bit        outport=O_PWM_SN \
                                 outsignal=o_pwm_sn \
-                                ratemethod=G_CLK_FREQ_HZ/(6000*255) \
+                                ratemethod=G_CLK_FREQ_HZ/C_PWM_CLK_HZ \
                                 norunt
 
 PORTCOMMENT inverted output PWM
 PERIPHERAL      PWM_8bit        outport=O_PWM_SI \
                                 outsignal=o_pwm_si \
-                                ratemethod=G_CLK_FREQ_HZ/(6000*255) \
+                                ratemethod=G_CLK_FREQ_HZ/C_PWM_CLK_HZ \
                                 invert
 
 PORTCOMMENT 3-channel PWM
 PERIPHERAL      PWM_8bit        outport=O_PWM_MULTI \
                                 outsignal=o_pwm_multi \
-                                ratemethod=100_000_000/(6000*255) \
+                                ratemethod=100_000_000/C_PWM_CLK_HZ \
                                 instances=3
 
 PORTCOMMENT termination signal

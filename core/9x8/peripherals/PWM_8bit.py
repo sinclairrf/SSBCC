@@ -29,7 +29,7 @@ class PWM_8bit(SSBCCperipheral):
       specifies the name of the output signal
       Note:  The name must start with "o_".
     ratemethod={clk/rate|count}
-      specifies the frequency at which the PWM counter is incremented
+      specifies the number of clock cycles per PWM count increment
       Note:  "clk," "rate," and "count" can be integers or can be declared by
              CONSTANT, LOCALPARARM, or PARAMETER configuration commands.
       Example:  ratemethod=count means to increment the PWM counter once every
@@ -73,17 +73,19 @@ class PWM_8bit(SSBCCperipheral):
             signal to the LED is at ground.  The processor clock frequency is
             provided by the parameter G_CLK_FREQ_HZ.\n
     Within the processor architecture file include the configuration command:\n
+    CONSTANT   C_PWM_LED_HZ 30*255
     PERIPHERAL PWM_8bit   outport=O_PWM_LED                     \\
                           outsignal=o_led                       \\
-                          ratemethod=G_CLK_FREQ_HZ/(30*255)     \\
+                          ratemethod=G_CLK_FREQ_HZ/C_PWM_LED_HZ \\
                           invert\n
     Use the following assembly to set the LED to about 1/4 intensity:\n
     0x40 .outport(O_PWM_LED)\n
   Example:  Similarly to obove, but for the three controls of a tri-color LED:\n
     Within the processor architecture file include the configuration command:\n
+    CONSTANT   C_PWM_LED_HZ 30*255
     PERIPHERAL PWM_8bit   outport=O_PWM_LED                     \\
                           outsignal=o_led                       \\
-                          ratemethod=G_CLK_FREQ_HZ/(30*255)     \\
+                          ratemethod=G_CLK_FREQ_HZ/C_PWM_LED_HZ \\
                           invert                                \\
                           instances=3\n
     Use the following assembly to set the LED intensities to 0x10 0x20 and 0x55:\n
