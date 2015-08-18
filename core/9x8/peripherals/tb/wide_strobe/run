@@ -8,7 +8,7 @@ NAME=wide_strobe
 iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
 ./tb > tb.out;
 
-T="`md5sum -c md5sums 2>&1 | sed '/: OK$/d'`";
+T="`md5sum -c md5sums --quiet`";
 if [ -n "${T}" ]; then
   echo "${NAME} failed" > /dev/stderr;
   exit 1;

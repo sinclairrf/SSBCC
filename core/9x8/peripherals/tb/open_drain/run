@@ -12,7 +12,7 @@ for WIDTH in 1 5 8; do
   ./tb > tb_${WIDTH}.out;
 done
 
-T="`md5sum -c md5sums 2>&1 | sed '/: OK$/d'`";
+T="`md5sum -c md5sums --quiet`";
 if [ -n "${T}" ]; then
   echo "${NAME} failed" > /dev/stderr;
   exit 1;
