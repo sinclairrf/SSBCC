@@ -199,7 +199,7 @@ try:
     elif re.match(r'\s*CONSTANT\b',line):
       if not config.Exists('architecture'):
         raise SSBCCException('"CONSTANT"s cannot be defined before the "ARCHITECTURE" is defined at %s' % loc);
-      cmd = re.findall(r'\s*CONSTANT\s+(C_\w+)\s+(0|-?[1-9]\d*|\w+)\s*$',line);
+      cmd = re.findall(r'\s*CONSTANT\s+(C_\w+)\s+(\S+)\s*$',line);
       if not cmd:
         raise SSBCCException('Malformed "CONSTANT" configuration command on %s: "%s"' % (loc,line,));
       cmd = cmd[0];
