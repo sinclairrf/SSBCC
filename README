@@ -1112,6 +1112,9 @@ set the wide signal to all zeroes using:
 
   ${(size['o_big']+7)/8-1} :loop 0 .outport(O_BIG) .jumpc(loop,1-) drop
 
+The sizes of variables, i.e., how many bytes of memory they occupy, are also
+provided.
+
 
 MACROS
 ================================================================================

@@ -57,10 +57,11 @@ class asmDef_9x8:
   def SymbolDict(self):
     """
     Return a dict object usable by the eval function with the currently defines
-    symbols for constants, variables, memory lengths, stack lengths, and signal
-    lengths.
+    symbols for constants, variables, memory and I/O signal lengths, variable
+    lengths, and stack lengths.
     """
     t = dict();
+    # Add constants and variable locations.
     for ixSymbol in range(len(self.symbols['list'])):
       name = self.symbols['list'][ixSymbol];
       stype = self.symbols['type'][ixSymbol];
@@ -68,12 +69,20 @@ class asmDef_9x8:
         t[name] = self.symbols['body'][ixSymbol][0];
       elif stype == 'variable':
         t[name] = self.symbols['body'][ixSymbol]['start'];
+    # Construct and add dictionary of sizes.
     sizes=dict();
+    def AddSize(name,value):
+      if name in sizes:
+        raise Exception('Program Bug:  Symbol "%s" multiply defined');
+      sizes[name] = value;
     for name in self.memoryLength:
-      sizes[name] = self.memoryLength[name];
+      AddSize(name,self.memoryLength[name]);
+    for ix in [ix for ix in range(len(self.symbols['type'])) if self.symbols['type'][ix] == 'variable']:
+      AddSize(self.symbols['list'][ix],len(self.symbols['body'][ix]['value']));
     for name in self.stackLength:
-      sizes[name] = self.stackLength[name];
+      AddSize(name,self.stackLength[name]);
     t['size'] = sizes;
+    # That's all.
     return t;
 
   ################################################################################
@@ -354,7 +363,9 @@ class asmDef_9x8:
   def RegisterStackLength(self,name,length):
     """
     Record the length of the specified stack.\n
-    Note:  This is used to evaluate "size[name]" in "${...}" expressions.
+    Note:  This is used to evaluate "size[name]" in "${...}" expressions.\n
+    Note:  This differs from RegisterMemoryLength() in that the stack lengths
+           can be larger than 256.
     """
     self.stackLength[name] = length;
 

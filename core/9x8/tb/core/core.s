@@ -48,13 +48,13 @@
   ;
 
   ; get the two pre-loaded values for "fred"
-  .fetchvector(fred,2) drop drop
+  .fetchvector(fred,${size['fred']}) drop drop
 
   ; Set the entire RAM "ram" to 0xFF.
   ${size['ram']-1} :set_mem 0xFF swap .jumpc(set_mem,.store-(ram)) drop
 
   ; Ensure "fred" was changed.
-  .fetchvector(fred,2) drop drop
+  .fetchvector(fred,${size['fred']}) drop drop
 
   ; Fetch, alter, and store the first value in "joe" using raw ".fetch(ram)" and ".store(ram)" macros.
   joe .fetch(ram) 1- joe .store(ram) drop
@@ -66,7 +66,7 @@
   2 .fetchindexed(joe) 1- 2 .storeindexed(joe) ${joe+2} .fetch(ram) drop
 
   ; Check the ".storevector" and ".fetch+" macros.
-  6 7 .storevector(fred,2) fred .fetch+(ram) .fetch(ram) drop drop
+  6 7 .storevector(fred,${size['fred']}) fred .fetch+(ram) .fetch(ram) drop drop
 
   ; Test "call" and "callc" opcodes.
   .call(test_callc,3) drop
