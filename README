@@ -58,7 +58,7 @@ The instructions are all single-cycle.  The instructions are:
 - 6 Forth-like data stack instructions:  drop, dup, nip, over, push, swap
 - 3 Forth-like return stack instructions:  >r, r>, r@
 - 2 I/O: inport, outport
-- 6 memory read and write with optional address post increment and post decrement
+- 6 memory read and write with optional address post increment or post decrement
 - 2 jump and conditional jump
 - 2 call and conditional call
 - 1 function return
@@ -970,7 +970,7 @@ memories:
   .fetchram+(var_name)  is similar to the .fetch+(mem_name) macro except that
                         the variable name is used to identify the memory instead
                         of the name of the memory
-  .fetchram-(var_name)  is similar to the .fetch-(mem_name) macro except that the
+  .fetchram-(var_name)  is similar to the .fetch-(mem_name) macro except that
                         the variable name is used to identify the memory instead
                         of the name of the memory
   .fetchvalue(var_name) fetches the single-byte value of var_name
@@ -1025,7 +1025,8 @@ memories:
   .storevector(var_name,N)
                         Does the reverse of the .fetchvector macro.
                         Note:  This is equivalent to the N+2 operation sequence
-                                 "var_name .store+(mem_name) ... .store+(mem_name)
+                                 "var_name
+                                 .store+(mem_name) ...  .store+(mem_name)
                                  .store(mem_name) drop"
                                where ".store+(mem_name)" is repeated N-1 times.
 
@@ -1292,6 +1293,9 @@ core and peripheral test benches; Verilator for long simulations of large,
 complex systems; and ISIM when Xilinx-specific cores are used.  Verilator is
 the fastest simulators I've encountered.  Verilator is also used for lint
 checking in the core test benches.
+
+The test benches for the core and the peripherals require Icarus Verilog and
+Verilator.
 
 
 MEM INITIALIZATION FILE
