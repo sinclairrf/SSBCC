@@ -16,7 +16,7 @@ PARAMETER G_CLK_FREQ_HZ 100_000_000
 
 PORTCOMMENT     UART_Tx port
 PERIPHERAL      UART_Tx outport=O_UART_TX \
-                        inport=I_UART_TX_BUSY \
+                        outstatus=I_UART_TX_BUSY \
                         baudmethod=G_CLK_FREQ_HZ/115200
 
 ASSEMBLY hello_world.s
