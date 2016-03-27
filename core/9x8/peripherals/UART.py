@@ -35,8 +35,8 @@ class UART(SSBCCperipheral):
                        [nStop={1|2}]\n
   Where:
     inport=I_inport_name
-      specifies the symbol used by the inport instruction to read a received by
-      from the peripheral
+      specifies the symbol used by the inport instruction to read a byte
+      received by the peripheral
       Note:  The name must start with "I_".
     outport=O_outport_name
       specifies the symbol used by the outport instruction to write a byte to
