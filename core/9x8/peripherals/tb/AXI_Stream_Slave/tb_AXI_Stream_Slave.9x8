@@ -1,0 +1,26 @@
+#
+# Copyright 2016, Sinclair R.F., Inc.
+#
+# Test bench for AXI_Stream_Slave peripheral.
+#
+
+ARCHITECTURE    core/9x8 Verilog
+INSTRUCTION     128
+DATA_STACK      32
+RETURN_STACK    16
+
+PORTCOMMENT     Incoming AXI Stream
+PERIPHERAL      AXI_Stream_Slave        basePortName=s_axis     \
+                                        instatus=I_axis_status  \
+                                        outlatch=O_axis_latch   \
+                                        indata=I_axis_data      \
+                                        data_width=16           \
+                                        hasTLast
+
+PORTCOMMENT     diagnostic output
+OUTPORT         8-bit,strobe    o_diag,o_diag_wr        O_DIAG
+
+PORTCOMMENT     termination signal
+OUTPORT         1-bit           o_done                  O_DONE
+
+ASSEMBLY tb_AXI_Stream_Slave.s

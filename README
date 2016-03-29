@@ -38,6 +38,8 @@ SSBCC has been used for the following projects:
 - operate two UART interfaces and multiple PWM controlled 2-lead bi-color LEDs
 - operate and monitor the Artix-7 fabric in a Zynq system using AXI4-Lite
   master and slave buses, I2C buses for timing-critical voltage measurements
+- coordinate data from multiple low data rate AXI-Streams and write them to the
+  processor memory through an AXI4-Master port
 
 The only external tool required is Python 2.7.
 
@@ -654,6 +656,8 @@ The following peripherals are provided:
   AXI4_Lite_Slave_DualPortRAM
                 dual-port-RAM interface for the micro controller to act as an
                 AXI4-Lite slave
+  AXI_Stream_Slave
+                AXI-Stream slave with optional TLast signal
   big_inport    shift reads from a single INPORT to construct a wide input
   big_outport   shift writes to a single OUTPORT to construct a wide output
   counter       counter for number of received high cycles from signal
