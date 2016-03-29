@@ -165,6 +165,8 @@ class SSBCCperipheral:
     if (lowLimit != None) and value < lowLimit:
       if lowLimit == 1:
         raise SSBCCException('Must be a positive integer');
+      elif lowLimit == 0:
+        raise SSBCCException('Must be a non-negative integer');
       else:
         raise SSBCCException('Cannot be less than %d' % lowLimit);
     if (highLimit != None) and value > highLimit:
