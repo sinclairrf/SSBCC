@@ -147,6 +147,8 @@ def genInports(fp,config):
     thisPort = config.inports[ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
+      if not signal:
+        continue
       signalType = signal[2];
       if signalType in ('data','set-reset',):
         haveBitInportSignals = True;
@@ -159,6 +161,8 @@ def genInports(fp,config):
     bitString = '';
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
+      if not signal:
+        continue
       signalName = signal[0];
       signalSize = signal[1];
       signalType = signal[2];
@@ -186,6 +190,8 @@ def genInports(fp,config):
     thisPort = config.inports[ix][1:];
     for jx in range(len(thisPort)):
       signal = thisPort[jx];
+      if not signal:
+        continue
       signalName = signal[0];
       signalType = signal[2];
       if signalType == 'strobe':
@@ -200,6 +206,8 @@ def genInports(fp,config):
   # Generate all the INPORT "set-reset"s.
   for ix in range(config.NInports()):
     thisPort = config.inports[ix][1:];
+    if not thisPort[0]:
+      continue
     if thisPort[0][2] == 'set-reset':
       signalName = thisPort[0][0];
       fp.write('always @(posedge i_clk)\n');
