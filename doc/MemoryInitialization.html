@@ -142,8 +142,8 @@ use it for various vendor-specific tools.
     &nbsp;&nbsp;&nbsp;&nbsp;split(loc[memName[ix]],splitLoc,"_");<br/>
     &nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(memType&nbsp;==&nbsp;"")&nbsp;{<br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;memType&nbsp;=&nbsp;splitLoc[1];<br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(memType&nbsp;=&nbsp;"RAMB18")&nbsp;L&nbsp;=&nbsp;2048;<br/>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(memType&nbsp;=&nbsp;"RAMB36")&nbsp;L&nbsp;=&nbsp;4096;<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(memType&nbsp;==&nbsp;"RAMB18")&nbsp;L&nbsp;=&nbsp;2048;<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(memType&nbsp;==&nbsp;"RAMB36")&nbsp;L&nbsp;=&nbsp;4096;<br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;L&nbsp;*=&nbsp;nMemories;<br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf("ADDRESS_SPACE&nbsp;uc&nbsp;%s&nbsp;WORD_ADDRESSING&nbsp;[0x0:0x%x]\n",memType,L-1);<br/>
     &nbsp;&nbsp;&nbsp;&nbsp;}<br/>
