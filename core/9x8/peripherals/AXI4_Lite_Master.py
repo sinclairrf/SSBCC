@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2013-2014, Sinclair R.F., Inc.
+# Copyright 2013-2014, 2018, Sinclair R.F., Inc.
 #
 ################################################################################
 
@@ -77,10 +77,6 @@ class AXI4_Lite_Master(SSBCCperipheral):
     noWSTRB
       indicates that the optional WSTRB signal should not be included
       Note:  This must be specified if write_enable is not specified.\n
-  Vivado Users:
-    The peripheral creates a TCL script to facilitate turning the micro
-    controller into an IP core.  Look for a file with the name
-    "vivado_<basePortName>.tcl".\n
   Example:  Xilinx' AXI_DMA core has a 7-bit address range for its register
     address map.  The PERIPHERAL configuration statement to interface to this
     core would be:\n
