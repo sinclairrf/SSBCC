@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright 2013, Sinclair R.F., Inc.
+ * Copyright 2013, 2018, Sinclair R.F., Inc.
  *
  * Test bench for the AXI4-Lite master peripheral.
  *
@@ -24,25 +24,25 @@ initial begin
 end
 
 // AXI4-Lite signals
-wire            s_alm_aresetn   = ~s_rst;
-wire            s_alm_aclk      = s_clk;
-wire            s_alm_awvalid;
-reg             s_alm_awready;
-wire      [6:0] s_alm_awaddr;
-wire            s_alm_wvalid;
-reg             s_alm_wready;
-wire     [31:0] s_alm_wdata;
-wire      [3:0] s_alm_wstrb;
-reg       [1:0] s_alm_bresp     = L_RESP_OKAY;
-reg             s_alm_bvalid;
-wire            s_alm_bready;
-wire            s_alm_arvalid;
-reg             s_alm_arready;
-wire      [6:0] s_alm_araddr;
-reg             s_alm_rvalid;
-wire            s_alm_rready;
-reg      [31:0] s_alm_rdata;
-reg       [1:0] s_alm_rresp     = L_RESP_OKAY;
+wire                    s_alm_aresetn   = ~s_rst;
+wire                    s_alm_aclk      = s_clk;
+wire                    s_alm_awvalid;
+reg                     s_alm_awready;
+wire              [6:0] s_alm_awaddr;
+wire                    s_alm_wvalid;
+reg                     s_alm_wready;
+wire          [`DW-1:0] s_alm_wdata;
+wire        [`DW/8-1:0] s_alm_wstrb;
+reg               [1:0] s_alm_bresp     = L_RESP_OKAY;
+reg                     s_alm_bvalid;
+wire                    s_alm_bready;
+wire                    s_alm_arvalid;
+reg                     s_alm_arready;
+wire            [6:0] s_alm_araddr;
+reg                     s_alm_rvalid;
+wire                    s_alm_rready;
+reg           [`DW-1:0] s_alm_rdata;
+reg               [1:0] s_alm_rresp     = L_RESP_OKAY;
 
 // diagnostic signals
 wire      [7:0] s_diag_data;
@@ -109,9 +109,9 @@ always @ (posedge s_alm_aclk)
     s_alm_bvalid <= 1'b0;
   else if (s_alm_awvalid && s_alm_awready) begin
     s_alm_bvalid <= 1'b1;
-    for (ix_write=0; ix_write<4; ix_write=ix_write+1)
+    for (ix_write=0; ix_write<`DW/8; ix_write=ix_write+1)
       if (s_alm_wstrb[ix_write])
-        s_mem[{ s_alm_awaddr[6:2], ix_write[1:0] }] <= s_alm_wdata[8*ix_write+:8];
+        s_mem[{ s_alm_awaddr[6:`NB], ix_write[`NB-1:0] }] <= s_alm_wdata[8*ix_write+:8];
   end else if (s_alm_bready)
     s_alm_bvalid <= 1'b0;
   else
@@ -134,15 +134,15 @@ always @ (posedge s_alm_aclk)
   else
     s_alm_arready <= s_alm_arvalid && ~s_alm_arready;
 
-localparam L_XOR_CONSTANT = 32'h5A5A_5A5A;
-initial s_alm_rdata = 32'd0;
+localparam L_XOR_CONSTANT = `DW'h5A5A_5A5A;
+initial s_alm_rdata = `DW'd0;
 integer ix_read;
 always @ (posedge s_alm_aclk)
   if (~s_alm_aresetn)
-    s_alm_rdata <= 32'd0;
+    s_alm_rdata <= `DW'd0;
   else if (s_alm_arvalid && s_alm_arready)
-    for (ix_read=0; ix_read<4; ix_read=ix_read+1)
-      s_alm_rdata[8*ix_read+:8] <= s_mem[{ s_alm_araddr[6:2], ix_read[1:0] }];
+    for (ix_read=0; ix_read<`DW/8; ix_read=ix_read+1)
+      s_alm_rdata[8*ix_read+:8] <= s_mem[{ s_alm_araddr[6:`NB], ix_read[`NB-1:0] }];
   else
     s_alm_rdata <= s_alm_rdata;
 
@@ -155,9 +155,20 @@ always @ (posedge s_alm_aclk)
   else
     s_alm_rvalid <= s_alm_rvalid && ~s_alm_rready;
 
+integer ix;
+integer jx;
+reg [`DW-1:0] s_alm_rdata_degray;
+always @ (*)
+  for (ix=0; ix<`DW; ix=ix+1) begin
+    s_alm_rdata_degray[8*ix+7] = s_alm_rdata[8*ix+7];
+    for (jx=6; jx>=0; jx=jx-1)
+      s_alm_rdata_degray[8*ix+jx] = s_alm_rdata_degray[8*ix+jx+1] ^ s_alm_rdata[8*ix+jx];
+  end
+
 always @ (posedge s_alm_aclk) begin
   if (s_alm_arvalid && s_alm_arready) $display("%14d -- arready issued : 0x%h", $time, s_alm_araddr);
-  if (s_alm_rready && s_alm_rvalid) $display("%14d -- rready recieved : 0x%8h", $time, s_alm_rdata);
+  if (s_alm_rready && s_alm_rvalid) $display("%14d -- rready recieved : 0x%h", $time, s_alm_rdata);
+  if (s_alm_rready && s_alm_rvalid) $display("%14d -- degrayed : 0x%h", $time, s_alm_rdata_degray);
 end
 
 //

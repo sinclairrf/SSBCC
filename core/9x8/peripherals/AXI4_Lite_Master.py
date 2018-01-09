@@ -12,10 +12,9 @@ from ssbccUtil import SSBCCException;
 
 class AXI4_Lite_Master(SSBCCperipheral):
   """
-  AXI-Lite master for 32-bit reads and 8, 16, and 32-bit writes.\n
-  256 bytes addressable by a single 8-bit value.  The data is stored in little
-  endian format (i.e., the LSB of the 32-bit word is stored in the lowest
-  numbered address).\n
+  AXI-Lite master for 32 or 64 bit reads writes.\n
+  The data is stored in little endian format (i.e., the LSB of the word is
+  stored in the lowest numbered address).\n
   Usage:
     PERIPHERAL AXI4_Lite_Master                                         \\
                                 basePortName=<name>                     \\
@@ -27,6 +26,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
                                 error=<I_error>                         \\
                                 read=<I_read>                           \\
                                 address_width=<N>                       \\
+                                [data_width=32|64]                      \\
                                 synchronous={True|False}                \\
                                 write_enable=<O_write_enable>|noWSTRB\n
   Where:
@@ -67,6 +67,10 @@ class AXI4_Lite_Master(SSBCCperipheral):
       value starting with the LSB
     address_width=<N>
       specifies the width of the 8-bit aligned address\n
+    data_width=(32|64)
+      optionally specified with read and write data width as 32 or 64 bits
+      Note:  The default value is 32 bits.
+      Note:  ARM's AXI4-Lite specification provides this restriction.
     synchronous={True|False}
       indicates whether or not he micro controller clock and the AXI4-Lite bus
       are synchronous
@@ -168,6 +172,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ('command_read',  r'O_\w+$',              None,           ),
       ('command_write', r'O_\w+$',              None,           ),
       ('data',          r'O_\w+$',              None,           ),
+      ('data_width',    r'(32|64)$',            int,            ),
       ('read',          r'I_\w+$',              None,           ),
       ('busy',          r'I_\w+$',              None,           ),
       ('error',         r'I_\w+$',              None,           ),
@@ -197,6 +202,12 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ):
       if not hasattr(self,paramname):
         raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
+    # Set optional parameters.
+    for optionalpair in (
+        ( 'data_width', 32,     ),
+      ):
+      if not hasattr(self,optionalpair[0]):
+        setattr(self,optionalpair[0],optionalpair[1]);
     # Ensure exclusive pair configurations are set and consistent.
     for exclusivepair in (
         ('write_enable','noWSTRB',None,None,),
@@ -220,8 +231,8 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ( '%s_awaddr',            self.address_width,     'output',       ),
       ( '%s_wvalid',            1,                      'output',       ),
       ( '%s_wready',            1,                      'input',        ),
-      ( '%s_wdata',             32,                     'output',       ),
-      ( '%s_wstrb',             4,                      'output',       ) if hasattr(self,'write_enable') else None,
+      ( '%s_wdata',             self.data_width,        'output',       ),
+      ( '%s_wstrb',             self.data_width/8,      'output',       ) if hasattr(self,'write_enable') else None,
       ( '%s_bresp',             2,                      'input',        ),
       ( '%s_bvalid',            1,                      'input',        ),
       ( '%s_bready',            1,                      'output',       ),
@@ -230,7 +241,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
       ( '%s_araddr',            self.address_width,     'output',       ),
       ( '%s_rvalid',            1,                      'input',        ),
       ( '%s_rready',            1,                      'output',       ),
-      ( '%s_rdata',             32,                     'input',        ),
+      ( '%s_rdata',             self.data_width,        'input',        ),
       ( '%s_rresp',             2,                      'input',        ),
     ):
       if not signal:
@@ -242,7 +253,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
     config.AddSignal('s__%s__wr' % self.basePortName, 1, loc);
     config.AddSignal('s__%s__busy' % self.basePortName, 5, loc);
     config.AddSignal('s__%s__error' % self.basePortName, 2, loc);
-    config.AddSignal('s__%s__read' % self.basePortName, 32, loc);
+    config.AddSignal('s__%s__read' % self.basePortName, self.data_width, loc);
     self.ix_address = config.NOutports();
     config.AddOutport((self.address,False,
                       # empty list -- disable normal output port signal generation
@@ -253,7 +264,7 @@ class AXI4_Lite_Master(SSBCCperipheral):
                       ),loc);
     if hasattr(self,'write_enable'):
       config.AddOutport((self.write_enable,False,
-                      ('%s_wstrb' % self.basePortName, 4, 'data', ),
+                      ('%s_wstrb' % self.basePortName, self.data_width/8, 'data', ),
                       ),loc);
     config.AddOutport((self.command_read,True,
                       ('s__%s__rd' % self.basePortName, 1, 'strobe', ),
@@ -269,29 +280,33 @@ class AXI4_Lite_Master(SSBCCperipheral):
                      ),loc);
     self.ix_read = config.NInports();
     config.AddInport((self.read,
-                     ('s__%s__read' % self.basePortName, 32, 'data', ),
+                     ('s__%s__read' % self.basePortName, self.data_width, 'data', ),
                      ),loc);
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v');
     # avoid i_clk and i_rst
     for subpair in (
-        ( r'\bgen__',           'gen__@NAME@__',                        ),
-        ( r'\bL__',             'L__@NAME@__',                          ),
-        ( r'\bs__',             's__@NAME@__',                          ),
-        ( r'\bi_a',             '@NAME@_a',                             ),
-        ( r'\bi_b',             '@NAME@_b',                             ),
-        ( r'\bi_rd',            '@NAME@_rd',                            ),
-        ( r'\bi_rr',            '@NAME@_rr',                            ),
-        ( r'\bi_rv',            '@NAME@_rv',                            ),
-        ( r'\bi_w',             '@NAME@_w',                             ),
-        ( r'\bo_',              '@NAME@_',                              ),
-        ( r'@ADDRESS_WIDTH@',   str(self.address_width),                ),
-        ( r'@ISSYNC@',          "1'b1" if self.synchronous else "1'b0", ),
-        ( r'@IX_ADDRESS@',      str(self.ix_address),                   ),
-        ( r'@IX_DATA@',         str(self.ix_data),                      ),
-        ( r'@IX_READ@',         str(self.ix_read),                      ),
-        ( r'@NAME@',            self.basePortName,                      ),
+        ( r'\bgen__',                   'gen__@NAME@__',                        ),
+        ( r'\bL__',                     'L__@NAME@__',                          ),
+        ( r'\bs__',                     's__@NAME@__',                          ),
+        ( r'\bi_a',                     '@NAME@_a',                             ),
+        ( r'\bi_b',                     '@NAME@_b',                             ),
+        ( r'\bi_rd',                    '@NAME@_rd',                            ),
+        ( r'\bi_rr',                    '@NAME@_rr',                            ),
+        ( r'\bi_rv',                    '@NAME@_rv',                            ),
+        ( r'\bi_w',                     '@NAME@_w',                             ),
+        ( r'\bo_',                      '@NAME@_',                              ),
+        ( r'@ADDRESS_WIDTH@',           str(self.address_width),                ),
+        ( r'@DATA_WIDTH@',              str(self.data_width),                   ),
+        ( r'@DATA_WIDTHm8@',            str(self.data_width-8),                 ),
+        ( r'@NBITS_DATA_WIDTH@',        '2' if self.data_width==32 else '3',    ),
+        ( r'@WSTRB_WIDTH@',             str(self.data_width/8),                 ),
+        ( r'@ISSYNC@',                  "1'b1" if self.synchronous else "1'b0", ),
+        ( r'@IX_ADDRESS@',              str(self.ix_address),                   ),
+        ( r'@IX_DATA@',                 str(self.ix_data),                      ),
+        ( r'@IX_READ@',                 str(self.ix_read),                      ),
+        ( r'@NAME@',                    self.basePortName,                      ),
       ):
       body = re.sub(subpair[0],subpair[1],body);
     body = self.GenVerilogFinal(config,body);

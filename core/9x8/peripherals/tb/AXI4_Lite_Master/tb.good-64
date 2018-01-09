@@ -1,0 +1,148 @@
+           870 -- awready issued : 0x78
+           870 -- wready issued : 0x0000000004030201 0x0f
+           890 -- bvalid issued
+          1020 -- arready issued : 0x78
+          1040 -- rready recieved : 0xxxxxxxxx04030201
+          1040 -- degrayed : 0xxxxxxxxx07020301
+          2370 -- awready issued : 0x60
+          2370 -- wready issued : 0x0807060504030201 0xff
+          2390 -- bvalid issued
+          2520 -- arready issued : 0x60
+          2540 -- rready recieved : 0x0807060504030201
+          2540 -- degrayed : 0x0f05040607020301
+          4760 -- awready issued : 0x78
+          4760 -- wready issued : 0x4041434246474544 0xff
+          4780 -- bvalid issued
+          6530 -- awready issued : 0x70
+          6530 -- wready issued : 0x4c4d4f4e4a4b4948 0xff
+          6550 -- bvalid issued
+          8300 -- awready issued : 0x68
+          8300 -- wready issued : 0x58595b5a5e5f5d5c 0xff
+          8320 -- bvalid issued
+         10070 -- awready issued : 0x60
+         10070 -- wready issued : 0x5455575652535150 0xff
+         10090 -- bvalid issued
+         11840 -- awready issued : 0x58
+         11840 -- wready issued : 0x7071737276777574 0xff
+         11860 -- bvalid issued
+         13610 -- awready issued : 0x50
+         13610 -- wready issued : 0x7c7d7f7e7a7b7978 0xff
+         13630 -- bvalid issued
+         15380 -- awready issued : 0x48
+         15380 -- wready issued : 0x68696b6a6e6f6d6c 0xff
+         15400 -- bvalid issued
+         17150 -- awready issued : 0x40
+         17150 -- wready issued : 0x6465676662636160 0xff
+         17170 -- bvalid issued
+         18920 -- awready issued : 0x38
+         18920 -- wready issued : 0x2021232226272524 0xff
+         18940 -- bvalid issued
+         20690 -- awready issued : 0x30
+         20690 -- wready issued : 0x2c2d2f2e2a2b2928 0xff
+         20710 -- bvalid issued
+         22460 -- awready issued : 0x28
+         22460 -- wready issued : 0x38393b3a3e3f3d3c 0xff
+         22480 -- bvalid issued
+         24230 -- awready issued : 0x20
+         24230 -- wready issued : 0x3435373632333130 0xff
+         24250 -- bvalid issued
+         26000 -- awready issued : 0x18
+         26000 -- wready issued : 0x1011131216171514 0xff
+         26020 -- bvalid issued
+         27770 -- awready issued : 0x10
+         27770 -- wready issued : 0x1c1d1f1e1a1b1918 0xff
+         27790 -- bvalid issued
+         29540 -- awready issued : 0x08
+         29540 -- wready issued : 0x08090b0a0e0f0d0c 0xff
+         29560 -- bvalid issued
+         31310 -- awready issued : 0x00
+         31310 -- wready issued : 0x0405070602030100 0xff
+         31330 -- bvalid issued
+         31540 -- arready issued : 0x40
+         31560 -- rready recieved : 0x6465676662636160
+         31560 -- degrayed : 0x4746454443424140
+         32130 : 0x64
+         32210 : 0x65
+         32290 : 0x67
+         32370 : 0x66
+         32450 : 0x62
+         32530 : 0x63
+         32610 : 0x61
+         32690 : 0x60
+         32910 -- arready issued : 0x20
+         32930 -- rready recieved : 0x3435373632333130
+         32930 -- degrayed : 0x2726252423222120
+         33500 : 0x34
+         33580 : 0x35
+         33660 : 0x37
+         33740 : 0x36
+         33820 : 0x32
+         33900 : 0x33
+         33980 : 0x31
+         34060 : 0x30
+         34280 -- arready issued : 0x10
+         34300 -- rready recieved : 0x1c1d1f1e1a1b1918
+         34300 -- degrayed : 0x1716151413121110
+         34870 : 0x1c
+         34950 : 0x1d
+         35030 : 0x1f
+         35110 : 0x1e
+         35190 : 0x1a
+         35270 : 0x1b
+         35350 : 0x19
+         35430 : 0x18
+         35650 -- arready issued : 0x08
+         35670 -- rready recieved : 0x08090b0a0e0f0d0c
+         35670 -- degrayed : 0x0f0e0d0c0b0a0908
+         36240 : 0x08
+         36320 : 0x09
+         36400 : 0x0b
+         36480 : 0x0a
+         36560 : 0x0e
+         36640 : 0x0f
+         36720 : 0x0d
+         36800 : 0x0c
+         37020 -- arready issued : 0x00
+         37040 -- rready recieved : 0x0405070602030100
+         37040 -- degrayed : 0x0706050403020100
+         37610 : 0x04
+         37690 : 0x05
+         37770 : 0x07
+         37850 : 0x06
+         37930 : 0x02
+         38010 : 0x03
+         38090 : 0x01
+         38170 : 0x00
+         38390 -- arready issued : 0x00
+         38410 -- rready recieved : 0x0405070602030100
+         38410 -- degrayed : 0x0706050403020100
+         38980 : 0x04
+         39060 : 0x05
+         39140 : 0x07
+         39220 : 0x06
+         39300 : 0x02
+         39380 : 0x03
+         39460 : 0x01
+         39540 : 0x00
+         39760 -- arready issued : 0x00
+         39780 -- rready recieved : 0x0405070602030100
+         39780 -- degrayed : 0x0706050403020100
+         40350 : 0x04
+         40430 : 0x05
+         40510 : 0x07
+         40590 : 0x06
+         40670 : 0x02
+         40750 : 0x03
+         40830 : 0x01
+         40910 : 0x00
+         41130 -- arready issued : 0x00
+         41150 -- rready recieved : 0x0405070602030100
+         41150 -- degrayed : 0x0706050403020100
+         41720 : 0x04
+         41800 : 0x05
+         41880 : 0x07
+         41960 : 0x06
+         42040 : 0x02
+         42120 : 0x03
+         42200 : 0x01
+         42280 : 0x00

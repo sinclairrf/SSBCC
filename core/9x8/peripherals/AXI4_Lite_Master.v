@@ -1,18 +1,18 @@
 //
 // PERIPHERAL:  AXI4-Lite Master
-// Copyright 2014, Sinclair R.F., Inc.
+// Copyright 2014, 2018, Sinclair R.F., Inc.
 //
 generate
 localparam L__ADDRESS_WIDTH = @ADDRESS_WIDTH@;
 localparam L__ISSYNC = @ISSYNC@;
 localparam L__RESP_OKAY = 2'b00;
-// Shift 8-bit values into the output 32-bit word.
-initial o_wdata = 32'd0;
+// Shift 8-bit values into the output word.
+initial o_wdata = @DATA_WIDTH@'d0;
 always @ (posedge i_clk)
   if (i_rst)
-    o_wdata <= 32'd0;
+    o_wdata <= @DATA_WIDTH@'d0;
   else if (s_outport && (s_T == 8'd@IX_DATA@))
-    o_wdata <= { o_wdata[0+:24], s_N };
+    o_wdata <= { o_wdata[0+:@DATA_WIDTHm8@], s_N };
   else
     o_wdata <= o_wdata;
 // Shift 8-bit values into the common output address and coerce 2 lsb of output
@@ -36,8 +36,8 @@ end else begin : gen__long_addr
       s__addr <= s__addr;
 end
 always @ (*) begin
-  o_awaddr = { s__addr[L__ADDRESS_WIDTH-1:2], 2'b00 };
-  o_araddr = { s__addr[L__ADDRESS_WIDTH-1:2], 2'b00 };
+  o_awaddr = { s__addr[L__ADDRESS_WIDTH-1:@NBITS_DATA_WIDTH@], @NBITS_DATA_WIDTH@'d0 };
+  o_araddr = { s__addr[L__ADDRESS_WIDTH-1:@NBITS_DATA_WIDTH@], @NBITS_DATA_WIDTH@'d0 };
 end
 // Either use the raw write strobe or synchronize the write strobe.
 wire s__wr_aclk;
@@ -197,14 +197,14 @@ always @ (posedge i_clk)
   else
     s__pending_rd_clk <= s__pending_rd_clk;
 
-// Store the received value in a 32-bit word and right shift it when it's read.
+// Store the received value and right shift it when it's read.
 always @ (posedge i_clk)
   if (i_rst)
-    s__read <= 32'd0;
+    s__read <= @DATA_WIDTH@'d0;
   else if (s__latch_read)
     s__read <= i_rdata;
   else if (s_inport && (s_T == 8'd@IX_READ@))
-    s__read <= { 8'd0, s__read[8+:24] };
+    s__read <= { 8'd0, s__read[8+:@DATA_WIDTHm8@] };
 
 // Composite status (non-zero indicates the bus has not finished the last
 // transaction).

@@ -3,6 +3,7 @@
            570 -- bvalid issued
            700 -- arready issued : 0x7c
            720 -- rready recieved : 0x04030201
+           720 -- degrayed : 0x07020301
           1980 -- awready issued : 0x7c
           1980 -- wready issued : 0x40414342 0xf
           2000 -- bvalid issued
@@ -101,48 +102,56 @@
          34550 -- bvalid issued
          34760 -- arready issued : 0x40
          34780 -- rready recieved : 0x62636160
+         34780 -- degrayed : 0x43424140
          35110 : 0x62
          35190 : 0x63
          35270 : 0x61
          35350 : 0x60
          35570 -- arready issued : 0x20
          35590 -- rready recieved : 0x32333130
+         35590 -- degrayed : 0x23222120
          35920 : 0x32
          36000 : 0x33
          36080 : 0x31
          36160 : 0x30
          36380 -- arready issued : 0x10
          36400 -- rready recieved : 0x1a1b1918
+         36400 -- degrayed : 0x13121110
          36730 : 0x1a
          36810 : 0x1b
          36890 : 0x19
          36970 : 0x18
          37190 -- arready issued : 0x08
          37210 -- rready recieved : 0x0e0f0d0c
+         37210 -- degrayed : 0x0b0a0908
          37540 : 0x0e
          37620 : 0x0f
          37700 : 0x0d
          37780 : 0x0c
          38000 -- arready issued : 0x04
          38020 -- rready recieved : 0x04050706
+         38020 -- degrayed : 0x07060504
          38350 : 0x04
          38430 : 0x05
          38510 : 0x07
          38590 : 0x06
          38810 -- arready issued : 0x00
          38830 -- rready recieved : 0x02030100
+         38830 -- degrayed : 0x03020100
          39160 : 0x02
          39240 : 0x03
          39320 : 0x01
          39400 : 0x00
          39620 -- arready issued : 0x00
          39640 -- rready recieved : 0x02030100
+         39640 -- degrayed : 0x03020100
          39970 : 0x02
          40050 : 0x03
          40130 : 0x01
          40210 : 0x00
          40430 -- arready issued : 0x00
          40450 -- rready recieved : 0x02030100
+         40450 -- degrayed : 0x03020100
          40780 : 0x02
          40860 : 0x03
          40940 : 0x01

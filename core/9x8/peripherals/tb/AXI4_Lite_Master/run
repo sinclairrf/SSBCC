@@ -1,16 +1,22 @@
 #!/bin/bash
 #
-# Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2013, 2018, Sinclair R.F., Inc.
 
 NAME=AXI4_Lite_Master
 
-../../../../../ssbcc -q --display-opcode -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
-iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
-./tb > tb.out;
-if ! cmp -s tb.out tb.good; then
-  echo "${NAME} failed" > /dev/stderr;
-  exit 1;
-fi
+for DW in 32 64; do
+  if [ ${DW} == 32 ]; then NB=2; else NB=3; fi
+  sed -e "s/@DW@/${DW}  /" tb_${NAME}_DW.9x8 > tb_${NAME}.9x8
+  cp tb_${NAME}_${DW}.s tb_${NAME}.s
+  ../../../../../ssbcc -q --display-opcode -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+  iverilog -DDW=${DW} -DNB=${NB} -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+  ./tb > tb.out;
+  if ! cmp -s tb.out tb.good-${DW}; then
+    echo "${NAME} failed" > /dev/stderr;
+    exit 1;
+  fi
+  rm tb_${NAME}.9x8 tb_${NAME}.s tb.out
+done
 
 echo "Passed:  ${NAME}";
 exit 0;
