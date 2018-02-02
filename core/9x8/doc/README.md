@@ -422,51 +422,51 @@ Alphabetic listing:
 <a name="opcode_mapping">Opcode Mapping</a>
 -------------------------------------------
 
-| Opcode                | | 8 | 7 | 6 | 5 | 4 | 3 | | 2 | 1 | 0 | | Description |
-| --------------------- | - | - | - | - | - | - | - | | - | - | - | - | ----------- |
-| [nop](#nop)           | | 0 | 0 | 0 | 0 | 0 | 0 | | 0 | 0 | 0 | | no operation |
-| [<<0](#<<0)           | | 0 | 0 | 0 | 0 | 0 | 0 | | 0 | 0 | 1 | | left shift 1 bit and bring in a 0 |
-| [<<1](#<<1)           | | 0 | 0 | 0 | 0 | 0 | 0 | | 0 | 1 | 0 | | left shift 1 bit and bring in a 1 |
-| [<<msb](#<<msb)       | | 0 | 0 | 0 | 0 | 0 | 0 | | 0 | 1 | 1 | | left shift 1 bit and rotate the msb into the lsb |
-| [0>>](#0>>)           | | 0 | 0 | 0 | 0 | 0 | 0 | | 1 | 0 | 0 | | right shift 1 bit and bring in a 0 |
-| [1>>](#1>>)           | | 0 | 0 | 0 | 0 | 0 | 0 | | 1 | 0 | 1 | | right shift 1 bit and bring in a 1 |
-| [msb>>](#msb>>)       | | 0 | 0 | 0 | 0 | 0 | 0 | | 1 | 1 | 0 | | right shift 1 bit and keep the msb the same |
-| [lsb>>](#lsb>>)       | | 0 | 0 | 0 | 0 | 0 | 0 | | 1 | 1 | 1 | | right shift 1 bit and rotate the lsb into the msb |
-| [dup](#dup)           | | 0 | 0 | 0 | 0 | 0 | 1 | | 0 | 0 | 0 | | push a duplicate of the top of the data stack onto the data stack |
-| [r@](#r@)             | | 0 | 0 | 0 | 0 | 0 | 1 | | 0 | 0 | 1 | | push a duplicate of the top of the return stack onto the data stack |
-| [over](#over)         | | 0 | 0 | 0 | 0 | 0 | 1 | | 0 | 1 | 0 | | push a duplicate of the next-to-top of the data stack onto the data stack |
-| [swap](#swap)         | | 0 | 0 | 0 | 0 | 1 | 0 | | 0 | 1 | 0 | | swap the top and the next-to-top of the data stack |
-| [+](#+)               | | 0 | 0 | 0 | 0 | 1 | 1 | | 0 | 0 | 0 | | pop the stack and replace the top with N+T |
-| [-](#-)               | | 0 | 0 | 0 | 0 | 1 | 1 | | 1 | 0 | 0 | | pop the stack and replace the top with N-T |
-| [dis](#dis)           | | 0 | 0 | 0 | 0 | 1 | 1 | | 0 | 0 | 0 | | disable interrupts |
-| [ena](#ena)           | | 0 | 0 | 0 | 0 | 1 | 1 | | 0 | 0 | 1 | | enable interrupts |
-| [0=](#0=)             | | 0 | 0 | 0 | 1 | 0 | 0 | | 0 | 0 | 0 | | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0x00</tt>" (i.e., it is zero), otherwise replace it with "<tt>0x00</tt>" |
-| [0<>](#0<>)           | | 0 | 0 | 0 | 1 | 0 | 0 | | 0 | 0 | 1 | | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0x00</tt>" (i.e., it is non-zero), otherwise replace it with "<tt>0x00</tt>" |
-| [-1=](#-1=)           | | 0 | 0 | 0 | 1 | 0 | 0 | | 0 | 1 | 0 | | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0xFF</tt>" (i.e., it is all ones), otherwise replace it with "<tt>0x00</tt>" |
-| [-1<>](#-1<>)         | | 0 | 0 | 0 | 1 | 0 | 0 | | 0 | 1 | 1 | | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0xFF</tt>" (i.e., it is not all ones), otherwise replace it with "<tt>0x00</tt>" |
-| [return](#return)     | | 0 | 0 | 0 | 1 | 0 | 1 | | 0 | 0 | 0 | | return from a function call |
-| [inport](#inport)     | | 0 | 0 | 0 | 1 | 1 | 0 | | 0 | 0 | 0 | | replace the top of the stack with the contents of the specified input port |
-| [outport](#outport)   | | 0 | 0 | 0 | 1 | 1 | 1 | | 0 | 0 | 0 | | write the next-to-top of the data stack to the output port specified by the top of the data stack |
-| [>r](#>r)             | | 0 | 0 | 1 | 0 | 0 | 0 | | 0 | 0 | 0 | | Pop the top of the data stack and push it onto the return stack |
-| [r>](#r>)             | | 0 | 0 | 1 | 0 | 0 | 1 | | 0 | 0 | 1 | | Pop the top of the return stack and push it onto the data stack |
-| [&](#&)               | | 0 | 0 | 1 | 0 | 1 | 0 | | 0 | 0 | 0 | | pop the stack and replace the top with N & T |
-| [or](#or)             | | 0 | 0 | 1 | 0 | 1 | 0 | | 0 | 0 | 1 | | pop the stack and replace the top with N | T |
-| [^](#^)               | | 0 | 0 | 1 | 0 | 1 | 0 | | 0 | 1 | 0 | | pop the stack and replace the top with N ^ T |
-| [nip](#nip)           | | 0 | 0 | 1 | 0 | 1 | 0 | | 0 | 1 | 1 | | pop the next-to-top from the data stack |
-| [drop](#drop)         | | 0 | 0 | 1 | 0 | 1 | 0 | | 1 | 0 | 0 | | drop the top value from the stack |
-| [1+](#1+)             | | 0 | 0 | 1 | 0 | 1 | 1 | | 0 | 0 | 0 | | Add 1 to T |
-| [1-](#1-)             | | 0 | 0 | 1 | 0 | 1 | 1 | | 1 | 0 | 0 | | Subtract 1 from T |
-| [store](#store)       | | 0 | 0 | 1 | 1 | 0 | 0 | | 0 | m | m | | Store N in the T'th entry in bank "<tt>mm</tt>", drop the top of the data stack |
-| [fetch](#fetch)       | | 0 | 0 | 1 | 1 | 0 | 1 | | 0 | m | m | | Exchange the top of the stack with the T'th value from bank "<tt>mm</tt>" |
-| [store+](#store+)     | | 0 | 0 | 1 | 1 | 1 | 0 | | 0 | m | m | | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and increment T |
-| [store-](#store-)     | | 0 | 0 | 1 | 1 | 1 | 0 | | 1 | m | m | | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and decrement T |
-| [fetch+](#fetch+)     | | 0 | 0 | 1 | 1 | 1 | 1 | | 0 | m | m | | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and increment T |
-| [fetch-](#fetch-)     | | 0 | 0 | 1 | 1 | 1 | 1 | | 1 | m | m | | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and decrement T |
-| [jump](#jump)         | | 0 | 1 | 0 | 0 | x | x | | x | x | x | | Jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [jumpc](#jumpc)       | | 0 | 1 | 0 | 1 | x | x | | x | x | x | | Conditionally jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [call](#call)         | | 0 | 1 | 1 | 0 | x | x | | x | x | x | | Call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [callc](#callc)       | | 0 | 1 | 1 | 1 | x | x | | x | x | x | | Conditionally call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [push](#push)         | | 1 | x | x | x | x | x | | x | x | x | | Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack. |
+| Opcode                | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | Description |
+| --------------------- | - | - | - | - | - | - | - | - | - | ----------- |
+| [nop](#nop)           | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | no operation |
+| [<<0](#<<0)           | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | left shift 1 bit and bring in a 0 |
+| [<<1](#<<1)           | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | left shift 1 bit and bring in a 1 |
+| [<<msb](#<<msb)       | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | left shift 1 bit and rotate the msb into the lsb |
+| [0>>](#0>>)           | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | right shift 1 bit and bring in a 0 |
+| [1>>](#1>>)           | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | right shift 1 bit and bring in a 1 |
+| [msb>>](#msb>>)       | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | right shift 1 bit and keep the msb the same |
+| [lsb>>](#lsb>>)       | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | right shift 1 bit and rotate the lsb into the msb |
+| [dup](#dup)           | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | push a duplicate of the top of the data stack onto the data stack |
+| [r@](#r@)             | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | push a duplicate of the top of the return stack onto the data stack |
+| [over](#over)         | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | push a duplicate of the next-to-top of the data stack onto the data stack |
+| [swap](#swap)         | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | swap the top and the next-to-top of the data stack |
+| [+](#+)               | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | pop the stack and replace the top with N+T |
+| [-](#-)               | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | pop the stack and replace the top with N-T |
+| [dis](#dis)           | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | disable interrupts |
+| [ena](#ena)           | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 1 | enable interrupts |
+| [0=](#0=)             | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0x00</tt>" (i.e., it is zero), otherwise replace it with "<tt>0x00</tt>" |
+| [0<>](#0<>)           | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0x00</tt>" (i.e., it is non-zero), otherwise replace it with "<tt>0x00</tt>" |
+| [-1=](#-1=)           | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0xFF</tt>" (i.e., it is all ones), otherwise replace it with "<tt>0x00</tt>" |
+| [-1<>](#-1<>)         | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 1 | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0xFF</tt>" (i.e., it is not all ones), otherwise replace it with "<tt>0x00</tt>" |
+| [return](#return)     | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | return from a function call |
+| [inport](#inport)     | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | replace the top of the stack with the contents of the specified input port |
+| [outport](#outport)   | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | 0 | write the next-to-top of the data stack to the output port specified by the top of the data stack |
+| [>r](#>r)             | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | Pop the top of the data stack and push it onto the return stack |
+| [r>](#r>)             | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 1 | Pop the top of the return stack and push it onto the data stack |
+| [&](#&)               | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | pop the stack and replace the top with N & T |
+| [or](#or)             | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 1 | pop the stack and replace the top with N | T |
+| [^](#^)               | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | pop the stack and replace the top with N ^ T |
+| [nip](#nip)           | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 1 | 1 | pop the next-to-top from the data stack |
+| [drop](#drop)         | 0 | 0 | 1 | 0 | 1 | 0 | 1 | 0 | 0 | drop the top value from the stack |
+| [1+](#1+)             | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 0 | Add 1 to T |
+| [1-](#1-)             | 0 | 0 | 1 | 0 | 1 | 1 | 1 | 0 | 0 | Subtract 1 from T |
+| [store](#store)       | 0 | 0 | 1 | 1 | 0 | 0 | 0 | m | m | Store N in the T'th entry in bank "<tt>mm</tt>", drop the top of the data stack |
+| [fetch](#fetch)       | 0 | 0 | 1 | 1 | 0 | 1 | 0 | m | m | Exchange the top of the stack with the T'th value from bank "<tt>mm</tt>" |
+| [store+](#store+)     | 0 | 0 | 1 | 1 | 1 | 0 | 0 | m | m | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and increment T |
+| [store-](#store-)     | 0 | 0 | 1 | 1 | 1 | 0 | 1 | m | m | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and decrement T |
+| [fetch+](#fetch+)     | 0 | 0 | 1 | 1 | 1 | 1 | 0 | m | m | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and increment T |
+| [fetch-](#fetch-)     | 0 | 0 | 1 | 1 | 1 | 1 | 1 | m | m | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and decrement T |
+| [jump](#jump)         | 0 | 1 | 0 | 0 | x | x | x | x | x | Jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [jumpc](#jumpc)       | 0 | 1 | 0 | 1 | x | x | x | x | x | Conditionally jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [call](#call)         | 0 | 1 | 1 | 0 | x | x | x | x | x | Call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [callc](#callc)       | 0 | 1 | 1 | 1 | x | x | x | x | x | Conditionally call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [push](#push)         | 1 | x | x | x | x | x | x | x | x | Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack. |
 
 **Nomenclature:**
 
