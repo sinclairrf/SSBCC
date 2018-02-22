@@ -371,26 +371,24 @@ This section documents the opcodes.
 
 Alphabetic listing:
 
-[&](#&),
-[+](#+),
-[+c](#+c),
-[-](#-),
-[-1<>](#-1<>),
-[-1=](#-1=),
-[-c](#-c),
-[0<>](#0<>),
-[0=](#0=),
-[0>>](#0>>),
-[1+](#1+),
-[1-](#1-),
-[1>>](#1>>),
-[<<0](#<<0),
-[<<1](#<<1),
-[<<msb](#<<msb),
-[>r](#>r),
-[FE=](#FE=),
-[FF=](#FF=),
-[^](#^),
+[&](#amp),
+[+](#plus),
+[+c](#plus_c),
+[-](#minus),
+[-1<>](#minus_1_not_equal),
+[-1=](#minus_1_equal),
+[-c](#minus_c),
+[0<>](#0_not_equal),
+[0=](#0_equal),
+[0>>](#0_gt_gt),
+[1+](#1_plus),
+[1-](#1_minus),
+[1>>](#1_gt_gt),
+[<<0](#lt_lt_0),
+[<<1](#lt_lt_1),
+[<<msb](#lt_lt_msb),
+[>r](#gt_r),
+[^](#carot),
 [call](#call),
 [callc](#callc),
 [dis](#dis),
@@ -398,75 +396,77 @@ Alphabetic listing:
 [dup](#dup),
 [ena](#ena),
 [fetch](#fetch),
-[fetch+](#fetch+),
-[fetch-](#fetch-),
+[fetch+](#fetch_plus),
+[fetch-](#fetch_minus),
 [inport](#inport),
 [jump](#jump),
 [jumpc](#jumpc),
-[lsb>>](#lsb>>),
-[msb>>](#msb>>),
+[lsb>>](#lsb_gt_gt),
+[msb>>](#msb_gt_gt),
 [nip](#nip),
 [nop](#nop),
 [or](#or),
 [outport](#outport),
 [over](#over),
 [push](#push),
-[r>](#r>),
-[r@](#r@),
+[r>](#r_gt),
+[r@](#r_at),
 [return](#return),
 [store](#store),
-[store+](#store+),
-[store-](#store-),
+[store+](#store_plus),
+[store-](#store_minus),
 [swap](#swap)
 
 <a name="opcode_mapping">Opcode Mapping</a>
 -------------------------------------------
 
-| Opcode                | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | Description |
-| --------------------- | - | - | - | - | - | - | - | - | - | ----------- |
-| [nop](#nop)           | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | no operation |
-| [<<0](#<<0)           | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | left shift 1 bit and bring in a 0 |
-| [<<1](#<<1)           | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | left shift 1 bit and bring in a 1 |
-| [<<msb](#<<msb)       | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | left shift 1 bit and rotate the msb into the lsb |
-| [0>>](#0>>)           | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | right shift 1 bit and bring in a 0 |
-| [1>>](#1>>)           | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | right shift 1 bit and bring in a 1 |
-| [msb>>](#msb>>)       | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | right shift 1 bit and keep the msb the same |
-| [lsb>>](#lsb>>)       | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | right shift 1 bit and rotate the lsb into the msb |
-| [dup](#dup)           | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | push a duplicate of the top of the data stack onto the data stack |
-| [r@](#r@)             | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | push a duplicate of the top of the return stack onto the data stack |
-| [over](#over)         | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | push a duplicate of the next-to-top of the data stack onto the data stack |
-| [swap](#swap)         | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | swap the top and the next-to-top of the data stack |
-| [+](#+)               | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | pop the stack and replace the top with N+T |
-| [-](#-)               | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | pop the stack and replace the top with N-T |
-| [dis](#dis)           | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | disable interrupts |
-| [ena](#ena)           | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 1 | enable interrupts |
-| [0=](#0=)             | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0x00</tt>" (i.e., it is zero), otherwise replace it with "<tt>0x00</tt>" |
-| [0<>](#0<>)           | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0x00</tt>" (i.e., it is non-zero), otherwise replace it with "<tt>0x00</tt>" |
-| [-1=](#-1=)           | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0xFF</tt>" (i.e., it is all ones), otherwise replace it with "<tt>0x00</tt>" |
-| [-1<>](#-1<>)         | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 1 | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0xFF</tt>" (i.e., it is not all ones), otherwise replace it with "<tt>0x00</tt>" |
-| [return](#return)     | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | return from a function call |
-| [inport](#inport)     | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | replace the top of the stack with the contents of the specified input port |
-| [outport](#outport)   | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | 0 | write the next-to-top of the data stack to the output port specified by the top of the data stack |
-| [>r](#>r)             | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | Pop the top of the data stack and push it onto the return stack |
-| [r>](#r>)             | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 1 | Pop the top of the return stack and push it onto the data stack |
-| [&](#&)               | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | pop the stack and replace the top with N & T |
-| [or](#or)             | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 1 | pop the stack and replace the top with N | T |
-| [^](#^)               | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 1 | 0 | pop the stack and replace the top with N ^ T |
-| [nip](#nip)           | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 1 | 1 | pop the next-to-top from the data stack |
-| [drop](#drop)         | 0 | 0 | 1 | 0 | 1 | 0 | 1 | 0 | 0 | drop the top value from the stack |
-| [1+](#1+)             | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 0 | Add 1 to T |
-| [1-](#1-)             | 0 | 0 | 1 | 0 | 1 | 1 | 1 | 0 | 0 | Subtract 1 from T |
-| [store](#store)       | 0 | 0 | 1 | 1 | 0 | 0 | 0 | m | m | Store N in the T'th entry in bank "<tt>mm</tt>", drop the top of the data stack |
-| [fetch](#fetch)       | 0 | 0 | 1 | 1 | 0 | 1 | 0 | m | m | Exchange the top of the stack with the T'th value from bank "<tt>mm</tt>" |
-| [store+](#store+)     | 0 | 0 | 1 | 1 | 1 | 0 | 0 | m | m | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and increment T |
-| [store-](#store-)     | 0 | 0 | 1 | 1 | 1 | 0 | 1 | m | m | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and decrement T |
-| [fetch+](#fetch+)     | 0 | 0 | 1 | 1 | 1 | 1 | 0 | m | m | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and increment T |
-| [fetch-](#fetch-)     | 0 | 0 | 1 | 1 | 1 | 1 | 1 | m | m | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and decrement T |
-| [jump](#jump)         | 0 | 1 | 0 | 0 | x | x | x | x | x | Jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [jumpc](#jumpc)       | 0 | 1 | 0 | 1 | x | x | x | x | x | Conditionally jump to the address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [call](#call)         | 0 | 1 | 1 | 0 | x | x | x | x | x | Call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [callc](#callc)       | 0 | 1 | 1 | 1 | x | x | x | x | x | Conditionally call the function at address "<tt>x_xxxx_TTTT_TTTT</tt>" |
-| [push](#push)         | 1 | x | x | x | x | x | x | x | x | Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack. |
+| Opcode                        |  8  |  7  |     |  6  |  5  |  4  |  3  |     |  2  |  1  |  0  | Description |
+| ----------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ----------- |
+| [nop](#nop)                   |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  0  |  0  |  0  | no operation |
+| [<<0](#lt_lt_0)               |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  0  |  0  |  1  | left shift 1 bit and bring in a 0 |
+| [<<1](#lt_lt_1)               |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  0  |  1  |  0  | left shift 1 bit and bring in a 1 |
+| [<<msb](#lt_lt_msb)           |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  0  |  1  |  1  | left shift 1 bit and rotate the msb into the lsb |
+| [0>>](#0_gt_gt)               |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  1  |  0  |  0  | right shift 1 bit and bring in a 0 |
+| [1>>](#1_gt_gt)               |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  1  |  0  |  1  | right shift 1 bit and bring in a 1 |
+| [msb>>](#msb_gt_gt)           |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  1  |  1  |  0  | right shift 1 bit and keep the msb the same |
+| [lsb>>](#lsb_gt_gt)           |  0  |  0  |     |  0  |  0  |  0  |  0  |     |  1  |  1  |  1  | right shift 1 bit and rotate the lsb into the msb |
+| [dup](#dup)                   |  0  |  0  |     |  0  |  0  |  0  |  1  |     |  0  |  0  |  0  | push a duplicate of the top of the data stack onto the data stack |
+| [r@](#r_at)                   |  0  |  0  |     |  0  |  0  |  0  |  1  |     |  0  |  0  |  1  | push a duplicate of the top of the return stack onto the data stack |
+| [over](#over)                 |  0  |  0  |     |  0  |  0  |  0  |  1  |     |  0  |  1  |  0  | push a duplicate of the next-to-top of the data stack onto the data stack |
+| [+c](#plus_c)                 |  0  |  0  |     |  0  |  0  |  0  |  1  |     |  0  |  1  |  1  | push the carry bit for an addition onto the data stack |
+| [-c](#minus_c)                |  0  |  0  |     |  0  |  0  |  0  |  1  |     |  1  |  1  |  1  | push the carry bit for a subtraction onto the data stack |
+| [swap](#swap)                 |  0  |  0  |     |  0  |  0  |  1  |  0  |     |  0  |  1  |  0  | swap the top and the next-to-top of the data stack |
+| [+](#plus)                    |  0  |  0  |     |  0  |  0  |  1  |  1  |     |  0  |  0  |  0  | pop the stack and replace the top with N+T |
+| [-](#minus)                   |  0  |  0  |     |  0  |  0  |  1  |  1  |     |  1  |  0  |  0  | pop the stack and replace the top with N-T |
+| [dis](#dis)                   |  0  |  0  |     |  0  |  0  |  1  |  1  |     |  0  |  0  |  0  | disable interrupts |
+| [ena](#ena)                   |  0  |  0  |     |  0  |  0  |  1  |  1  |     |  0  |  0  |  1  | enable interrupts |
+| [0=](#0_equal)                |  0  |  0  |     |  0  |  1  |  0  |  0  |     |  0  |  0  |  0  | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0x00</tt>" (i.e., it is zero), otherwise replace it with "<tt>0x00</tt>" |
+| [0<>](#0_not_equal)           |  0  |  0  |     |  0  |  1  |  0  |  0  |     |  0  |  0  |  1  | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0x00</tt>" (i.e., it is non-zero), otherwise replace it with "<tt>0x00</tt>" |
+| [-1=](#minus_1_equal)         |  0  |  0  |     |  0  |  1  |  0  |  0  |     |  0  |  1  |  0  | replace the top of the stack with "<tt>0xFF</tt>" if it is "<tt>0xFF</tt>" (i.e., it is all ones), otherwise replace it with "<tt>0x00</tt>" |
+| [-1<>](#minus_1_not_equal)    |  0  |  0  |     |  0  |  1  |  0  |  0  |     |  0  |  1  |  1  | replace the top of the stack with "<tt>0xFF</tt>" if it is not "<tt>0xFF</tt>" (i.e., it is not all ones), otherwise replace it with "<tt>0x00</tt>" |
+| [return](#return)             |  0  |  0  |     |  0  |  1  |  0  |  1  |     |  0  |  0  |  0  | return from a function call |
+| [inport](#inport)             |  0  |  0  |     |  0  |  1  |  1  |  0  |     |  0  |  0  |  0  | replace the top of the stack with the contents of the specified input port |
+| [outport](#outport)           |  0  |  0  |     |  0  |  1  |  1  |  1  |     |  0  |  0  |  0  | write the next-to-top of the data stack to the output port specified by the top of the data stack |
+| [>r](#gt_r)                   |  0  |  0  |     |  1  |  0  |  0  |  0  |     |  0  |  0  |  0  | Pop the top of the data stack and push it onto the return stack |
+| [r>](#r_gt)                   |  0  |  0  |     |  1  |  0  |  0  |  1  |     |  0  |  0  |  1  | Pop the top of the return stack and push it onto the data stack |
+| [&](#amp)                     |  0  |  0  |     |  1  |  0  |  1  |  0  |     |  0  |  0  |  0  | pop the stack and replace the top with N & T |
+| [or](#or)                     |  0  |  0  |     |  1  |  0  |  1  |  0  |     |  0  |  0  |  1  | pop the stack and replace the top with N \| T |
+| [^](#carot)                   |  0  |  0  |     |  1  |  0  |  1  |  0  |     |  0  |  1  |  0  | pop the stack and replace the top with N ^ T |
+| [nip](#nip)                   |  0  |  0  |     |  1  |  0  |  1  |  0  |     |  0  |  1  |  1  | pop the next-to-top from the data stack |
+| [drop](#drop)                 |  0  |  0  |     |  1  |  0  |  1  |  0  |     |  1  |  0  |  0  | drop the top value from the stack |
+| [1+](#1_plus)                 |  0  |  0  |     |  1  |  0  |  1  |  1  |     |  0  |  0  |  0  | Add 1 to T |
+| [1-](#1_minus)                |  0  |  0  |     |  1  |  0  |  1  |  1  |     |  1  |  0  |  0  | Subtract 1 from T |
+| [store](#store)               |  0  |  0  |     |  1  |  1  |  0  |  0  |     |  0  |  m  |  m  | Store N in the T'th entry in bank "<tt>mm</tt>", drop the top of the data stack |
+| [fetch](#fetch)               |  0  |  0  |     |  1  |  1  |  0  |  1  |     |  0  |  m  |  m  | Exchange the top of the stack with the T'th value from bank "<tt>mm</tt>" |
+| [store+](#store_plus)         |  0  |  0  |     |  1  |  1  |  1  |  0  |     |  0  |  m  |  m  | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and increment T |
+| [store-](#store_minus)        |  0  |  0  |     |  1  |  1  |  1  |  0  |     |  1  |  m  |  m  | Store N in the T'th entry in bank "<tt>mm</tt>", nip the data stack, and decrement T |
+| [fetch+](#fetch_plus)         |  0  |  0  |     |  1  |  1  |  1  |  1  |     |  0  |  m  |  m  | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and increment T |
+| [fetch-](#fetch_minus)        |  0  |  0  |     |  1  |  1  |  1  |  1  |     |  1  |  m  |  m  | Push the T'th entry from bank "<tt>mm</tt>" into the data stack as N and decrement T |
+| [jump](#jump)                 |  0  |  1  |     |  0  |  0  |  x  |  x  |     |  x  |  x  |  x  | Jump to the 13-bit address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [jumpc](#jumpc)               |  0  |  1  |     |  0  |  1  |  x  |  x  |     |  x  |  x  |  x  | Conditionally jump to the 13-bit address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [call](#call)                 |  0  |  1  |     |  1  |  0  |  x  |  x  |     |  x  |  x  |  x  | Call the function at the 13-bit address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [callc](#callc)               |  0  |  1  |     |  1  |  1  |  x  |  x  |     |  x  |  x  |  x  | Conditionally call the function at the 13-bit address "<tt>x_xxxx_TTTT_TTTT</tt>" |
+| [push](#push)                 |  1  |  x  |     |  x  |  x  |  x  |  x  |     |  x  |  x  |  x  | Push the 8-bit value "<tt>xxxx_xxxx</tt>" onto the data stack. |
 
 **Nomenclature:**
 
@@ -490,7 +490,7 @@ and to decrement the pointer into the data stack.
 <tt>R <= \*return--</tt> and <tt>\*++return <= R</tt> are similar but refer to
 the top of the return stack and the pointer into the return stack RAM.
 
-<a name="&">Instruction:  &</a>
+<a name="amp">Instruction:  &</a>
 -----------------------------------
 
 **Description:**
@@ -507,7 +507,7 @@ T <= T & N
 N <= *stack--
 ```
 
-<a name="+">Instruction:  +</a>
+<a name="plus">Instruction:  +</a>
 -------------------------------
 
 **Description:**
@@ -524,7 +524,7 @@ T <= N + T
 N <= *stack--
 ```
 
-<a name="+c">Instruction:  +c</a>
+<a name="plus_c">Instruction:  +c</a>
 ---------------------------------
 
 **Description:**
@@ -545,7 +545,7 @@ N <= T
 *++stack <= N
 ```
 
-<a name="-">Instruction:  -</a>
+<a name="minus">Instruction:  -</a>
 -------------------------------
 
 **Description:**
@@ -562,7 +562,7 @@ T <= N - T
 N <= *stack--
 ```
 
-<a name="-1<>">Instruction:  -1<></a>
+<a name="minus_1_not_equal">Instruction:  -1<></a>
 -------------------------------------
 
 **Description:**
@@ -582,7 +582,7 @@ else
 N and stack unchanged
 ```
 
-<a name="-1=">Instruction:  -1=</a>
+<a name="minus_1_equal">Instruction:  -1=</a>
 -----------------------------------
 
 **Description:**
@@ -602,7 +602,7 @@ else
 N and stack unchanged
 ```
 
-<a name="-c">Instruction:  -c</a>
+<a name="minus_c">Instruction:  -c</a>
 ---------------------------------
 
 **Description:**
@@ -623,7 +623,7 @@ N <= T
 *++stack <= N
 ```
 
-<a name="0<>">Instruction:  0<></a>
+<a name="0_not_equal">Instruction:  0<></a>
 -----------------------------------
 
 **Description:**
@@ -643,7 +643,7 @@ else
 N and stack unchanged
 ```
 
-<a name="0=">Instruction:  0=</a>
+<a name="0_equal">Instruction:  0=</a>
 ---------------------------------
 
 **Description:**
@@ -663,7 +663,7 @@ else
 N and stack unchanged
 ```
 
-<a name="0>>">Instruction:  0>></a>
+<a name="0_gt_gt">Instruction:  0>></a>
 -----------------------------------------
 
 **Description:**
@@ -680,7 +680,7 @@ T <= { 0, T[7], T[6], ..., T[1] }
 N and stack unchanged
 ```
 
-<a name="1+">Instruction:  1+</a>
+<a name="1_plus">Instruction:  1+</a>
 ---------------------------------
 
 **Description:**
@@ -696,7 +696,7 @@ T <= T + 1
 N and stack unchanged
 ```
 
-<a name="1-">Instruction:  1-</a>
+<a name="1_minus">Instruction:  1-</a>
 ---------------------------------
 
 **Description:**
@@ -712,7 +712,7 @@ T <= T - 1
 N and stack unchanged
 ```
 
-<a name="1>>">Instruction:  1>></a>
+<a name="1_gt_gt">Instruction:  1>></a>
 -----------------------------------------
 
 **Description:**
@@ -729,7 +729,7 @@ T <= { 1, T[7], T[6], ..., T[1] }
 N and stack unchanged
 ```
 
-<a name="<<0">Instruction:  <<0</a>
+<a name="lt_lt_0">Instruction:  <<0</a>
 -----------------------------------------
 
 **Description:**
@@ -746,7 +746,7 @@ T <= { T[6], T[5], ..., T[0], 0 }
 N and stack unchanged
 ```
 
-<a name="<<1">Instruction:  <<1</a>
+<a name="lt_lt_1">Instruction:  <<1</a>
 -----------------------------------------
 
 **Description:**
@@ -763,7 +763,7 @@ T <= { T[6], T[5], ..., T[0], 1 }
 N and stack unchanged
 ```
 
-<a name="<<msb">Instruction:  &lt;&lt;msb</a>
+<a name="lt_lt_msb">Instruction:  &lt;&lt;msb</a>
 ---------------------------------------------
 
 **Description:**
@@ -779,7 +779,7 @@ T <= { T[6], T[5], ..., T[0], T[7] }
 N and stack unchanged
 ```
 
-<a name=">r">Instruction:  &gt;r</a>
+<a name="gt_r">Instruction:  &gt;r</a>
 ------------------------------------
 
 **Description:**
@@ -796,7 +796,7 @@ T <= N
 N <= *stack--
 ```
 
-<a name="^">Instruction:  ^</a>
+<a name="carot">Instruction:  ^</a>
 -------------------------------
 
 **Description:**
@@ -965,7 +965,7 @@ T <= memory[T] where the memory bank is specified by <tt>opcode[1:0]</tt>
 N and stack unchanged
 ```
 
-<a name="fetch+">Instruction:  fetch+</a>
+<a name="fetch_plus">Instruction:  fetch+</a>
 -----------------------------------------
 
 **Description:**
@@ -983,7 +983,7 @@ N <= memory[T] where the memory bank is specified by <tt>opcode[1:0]</tt>
 *++stack <= N
 ```
 
-<a name="fetch-">Instruction:  fetch-</a>
+<a name="fetch_minus">Instruction:  fetch-</a>
 -----------------------------------------
 
 **Description:**
@@ -1021,7 +1021,7 @@ N and stack unchanged
 **Special:**
 
 The recommended procedure to read from an input port is to use the
-"<tt>[.inport](#.inport)</tt>" macro.
+"<tt>[.inport](#dot_inport)</tt>" macro.
 
 <a name="jump">Instruction:  jump</a>
 -------------------------------------
@@ -1075,7 +1075,7 @@ The <tt>.jumpc</tt> macro must be used to perform conditional jumps.
 Interrupts are disabled during the clock cycle immediately following a jumpc
 instruction.
 
-<a name="lsb>>">Instruction:  lsb>></a>
+<a name="lsb_gt_gt">Instruction:  lsb>></a>
 ---------------------------------------------
 
 **Description:**
@@ -1091,7 +1091,7 @@ T <= { T[0], T[7], T[6], ..., T[1] }
 N and stack unchanged
 ```
 
-<a name="msb>>">Instruction:  msb>></a>
+<a name="msb_gt_gt">Instruction:  msb>></a>
 ---------------------------------------------
 
 **Description:**
@@ -1176,7 +1176,10 @@ outport[T] <= N
 **Special:**
 
 The recommended procedure to write to an output port is to use the
-"<tt>[.outport](#.outport)</tt>" and <tt>[.outstrobe](#.outstrobe)</tt> macros.
+<tt>[.outport](#dot_outport)</tt> and <tt>[.outstrobe](#dot_outstrobe)</tt> macros.
+The <tt>.outport</tt> macro is required for output ports with bit widths and
+optional strobes, the <tt>.outstrobe</tt> macro is required for output ports
+that are strobe only.
 
 <a name="over">Instruction:  over</a>
 -------------------------------------
@@ -1212,7 +1215,7 @@ N <= T
 *++stack <= N
 ```
 
-<a name="r>">Instruction:  r&gt;</a>
+<a name="r_gt">Instruction:  r&gt;</a>
 ------------------------------------
 
 **Description:**
@@ -1229,7 +1232,7 @@ N <= T
 *++stack <= N
 ```
 
-<a name="r@">Instruction:  r@</a>
+<a name="r_at">Instruction:  r@</a>
 ---------------------------------
 
 **Description:**
@@ -1263,7 +1266,7 @@ T, N, and stack unchanged
 
 **Special:**
 
-The <tt>[.return](#.return)</tt> macro must be used to perform function returns.
+The <tt>[.return](#dot_return)</tt> macro must be used to perform function returns.
 
 Interrupts are disabled during the clock cycle immediately following a
 <tt>return</tt> instruction.
@@ -1289,10 +1292,10 @@ memory[T] <= N where the memory bank is specified by <tt>opcode[1:0]</tt>
 
 **Special:**
 
-The <tt>[.store](#.store)</tt> macro must be used to incorporate the memory bank
+The <tt>[.store](#dot_store)</tt> macro must be used to incorporate the memory bank
 index into the instruction.
 
-<a name="store+">Instruction:  store+</a>
+<a name="store_plus">Instruction:  store+</a>
 -----------------------------------------
 
 **Description:**
@@ -1314,10 +1317,10 @@ memory[T] <= N where the memory bank is specified by <tt>opcode[1:0]</tt>
 
 **Special:**
 
-The <tt>[.store+](#.store+)</tt> macro must be used to incorporate the memory bank
+The <tt>[.store+](#dot_store_plus)</tt> macro must be used to incorporate the memory bank
 index into the instruction.
 
-<a name="store-">Instruction:  store-</a>
+<a name="store_minus">Instruction:  store-</a>
 -----------------------------------------
 
 **Description:**
@@ -1339,7 +1342,7 @@ memory[T] <= N where the memory bank is specified by <tt>opcode[1:0]</tt>
 
 **Special:**
 
-The <tt>[.store-](#.store-)</tt> macro must be used to incorporate the memory bank
+The <tt>[.store-](#dot_store_minus)</tt> macro must be used to incorporate the memory bank
 index into the instruction.
 
 <a name="swap">Instruction:  swap</a>
@@ -1492,15 +1495,16 @@ Directives
 ----------
 
 Alphebetic listing:
-[.constant](#.constant),
-[.function](#.function),
-[.include](#.include),
-[.interrupt](#.interrupt),
-[.main](#.main),
-[.memory](#.memory),
-and [.variable](#.variable).
+[.constant](#dot_constant),
+[.function](#dot_function),
+[.include](#dot_include),
+[.interrupt](#dot_interrupt),
+[.main](#dot_main),
+[.memory](#dot_memory),
+and
+[.variable](#dot_variable).
 
-### <a name=".constant">.constant</a>
+### <a name="dot_constant">.constant</a>
 
 **Description:**
 
@@ -1539,7 +1543,7 @@ Set a constant to a string:
 .constant STRING N"Hello World!"
 ```
 
-### <a name=".function">.function</a>
+### <a name="dot_function">.function</a>
 
 **Description:**
 
@@ -1563,7 +1567,7 @@ The function must end in a return or an unconditional jump.
 .function add5 5 .return(+)
 ```
 
-### <a name=".include">.include</a>
+### <a name="dot_include">.include</a>
 
 **Description:**
 
@@ -1575,7 +1579,7 @@ Include the source code from the specified assembly file.
 .include filename.s
 ```
 
-### <a name=".interrupt">.interrupt</a>
+### <a name="dot_interrupt">.interrupt</a>
 
 **Description:**
 
@@ -1603,7 +1607,7 @@ Count the number of interrupts encountered.
   .fetchvalue(interrupt_count) 1+ .storevalue(interrupt_count) .return
 ```
 
-### <a name=".main">.main</a>
+### <a name="dot_main">.main</a>
 
 **Description:**
 
@@ -1624,7 +1628,7 @@ The main function must end in an unconditional jump.
 
 See the <tt>examples</tt> directory.
 
-### <a name=".memory">.memory</a>
+### <a name="dot_memory">.memory</a>
 
 **Description:**
 
@@ -1646,9 +1650,9 @@ architecture file.
 
 **Example:**
 
-See [.variable](#.variable).
+See [.variable](#dot_variable).
 
-### <a name=".variable">.variable</a>
+### <a name="dot_variable">.variable</a>
 
 **Description:**
 
@@ -1690,27 +1694,29 @@ Macros
 ======
 
 Alphebetic listing:
-[.call](#.call),
-[.callc](#.callc),
-[.fetch](#.fetch),
-[.fetch+](#.fetch+),
-[.fetch-](#.fetch-),
-[.fetchindexed](#.fetchindexed),
-[.fetchvalue](#.fetchvalue),
-[.fetchvector](#.fetchvector),
-[.inport](#.inport),
-[.jump](#.jump),
-[.jumpc](#.jumpc),
-[.outport](#.outport),
-[.return](#.return),
-[.store](#.store),
-[.store+](#.store+),
-[.store-](#.store-),
-[.storeindexed](#.storeindexed),
-[.storevalue](#.storevalue),
-and [.storevector](#.storevector).
+[.call](#dot_call),
+[.callc](#dot_callc),
+[.fetch](#dot_fetch),
+[.fetch+](#dot_fetch_plus),
+[.fetch-](#dot_fetch_minus),
+[.fetchindexed](#dot_fetchindexed),
+[.fetchvalue](#dot_fetchvalue),
+[.fetchvector](#dot_fetchvector),
+[.inport](#dot_inport),
+[.jump](#dot_jump),
+[.jumpc](#dot_jumpc),
+[.outport](#dot_outport),
+[.outstrobe](#dot_outstrobe),
+[.return](#dot_return),
+[.store](#dot_store),
+[.store+](#dot_store_plus),
+[.store-](#dot_store_minus),
+[.storeindexed](#dot_storeindexed),
+[.storevalue](#dot_storevalue),
+and
+[.storevector](#dot_storevector).
 
-### <a name=".call"></tt>.call(function[,instruction])</tt></a>
+### <a name="dot_call"></tt>.call(function[,instruction])</tt></a>
 
 - <tt>function</tt> is the name of a function
 
@@ -1727,7 +1733,7 @@ specified function:
 | 2 | <tt>call(function[12:8])</tt> | the call instruction with the 5 msb of the function address |
 | 3 | <tt>instruction</tt> | the instruction following the call instruction |
 
-### <a name=".callc"><tt>.callc(function[,instruction])</tt></a>
+### <a name="dot_callc"><tt>.callc(function[,instruction])</tt></a>
 
 - <tt>function</tt> is the name of a function
 
@@ -1744,28 +1750,28 @@ This generates the following 3 instruction sequence to conditionally
 | 2 | <tt>callc(function[12:8])</tt> | the callc instruction with the 5 msb of the function address |
 | 3 | <tt>instruction</tt> | the instruction following the call instruction |
 
-### <a name=".fetch"><tt>.fetch(ram)</tt></a>
+### <a name="dot_fetch"><tt>.fetch(ram)</tt></a>
 
 - <tt>ram</tt> is the memory from which values are being fetched
 
 This macro is used to incorporate the memory index for <tt>ram</tt> into the
 <tt>[fetch](#fetch)</tt> instruction.
 
-### <a name=".fetch-"><tt>.fetch-(ram)</tt></a>
+### <a name="dot_fetch_minus"><tt>.fetch-(ram)</tt></a>
 
 - <tt>ram</tt> is the memory from which values are being fetched
 
 This macro is used to incorporate the memory index for <tt>ram</tt> into the
-<tt>[fetch-](#fetch-)</tt> instruction.
+<tt>[fetch-](#fetch_minus)</tt> instruction.
 
-### <a name=".fetch+"><tt>.fetch+(ram)</tt></a>
+### <a name="dot_fetch_plus"><tt>.fetch+(ram)</tt></a>
 
 - <tt>ram</tt> is the memory from which values are being fetched
 
 This macro is used to incorporate the memory index for <tt>ram</tt> into the
-<tt>[fetch+](#fetch+)</tt> instruction.
+<tt>[fetch+](#fetch_plus)</tt> instruction.
 
-### <a name=".fetchindexed"><tt>.fetchindexed(variable)</tt></a>
+### <a name="dot_fetchindexed"><tt>.fetchindexed(variable)</tt></a>
 
 - <tt>variable</tt> is a variable name
 
@@ -1781,7 +1787,7 @@ multi-element array and perform a fetch indexed by the top of the data stack.
 
 Here the variable is stored in the memory <tt>ram</tt>.
 
-### <a name=".fetchvalue">.fetchvalue(variable)</a>
+### <a name="dot_fetchvalue">.fetchvalue(variable)</a>
 
 - <tt>variable</tt> is a variable name
 
@@ -1795,7 +1801,7 @@ value for the specified variable from memory.
 
 Here the variable is stored in the memory <tt>ram</tt>.
 
-### <a name=".fetchvector"><tt>.fetchvector(name,length)</tt></a>
+### <a name="dot_fetchvector"><tt>.fetchvector(name,length)</tt></a>
 
 - <tt>name</tt> is a variable name
 
@@ -1811,7 +1817,7 @@ Forth-preferred order.
 | 2 .. <tt>length</tt> | <tt>.fetch-(ram)</tt> | push the last element of the vector onto the data stack under the top and decrement the memory index |
 | <tt>length+1</tt> | .fetch(ram) | replace the index with the first element of the variable |
 
-### <a name=".inport"><tt>.inport(I_PORT)</tt></a>
+### <a name="dot_inport"><tt>.inport(I_PORT)</tt></a>
 
 - <tt>I_PORT</tt> is the input port number
 
@@ -1823,7 +1829,7 @@ input port.
 | 1 | <tt>I_PORT</tt> | push the input port index onto the data stack |
 | 2 | <tt>inport</tt> | the inport instruction |
 
-### <a name=".jump"><tt>.jump(target[,instruction])</tt></a>
+### <a name="dot_jump"><tt>.jump(target[,instruction])</tt></a>
 
 - <tt>target</tt> is the address of the jump target
 
@@ -1841,7 +1847,7 @@ target address as follows:
 | 2 | <tt>jump(target[12:8])</tt> | the <tt>jump</tt> instruction with the 5 msb of the target address |
 | 3 | <tt>instruction</tt> | the instruction following the jump instruction |
 
-### <a name=".jumpc"><tt>.jumpc(target[,instruction])</tt></a>
+### <a name="dot_jumpc"><tt>.jumpc(target[,instruction])</tt></a>
 
 - <tt>target</tt> is the address of the jump target
 
@@ -1859,7 +1865,7 @@ the specified target address as follows:
 | 2 | <tt>jumpc(target[12:8])</tt> | the <tt>jumpc</tt> instruction with the 5 msb of the target address |
 | 3 | <tt>instruction</tt> | the instruction following the jumpc instruction |
 
-### <a name=".outport"><tt>.outport(O_PORT[,instruction])</tt></a>
+### <a name="dot_outport"><tt>.outport(O_PORT[,instruction])</tt></a>
 
 - <tt>O_PORT</tt> is the output port number
 
@@ -1878,7 +1884,19 @@ top of the data stack to the specified output port as follows.  The default
 | 2 | <tt>outport</tt> | the <tt>outport</tt> instruction |
 | 3 | <tt>instruction</tt> | the instruction following the outport instruction |
 
-### <a name=".return"><tt>.return[(instruction)]</tt></a>
+### <a name="dot_outstrobe"><tt>.outstrobe(O_PORT)</tt></a>
+
+- <tt>O_PORT</tt> is the output port number
+
+This macro generates the two instruction sequence to write the value at the
+top of the data stack to the specified output port as follows.
+
+| index | instruction | description |
+| ----- | ----------- | ----------- |
+| 1 | <tt>O_PORT</tt> | push the output port index onto the data stack |
+| 2 | <tt>outport</tt> | the <tt>outport</tt> instruction |
+
+### <a name="dot_return"><tt>.return[(instruction)]</tt></a>
 
 - <tt>instruction</tt> is an optional instruction to perform immedidately after
   the <tt>return</tt> instruction
@@ -1893,28 +1911,28 @@ follows:
 | 1 | <tt>return</tt> | the <tt>return</tt> instruction |
 | 2 | <tt>instruction</tt> | the instruction following the return instruction |
 
-### <a name=".store"><tt>.store(ram)</tt></a>
+### <a name="dot_store"><tt>.store(ram)</tt></a>
 
 - <tt>ram</tt> is the memory to which values are being stored
 
 This macro is used to incorporate the memory index for <tt>ram</tt> into the
 <tt>[store](#store)</tt> instruction.
 
-### <a name=".store-"><tt>.store-(ram)</tt></a>
+### <a name="dot_store_minus"><tt>.store-(ram)</tt></a>
 
 - <tt>ram</tt> is the memory to which values are being stored
 
 This macro is used to incorporate the memory index for <tt>ram</tt> into the
-<tt>[store-](#store-)</tt> instruction.
+<tt>[store-](#store_minus)</tt> instruction.
 
-### <a name=".store+">.store+</a>
+### <a name="dot_store_plus">.store+</a>
 
 - <tt>ram</tt> is the memory to which values are being stored
 
 This macro is used to incorporate the memory index for <tt>ram</tt> into the
-<tt>[store+](#store+)</tt> instruction.
+<tt>[store+](#store_plus)</tt> instruction.
 
-### <a name=".storeindexed"><tt>.storeindexed(variable[,instruction])</tt></a>
+### <a name="dot_storeindexed"><tt>.storeindexed(variable[,instruction])</tt></a>
 
 - <tt>variable</tt> is a variable name
 
@@ -1935,7 +1953,7 @@ I.e., it generates the four instruction sequence to store
 | 3 | <tt>store(ram)</tt> | store <tt>N</tt> at <tt>ram[T+variable]</tt> |
 | 4 | <tt>instruction</tt> | the instruction following the store instruction |
 
-### <a name=".storevalue"><tt>.storevalue(variable[,instruction])</tt></a>
+### <a name="dot_storevalue"><tt>.storevalue(variable[,instruction])</tt></a>
 
 - <tt>variable</tt> is a variable name
 
@@ -1953,7 +1971,7 @@ data stack at the specified variable.
 | 2 | store(ram) | store the initial value of the top of the data stack at the specified variable |
 | 3 | <tt>instruction</tt> | the instruction following the store instruction |
 
-### <a name=".storevector"><tt>.storevector(variable,length[,instruction])</tt></a>
+### <a name="dot_storevector"><tt>.storevector(variable,length[,instruction])</tt></a>
 
 - <tt>variable</tt> is a variable name
 

@@ -75,7 +75,7 @@ always @ (*)
     default : s_T_stack = s_T;
   endcase
 
-//  opcode = 000011_x00 (adder) and 001xxx_x.. (incrementers)
+//  opcode = 00_0001_x00 (+/-c), 00_0011_x00 (adder) and 00_1xxx_x.. (incrementers)
 always @ (*)
   if (s_opcode[6] == 1'b0)
     case (s_opcode[2])
