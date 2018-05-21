@@ -113,23 +113,16 @@ end else begin : gen__async_rd
   assign s__rd_aclk = s__rd_aclk_out;
 end
 
-// Generate the read address valid signal and record the address acknowledgement
-// pending status.
-reg s__pending_rd_aclk = 1'b0;
+// Generate the read address valid signal.
 always @ (posedge i_aclk)
-  if (~i_aresetn) begin
+  if (~i_aresetn)
     o_arvalid <= 1'b0;
-    s__pending_rd_aclk <= 1'b0;
-  end else if (s__rd_aclk) begin
+  else if (s__rd_aclk)
     o_arvalid <= 1'b1;
-    s__pending_rd_aclk <= 1'b1;
-  end else if (i_arready) begin
+  else if (i_arready)
     o_arvalid <= 1'b0;
-    s__pending_rd_aclk <= 1'b0;
-  end else begin
+  else
     o_arvalid <= o_arvalid;
-    s__pending_rd_aclk <= s__pending_rd_aclk;
-  end
 
 // Generate a strobe from the i_aclk domain to the i_clk domain to latch the
 // incoming read data and then generate a strobe in the reverse direction to
@@ -209,7 +202,7 @@ always @ (posedge i_clk)
 // Composite status (non-zero indicates the bus has not finished the last
 // transaction).
 always @ (posedge i_clk)
-  s__busy <= { s__pending_rd_clk, s__pending_rd_aclk, s__pending_wr };
+  s__busy <= { s__pending_rd_clk, o_arvalid, s__pending_wr };
 
 // Monitor the bresp and rresp 2-bit signals for non-OK indication
 always @ (posedge i_aclk)
