@@ -39,7 +39,7 @@ end
 genvar ix__outclk;
 wire [@DEPTH_NBITS-1@:0] s__ix_in_outclk_p;
 assign s__ix_in_outclk_p[@DEPTH_NBITS-1@] = s__ix_in_gray_s[2][@DEPTH_NBITS-1@];
-for (ix__outclk=@DEPTH_NBITS-1@; ix__outclk>0; ix__outclk=ix__outclk-1) begin : gen_ix_in_outclk_p
+for (ix__outclk=@DEPTH_NBITS-1@; ix__outclk>0; ix__outclk=ix__outclk-1) begin : gen__ix_in_outclk_p
   assign s__ix_in_outclk_p[ix__outclk-1] = s__ix_in_outclk_p[ix__outclk] ^ s__ix_in_gray_s[2][ix__outclk-1];
 end
 reg [@DEPTH_NBITS-1@:0] s__ix_in_outclk = @DEPTH_NBITS@'h0;
@@ -64,7 +64,7 @@ end
 genvar ix__clk;
 wire [@DEPTH_NBITS-1@:0] s__ix_out_clk;
 assign s__ix_out_clk[@DEPTH_NBITS-1@] = s__ix_out_gray_s[2][@DEPTH_NBITS-1@];
-for (ix__clk=@DEPTH_NBITS-1@; ix__clk>0; ix__clk=ix__clk-1) begin : gen_ix_out_clk
+for (ix__clk=@DEPTH_NBITS-1@; ix__clk>0; ix__clk=ix__clk-1) begin : gen__ix_out_clk
   assign s__ix_out_clk[ix__clk-1] = s__ix_out_clk[ix__clk] ^ s__ix_out_gray_s[2][ix__clk-1];
 end
 reg [@DEPTH_NBITS-1@:0] s__delta_clk = @DEPTH_NBITS@'h0;

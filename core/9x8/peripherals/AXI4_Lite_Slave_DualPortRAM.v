@@ -112,7 +112,7 @@ reg [7:0] s__mc_wdata = 8'd0;
 always @ (posedge i_clk)
   s__mc_wdata <= s_N;
 // different memory architectures required by different synthesis tools
-if (@MEM8@) begin : gen_mem8
+if (@MEM8@) begin : gen__mem8
 reg [7:0] s__mem[L__SIZE-1:0];
 genvar ix__mem;
 for (ix__mem=0; ix__mem<4; ix__mem=ix__mem+1) begin : gen__wr
@@ -134,7 +134,7 @@ always @ (posedge i_clk) begin
     s__mem[s__mc_addr_s] = s__mc_wdata;
   s__mc_rdata <= s__mem[s__mc_addr_s];
 end
-end else begin : gen_mem32
+end else begin : gen__mem32
 reg [31:0] s__mem[L__SIZE/4-1:0];
 integer ix__axi;
 always @ (posedge i_aclk)
