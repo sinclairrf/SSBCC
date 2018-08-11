@@ -1,7 +1,14 @@
 #!/usr/bin/python2.7
 #
-# Copyright 2012-2015, Sinclair R.F., Inc.
-# Build an SSBCC system.
+# Copyright 2012-2015, 2018, Sinclair R.F., Inc.
+#
+# Build an SSBCC system as follow:
+#   - Process the command-line arguments
+#   - Read and parse the processor configuration file
+#   - Run the compiler on the specified processor code and load and validate the
+#     resulting binary
+#   - Generate the processor core
+#   - Generate a VHDL Package file for the core
 
 import math
 import os
@@ -94,11 +101,13 @@ try:
   else:
     config.Set('synth_instr_mem',None);
 
+  ##############################################################################
   #
   # Read the configuration file into a line-by-line buffer.
   # Note:  argList.filename is a file handle, so no paths will be searched by
   #        LoadFile.  This is ensured by setting config to None.
   #
+  ##############################################################################
 
   filename = argList.filename.name;
   configList = LoadFile(argList.filename,None);
@@ -114,7 +123,8 @@ try:
   compiler = [];
   user_header = list();
   while configList or configListStack:
-    # If the current file has ended, then proceed to the next file.
+    # If the current file has ended, then validate correct file structure and
+    # proceed to the next file.
     if not configList:
       if not len(bufLine) == 0:
         raise SSBCCException('Malformed configuration command at the end of %s' % filename);
@@ -152,15 +162,13 @@ try:
       cmd = re.findall(r'\s*\.IFDEF\s+(\w+)\s*$',line);
       if not cmd:
         raise SSBCCException('Malformed ".IFDEF" configuration command on %s' % loc);
-      cmd = cmd[0];
-      ifstack.append(config.IsSymbol(cmd));
+      ifstack.append(config.IsSymbol(cmd[0]));
     # .IFNDEF conditional
     elif re.match(r'\s*\.IFNDEF\b',line):
       cmd = re.findall(r'\s*\.IFNDEF\s+(\w+)\s*$',line);
       if not cmd:
         raise SSBCCException('Malformed ".IFNDEF" configuration command on %s' % loc);
-      cmd = cmd[0];
-      ifstack.append(not config.IsSymbol(cmd));
+      ifstack.append(not config.IsSymbol(cmd[0]));
     elif re.match(r'\s*.INCLUDE\b',line):
       cmd = re.findall(r'\s*\.INCLUDE\s+(\S+)\s*$',line);
       if not cmd:
@@ -340,17 +348,17 @@ try:
     config.Set('invertReset',False);
 
   #
-  # end-of-file processing
+  # Ensure required configurations are set.
   #
 
-  if not config.Exists('architecture'):
-    raise SSBCCException('Required ARCHITECTURE configuration command missing');
-  if not config.Exists('data_stack'):
-    raise SSBCCException('Required DATA_STACK configuration command missing');
-  if not config.Exists('nInstructions'):
-    raise SSBCCException('Required INSTRUCTION configuration command missing');
-  if not config.Exists('return_stack'):
-    raise SSBCCException('Required RETURN_STACK configuration command missing');
+  for (configName, configString) in [
+    ('architecture',  'ARCHITECTURE', ),
+    ('data_stack',    'DATA_STACK',   ),
+    ('nInstructions', 'INSTRUCTION',  ),
+    ('return_stack',  'RETURN_STACK', ),
+  ]:
+    if not config.Exists(configName):
+      raise SSBCCException('Required %s configuration command missing' % configString);
 
   # Ensure reasonable values
   if config.Get('nInstructions')['length'] > 2**13:
@@ -371,7 +379,7 @@ try:
     p.GenAssembly(config);
 
   # Compute the file name to store the assembler output
-  assemblerOutput = os.path.splitext(argList.filename.name)[0]+'.9x8-meta'
+  assemblerOutput = config.Get('outCoreName')+'.9x8-meta'
 
   # Compute the command to invoke the compiler.
   if not compiler:
@@ -531,11 +539,13 @@ try:
   #
 
   for line in fpRawCore:
+    # output fixed core contents while ensursing user-defined signals do not
+    # conflict with pre-defined core I/Os
     if not re.match(r'..@SSBCC@',line):
       if re.match(r'\s*(reg|wire)\s',line):
         cmd = re.findall(r'\s*(reg|wire)\s+([[][^]]+]\s+)?(\w+)\b',line);
         if config.IsSymbol(cmd[0][-1]):
-          raise SSBCCException('Symbol "%s" is used by the core and cannot be used by peripherals, etc.' % cmd[0][-1]);
+          raise SSBCCException('Symbol "%s" is used by the core and cannot be used by I/Os, peripherals, etc.' % cmd[0][-1]);
       fpOutCore.write(line);
       continue;
     fillCommand = re.findall(r'..@SSBCC@\s+(\S+)',line)[0];
@@ -569,9 +579,11 @@ try:
     else:
       doFillCommand(fillCommand,fpOutCore,config);
 
+  ##############################################################################
   #
   # Write package file (for use in VHDL or mixed-language projects)
   #
+  ##############################################################################
 
   import ssbccGenVhdlPkg
   ssbccGenVhdlPkg.genVhdlPkg(config);

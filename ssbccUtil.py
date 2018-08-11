@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright 2012, Sinclair R.F., Inc.
+# Copyright 2012-2015, 2018, Sinclair R.F., Inc.
 #
 # Utilities required by ssbcc
 #
@@ -173,7 +173,7 @@ def LoadFile(filename,config):
   for tmpLine in fp:
     ixLine += 1;
     while tmpLine and tmpLine[-1] in ('\n','\r',):
-      tmpLine = tmpLine[0:-1];
+      tmpLine = tmpLine[:-1];
     v.append((tmpLine,ixLine,));
   fp.close();
   return v;
