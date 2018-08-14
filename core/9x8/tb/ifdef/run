@@ -60,7 +60,7 @@ for INCLUDE_UART in false true; do
 done
 
 # Remove the temporary output files.
-rm -f ssbcc uc.9x8-meta uc.v;
+rm -f ssbcc uc.9x8-meta uc.v uc.mem uc_pkg.vhd;
 
 # Print success message and return success indication.
 echo "Passed:  ${NAME}";

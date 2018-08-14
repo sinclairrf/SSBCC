@@ -17,6 +17,6 @@ if [ -n "`./tb | cmp - tb.good 2>&1`" ]; then
   exit 1;
 fi
 
-rm -f ssbcc;
+rm -f ssbcc tb tb.vcd core.9x8-meta core.mem core.v core_pkg.vhd;
 
 echo "Passed:  core"
