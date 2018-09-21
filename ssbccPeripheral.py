@@ -88,11 +88,13 @@ class SSBCCperipheral:
   def GenVerilogFinal(self,config,body):
     """
     Clean up the peripheral code.
-    Change "$clog2" to "clog2" for simulators and synthesis tools that don't
+    - Change "$clog2" to "clog2" for simulators and synthesis tools that don't
       recognize or process "$clog2."
+    - Remove blank lines (to facilitate navigating the micro controller module).
     """
     if config.Get('define_clog2'):
-      body = re.sub('\$clog2','clog2',body);
+      body = re.sub(r'\$clog2','clog2',body);
+    body = re.sub(r'\n{2,}','\n',body,flags=re.DOTALL);
     return body;
 
   def GenVHDL(self,fp,config):
