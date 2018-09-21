@@ -2,7 +2,7 @@
 
 def pushByte(ad):
   """
-  User-defined macro to push a specific byte of a multi-byte onto the data
+  User-defined macro to push a specific byte of a multi-byte value onto the data
   stack.\n
   Usage:
     .pushByte(v,ix)
