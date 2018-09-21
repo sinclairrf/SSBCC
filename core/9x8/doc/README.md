@@ -23,7 +23,9 @@ Directory Contents
 
 This directory contains the assembler and the Verilog template for the
 processor.  While the assember can be run by itself, it is more typically run by
-the <tt>../../ssbcc</tt> script as part of making a complete computer core.
+the <tt>ssbcc</tt> script as part of making a complete computer core.
+In&nbsp;particular, the `ssbcc` script automatically generates the
+architecture-dependent parameters, port indices, etc. required by the assembler.
 
 <a name="introduction"></a>
 Introduction
@@ -269,7 +271,7 @@ instructions in detail.
 
   has the reverse effect in that it stores the top four values on the stack in
   memory with the value that had been at the top of the stack being stored at
-  address <tt>00_0001_000</tt>.  That is, it has the effect of storing the
+  address <tt>00_0001_0000</tt>.  That is, it has the effect of storing the
   values from the four-fetch instruction sequence into memory and preserving
   their order.
 
@@ -1254,7 +1256,7 @@ N <= T
 
 **Description:**
 
-Popd the top of the return stack into the PC.
+Pop the top of the return stack into the PC.
 
 **Operation:**
 
@@ -1693,6 +1695,9 @@ Declare an array to convert 4-bit values to their hex character.
 Macros
 ======
 
+Macros are used to access opcodes that cannot be used directly or to help
+improve code readability and may also provide syntax checking.
+
 Alphebetic listing:
 [.call](#dot_call),
 [.callc](#dot_callc),
@@ -1700,6 +1705,7 @@ Alphebetic listing:
 [.fetch+](#dot_fetch_plus),
 [.fetch-](#dot_fetch_minus),
 [.fetchindexed](#dot_fetchindexed),
+[.fetchoffset](#dot_fetchoffset),
 [.fetchvalue](#dot_fetchvalue),
 [.fetchvector](#dot_fetchvector),
 [.inport](#dot_inport),
@@ -1712,9 +1718,16 @@ Alphebetic listing:
 [.store+](#dot_store_plus),
 [.store-](#dot_store_minus),
 [.storeindexed](#dot_storeindexed),
+[.storeoffset](#dot_storeoffset),
 [.storevalue](#dot_storevalue),
 and
 [.storevector](#dot_storevector).
+
+Program Control
+---------------
+
+Detailed Descriptions
+---------------------
 
 ### <a name="dot_call"></tt>.call(function[,instruction])</tt></a>
 
@@ -1786,6 +1799,21 @@ multi-element array and perform a fetch indexed by the top of the data stack.
 | 3 | <tt>fetch(ram)</tt> | exchange the memory location for the variable value |
 
 Here the variable is stored in the memory <tt>ram</tt>.
+
+### <a name="dot_fetchoffset">.fetchoffset(variable,ix)</a>
+
+- <tt>variable</tt> is a variable name
+
+- <tt>ix</tt> is the index into the variable
+
+This macro generates the following two instruction sequence to fetch the
+value at the specified offset for the specified variable from memory.  I.e., it
+has the effect of pushing <tt>variable[ix]</tt> onto the data stack.
+
+| index | instruction | description |
+| ----- | ----------- | ----------- |
+| 1 | <tt>variable[ix]</tt> | push the memory location of the variable[ix] onto the data stack |
+| 2 | <tt>fetch(ram)</tt> | exchange the memory location for the variable value |
 
 ### <a name="dot_fetchvalue">.fetchvalue(variable)</a>
 
@@ -1884,6 +1912,9 @@ top of the data stack to the specified output port as follows.  The default
 | 2 | <tt>outport</tt> | the <tt>outport</tt> instruction |
 | 3 | <tt>instruction</tt> | the instruction following the outport instruction |
 
+**Special:**  The macro rejects strobe-only output ports for the <tt>O_PORT</tt>
+argument.
+
 ### <a name="dot_outstrobe"><tt>.outstrobe(O_PORT)</tt></a>
 
 - <tt>O_PORT</tt> is the output port number
@@ -1895,6 +1926,9 @@ top of the data stack to the specified output port as follows.
 | ----- | ----------- | ----------- |
 | 1 | <tt>O_PORT</tt> | push the output port index onto the data stack |
 | 2 | <tt>outport</tt> | the <tt>outport</tt> instruction |
+
+**Special:**  The macro only accepts strobe-only output ports for the
+<tt>O_PORT</tt> argument.
 
 ### <a name="dot_return"><tt>.return[(instruction)]</tt></a>
 
@@ -1969,6 +2003,27 @@ data stack at the specified variable.
 | ----- | ----------- | ----------- |
 | 1 | <tt>variable</tt> | push the variable location onto the data stack |
 | 2 | store(ram) | store the initial value of the top of the data stack at the specified variable |
+| 3 | <tt>instruction</tt> | the instruction following the store instruction |
+
+### <a name="dot_storeoffset"><tt>.storeoffset(variable,ix[,instruction])</tt></a>
+
+- <tt>variable</tt> is a variable name
+
+- <tt>ix</tt> is the index into the variable
+
+- <tt>instruction</tt> is an optional instruction to perform at the end of the
+  instruction sequence
+
+  Default:  <tt>drop</tt>
+
+This macro generates the three instruction sequence to store the top of the data
+stack at the specified index of the variable.  I.e., it generates the code to
+store the top of the data stack at <tt>variable[ix]</tt>.
+
+| index | instruction | description |
+| ----- | ----------- | ----------- |
+| 1 | <tt>variable[ix]</tt> | push the location of variable[ix] onto the data stack |
+| 2 | store(ram) | store the initial value of the top of the data stack at the specified location |
 | 3 | <tt>instruction</tt> | the instruction following the store instruction |
 
 ### <a name="dot_storevector"><tt>.storevector(variable,length[,instruction])</tt></a>
