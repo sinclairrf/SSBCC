@@ -277,7 +277,7 @@ class SSBCCinterruptPeripheral(SSBCCperipheral):
 
 ################################################################################
 #
-# Utilties for interrupt peripherals.
+# Utilities for interrupt peripherals.
 #
 ################################################################################
 
