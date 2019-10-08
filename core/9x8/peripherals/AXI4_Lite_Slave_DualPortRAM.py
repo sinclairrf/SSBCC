@@ -1,115 +1,41 @@
 ################################################################################
 #
 # Copyright 2013-2014, 2018, Sinclair R.F., Inc.
+# Copyright 2019, Rodney Sinclair
 #
 ################################################################################
 
 import math
-import re;
+import re
 
 from ssbccPeripheral import SSBCCperipheral
-from ssbccUtil import SSBCCException;
+from ssbccUtil import SSBCCException
 
 class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
   """
-  AXI-Lite slave implemented as a dual-port RAM.  The dual-port RAM has at most
-  256 bytes addressable by a single 8-bit value.  The data is stored in little
-  endian format (i.e., the LSB of the 32-bit word is stored in the lowest
-  numbered address).\n
-  Usage:
-    PERIPHERAL AXI4_Lite_Slave_DualPortRAM              \\
-                                basePortName=<name>     \\
-                                address=<O_address>     \\
-                                read=<I_read>           \\
-                                write=<O_write>         \\
-                                [size=<N>]              \\
-                                [ram8|ram32]\n
-  Where:
-    basePortName=<name>
-      specifies the name used to construct the multiple AXI4-Lite signals
-    address=<O_address>
-      specifies the symbol used to set the address used for read and write
-      operations from and to the dual-port memory
-    read=<I_read>
-      specifies the symbol used to read from the dual-port memory
-    write=<O_write>
-      specifies the symbol used to write to the dual-port memory
-    size=<N>
-      optionally specify the size of the dual-port memory.
-      Note:  N must be either a power of 2 in the range from 16 to 256 inclusive
-             or it must be a local param with the same restrictions on its
-             value.
-      Note:  N=256, i.e., the largest memory possible, is the default.
-      Note:  Using a localparam for the memory size provides a convenient way
-             to use the size of the dual port RAM in the micro controller code.\n
-    ram8
-      optionally specifies using an 8-bit RAM for the dual-port memory instantiation
-      Note:  This is the default
-    ram32
-      optionally specifies using a 32-bit RAM for the dual-port memory instantiation
-      Note:  This is required for Vivado 2013.3.\n
-  Example:  The code fragments
-              <addr> .outport(O_address) .inport(I_read)
-            and
-              <addr> .outport(O_address) <value> .outport(O_write)
-            will read from and write to the dual-port RAM.\n
-  Example:  Function to read the byte at the specified address:
-              ; ( u_addr - u_value)
-              .function als_read
-                .outport(O_address) .inport(I_read) .return
-            or
-              ; ( u_addr - u_value)
-              .function als_read
-                .outport(O_address) I_read .return(inport)
-            To invoke the function:
-              <addr> .call(als_read)
-            or
-              .call(als_read,<addr>)\n
-  Example:  Function to write the byte at the specified address:
-              ; ( u_value u_addr - )
-              .function als_write
-                .outport(O_address) O_write outport .return(drop)
-            To invoke the function:
-              <value> <addr> .call(als_write)
-            or
-              <value> .call(als_write,<addr>)\n
-  Example:  Spin on an address, waiting for the host processor to write to the
-            address, do something when the address is written to, and then
-            clear its contents.
-              0x00 .outport(O_address)
-              :loop .inport(I_read) 0= .jumpc(loop)
-              ; Avoid race conditions between the processor writes and the micro
-              ; controller read.
-              .inport(I_read)
-              ...
-              ; clear the value and start waiting again
-              0x00 O_address outport O_write outport .jump(loop,drop)\n
-  LEGAL NOTICE:  ARM has restrictions on what kinds of applications can use
-  interfaces based on their AXI protocol.  Ensure your application is in
-  compliance with their restrictions before using this peripheral for an AXI
-  interface.
+  The documentation is recorded in the file AXI4_Lite_Slave_DualPortRAM.md
   """
 
   def __init__(self,peripheralFile,config,param_list,loc):
     # Use the externally provided file name for the peripheral
-    self.peripheralFile = peripheralFile;
+    self.peripheralFile = peripheralFile
     # Get the parameters.
     allowables = (
-      ( 'address',      r'O_\w+$',      None,           ),
-      ( 'basePortName', r'\w+$',        None,           ),
-      ( 'ram8',         None,           None,           ),
-      ( 'ram32',        None,           None,           ),
-      ( 'read',         r'I_\w+$',      None,           ),
-      ( 'size',         r'\S+$',        lambda v : self.IntPow2Method(config,v,lowLimit=16,highLimit=256), ),
-      ( 'write',        r'O_\w+$',      None,           ),
-    );
-    names = [a[0] for a in allowables];
+      ( 'address',              r'O_\w+$',      None,           ),
+      ( 'basePortName',         r'\w+$',        None,           ),
+      ( 'ram8',                 None,           None,           ),
+      ( 'ram32',                None,           None,           ),
+      ( 'read',                 r'I_\w+$',      None,           ),
+      ( 'address_width',        r'\S+$',        lambda v : self.IntMethod(config,v,lowLimit=4), ),
+      ( 'write',                r'O_\w+$',      None,           ),
+    )
+    names = [a[0] for a in allowables]
     for param_tuple in param_list:
-      param = param_tuple[0];
+      param = param_tuple[0]
       if param not in names:
-        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,));
-      param_test = allowables[names.index(param)];
-      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2]);
+        raise SSBCCException('Unrecognized parameter "%s" at %s' % (param,loc,))
+      param_test = allowables[names.index(param)]
+      self.AddAttr(config,param,param_tuple[1],param_test[1],loc,param_test[2])
     # Ensure the required parameters are provided.
     for paramname in (
       'address',
@@ -118,25 +44,24 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
       'write',
     ):
       if not hasattr(self,paramname):
-        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,));
+        raise SSBCCException('Required parameter "%s" is missing at %s' % (paramname,loc,))
     # Set optional parameters.
     for optionalpair in (
-        ('size',        256,    ),
+        ('address_width',       8,    ),
       ):
       if not hasattr(self,optionalpair[0]):
-        setattr(self,optionalpair[0],optionalpair[1]);
+        setattr(self,optionalpair[0],optionalpair[1])
     # Ensure exclusive pair configurations are set and consistent.
     for exclusivepair in (
         ('ram8','ram32','ram8',True,),
       ):
       if hasattr(self,exclusivepair[0]) and hasattr(self,exclusivepair[1]):
-        raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,));
+        raise SSBCCException('Only one of "%s" and "%s" can be specified at %s' % (exclusivepair[0],exclusivepair[1],loc,))
       if not hasattr(self,exclusivepair[0]) and not hasattr(self,exclusivepair[1]):
-        setattr(self,exclusivepair[2],exclusivepair[3]);
+        setattr(self,exclusivepair[2],exclusivepair[3])
     # Set the string used to identify signals associated with this peripheral.
-    self.namestring = self.basePortName;
+    self.namestring = self.basePortName
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
-    self.address_width = int(math.log(self.size,2));
     for signal in (
         ( '%s_aresetn',         1,                      'input',        ),
         ( '%s_aclk',            1,                      'input',        ),
@@ -158,40 +83,52 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
         ( '%s_rdata',           32,                     'output',       ),
         ( '%s_rresp',           2,                      'output',       ),
       ):
-      thisName = signal[0] % self.basePortName;
-      config.AddIO(thisName,signal[1],signal[2],loc);
-    config.AddSignal('s__%s__mc_addr'  % self.namestring, self.address_width, loc);
-    config.AddSignal('s__%s__mc_rdata' % self.namestring, 8, loc);
+      thisName = signal[0] % self.basePortName
+      config.AddIO(thisName,signal[1],signal[2],loc)
+    config.AddSignal('s__%s__mc_rdata' % self.namestring, 8, loc)
+    self.ix_address = config.NOutports();
     config.AddOutport((self.address,False,
-                      ('s__%s__mc_addr' % self.namestring, self.address_width, 'data', ),
-                      ),loc);
+                      # empty list
+                      ),loc)
     config.AddInport((self.read,
                       ('s__%s__mc_rdata' % self.namestring, 8, 'data', ),
-                      ),loc);
-    self.ix_write = config.NOutports();
+                      ),loc)
+    self.ix_write = config.NOutports()
     config.AddOutport((self.write,False,
                       # empty list
-                      ),loc);
-    # Add the 'clog2' function to the processor (if required).
-    config.functions['clog2'] = True;
+                      ),loc)
 
   def GenVerilog(self,fp,config):
-    body = self.LoadCore(self.peripheralFile,'.v');
+    body = self.LoadCore(self.peripheralFile,'.v')
+    if self.address_width <= 8:
+      body = re.sub(r' *@ADDR_NARROW_BEGIN@','',body)
+      body = re.sub(r' *@ADDR_NARROW_ELSE@.*?@ADDR_NARROW_END@','',body,flags=re.DOTALL)
+    else:
+      body = re.sub(r' *@ADDR_NARROW_BEGIN@.*@ADDR_NARROW_ELSE@','',body,flags=re.DOTALL)
+      body = re.sub(r' *@ADDR_NARROW_END@','',body)
+    if hasattr(self,'ram8'):
+      body = re.sub(r'@RAM8_BEGIN@','',body)
+      body = re.sub(r'@RAM8_END@','',body)
+      body = re.sub(r'@RAM32_BEGIN@.*?@RAM32_END@','',body,flags=re.DOTALL)
+    if hasattr(self,'ram32'):
+      body = re.sub(r'@RAM8_BEGIN@.*?@RAM8_END@','',body,flags=re.DOTALL)
+      body = re.sub(r'@RAM32_BEGIN@','',body)
+      body = re.sub(r'@RAM32_END@','',body)
     for subpair in (
         ( r'\bL__',             'L__@NAME@__',                          ),
         ( r'\bgen__',           'gen__@NAME@__',                        ),
-        ( r'\bi_a',             '@NAME@_a',                             ),
-        ( r'\bi_b',             '@NAME@_b',                             ),
-        ( r'\bi_r',             '@NAME@_r',                             ),
-        ( r'\bi_w',             '@NAME@_w',                             ),
+        ( r'\bi_',              '@NAME@_',                              ),
         ( r'\bix__',            'ix__@NAME@__',                         ),
         ( r'\bo_',              '@NAME@_',                              ),
         ( r'\bs__',             's__@NAME@__',                          ),
+        ( r'@ADDRESS_WIDTH@',   str(self.address_width),                ),
+        ( r'@IX_ADDRESS@',      "8'h%02x" % self.ix_address,            ),
         ( r'@IX_WRITE@',        "8'h%02x" % self.ix_write,              ),
         ( r'@NAME@',            self.namestring,                        ),
-        ( r'@SIZE@',            str(self.size),                         ),
-        ( r'@MEM8@',            '1' if hasattr(self,'mem8') else '0',   ),
+        ( r'@SIZE@',            str(2**self.address_width),             ),
+        ( r'@UC_CLK@',          'i_clk',                                ),
+        ( r'@UC_RST@',          'i_rst',                                ),
       ):
-      body = re.sub(subpair[0],subpair[1],body);
-    body = self.GenVerilogFinal(config,body);
-    fp.write(body);
+      body = re.sub(subpair[0],subpair[1],body)
+    body = self.GenVerilogFinal(config,body)
+    fp.write(body)

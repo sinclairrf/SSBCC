@@ -1,18 +1,27 @@
 #!/bin/bash
 #
 # Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2019, Rodney Sinclair
 
 NAME=AXI4_Lite_Slave_DualPortRAM
 
 for RAM in ram8 ram32; do
-  sed -e "s/@RAM@/${RAM}/" tb_AXI4_Lite_Slave_DualPortRAM.9x8-template > tb_AXI4_Lite_Slave_DualPortRAM.9x8;
-  ../../../../../ssbcc -q --display-opcode -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
-  iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
-  ./tb > tb.out;
-  if ! cmp -s tb.out tb.good; then
-    echo "${NAME} failed" > /dev/stderr;
-    exit 1;
-  fi
+  for ADDRESS_WIDTH in 7 8 9 12; do
+    sed \
+      -e "s/@RAM@/${RAM}/" \
+      -e "s/@ADDRESS_WIDTH@/${ADDRESS_WIDTH}/" \
+      tb_AXI4_Lite_Slave_DualPortRAM.9x8-template > tb_AXI4_Lite_Slave_DualPortRAM.9x8;
+    sed \
+      -e "s/@ADDRESS_WIDTH@/${ADDRESS_WIDTH}/" \
+      tb.v-template > tb.v
+    ../../../../../ssbcc -q --display-opcode -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+    iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+    ./tb > tb.out;
+    if ! cmp -s tb.out tb.good; then
+      echo "${NAME} failed" > /dev/stderr;
+      exit 1;
+    fi
+  done
 done
 
 echo "Passed:  ${NAME}";

@@ -1,4 +1,6 @@
 # Copyright 2013, Sinclair R.F., Inc.
+# Copyright 2019, Rodney Sinclair
+#
 # Test bench for AXI4-Lite slave dual-port-ram peripheral.
 
 ARCHITECTURE core/9x8 Verilog
@@ -9,13 +11,12 @@ RETURN_STACK    2
 
 
 PORTCOMMENT AXI4-Lite Slave I/F
-LOCALPARAM L_DP_SIZE 128
 PERIPHERAL AXI4_Lite_Slave_DualPortRAM \
                         basePortName=axi_lite \
                         address=O_DP_ADDRESS \
                         read=I_DP_READ \
                         write=O_DP_WRITE \
-                        size=L_DP_SIZE \
+                        address_width=@ADDRESS_WIDTH@ \
                         @RAM@
 
 PORTCOMMENT diagnostic output
