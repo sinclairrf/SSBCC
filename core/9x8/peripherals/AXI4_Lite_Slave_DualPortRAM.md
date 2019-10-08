@@ -13,7 +13,7 @@ PERIPHERAL AXI4_Lite_Slave_DualPortRAM                  \
                                 address=<O_address>     \
                                 read=<I_read>           \
                                 write=<O_write>         \
-                                [size=<N>]              \
+                                [address_width=<N>]     \
                                 [ram8|ram32]
 ```
 
@@ -36,17 +36,16 @@ Where:
 
     specifies the symbol used to write to the dual-port memory
 
-  - size=<N>
+  - address_width=<N>
 
-    optionally specify the size of the dual-port memory.
+    optionally specify the width of the dual-port memory address port.
 
-    Note:  N must be either a power of 2 in the range from 16 to 256 inclusive
-    or it must be a local param with the same restrictions on its value.
+    Note:  N must be at least&nbsp;2.  Values less than or equal to 8 allow
+    single-byte addresses in the assembly code.  Values larger than 8 require
+    two or mmore address bytes in the assembly code.
 
-    Note:  N=256, i.e., the largest memory possible, is the default.
-
-    Note:  Using a localparam for the memory size provides a convenient way to
-    use the size of the dual port RAM in the micro controller code.
+    Note:  N=8, i.e., the full range addressable by a single address byte, is
+    the default.
 
   - ram8
 
