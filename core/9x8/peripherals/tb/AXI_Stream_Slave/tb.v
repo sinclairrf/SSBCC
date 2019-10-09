@@ -56,8 +56,6 @@ tb_AXI_Stream_Slave uut(
   .i_rst                (s_rst),
   .i_clk                (s_clk),
   // Incoming AXI Stream
-  .s_axis_aclk          (s_clk),
-  .s_axis_aresetn       (~s_rst),
   .s_axis_tvalid        (s_axis_tvalid),
   .s_axis_tready        (s_axis_tready),
   .s_axis_tlast         (s_axis_tlast),

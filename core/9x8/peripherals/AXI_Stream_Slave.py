@@ -56,8 +56,6 @@ class AXI_Stream_Slave(SSBCCperipheral):
           raise SSBCCException('One of "%s" or "%s" must be set at %s' % (exclusivepair[0],exclusivepair[1],loc,))
     # Add the I/O port, internal signals, and the INPORT and OUTPORT symbols for this peripheral.
     for signal in (
-      ( '%s_aclk',      1,                      'input',  ),
-      ( '%s_aresetn',   1,                      'input',  ),
       ( '%s_tvalid',    1,                      'input',  ),
       ( '%s_tready',    1,                      'output', ),
       ( '%s_tlast',     1,                      'input',  ) if hasattr(self,'hasTLast') else None,
