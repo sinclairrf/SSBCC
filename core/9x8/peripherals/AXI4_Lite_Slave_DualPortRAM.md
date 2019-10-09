@@ -16,7 +16,8 @@ PERIPHERAL AXI4_Lite_Slave_DualPortRAM                  \
                                 read=<I_read>           \
                                 write=<O_write>         \
                                 [address_width=<N>]     \
-                                [ram8|ram32]
+                                [ram8|ram32]            \
+                                [autoincrement]
 ```
 
 Where:
@@ -60,6 +61,17 @@ Where:
     optionally specifies using a 32-bit RAM for the dual-port memory instantiation
 
     Note:  This is required for Vivado 2013.3.
+
+  - autoincrement
+
+    optionally specifies that the micro controller address to the RAM will
+    increment by 1 every time a read is performed and to decrement by 1 every
+    time a write is performed
+
+    Note:  The intention here is to allow faster reads from and writes to the
+    memory with the constraint that the RAM is little-endian while the data
+    stack is big-endian (in the sense that the most-significant bit is at the
+    top of the data stack).
 
 Example
 =======

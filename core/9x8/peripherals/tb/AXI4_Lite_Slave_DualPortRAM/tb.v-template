@@ -41,7 +41,7 @@ reg  [6:0] s_rd_addr    = 7'd0;
 reg        s_rd_go      = 1'b0;
 initial begin
   // 1-byte write
-  repeat (3000) @ (posedge s_aclk);
+  repeat (1500) @ (posedge s_aclk);
   s_wr_addr <= 'h00;
   s_wr_data <= 32'h03020100;
   s_wr_vld  <= 4'b1000;
@@ -167,7 +167,7 @@ wire  [7:0] s_addr;
 wire  [7:0] s_data;
 wire        s_data_wr;
 wire        s_done;
-tb_AXI4_Lite_Slave_DualPortRAM uut(
+uc uut(
   // synchronous reset and processor clock
   .i_rst                (s_rst),
   .i_clk                (s_clk),

@@ -4,20 +4,20 @@
 # Test bench for AXI4-Lite slave dual-port-ram peripheral.
 
 ARCHITECTURE core/9x8 Verilog
+ASSEMBLY @ASSEMBLY@
 
 INSTRUCTION     128
 DATA_STACK      16
 RETURN_STACK    2
 
-
 PORTCOMMENT AXI4-Lite Slave I/F
-PERIPHERAL AXI4_Lite_Slave_DualPortRAM \
-                        basePortName=axi_lite \
-                        address=O_DP_ADDRESS \
-                        read=I_DP_READ \
-                        write=O_DP_WRITE \
-                        address_width=@ADDRESS_WIDTH@ \
-                        @RAM@
+PERIPHERAL AXI4_Lite_Slave_DualPortRAM                  \
+                        basePortName=axi_lite           \
+                        address=O_DP_ADDRESS            \
+                        read=I_DP_READ                  \
+                        write=O_DP_WRITE                \
+                        address_width=@ADDRESS_WIDTH@   \
+                        @RAM@ @AUTOINCREMENT@
 
 PORTCOMMENT diagnostic output
 OUTPORT 8-bit           o_diag_addr             O_DIAG_ADDR
@@ -25,5 +25,3 @@ OUTPORT 8-bit,strobe    o_diag_data,o_diag_wr   O_DIAG_DATA
 
 PORTCOMMENT program termination
 OUTPORT strobe o_done O_DONE
-
-ASSEMBLY tb_AXI4_Lite_Slave_DualPortRAM.s

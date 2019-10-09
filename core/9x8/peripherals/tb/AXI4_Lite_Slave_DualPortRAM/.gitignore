@@ -1,5 +1,4 @@
 *.9x8
-*.tcl
 tb.out
 tb.v
-tb_*.v
+uc.v

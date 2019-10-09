@@ -118,7 +118,7 @@ reg [7:0] s__mc_wdata = 8'd0;
 always @ (posedge @UC_CLK@)
   s__mc_wdata <= s_N;
 
-reg [L__SIZE-1:0] s__mc_addr = 'd0;
+reg [L__ADDR_WIDTH-1:0] s__mc_addr = 'd0;
 always @ (posedge @UC_CLK@)
   if (@UC_RST@)
     s__mc_addr <= 'd0;
@@ -128,6 +128,12 @@ always @ (posedge @UC_CLK@)
     @ADDR_NARROW_ELSE@
     s__mc_addr <= { s__mc_addr[0+:L__SIZE-8], s_N };
     @ADDR_NARROW_END@
+  @AUTOINCREMENT_BEGIN@
+  else if (s_inport && (s_T == @IX_READ@))
+    s__mc_addr <= s__mc_addr + 'd1;
+  else if (s_outport && (s_T == @IX_WRITE@))
+    s__mc_addr <= s__mc_addr - 'd1;
+  @AUTOINCREMENT_END@
   else
     s__mc_addr <= s__mc_addr;
 

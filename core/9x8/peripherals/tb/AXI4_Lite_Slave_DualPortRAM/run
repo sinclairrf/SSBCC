@@ -5,17 +5,22 @@
 
 NAME=AXI4_Lite_Slave_DualPortRAM
 
+SSBCC="../../../../../ssbcc -q --display-opcode -P monitor_stack"
+
+# Test single-byte addressing.
 for RAM in ram8 ram32; do
-  for ADDRESS_WIDTH in 7 8 9 12; do
+  for ADDRESS_WIDTH in 7 8; do
     sed \
-      -e "s/@RAM@/${RAM}/" \
+      -e "s/@ASSEMBLY@/uc_onebyte.s/" \
       -e "s/@ADDRESS_WIDTH@/${ADDRESS_WIDTH}/" \
-      tb_AXI4_Lite_Slave_DualPortRAM.9x8-template > tb_AXI4_Lite_Slave_DualPortRAM.9x8;
+      -e "s/@RAM@/${RAM}/" \
+      -e "s/@AUTOINCREMENT@//" \
+      uc.9x8-template > uc.9x8;
     sed \
       -e "s/@ADDRESS_WIDTH@/${ADDRESS_WIDTH}/" \
       tb.v-template > tb.v
-    ../../../../../ssbcc -q --display-opcode -P monitor_stack tb_${NAME}.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
-    iverilog -o tb tb.v tb_${NAME}.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+    ${SSBCC} uc.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+    iverilog -o tb tb.v uc.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
     ./tb > tb.out;
     if ! cmp -s tb.out tb.good; then
       echo "${NAME} failed" > /dev/stderr;
@@ -23,6 +28,44 @@ for RAM in ram8 ram32; do
     fi
   done
 done
+
+# Test two-byte addressing.
+for ADDRESS_WIDTH in 9 12; do
+  sed \
+    -e "s/@ASSEMBLY@/uc_twobyte.s/" \
+    -e "s/@ADDRESS_WIDTH@/${ADDRESS_WIDTH}/" \
+    -e "s/@RAM@/ram8/" \
+    -e "s/@AUTOINCREMENT@//" \
+    uc.9x8-template > uc.9x8;
+  sed \
+    -e "s/@ADDRESS_WIDTH@/${ADDRESS_WIDTH}/" \
+    tb.v-template > tb.v
+  ${SSBCC} uc.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+  iverilog -o tb tb.v uc.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+  ./tb > tb.out;
+  if ! cmp -s tb.out tb.good; then
+    echo "${NAME} failed" > /dev/stderr;
+    exit 1;
+  fi
+done
+
+# Test optional autoincrement.
+sed \
+  -e "s/@ASSEMBLY@/uc_autoincrement.s/" \
+  -e "s/@ADDRESS_WIDTH@/8/" \
+  -e "s/@RAM@/ram8/" \
+  -e "s/@AUTOINCREMENT@/autoincrement/" \
+  uc.9x8-template > uc.9x8;
+sed \
+  -e "s/@ADDRESS_WIDTH@/8/" \
+  tb.v-template > tb.v
+${SSBCC} uc.9x8 || { echo "${NAME} compile failed" > /dev/stderr; exit 1; }
+iverilog -o tb tb.v uc.v || { echo "${NAME} build failed" > /dev/stderr; exit 1; }
+./tb > tb.out;
+if ! cmp -s tb.out tb.good; then
+  echo "${NAME} failed" > /dev/stderr;
+  exit 1;
+fi
 
 echo "Passed:  ${NAME}";
 exit 0;

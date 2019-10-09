@@ -23,6 +23,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     allowables = (
       ( 'address',              r'O_\w+$',      None,           ),
       ( 'address_width',        r'\S+$',        lambda v : self.IntMethod(config,v,lowLimit=4), ),
+      ( 'autoincrement',        None,           None,           ),
       ( 'basePortName',         r'\w+$',        None,           ),
       ( 'ram32',                None,           None,           ),
       ( 'ram8',                 None,           None,           ),
@@ -90,6 +91,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     config.AddOutport((self.address,False,
                       # empty list
                       ),loc)
+    self.ix_read = config.NInports()
     config.AddInport((self.read,
                       ('s__%s__mc_rdata' % self.namestring, 8, 'data', ),
                       ),loc)
@@ -100,6 +102,11 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
 
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v')
+    if hasattr(self,'autoincrement'):
+      body = re.sub(r' *@AUTOINCREMENT_BEGIN@','',body)
+      body = re.sub(r' *@AUTOINCREMENT_END@','',body)
+    else:
+      body = re.sub(r' *@AUTOINCREMENT_BEGIN@.*?@AUTOINCREMENT_END@','',body,flags=re.DOTALL)
     if self.address_width <= 8:
       body = re.sub(r' *@ADDR_NARROW_BEGIN@','',body)
       body = re.sub(r' *@ADDR_NARROW_ELSE@.*?@ADDR_NARROW_END@','',body,flags=re.DOTALL)
@@ -123,6 +130,7 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
         ( r'\bs__',             's__@NAME@__',                          ),
         ( r'@ADDRESS_WIDTH@',   str(self.address_width),                ),
         ( r'@IX_ADDRESS@',      "8'h%02x" % self.ix_address,            ),
+        ( r'@IX_READ@',         "8'h%02x" % self.ix_read,               ),
         ( r'@IX_WRITE@',        "8'h%02x" % self.ix_write,              ),
         ( r'@NAME@',            self.namestring,                        ),
         ( r'@SIZE@',            str(2**self.address_width),             ),
