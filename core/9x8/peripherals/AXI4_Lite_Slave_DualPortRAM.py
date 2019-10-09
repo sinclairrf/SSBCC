@@ -22,11 +22,11 @@ class AXI4_Lite_Slave_DualPortRAM(SSBCCperipheral):
     # Get the parameters.
     allowables = (
       ( 'address',              r'O_\w+$',      None,           ),
-      ( 'basePortName',         r'\w+$',        None,           ),
-      ( 'ram8',                 None,           None,           ),
-      ( 'ram32',                None,           None,           ),
-      ( 'read',                 r'I_\w+$',      None,           ),
       ( 'address_width',        r'\S+$',        lambda v : self.IntMethod(config,v,lowLimit=4), ),
+      ( 'basePortName',         r'\w+$',        None,           ),
+      ( 'ram32',                None,           None,           ),
+      ( 'ram8',                 None,           None,           ),
+      ( 'read',                 r'I_\w+$',      None,           ),
       ( 'write',                r'O_\w+$',      None,           ),
     )
     names = [a[0] for a in allowables]
