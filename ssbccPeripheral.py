@@ -147,7 +147,7 @@ class SSBCCperipheral:
       raise SSBCCException('Must be a power of 2');
     return value;
 
-  def IntMethod(self,config,value,lowLimit=None,highLimit=None):
+  def IntMethod(self,config,value,lowLimit=None,highLimit=None,multipleof=None):
     """
     Return the integer value of the argument.  Throw an error if the argument is
     unrecognized, not an integer, or is outside the optionally specified range.
@@ -173,6 +173,8 @@ class SSBCCperipheral:
         raise SSBCCException('Cannot be less than %d' % lowLimit);
     if (highLimit != None) and value > highLimit:
       raise SSBCCException('Cannot be more than %d' % highLimit);
+    if (multipleof != None) and (value % multipleof != 0):
+      raise SSBCCException('Must be a multiple of %d' % multipleof)
     return value;
 
   def IntValueMethod(self,value):

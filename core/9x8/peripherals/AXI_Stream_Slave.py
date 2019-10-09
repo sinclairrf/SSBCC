@@ -1,6 +1,7 @@
 ################################################################################
 #
 # Copyright 2016, Sinclair R.F., Inc.
+# Copyright 2019, Rodney Sinclair
 #
 ################################################################################
 
@@ -9,60 +10,7 @@ from ssbccUtil import SSBCCException
 
 class AXI_Stream_Slave(SSBCCperipheral):
   """
-  Implement an AXI-Stream slave port with an optional TLast signal.\n
-  Usage:
-    PERIPHERAL AXI_Stream_Slave         basePortName=<name>             \\
-                                        instatus=<I_status>             \\
-                                        outlatch=<O_latch>              \\
-                                        indata=<I_data>                 \\
-                                        data_width=<N>                  \\
-                                        [noTLast|hasTLast]\n
-  where:
-    basePortName=<name>
-      specifies the name used to construct the multiple AXI-Stream signals
-    instatus=<I_status>
-      specifies the symbol used to read the status as to whether or not data is
-      available on the port
-      Note:  Data is available is bit 0x01 is set.  If data is not available
-             the byte will be 0x00.
-      Note:  If "hasTLast" is specified, bit 0x02 of the status will be the
-             value of the TLast signal coincident with the data that will be
-             latched by the outlatch strobe.
-    outlatch=<O_latch>
-      specifies the symbol used for the outport strobe that latches the
-      AXI-Stream data so that it can be read by the indata inport symbol
-      Note:  This also generates the acknowledgement signal that allows the
-             data on the AXI-Stream to advance (which is why the TLast value
-             cannot be sampled after this strobe is generated).
-    indata=<I_data>
-      specifies the symbol used to read the data portion of the AXI-Stream
-      latched by the outlatch symbol
-      Note:  Data is read LSB first.
-    data_width=<N>
-      specifies the width of the data portion of the AXI-Stream
-      Note:  N must be a power of 2 and it must be at least 8.
-    noTLast
-      specifies that the incoming AXI-Stream does not have a TLast signal
-    hasTLast
-      specifies that the incoming AXI-Stream does have a TLast signal\n
-  Example:  Receive data from a 32-bit wide AXI-Stream and preserve the value
-            of the TLast signal.\n
-    PERIPHERAL AXI_Stream_Slave         basePortName=incoming           \\
-                                        instatus=I_incoming_status      \\
-                                        outlatch=O_latch_incoming       \\
-                                        indata=I_incoming_data          \\
-                                        data_width=32                   \\
-                                        hasTLast\n
-    ; Wait for data to arrive on the AXI-Stream.
-    ; ( - )
-    :loop_wait .inport(I_incoming_status) 0= .jumpc(loop_wait)
-    ; Push the status of the TLast signal onto the data stack.
-    ; ( - f_tlast )
-    .inport(I_incoming_status) 0x02 and 0<>
-    ; Latch and read the AXI-Stream data.
-    ; ( f_tlast - f_tlast u_LSB ... u_MSB )
-    .outstrobe(O_latch_incoming)
-    ${4-1} :loop_read >r .inport(I_incoming_data) r> .jumpc(loop_read,1-) drop
+  The documentation is recorded in the file AXI_Stream_Slave.md
   """
 
   def __init__(self,peripheralFile,config,param_list,loc):
@@ -71,7 +19,7 @@ class AXI_Stream_Slave(SSBCCperipheral):
     # Get the parameters.
     allowables = (
       ( 'basePortName', r'\w+$',                None,           ),
-      ( 'data_width',   r'\w+$',                lambda v : self.IntPow2Method(config,v,lowLimit=8), ),
+      ( 'data_width',   r'\w+$',                lambda v : self.IntMethod(config,v,lowLimit=8,multipleof=8), ),
       ( 'hasTLast',     None,                   None,           ),
       ( 'indata',       r'I_\w+$',              None,           ),
       ( 'instatus',     r'I_\w+$',              None,           ),
@@ -133,36 +81,15 @@ class AXI_Stream_Slave(SSBCCperipheral):
                      ), loc)
 
   def GenVerilog(self,fp,config):
-    body = """
-//
-// PERIPHERAL AXI_Stream_Slave:  @NAME@
-//
-initial @NAME@_tready = 1'b0;
-always @ (posedge @NAME@_aclk)
-  if (~@NAME@_aresetn)
-    @NAME@_tready <= 1'b0;
-  else if (s_outport && (s_T == @IX_LATCH@))
-    @NAME@_tready <= 1'b1;
-  else  if (@NAME@_tvalid && @NAME@_tready)
-    @NAME@_tready <= 1'b0;
-  else
-    @NAME@_tready <= @NAME@_tready;
-always @ (posedge @NAME@_aclk)
-  if (~@NAME@_aresetn)
-    s__@NAME@__data <= @WIDTH@'d0;
-  else if (s_outport && (s_T == @IX_LATCH@))
-    s__@NAME@__data <= @NAME@_tdata;
-  else if (s_inport && (s_T == @IX_INDATA@))
-    s__@NAME@__data <= @SHIFT_DATA@;
-  else
-    s__@NAME@__data <= s__@NAME@__data;
-"""[1:]
+    body = self.LoadCore(self.peripheralFile,'.v')
     for subpair in (
       ( '@NAME@',       self.basePortName, ),
       ( '@WIDTH@',      str(self.data_width), ),
       ( '@IX_LATCH@',   "8'd%d" % self.ix_latch, ),
       ( '@IX_INDATA@',  "8'd%d" % self.ix_indata, ),
       ( '@SHIFT_DATA@', "8'd0" if self.data_width == 8 else "{ 8'd0, s__%s__data[8+:%d] }" % (self.basePortName,self.data_width-8,), ),
+      ( r'@UC_CLK@',    'i_clk', ),
+      ( r'@UC_RST@',    'i_rst', ),
     ):
       body = re.sub(subpair[0],subpair[1],body)
     body = self.GenVerilogFinal(config,body)
