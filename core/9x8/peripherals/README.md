@@ -9,3 +9,4 @@ of the functionality.
 | [AXI\_Stream\_Slave](AXI_Stream_Slave.md) | AXI-Stream Slave port |
 | [adder\_16bit](adder_16bit.md) | 16-bit add/subtract core |
 | [big\_inport](big_inport.md) | read a wide signal into two or more bytes |
+| [big\_outport](big_outport.md) | write a multi-byte signal |
