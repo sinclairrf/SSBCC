@@ -1,18 +1,43 @@
   BUGS:
+    AXI peripherals
+      set RREADY high earlier for AXI peripherals
+      read address needs an extra clock cycle
+      AXI4-Lite Master -- busy loop doesn't work reliably
+    use includepaths when invoking the assembler
+    "-o xx/yy" results in bad "module" statement
 
   example
 *   "<", ... operators for signed 8-bit values
 
   ssbcc
-*   change "outstatus" to "outfull" for UART and UART_Tx
-*   add size[variable_name]
+    peripherals
+      move __docstring__ to .md files
+      remove trailing ';' from all python files
+      create README.md
+      add blank lines to peripheral Verilog files to improve readability
+    documentation
+      change README to README.md
+        pointers to core/9x8/peripherals/README.md, ...
+      top-level overview, point to implemented cores
+      required:  ARCHITECTURE and sizes, ASSEMBLY, and HDL
+      I/O Ports
+      INPORT and OUTPORT
+      PERIPHERAL
+        finish doc/peripheral.html
+      all error messages
+    Vivado:  Block ROM style (for PC, ...)
+      rework ROM inference styles?
+    convert from python2 to python3
+    add ".repeat(instr,N)" macro
+    change "outstatus" to "outfull" for UART and UART_Tx
+    add size[variable_name]
     add r* to over-write either s_T or s_N?
-*   accommodate Lattice Diamond synthesis and memory initialization
-*   make "quiet" the default
-*   ensure timer tolerance is non-zero
-*   ensure all "raise" statements include the source line code number
-*   write COMBINE MEMORY tests
-?   bit-slice constants (similarly to parameters)
+    accommodate Lattice Diamond synthesis and memory initialization
+    make "quiet" the default
+    ensure timer tolerance is non-zero
+    ensure all "raise" statements include the source line code number
+    write COMBINE MEMORY tests
+    bit-slice constants (similarly to parameters)
     handle ';' that aren't preceded by a space
     use .IFNDEF instead of checking assembler check for previously included files
     add "rot" instruction?
@@ -24,14 +49,6 @@
       how to accommodate multiple "shared memory" peripherals?
     remove dead parameters and dead code
     rework design as required to make it more robust
-    documentation
-      top-level overview, point to implemented cores
-      required:  ARCHITECTURE and sizes, ASSEMBLY, and HDL
-      I/O Ports
-      INPORT and OUTPORT
-      PERIPHERAL
-        finish doc/peripheral.html
-*     all error messages
     generate Altera SOPC/Qsys TCL script
     add VHDL
 
