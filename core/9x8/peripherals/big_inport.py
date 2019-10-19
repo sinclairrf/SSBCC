@@ -1,6 +1,7 @@
 ################################################################################
 #
 # Copyright 2013-2014, Sinclair R.F., Inc.
+# Copyright 2019, Rodney Sinclair
 #
 ################################################################################
 
@@ -58,7 +59,6 @@ class big_inport(SSBCCperipheral):
         ( r'@INSIGNAL@',        self.insignal, ),
         ( r'@UC_CLK@',          'i_clk', ),
         ( r'@UC_RST@',          'i_rst', ),
-
       ):
       body = re.sub(subpair[0],subpair[1],body)
     body = self.GenVerilogFinal(config,body)
