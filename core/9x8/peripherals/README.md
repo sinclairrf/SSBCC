@@ -10,4 +10,5 @@ of the functionality.
 | [adder\_16bit](adder_16bit.md) | 16-bit add/subtract core |
 | [big\_inport](big_inport.md) | read a wide signal into two or more bytes |
 | [big\_outport](big_outport.md) | write a multi-byte signal |
+| [counter](counter.md) | count received strobes |
 | [monitor\_stack](monitor_stack.md) | simulation peripheral to monitor stack validity |
