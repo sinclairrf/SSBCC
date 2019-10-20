@@ -94,7 +94,7 @@ class SSBCCperipheral:
     """
     if config.Get('define_clog2'):
       body = re.sub(r'\$clog2','clog2',body);
-    body = re.sub(r'\n{2,}','\n',body,flags=re.DOTALL);
+    body = re.sub(r'(\s*\n){2,}','\n',body,flags=re.DOTALL);
     return body;
 
   def GenVHDL(self,fp,config):
@@ -106,8 +106,8 @@ class SSBCCperipheral:
 
   def LoadCore(self,filename,extension):
     """
-    Read the source HDL for the peripheral from the same directory as the python
-    script.
+    Read the source specified by the extension for the peripheral from the same
+    directory as the python script.
     filename    name for the python peripheral (usually "__file__")
     extension   the string such as ".v" or ".vhd" required by the HDL\n
     Note:  The '.' must be included in the extension.  For example, the UART
