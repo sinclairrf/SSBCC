@@ -6,13 +6,14 @@ Count received strobes.
 Usage
 =====
 
+```
 PERIPHERAL counter                              \
                 insignal=i_name                 \
                 inport=I_NAME                   \
                 [width=<N> outlatch=O_NAME]
+```
 
-Where
-=====
+Where:
 
 - insignal=i_name
 
