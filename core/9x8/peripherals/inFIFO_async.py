@@ -11,6 +11,7 @@ from ssbccUtil import CeilLog2, \
 
 class inFIFO_async(SSBCCperipheral):
   """
+  The documentation is recorded in the file inFIFO_async.md
   """
 
   def __init__(self,peripheralFile,config,param_list,loc):
