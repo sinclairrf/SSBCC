@@ -56,21 +56,21 @@ class inFIFO_async(SSBCCperipheral):
   def GenVerilog(self,fp,config):
     body = self.LoadCore(self.peripheralFile,'.v')
     for subpair in (
-        ( r'\bgen__',           'gen__@NAME@__'                 ),
-        ( r'\bix__',            'ix__@NAME@__'                  ),
-        ( r'\bs__',             's__@NAME@__'                   ),
-        ( r'@DATA@',            self.data,                      ),
-        ( r'@DATA_FULL@',       self.data_full,                 ),
-        ( r'@DATA_WR@',         self.data_wr,                   ),
-        ( r'@DEPTH-1@',         str(self.depth-1),              ),
-        ( r'@DEPTH_NBITS@',     str(CeilLog2(self.depth)),      ),
-        ( r'@DEPTH_NBITS-1@',   str(CeilLog2(self.depth)-1),    ),
-        ( r'@INCLK@',           self.inclk,                     ),
-        ( r'@IX_DATA@',         str(self.ix_data),              ),
-        ( r'@NAME@',            self.data,                      ),
-        ( r'@UC_CLK@',          'i_clk',                        ),
-        ( r'@UC_RST@',          'i_rst',                        ),
-      ):
+      ( r'\bgen__',           'gen__@NAME@__' ),
+      ( r'\bix__',            'ix__@NAME@__' ),
+      ( r'\bs__',             's__@NAME@__' ),
+      ( r'@DATA@',            self.data, ),
+      ( r'@DATA_FULL@',       self.data_full, ),
+      ( r'@DATA_WR@',         self.data_wr, ),
+      ( r'@DEPTH-1@',         str(self.depth-1), ),
+      ( r'@DEPTH_NBITS@',     str(CeilLog2(self.depth)), ),
+      ( r'@DEPTH_NBITS-1@',   str(CeilLog2(self.depth)-1), ),
+      ( r'@INCLK@',           self.inclk, ),
+      ( r'@IX_DATA@',         str(self.ix_data), ),
+      ( r'@NAME@',            self.data, ),
+      ( r'@UC_CLK@',          'i_clk', ),
+      ( r'@UC_RST@',          'i_rst', ),
+    ):
       body = re.sub(subpair[0],subpair[1],body)
     body = self.GenVerilogFinal(config,body)
     fp.write(body)
