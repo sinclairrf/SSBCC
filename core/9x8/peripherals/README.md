@@ -11,6 +11,6 @@ of the functionality.
 | [big\_inport](big_inport.md) | read a wide signal into two or more bytes |
 | [big\_outport](big_outport.md) | write a multi-byte signal |
 | [counter](counter.md) | count received strobes |
-| [inFIFO](inFIFO.md) | Input FIFO with an asynchronous clock |
+| [inFIFO\_async](inFIFO_async.md) | Input FIFO with an asynchronous clock |
 | [latch](latch.md) | latch a large value for piecewise input |
 | [monitor\_stack](monitor_stack.md) | simulation peripheral to monitor stack validity |
