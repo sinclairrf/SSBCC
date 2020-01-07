@@ -15,4 +15,5 @@ of the functionality.
 | [latch](latch.md) | latch a large value for piecewise input |
 | [monitor\_stack](monitor_stack.md) | simulation peripheral to monitor stack validity |
 | [open\_drain](open_drain.md) | Open-drain I/O suitable for direct connection to a pin |
+| [open\_drain\_tristate](open_drain_tristate.md) | Open-drain I/O with tri-state pins |
 | [outFIFO\_async](outFIFO_async.md) | Output FIFO with an asynchronous clock |

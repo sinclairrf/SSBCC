@@ -82,3 +82,9 @@ ${int(100.e6/400.e3/3)-1} :delay .jumpc(delay,1-) drop
 
 See the I2C examples for a complete demonstration of using the open_drain
 peripheral.
+
+WARNING
+=======
+
+Some synthesis tools object to using "z" as a value.  You may need to use the
+open_drain_tristate peripheral instead.
